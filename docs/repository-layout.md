@@ -116,7 +116,20 @@ that needs each package adds it.
 - Each release has an entry in [`CHANGELOG.md`](../CHANGELOG.md)
   ([Keep a Changelog](https://keepachangelog.com/)) and an annotated tag
   `vX.Y.Z`; unreleased changes accumulate under `[Unreleased]`.
-- Current version: **0.1.0** — repository foundation (layout and toolchain).
+- **Between releases**, `Directory.Build.props` also sets `VersionSuffix` to
+  `dev`, so every build reports a pre-release version (`X.Y.Z-dev`), which
+  Semantic Versioning orders before the release `X.Y.Z`. Assembly and file
+  versions stay numeric (`X.Y.Z.0`).
+- **Branches:** work happens on `develop`; `main` only receives releases and
+  always holds the latest released version.
+- **Releasing a version** — only when the maintainer declares it:
+  1. on `develop`, remove `VersionSuffix`, move the `[Unreleased]` entries into
+     a dated `[X.Y.Z]` section, and commit;
+  2. merge `develop` into `main`;
+  3. tag that `main` commit with the annotated tag `vX.Y.Z` and push it;
+  4. on `develop`, open the next version line (next MINOR by default while at
+     0.y.z) with `VersionSuffix` `dev` again.
+- Current line: **0.1.0 — in progress** (`0.1.0-dev`); no release yet.
 
 ## Why this layout
 

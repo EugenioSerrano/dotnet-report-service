@@ -5,8 +5,8 @@ immutable JSON snapshot plus one versioned template into downloadable **PDF,
 HTML, Excel and Markdown** files — durably, asynchronously, and with memory
 that stays bounded no matter how large the report is.
 
-> **Current version: 0.1.0** — repository foundation (layout and toolchain);
-> no runnable service yet. See [CHANGELOG.md](CHANGELOG.md).
+> **Version: 0.1.0 — in progress** (builds report `0.1.0-dev`; not released
+> yet). See [CHANGELOG.md](CHANGELOG.md).
 >
 > **Project status: design complete, implementation not started.**
 > The analysis phase closed on 2026-10-21 with every open question answered.
@@ -452,6 +452,12 @@ version for the whole repository. It stays at **0.y.z** while the milestones
 above are delivered — no API or contract stability is promised until then —
 and the first operational version ships as **1.0.0**. Every release is listed
 in [CHANGELOG.md](CHANGELOG.md) and tagged `vX.Y.Z`.
+
+Between releases, builds carry a `-dev` pre-release label (currently
+`0.1.0-dev`). A version is released when the maintainer declares it: the label
+is removed, the changelog gets the dated version section, `develop` is merged
+into `main`, and `main` is tagged `vX.Y.Z`. `main` always holds the latest
+release; `develop` holds the work in progress.
 
 ## Technology decisions
 

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-21
+Work towards **0.1.0** (in progress — builds report `0.1.0-dev`).
 
 ### Added
 
@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with package source mapping.
 - Platform matrix: .NET 10 SDK pinned to the 10.0.4xx band, `net10.0` and
   analyzer level 10.0 as shared defaults.
-- Product version 0.1.0 and this changelog.
+- Product version line 0.1.0, with pre-release builds reporting `0.1.0-dev`,
+  and this changelog.
 - README describing the product design, and `docs/repository-layout.md`.
 
-[Unreleased]: https://github.com/EugenioSerrano/dotnet-report-service/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/EugenioSerrano/dotnet-report-service/releases/tag/v0.1.0
+[Unreleased]: https://github.com/EugenioSerrano/dotnet-report-service/commits/develop
