@@ -1,0 +1,8 @@
+{
+  "sdk": {
+    "version": "10.0.402",
+    "rollForward": "latestPatch",
+    "allowPrerelease": false,
+    "errorMessage": "dotnet-report-service requires a .NET 10 SDK in the 10.0.4xx band (10.0.402 or a later patch). Install it from https://dotnet.microsoft.com/download/dotnet/10.0"
+  }
+}

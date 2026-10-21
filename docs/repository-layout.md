@@ -15,11 +15,13 @@ dotnet-report-service/
 ├── eng/                       Build and engineering assets
 ├── spikes/                    Stage 0 experiments (not part of the product)
 ├── dotnet-report-service.slnx Product solution
-├── Directory.Build.props      Build settings shared by every project
+├── global.json                .NET SDK pin (10.0.4xx band)
+├── Directory.Build.props      Build settings shared by every project, product version
 ├── Directory.Packages.props   Central package versions
 ├── NuGet.config               Package sources (nuget.org only)
 ├── .editorconfig              Code style and whitespace rules
 ├── .gitattributes             Line endings (LF) and binary files
+├── CHANGELOG.md               Release history
 ├── README.md
 └── LICENSE
 ```
@@ -42,11 +44,17 @@ Spikes are never added.
 
 ## Shared configuration
 
+- **`global.json`** pins the .NET SDK to the 10.0.4xx band (10.0.402 or a
+  later patch, no previews); any `dotnet` command run in the repository uses
+  it or fails with an explanation of what to install.
 - **`Directory.Build.props`** is imported automatically by every project below
-  the root. It enables nullable reference types and implicit usings, treats
-  warnings as errors, enforces code style during build, and sets the package
-  metadata (MIT licence, repository URL). It sets **no version** — no target
-  framework, language version, analysis level or SDK.
+  the root. It sets the shared defaults `net10.0` and analyzer level 10.0,
+  enables nullable reference types and implicit usings, treats warnings as
+  errors, enforces code style during build, declares the product version
+  (`VersionPrefix`) and sets the package metadata (MIT licence, repository
+  URL). A project may override the target framework or analyzer level
+  explicitly when it has a reason to; the language version is the framework's
+  default.
 - **`spikes/Directory.Build.props`** imports the root file and relaxes it for
   experiments: warnings do not fail the build and nothing is packable.
 - **`Directory.Packages.props`** enables central package management: package
@@ -61,10 +69,54 @@ Spikes are never added.
 
 ## Requirements
 
-- A .NET SDK of version 9.0.200 or later to open and build
-  `dotnet-report-service.slnx` (`.slnx` is the default solution format from
-  .NET 10 on). Exact SDK and framework versions are fixed when the first
-  projects are added.
+- The **.NET 10 SDK, 10.0.402 or a later 10.0.4xx patch**
+  (see `global.json`). It also opens `dotnet-report-service.slnx` (`.slnx` is
+  the default solution format from .NET 10 on).
+
+## Versions
+
+### Platform
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| .NET | 10 (LTS) — SDK 10.0.4xx band, `net10.0` | Supported until November 2028 |
+| Aspire | 13.6.2 | Local development composition; requires the .NET 10 SDK |
+| Temporal | .NET SDK 1.21.0; dev server image `temporalio/temporal:1.9.1`; production reference server 1.32.x with PostgreSQL | |
+| PostgreSQL | 18 (client Npgsql 10.0.3) | |
+| Cache | Valkey 9.1 | Redis protocol — Redis works as well |
+| Playwright / Chromium | Playwright 1.63.0 → Chromium 153 | Installed into the PDF worker image at build time |
+| Paged.js | 0.4.3 | Vendored in the render image; no Node.js at runtime |
+
+Package versions appear in `Directory.Packages.props` as the first change
+that needs each package adds it.
+
+### Dependency rules
+
+- **Exact versions only** — no ranges or wildcards; container images pinned by
+  tag (and by digest in published images).
+- **Stable releases only** in `src/` and `tests/`; a spike may try a
+  prerelease only if its README says so.
+- **Patch and minor updates** are routine changes that must keep the build
+  and tests green; **any Playwright update** also requires the rendering
+  snapshot tests to pass, because it changes Chromium.
+- **Major updates** of a platform component are deliberate decisions, made
+  and recorded on their own.
+- Every new or upgraded dependency is checked for licence compatibility with
+  MIT.
+
+### Product version
+
+- [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH`, one
+  version for the whole repository, declared as `VersionPrefix` in
+  `Directory.Build.props`.
+- The product stays at **0.y.z** until the first operational version ships as
+  **1.0.0**; until then no API or contract stability is promised. While at
+  0.y.z, MINOR grows with each delivered milestone or capability, PATCH with
+  fixes.
+- Each release has an entry in [`CHANGELOG.md`](../CHANGELOG.md)
+  ([Keep a Changelog](https://keepachangelog.com/)) and an annotated tag
+  `vX.Y.Z`; unreleased changes accumulate under `[Unreleased]`.
+- Current version: **0.1.0** — repository foundation (layout and toolchain).
 
 ## Why this layout
 

@@ -1,16 +1,26 @@
 <Project>
   <!--
     Repository-wide MSBuild properties, imported automatically by every project
-    below this folder. Versions (TargetFramework, LangVersion, AnalysisLevel,
-    SDK, packages) are deliberately not set here: they are fixed by the
-    version matrix and declared per project or in Directory.Packages.props.
+    below this folder.
+    - Target framework and analyzer level are shared defaults; a project may
+      override them explicitly when it has a reason to.
+    - The SDK band is pinned in global.json.
+    - Package versions live only in Directory.Packages.props.
+    - The product version below is changed only when a release is made.
   -->
   <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AnalysisLevel>10.0</AnalysisLevel>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Product version (Semantic Versioning). One version for the whole repository. -->
+    <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>

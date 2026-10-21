@@ -5,6 +5,9 @@ immutable JSON snapshot plus one versioned template into downloadable **PDF,
 HTML, Excel and Markdown** files — durably, asynchronously, and with memory
 that stays bounded no matter how large the report is.
 
+> **Current version: 0.1.0** — repository foundation (layout and toolchain);
+> no runnable service yet. See [CHANGELOG.md](CHANGELOG.md).
+>
 > **Project status: design complete, implementation not started.**
 > The analysis phase closed on 2026-10-21 with every open question answered.
 > Development begins with a set of technical spikes (Stage 0) that fix the
@@ -134,7 +137,7 @@ flowchart TB
         PG[("PostgreSQL\nmetadata")]
         TS[("Temporal\nserver")]
         OS[("Object storage\nS3 · Azure Blob · Filesystem")]
-        RD[("Redis\ntemplate cache")]
+        RD[("Valkey\ntemplate cache")]
         TR["Templates repo\n(GitHub + CI)"]
     end
     CS --> GW --> API
@@ -156,7 +159,7 @@ flowchart TB
 | **Temporal** | Durable, deterministic orchestration of each job | Workflows exchange only references and small metadata; activities do the I/O |
 | **Workers** | One task queue per cost type: `report-data`, `report-html`, `report-pdf-rendering`, `report-pdf-merge`, `report-xlsx` | PDF workers run one Chromium each and scale independently; light workers may share a process |
 | **Object storage** | Snapshots, blocks, intermediates, outputs, published template packages | Injectable providers: S3-compatible, Azure Blob Storage, Filesystem (the local/dev default). Each provider declares its capabilities (signed URLs, conditional commit) |
-| **Redis** | Shared cache of template packages and metadata across workers | A cache miss or outage never blocks rendering: object storage is the source of truth |
+| **Valkey** (Redis protocol) | Shared cache of template packages and metadata across workers | A cache miss or outage never blocks rendering: object storage is the source of truth. Adopters may run Redis instead |
 | **Templates repository** | Source of templates; CI validates and publishes immutable packages | GitHub is the *source*, never a runtime dependency |
 
 Observability is OpenTelemetry-based (logs, traces, metrics per job, block,
@@ -410,7 +413,7 @@ are planned after the MVP.
   record, 1 000 records or 8 MiB per block, 16 MiB hard maximum, 64 levels,
   5-minute block timeout, 2 concurrent blocks, 1 render per PDF worker);
   measure before relying on them.
-- **PostgreSQL**, **Temporal** and **Redis** connection settings.
+- **PostgreSQL**, **Temporal** and **Valkey** (or Redis) connection settings.
 
 The service publishes measured capacity figures per release on reference
 datasets. It commits to **no SLA**.
@@ -438,21 +441,29 @@ datasets. It commits to **no SLA**.
 |-----------|----------|
 | **Stage 0 — spikes** | Solution skeleton and Aspire AppHost; LTS-first version matrix; measured spikes for the incremental parser, template engines per record, Paged.js + Chromium on Linux (vs. native `@page` margin boxes), page subtotals, global numbering, PDF merge (PDFsharp vs. qpdf), XLSX writer (MiniExcel vs. Open XML SDK), Markdown conversion routes; seeded synthetic pilot datasets |
 | **MVP — first durable path** | Upload sessions, idempotent job creation, durable dispatch to Temporal, immutable template packages with the three engines, separate PDF worker, status and download, restart resilience, observability baseline, Filesystem storage provider — for a small single-block report |
-| **v1 — first operational version** | Streaming validation, partitioning and durable block index, bounded concurrency and ordered merge, page/group/carried-forward totals, global numbering, cancellation, HTML / raw XLSX / Markdown outputs, per-output status, retention and cleanup, authorization on the declared consumer, S3 and Azure Blob providers, Redis cache, measured limits, OpenAPI and runbooks, local Kubernetes test |
+| **v1 — first operational version** | Streaming validation, partitioning and durable block index, bounded concurrency and ordered merge, page/group/carried-forward totals, global numbering, cancellation, HTML / raw XLSX / Markdown outputs, per-output status, retention and cleanup, authorization on the declared consumer, S3 and Azure Blob providers, Valkey cache, measured limits, OpenAPI and runbooks, local Kubernetes test |
 | **v2 — extensions** | Excel template rendering, Razor with an isolation model, webhooks, administrative capabilities, autoscaling; candidates: pluggable authentication, purge-on-demand and download audit |
 | **Backlog** | E-mail delivery, own Markdown templates, continuous layout across blocks, advanced Excel, broker integration, cross-references with page numbers, inline small-data shortcut |
+
+### Versioning
+
+The product follows [Semantic Versioning](https://semver.org/) with a single
+version for the whole repository. It stays at **0.y.z** while the milestones
+above are delivered — no API or contract stability is promised until then —
+and the first operational version ships as **1.0.0**. Every release is listed
+in [CHANGELOG.md](CHANGELOG.md) and tagged `vX.Y.Z`.
 
 ## Technology decisions
 
 | Area | Decision |
 |------|----------|
-| Platform | .NET (current LTS) on Linux containers; .NET Aspire for local development; Kubernetes or Azure Container Apps for production |
-| Orchestration | Temporal (self-hosted) with PostgreSQL |
+| Platform | .NET 10 (LTS, supported until November 2028; SDK pinned in `global.json`) on Linux containers; Aspire 13.6 for local development; Kubernetes or Azure Container Apps for production |
+| Orchestration | Temporal (self-hosted) with PostgreSQL 18; local development uses the official Temporal CLI dev-server image |
 | Metadata | PostgreSQL, accessed with Dapper and explicit SQL |
-| PDF | Playwright + headless Chromium baked into the worker image; Paged.js for pagination (native Chromium `@page` margin boxes evaluated in Stage 0) |
+| PDF | Playwright 1.63 + headless Chromium 153 baked into the worker image; Paged.js 0.4.3 for pagination (native Chromium `@page` margin boxes evaluated in Stage 0) |
 | Template engines | Scriban, Handlebars.Net, Fluid (Liquid) — peers, no default; Razor later |
 | Object storage | Injectable providers: S3-compatible, Azure Blob Storage, Filesystem |
-| Cache | Redis (or a protocol-compatible alternative such as Valkey) for template packages |
+| Cache | Valkey 9.1 for template packages (Redis protocol — Redis works as well) |
 | PDF merge / stamping, XLSX writer, Markdown | Chosen after the Stage 0 spikes; candidates are permissive-licensed only (PDFsharp, qpdf, MiniExcel, Open XML SDK, ReverseMarkdown) |
 | Chunk layout | `page-boundary` with group/section-boundary cuts; continuous layout is backlog |
 
@@ -461,10 +472,11 @@ downloaded from the internet during a job.
 
 ## Development
 
-The repository layout and its conventions are in place; projects arrive with
-the next milestones. Until then there is nothing to build or run. When the
+The repository layout, its conventions and the toolchain pin are in place
+(.NET 10 SDK, 10.0.4xx band — see `global.json`); projects arrive with the
+next milestones. Until then there is nothing to build or run. When the
 first projects land, this section will cover prerequisites (.NET SDK,
-Docker), running the Aspire AppHost (API, Temporal, PostgreSQL, Redis,
+Docker), running the Aspire AppHost (API, Temporal, PostgreSQL, Valkey,
 storage and workers in one command), the seeded pilot datasets and the test
 suites.
 
@@ -478,9 +490,11 @@ dotnet-report-service/
 ├── eng/                       Build and engineering assets
 ├── spikes/                    Stage 0 experiments — not part of the product
 ├── dotnet-report-service.slnx Product solution
-├── Directory.Build.props      Shared build settings (nullable, warnings as errors, code style)
+├── global.json                .NET SDK pin (10.0.4xx band)
+├── Directory.Build.props      Shared build settings (net10.0, warnings as errors, code style) and product version
 ├── Directory.Packages.props   Central package versions
-└── NuGet.config               nuget.org only, with package source mapping
+├── NuGet.config               nuget.org only, with package source mapping
+└── CHANGELOG.md               Release history
 ```
 
 Naming rules, the shared configuration and the conventions this layout
@@ -489,7 +503,7 @@ each folder has its own `README.md`.
 
 Planned product projects under `src/`: `AppHost`, `ServiceDefaults`, `Api`,
 `Contracts`, `Application`, `Domain`, `Infrastructure` (storage providers,
-Dapper, Redis), `Templates.Abstractions`, `Templates.Scriban`,
+Dapper, cache), `Templates.Abstractions`, `Templates.Scriban`,
 `Templates.Handlebars`, `Templates.Liquid`, `Workflows` (Temporal), and the
 workers `Workers.Data`, `Workers.Html`, `Workers.Pdf`, `Workers.Merge`,
 `Workers.Excel` — each prefixed `ReportService.`.
