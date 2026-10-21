@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Repository-wide MSBuild properties, imported automatically by every project
+    below this folder. Versions (TargetFramework, LangVersion, AnalysisLevel,
+    SDK, packages) are deliberately not set here: they are fixed by the
+    version matrix and declared per project or in Directory.Packages.props.
+  -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Eugenio Serrano</Authors>
+    <Copyright>Copyright (c) 2026 Eugenio Serrano</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/EugenioSerrano/dotnet-report-service</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/EugenioSerrano/dotnet-report-service</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

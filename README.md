@@ -461,42 +461,38 @@ downloaded from the internet during a job.
 
 ## Development
 
-> Not available yet — the solution skeleton is the first Stage 0 deliverable.
-> When it lands, this section will cover: prerequisites (.NET SDK, Docker),
-> `dotnet run` on the Aspire AppHost (API, Temporal, PostgreSQL, Redis,
-> storage and workers in one command), running the seeded pilot datasets, and
-> the test projects (hermetic, rendering, performance).
-
-The intended solution layout:
+The repository layout and its conventions are in place; projects arrive with
+the next milestones. Until then there is nothing to build or run. When the
+first projects land, this section will cover prerequisites (.NET SDK,
+Docker), running the Aspire AppHost (API, Temporal, PostgreSQL, Redis,
+storage and workers in one command), the seeded pilot datasets and the test
+suites.
 
 ```text
-src/
-  ReportService.AppHost/              # Aspire composition
-  ReportService.ServiceDefaults/
-  ReportService.Api/
-  ReportService.Contracts/
-  ReportService.Application/
-  ReportService.Domain/
-  ReportService.Infrastructure/       # storage providers, Dapper, Redis
-  ReportService.Templates.Abstractions/
-  ReportService.Templates.Scriban/
-  ReportService.Templates.Handlebars/
-  ReportService.Templates.Liquid/
-  ReportService.Workflows/            # Temporal workflows and activities
-  ReportService.Workers.Data/
-  ReportService.Workers.Html/
-  ReportService.Workers.Pdf/
-  ReportService.Workers.Merge/
-  ReportService.Workers.Excel/
-tests/
-  ReportService.IntegrationTests/
-  ReportService.RenderingTests/
-  ReportService.PerformanceTests/
-samples/
-  templates/
-  datasets/                           # seeded synthetic generator
-docs/
+dotnet-report-service/
+├── src/                       Product source — src/ReportService.<Area>/
+├── tests/                     Tests mirroring src/ (ReportService.<Area>.Tests)
+│                              + IntegrationTests, RenderingTests, PerformanceTests
+├── samples/                   Templates and seeded datasets for adopters
+├── docs/                      Documentation
+├── eng/                       Build and engineering assets
+├── spikes/                    Stage 0 experiments — not part of the product
+├── dotnet-report-service.slnx Product solution
+├── Directory.Build.props      Shared build settings (nullable, warnings as errors, code style)
+├── Directory.Packages.props   Central package versions
+└── NuGet.config               nuget.org only, with package source mapping
 ```
+
+Naming rules, the shared configuration and the conventions this layout
+follows are described in [`docs/repository-layout.md`](docs/repository-layout.md);
+each folder has its own `README.md`.
+
+Planned product projects under `src/`: `AppHost`, `ServiceDefaults`, `Api`,
+`Contracts`, `Application`, `Domain`, `Infrastructure` (storage providers,
+Dapper, Redis), `Templates.Abstractions`, `Templates.Scriban`,
+`Templates.Handlebars`, `Templates.Liquid`, `Workflows` (Temporal), and the
+workers `Workers.Data`, `Workers.Html`, `Workers.Pdf`, `Workers.Merge`,
+`Workers.Excel` — each prefixed `ReportService.`.
 
 ## Contributing and licence
 

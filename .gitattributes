@@ -1,0 +1,14 @@
+# Normalize line endings to LF in the repository and in working copies.
+* text=auto eol=lf
+
+# Binary files: never touched by line-ending normalization or diffs.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.pdf   binary
+*.xlsx  binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary

@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    Spikes inherit the repository-wide settings, then relax what would slow
+    down throwaway experiments: warnings do not fail the build and nothing is
+    packable. Spikes are never part of the product solution.
+  -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>
