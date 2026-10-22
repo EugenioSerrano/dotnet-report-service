@@ -1,0 +1,604 @@
+{
+  "started": "2026-10-21T17:06:52.9145459\u002B00:00",
+  "finished": "2026-10-21T17:12:42.0786708\u002B00:00",
+  "quick": false,
+  "repetitions": 3,
+  "sizes": [
+    1000,
+    5000,
+    10000
+  ],
+  "batchSize": 25,
+  "environment": {
+    "runtimeVersion": "10.0.13",
+    "frameworkDescription": ".NET 10.0.13",
+    "osDescription": "Ubuntu 24.04.5 LTS",
+    "processArchitecture": "X64",
+    "processorCount": 4,
+    "serverGc": false,
+    "pdfLibraryAssemblyVersion": "6.2.4.0",
+    "pdfLibraryInformationalVersion": "6.2.4\u002B362d80539100d2d5bba04d58dd13ae14e12cd780",
+    "qpdf": "qpdf version 12.4.2",
+    "qpdfReleaseVersion": "12.4.2",
+    "qpdfArchiveSha256": "db367d897829f22c4198ce1094143c9d467bd6ee7dfabc44ba6f02056b24f8b1",
+    "pdftotext": "pdftotext version 24.02.0",
+    "pdftoppm": "pdftoppm version 24.02.0",
+    "gnuTime": "time (GNU Time) UNKNOWN",
+    "packageList": [
+      "fonts-dejavu-core\t2.37-8",
+      "poppler-utils\t24.02.0-1ubuntu9.10",
+      "time\t1.9-0.2build1"
+    ],
+    "memoryMax": "8589934592",
+    "memorySwapMax": "0",
+    "cpuMax": "400000 100000",
+    "userId": "1654",
+    "fontsPresent": true,
+    "timeLabelsPresent": true
+  },
+  "seed": 20261021,
+  "sets": {
+    "1000": {
+      "parts": 50,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 3876177,
+      "manifestSha256": "57a65a4386e92a18592fcaf75dba3fce1e6e7e6aa0e29723cc7d8a29c126f9ec",
+      "manifestSha256Note": "raw; changes at every generation, not reproducible",
+      "maskedSetDigest": "8a4de9c5256af329b75187b2824100788fdec3d133d21d38e3cf121542c35bcd"
+    },
+    "5000": {
+      "parts": 250,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 19374161,
+      "manifestSha256": "9afd32226000d58db1555d418a97292d40ce676190e4899dda0d88143501369e",
+      "manifestSha256Note": "raw; changes at every generation, not reproducible",
+      "maskedSetDigest": "dda0f43d7584d00e7fdd57f5b63852c2efef2789fe947e8f8a224c97a34ea397"
+    },
+    "10000": {
+      "parts": 500,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 38782855,
+      "manifestSha256": "3252132b304951bedc77f47af264f7e2fa5312b57a70ef2474389c37fd24058b",
+      "manifestSha256Note": "raw; changes at every generation, not reproducible",
+      "maskedSetDigest": "11a53a858f9053b8ca62d5445e2e62c129a2320865b9b59405765a5bc3f38990"
+    }
+  },
+  "generation": {
+    "generateSeconds1000": 1.78,
+    "generateSeconds5000": 3.54,
+    "generateSeconds10000": 4.93
+  },
+  "reproducibility": {
+    "size": 1000,
+    "firstManifestSha256": "57a65a4386e92a18592fcaf75dba3fce1e6e7e6aa0e29723cc7d8a29c126f9ec",
+    "repeatManifestSha256": "6b3c368e5cec0499cef2c0a784cab33fc08c6dc78fe7325d2835fbb5c69e6175",
+    "rawManifestHashesCompared": false,
+    "firstMaskedSetDigest": "8a4de9c5256af329b75187b2824100788fdec3d133d21d38e3cf121542c35bcd",
+    "repeatMaskedSetDigest": "8a4de9c5256af329b75187b2824100788fdec3d133d21d38e3cf121542c35bcd",
+    "structureEqual": true,
+    "parts": 50,
+    "maskedIdentical": 50,
+    "fail": 0,
+    "minRawDifferingBytes": 74,
+    "maxRawDifferingBytes": 84,
+    "sumRawDifferingBytes": 4056,
+    "rawDifferingBytesCompared": false,
+    "minTagSpans": 4,
+    "maxTagSpans": 4,
+    "xmpSpans": [
+      2
+    ],
+    "filesMatchManifests": true,
+    "controls": 18,
+    "controlsPass": true,
+    "controlFilesUnchanged": true,
+    "verdict": "masked-identical"
+  },
+  "controlsPass": true,
+  "sourcePartChecks": {
+    "1000": {
+      "targetPages": 1000,
+      "parts": 50,
+      "passClean": 0,
+      "passExempt": 50,
+      "fail": 0,
+      "minWarningLines": 23,
+      "maxWarningLines": 63,
+      "sumWarningLines": 2150,
+      "sumExemptWarningLines": 2150
+    },
+    "5000": {
+      "targetPages": 5000,
+      "parts": 250,
+      "passClean": 0,
+      "passExempt": 250,
+      "fail": 0,
+      "minWarningLines": 23,
+      "maxWarningLines": 63,
+      "sumWarningLines": 10750,
+      "sumExemptWarningLines": 10750
+    },
+    "10000": {
+      "targetPages": 10000,
+      "parts": 500,
+      "passClean": 0,
+      "passExempt": 500,
+      "fail": 0,
+      "minWarningLines": 23,
+      "maxWarningLines": 63,
+      "sumWarningLines": 21500,
+      "sumExemptWarningLines": 21500
+    }
+  },
+  "outputChecks": {
+    "outputs": 45,
+    "passClean": 0,
+    "passExempt": 45,
+    "fail": 0,
+    "minWarningLines": 2150,
+    "maxWarningLines": 42000
+  },
+  "combinations": [
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 75.3,
+        "max": 75.52
+      },
+      "managedHeapPeakMiB": {
+        "median": 24.62,
+        "max": 25.71
+      },
+      "wallSeconds": {
+        "median": 0.5,
+        "max": 0.54
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.61,
+        "max": 3.61
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 85.73,
+        "max": 86.39
+      },
+      "managedHeapPeakMiB": {
+        "median": 30.89,
+        "max": 31.52
+      },
+      "wallSeconds": {
+        "median": 0.64,
+        "max": 0.66
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.83,
+        "max": 3.83
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 97.77,
+        "max": 99.79
+      },
+      "managedHeapPeakMiB": {
+        "median": 34.52,
+        "max": 35.82
+      },
+      "wallSeconds": {
+        "median": 1.11,
+        "max": 1.16
+      },
+      "tempDiskPeakMiB": {
+        "median": 3.84,
+        "max": 3.84
+      },
+      "outputMiB": {
+        "median": 3.85,
+        "max": 3.85
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 29.81,
+        "max": 29.84
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 0.14,
+        "max": 0.16
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.66,
+        "max": 3.66
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 67.32,
+        "max": 67.71
+      },
+      "managedHeapPeakMiB": {
+        "median": 19.55,
+        "max": 20.59
+      },
+      "wallSeconds": {
+        "median": 0.82,
+        "max": 0.94
+      },
+      "tempDiskPeakMiB": {
+        "median": 4.96,
+        "max": 4.96
+      },
+      "outputMiB": {
+        "median": 4.87,
+        "max": 4.87
+      }
+    },
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 117.27,
+        "max": 117.59
+      },
+      "managedHeapPeakMiB": {
+        "median": 60.43,
+        "max": 60.53
+      },
+      "wallSeconds": {
+        "median": 1.88,
+        "max": 1.92
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 18.08,
+        "max": 18.08
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 149.33,
+        "max": 150.71
+      },
+      "managedHeapPeakMiB": {
+        "median": 89.31,
+        "max": 89.32
+      },
+      "wallSeconds": {
+        "median": 2.48,
+        "max": 2.61
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 19.08,
+        "max": 19.08
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 150.96,
+        "max": 152.82
+      },
+      "managedHeapPeakMiB": {
+        "median": 71.63,
+        "max": 74.86
+      },
+      "wallSeconds": {
+        "median": 4.1,
+        "max": 4.14
+      },
+      "tempDiskPeakMiB": {
+        "median": 19.22,
+        "max": 19.22
+      },
+      "outputMiB": {
+        "median": 19.28,
+        "max": 19.28
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 109.25,
+        "max": 109.35
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 0.64,
+        "max": 0.74
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 18.31,
+        "max": 18.31
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 144.42,
+        "max": 144.47
+      },
+      "managedHeapPeakMiB": {
+        "median": 21.56,
+        "max": 21.7
+      },
+      "wallSeconds": {
+        "median": 3.11,
+        "max": 3.32
+      },
+      "tempDiskPeakMiB": {
+        "median": 24.79,
+        "max": 24.79
+      },
+      "outputMiB": {
+        "median": 24.39,
+        "max": 24.39
+      }
+    },
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 165.96,
+        "max": 166.33
+      },
+      "managedHeapPeakMiB": {
+        "median": 104.99,
+        "max": 105.04
+      },
+      "wallSeconds": {
+        "median": 2.93,
+        "max": 2.99
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 36.23,
+        "max": 36.23
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 221.17,
+        "max": 222.79
+      },
+      "managedHeapPeakMiB": {
+        "median": 157.98,
+        "max": 158.48
+      },
+      "wallSeconds": {
+        "median": 4.72,
+        "max": 4.89
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 38.2,
+        "max": 38.2
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 208.14,
+        "max": 209.54
+      },
+      "managedHeapPeakMiB": {
+        "median": 128.88,
+        "max": 131.54
+      },
+      "wallSeconds": {
+        "median": 6.22,
+        "max": 6.57
+      },
+      "tempDiskPeakMiB": {
+        "median": 38.47,
+        "max": 38.47
+      },
+      "outputMiB": {
+        "median": 38.63,
+        "max": 38.63
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 208.93,
+        "max": 208.95
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 1.6,
+        "max": 1.77
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 36.71,
+        "max": 36.71
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 279.76,
+        "max": 279.77
+      },
+      "managedHeapPeakMiB": {
+        "median": 22.39,
+        "max": 22.39
+      },
+      "wallSeconds": {
+        "median": 6.26,
+        "max": 6.31
+      },
+      "tempDiskPeakMiB": {
+        "median": 49.62,
+        "max": 49.62
+      },
+      "outputMiB": {
+        "median": 48.85,
+        "max": 48.85
+      }
+    }
+  ],
+  "bounded": [
+    {
+      "variant": "V1",
+      "name": "pdfsharp-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 2.2,
+      "heapRatio10000To1000": 4.26
+    },
+    {
+      "variant": "V2",
+      "name": "pdfsharp-merge-stamp",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 2.58,
+      "heapRatio10000To1000": 5.11
+    },
+    {
+      "variant": "V3",
+      "name": "pdfsharp-staged",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 2.13,
+      "heapRatio10000To1000": 3.73
+    },
+    {
+      "variant": "V4",
+      "name": "qpdf-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 7.01,
+      "heapRatio10000To1000": null
+    },
+    {
+      "variant": "V5",
+      "name": "pdfsharp-stamp-qpdf-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 4.16,
+      "heapRatio10000To1000": 1.15
+    }
+  ],
+  "allVerificationsPass": true
+}

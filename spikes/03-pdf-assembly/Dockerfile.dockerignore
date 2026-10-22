@@ -1,0 +1,10 @@
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/03-pdf-assembly/Directory.Packages.props
+!spikes/03-pdf-assembly/PdfAssemblySpike/**
+spikes/03-pdf-assembly/PdfAssemblySpike/bin
+spikes/03-pdf-assembly/PdfAssemblySpike/obj

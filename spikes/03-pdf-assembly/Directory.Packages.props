@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Package versions of this experiment only. Kept apart from the root file so
+    the experiment never changes the product's central package versions.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lets a version listed here also pin a package that is only a dependency of another one. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="PDFsharp" Version="6.2.4" />
+    <!--
+      Dependency of PDFsharp (digital signatures). The version PDFsharp asks for
+      has known vulnerabilities; the next patch release has none.
+    -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
+  </ItemGroup>
+</Project>
