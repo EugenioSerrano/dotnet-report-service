@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Package versions used only by the XLSX writer spike. This file takes the
+    place of the repository-wide one for this folder; versions are exact.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.5.1" />
+    <PackageVersion Include="MiniExcel" Version="1.46.0" />
+  </ItemGroup>
+</Project>

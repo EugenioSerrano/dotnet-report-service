@@ -1,0 +1,6 @@
+candidate,size,runs,okRuns,managedHeapPeakMiB,processPeakRssMiB,chromiumTreePeakRssMiB,tempDiskPeakMiB,outputMiB,rowsPerSecond,elapsedSeconds,allocatedMiB,gen2Collections,sourceEnumerations,rssRatio,heapRatio,verdict
+miniexcel,1m,1,1,20.682,73.039,n/a,0,106.707,71460,13.994,3719.846,3,1,,,n/a (needs 100k and 1m)
+openxml-default,1m,1,1,1169.808,1159.012,n/a,0,67.088,29795,33.563,3195.799,7,1,,,n/a (needs 100k and 1m)
+openxml-writeonly,1m,1,0,,,n/a,,,,,,,,,,failed at 1m
+openxml-zip,1m,1,1,18.37,72.227,n/a,0,67.108,45016,22.214,1654.35,1,1,,,n/a (needs 100k and 1m)
+read-only,1m,1,1,17.834,61.129,n/a,0,0,191900,5.211,603.297,0,1,,,n/a (needs 100k and 1m)

@@ -1,0 +1,337 @@
+XLSX writer experiment - check logs (2026-10-21, Windows reference environment, page revision 1)
+Paths: <D> = datasets folder, <work>/<out> = scratch folders outside the repository.
+
+== 1. Typing on the real dataset (1 000 000 records, strict profiles)
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict.json --output <out>/e4-miniexcel-volume-strict.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435
+{"candidate":"miniexcel","profile":"volume-strict","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"quantity","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435","elapsedSeconds":0.024,"rowsPerSecond":0,"managedHeapPeakMiB":3.883,"processPeakRssMiB":29.277,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":3.866,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict.json --output <out>/e4-openxml-default-volume-strict.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435
+{"candidate":"openxml-default","profile":"volume-strict","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"quantity","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435","elapsedSeconds":0.096,"rowsPerSecond":0,"managedHeapPeakMiB":1.124,"processPeakRssMiB":37.582,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":1.103,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-writeonly --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict.json --output <out>/e4-openxml-writeonly-volume-strict.xlsx
+error code=failed message=Cannot retrieve parts of writeonly container type=System.IO.IOException
+{"candidate":"openxml-writeonly","profile":"volume-strict","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"failed","errorCode":"failed","errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":"Cannot retrieve parts of writeonly container","elapsedSeconds":0.051,"rowsPerSecond":0,"managedHeapPeakMiB":0.875,"processPeakRssMiB":32.543,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":0.855,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=1 outputFileExists=no
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict.json --output <out>/e4-openxml-zip-volume-strict.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435
+{"candidate":"openxml-zip","profile":"volume-strict","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"quantity","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=quantity value=4286.563028959435","elapsedSeconds":0.049,"rowsPerSecond":0,"managedHeapPeakMiB":1.104,"processPeakRssMiB":35.195,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":1.087,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict-reference.json --output <out>/e4-miniexcel-volume-strict-reference.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994
+{"candidate":"miniexcel","profile":"volume-strict-reference","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"reference","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994","elapsedSeconds":0.032,"rowsPerSecond":0,"managedHeapPeakMiB":3.893,"processPeakRssMiB":29.137,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":3.872,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict-reference.json --output <out>/e4-openxml-default-volume-strict-reference.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994
+{"candidate":"openxml-default","profile":"volume-strict-reference","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"reference","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994","elapsedSeconds":0.105,"rowsPerSecond":0,"managedHeapPeakMiB":1.124,"processPeakRssMiB":37.684,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":1.104,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-writeonly --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict-reference.json --output <out>/e4-openxml-writeonly-volume-strict-reference.xlsx
+error code=failed message=Cannot retrieve parts of writeonly container type=System.IO.IOException
+{"candidate":"openxml-writeonly","profile":"volume-strict-reference","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"failed","errorCode":"failed","errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":"Cannot retrieve parts of writeonly container","elapsedSeconds":0.041,"rowsPerSecond":0,"managedHeapPeakMiB":0.875,"processPeakRssMiB":32.613,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":0.855,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=1 outputFileExists=no
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1m.json --columns profiles/volume-strict-reference.json --output <out>/e4-openxml-zip-volume-strict-reference.xlsx
+error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994
+{"candidate":"openxml-zip","profile":"volume-strict-reference","dataset":"header-items-v1.volume.1m.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"precision","errorRow":1,"errorColumn":"reference","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740994","elapsedSeconds":0.074,"rowsPerSecond":0,"managedHeapPeakMiB":1.104,"processPeakRssMiB":35.301,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":null,"outputMiB":0,"allocatedMiB":1.088,"gen2Collections":0,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+
+== 2. typing-check (run 1; runs 2 and 3 produced identical output)
+$ typing-check --work <work>
+PASS T1 miniexcel - decimal with 15 significant digits is a numeric cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T1 openxml-default - decimal with 15 significant digits is a numeric cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T1 openxml-writeonly - decimal with 15 significant digits is a numeric cell - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T1 openxml-zip - decimal with 15 significant digits is a numeric cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T2 miniexcel - decimal with 16 significant digits fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=98765432101234.56; no output file
+PASS T2 openxml-default - decimal with 16 significant digits fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=98765432101234.56; no output file
+FAIL T2 openxml-writeonly - decimal with 16 significant digits fails - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T2 openxml-zip - decimal with 16 significant digits fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=98765432101234.56; no output file
+PASS T3 miniexcel - decimal 0.1234567890123456 (16 digits) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.1234567890123456; no output file
+PASS T3 openxml-default - decimal 0.1234567890123456 (16 digits) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.1234567890123456; no output file
+FAIL T3 openxml-writeonly - decimal 0.1234567890123456 (16 digits) fails - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T3 openxml-zip - decimal 0.1234567890123456 (16 digits) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.1234567890123456; no output file
+PASS T4 miniexcel - trailing zeros: 1000.000000000000 is 1000 exactly - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T4 openxml-default - trailing zeros: 1000.000000000000 is 1000 exactly - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T4 openxml-writeonly - trailing zeros: 1000.000000000000 is 1000 exactly - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T4 openxml-zip - trailing zeros: 1000.000000000000 is 1000 exactly - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T5 miniexcel - negative and zero decimals - exit 0; sheets items=2; mismatches 0; f=0; 2 cell check(s) passed
+PASS T5 openxml-default - negative and zero decimals - exit 0; sheets items=2; mismatches 0; f=0; 2 cell check(s) passed
+FAIL T5 openxml-writeonly - negative and zero decimals - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T5 openxml-zip - negative and zero decimals - exit 0; sheets items=2; mismatches 0; f=0; 2 cell check(s) passed
+PASS T6 miniexcel - integer with 15 digits is exact - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T6 openxml-default - integer with 15 digits is exact - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T6 openxml-writeonly - integer with 15 digits is exact - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T6 openxml-zip - integer with 15 digits is exact - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T7 miniexcel - integer 9007199254740993 (16 digits, above 2^53) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740993; no output file
+PASS T7 openxml-default - integer 9007199254740993 (16 digits, above 2^53) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740993; no output file
+FAIL T7 openxml-writeonly - integer 9007199254740993 (16 digits, above 2^53) fails - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T7 openxml-zip - integer 9007199254740993 (16 digits, above 2^53) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=9007199254740993; no output file
+PASS T8 miniexcel - string column keeps a 16-digit JSON number as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T8 openxml-default - string column keeps a 16-digit JSON number as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T8 openxml-writeonly - string column keeps a 16-digit JSON number as text - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T8 openxml-zip - string column keeps a 16-digit JSON number as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T9 miniexcel - string column keeps a 16-digit decimal as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T9 openxml-default - string column keeps a 16-digit decimal as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T9 openxml-writeonly - string column keeps a 16-digit decimal as text - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T9 openxml-zip - string column keeps a 16-digit decimal as text - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T10 miniexcel - string column keeps leading zeros - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T10 openxml-default - string column keeps leading zeros - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T10 openxml-writeonly - string column keeps leading zeros - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T10 openxml-zip - string column keeps leading zeros - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T11 miniexcel - formula-like strings are text, never formulas - exit 0; sheets items=6; mismatches 0; f=0; 6 cell check(s) passed
+PASS T11 openxml-default - formula-like strings are text, never formulas - exit 0; sheets items=6; mismatches 0; f=0; 6 cell check(s) passed
+FAIL T11 openxml-writeonly - formula-like strings are text, never formulas - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T11 openxml-zip - formula-like strings are text, never formulas - exit 0; sheets items=6; mismatches 0; f=0; 6 cell check(s) passed
+PASS T12 miniexcel - 32 767 characters fit one cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T12 openxml-default - 32 767 characters fit one cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T12 openxml-writeonly - 32 767 characters fit one cell - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T12 openxml-zip - 32 767 characters fit one cell - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T13 miniexcel - 32 768 characters fail - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=cell-length row=1 column=description value=abcdefghijklmnopqrstuvwxyz0123456789 abc...(length 32768); no output file
+PASS T13 openxml-default - 32 768 characters fail - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=cell-length row=1 column=description value=abcdefghijklmnopqrstuvwxyz0123456789 abc...(length 32768); no output file
+FAIL T13 openxml-writeonly - 32 768 characters fail - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T13 openxml-zip - 32 768 characters fail - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=cell-length row=1 column=description value=abcdefghijklmnopqrstuvwxyz0123456789 abc...(length 32768); no output file
+PASS T14 miniexcel - 2 500 rows over a 1 000-row sheet, policy error: fails before writing - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=2500; no output file; raised before writing
+PASS T14 openxml-default - 2 500 rows over a 1 000-row sheet, policy error: fails before writing - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=2500; no output file; raised before writing
+PASS T14 openxml-writeonly - 2 500 rows over a 1 000-row sheet, policy error: fails before writing - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=2500; no output file; raised before writing
+PASS T14 openxml-zip - 2 500 rows over a 1 000-row sheet, policy error: fails before writing - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=2500; no output file; raised before writing
+PASS T15 miniexcel - same with the header count ignored: streaming guard at record 1 001 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=more than 1000 data rows in sheet items; no output file
+PASS T15 openxml-default - same with the header count ignored: streaming guard at record 1 001 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=more than 1000 data rows in sheet items; no output file
+FAIL T15 openxml-writeonly - same with the header count ignored: streaming guard at record 1 001 - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T15 openxml-zip - same with the header count ignored: streaming guard at record 1 001 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1001 column=- value=more than 1000 data rows in sheet items; no output file
+PASS T16 miniexcel - same with policy split: items 1 000, items-2 1 000, items-3 500 - exit 0; sheets items=1000, items-2=1000, items-3=500; mismatches 0; f=0
+PASS T16 openxml-default - same with policy split: items 1 000, items-2 1 000, items-3 500 - exit 0; sheets items=1000, items-2=1000, items-3=500; mismatches 0; f=0
+FAIL T16 openxml-writeonly - same with policy split: items 1 000, items-2 1 000, items-3 500 - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T16 openxml-zip - same with policy split: items 1 000, items-2 1 000, items-3 500 - exit 0; sheets items=1000, items-2=1000, items-3=500; mismatches 0; f=0
+PASS T17 miniexcel - exactly 1 000 rows fit a 1 000-row sheet - exit 0; sheets items=1000; mismatches 0; f=0
+PASS T17 openxml-default - exactly 1 000 rows fit a 1 000-row sheet - exit 0; sheets items=1000; mismatches 0; f=0
+FAIL T17 openxml-writeonly - exactly 1 000 rows fit a 1 000-row sheet - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T17 openxml-zip - exactly 1 000 rows fit a 1 000-row sheet - exit 0; sheets items=1000; mismatches 0; f=0
+PASS T18 miniexcel - decimal 1e-30 (underflows the decimal type) fails, never rounded to 0 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1e-30; no output file
+PASS T18 openxml-default - decimal 1e-30 (underflows the decimal type) fails, never rounded to 0 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1e-30; no output file
+FAIL T18 openxml-writeonly - decimal 1e-30 (underflows the decimal type) fails, never rounded to 0 - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T18 openxml-zip - decimal 1e-30 (underflows the decimal type) fails, never rounded to 0 - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1e-30; no output file
+PASS T19 miniexcel - decimal with 29 decimal places fails, never rounded - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.00000000000000000000000000001; no output file
+PASS T19 openxml-default - decimal with 29 decimal places fails, never rounded - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.00000000000000000000000000001; no output file
+FAIL T19 openxml-writeonly - decimal with 29 decimal places fails, never rounded - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T19 openxml-zip - decimal with 29 decimal places fails, never rounded - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=0.00000000000000000000000000001; no output file
+PASS T20 miniexcel - decimal 1E+30 (beyond the decimal range) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1E+30; no output file
+PASS T20 openxml-default - decimal 1E+30 (beyond the decimal range) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1E+30; no output file
+FAIL T20 openxml-writeonly - decimal 1E+30 (beyond the decimal range) fails - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T20 openxml-zip - decimal 1E+30 (beyond the decimal range) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=amount value=1E+30; no output file
+PASS T21 miniexcel - integer of 33 digits (cannot be parsed) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=100000000000000000000000000000000; no output file
+PASS T21 openxml-default - integer of 33 digits (cannot be parsed) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=100000000000000000000000000000000; no output file
+FAIL T21 openxml-writeonly - integer of 33 digits (cannot be parsed) fails - expected exit 3 OUTPUT_LIMIT_EXCEEDED, got exit 1 Cannot retrieve parts of writeonly container
+PASS T21 openxml-zip - integer of 33 digits (cannot be parsed) fails - exit 3: error code=OUTPUT_LIMIT_EXCEEDED reason=precision row=1 column=reference value=100000000000000000000000000000000; no output file
+PASS T22 miniexcel - decimal with an exponent (1.5E3) is the number 1500 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T22 openxml-default - decimal with an exponent (1.5E3) is the number 1500 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T22 openxml-writeonly - decimal with an exponent (1.5E3) is the number 1500 - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T22 openxml-zip - decimal with an exponent (1.5E3) is the number 1500 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T23 miniexcel - negative zero is written as 0 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T23 openxml-default - negative zero is written as 0 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+FAIL T23 openxml-writeonly - negative zero is written as 0 - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS T23 openxml-zip - negative zero is written as 0 - exit 0; sheets items=1; mismatches 0; f=0; 1 cell check(s) passed
+PASS T24 miniexcel - a fraction in an integer column is a type mismatch (exit 1) - exit 1: Record 1, column 'sequence': a Number value '12.5' does not match the declared type 'integer'.; no output file
+PASS T24 openxml-default - a fraction in an integer column is a type mismatch (exit 1) - exit 1: Record 1, column 'sequence': a Number value '12.5' does not match the declared type 'integer'.; no output file
+FAIL T24 openxml-writeonly - a fraction in an integer column is a type mismatch (exit 1) - expected exit 1 for a type mismatch and no file, got exit 1 file=False: Cannot retrieve parts of writeonly container
+PASS T24 openxml-zip - a fraction in an integer column is a type mismatch (exit 1) - exit 1: Record 1, column 'sequence': a Number value '12.5' does not match the declared type 'integer'.; no output file
+PASS C1 miniexcel - combined numeric-profile cases kept for validation and Excel - exit 0; sheets items=15; mismatches 0; f=0
+PASS C1 openxml-default - combined numeric-profile cases kept for validation and Excel - exit 0; sheets items=15; mismatches 0; f=0
+FAIL C1 openxml-writeonly - combined numeric-profile cases kept for validation and Excel - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS C1 openxml-zip - combined numeric-profile cases kept for validation and Excel - exit 0; sheets items=15; mismatches 0; f=0
+PASS C2 miniexcel - combined text-profile cases kept for validation and Excel - exit 0; sheets items=9; mismatches 0; f=0
+PASS C2 openxml-default - combined text-profile cases kept for validation and Excel - exit 0; sheets items=9; mismatches 0; f=0
+FAIL C2 openxml-writeonly - combined text-profile cases kept for validation and Excel - expected ok, got exit 1 Cannot retrieve parts of writeonly container
+PASS C2 openxml-zip - combined text-profile cases kept for validation and Excel - exit 0; sheets items=9; mismatches 0; f=0
+INFO miniexcel storage: sharedStrings=present cellXfs=6 cell types n=60 str=52
+INFO openxml-default storage: sharedStrings=absent cellXfs=1 cell types inlineStr=52 n=60
+INFO openxml-zip storage: sharedStrings=absent cellXfs=1 cell types inlineStr=52 n=60
+typing-check: 79 PASS, 25 FAIL (kept outputs: 3 cases x 4 candidates)
+exit=1 (only because openxml-writeonly cannot create a package; every other candidate 26/26 PASS)
+
+== 3. Full-size content checks of the kept 1m outputs
+$ inspect --input <work>/out/miniexcel-1m.xlsx --source <D>/header-items-v1.volume.1m.json --columns profiles/volume-exact-text.json --probes <work>/out/miniexcel-1m.probes.json
+inspect file=miniexcel-1m.xlsx
+  parts: _rels/.rels xl/sharedStrings.xml xl/worksheets/sheet1.xml xl/styles.xml xl/drawings/_rels/drawing1.xml.rels xl/drawings/drawing1.xml xl/worksheets/_rels/sheet1.xml.rels xl/workbook.xml xl/_rels/workbook.xml.rels [Content_Types].xml
+  sharedStrings: present bytes=162 count=0 uniqueCount=0
+  cellXfs: 6
+  sheet items: rows=1000001 cells n=2000000 str=5000007 f=0
+  compare: dataRows=1000000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 10 written to miniexcel-1m.probes.json
+PASS inspect miniexcel-1m.xlsx
+exit=0 (inspect took 10 s)
+$ inspect --input <work>/out/openxml-default-1m.xlsx --source <D>/header-items-v1.volume.1m.json --columns profiles/volume-exact-text.json --probes <work>/out/openxml-default-1m.probes.json
+inspect file=openxml-default-1m.xlsx
+  parts: xl/workbook.xml xl/worksheets/sheet1.xml xl/styles.xml _rels/.rels xl/_rels/workbook.xml.rels [Content_Types].xml
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1000001 cells inlineStr=5000007 n=2000000 f=0
+  compare: dataRows=1000000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 10 written to openxml-default-1m.probes.json
+PASS inspect openxml-default-1m.xlsx
+exit=0 (inspect took 11 s)
+$ inspect --input <work>/out/openxml-zip-1m.xlsx --source <D>/header-items-v1.volume.1m.json --columns profiles/volume-exact-text.json --probes <work>/out/openxml-zip-1m.probes.json
+inspect file=openxml-zip-1m.xlsx
+  parts: [Content_Types].xml _rels/.rels xl/_rels/workbook.xml.rels xl/worksheets/sheet1.xml xl/styles.xml xl/workbook.xml
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1000001 cells inlineStr=5000007 n=2000000 f=0
+  compare: dataRows=1000000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 10 written to openxml-zip-1m.probes.json
+PASS inspect openxml-zip-1m.xlsx
+exit=0 (inspect took 10 s)
+
+== 4. Row limit at the real limit (1 100 000-record file, profile volume-exact-text)
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/fit-miniexcel.xlsx --rows 1048575
+{"candidate":"miniexcel","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1048575,"sheets":1,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":6.659,"rowsPerSecond":157470.2,"managedHeapPeakMiB":20.775,"processPeakRssMiB":60.387,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":111.898,"allocatedMiB":3919.577,"gen2Collections":4,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/over-miniexcel.xlsx --rows 1048576
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576
+{"candidate":"miniexcel","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576","elapsedSeconds":0.01,"rowsPerSecond":0,"managedHeapPeakMiB":0.73,"processPeakRssMiB":26.344,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.715,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/full-miniexcel.xlsx 
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000
+{"candidate":"miniexcel","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000","elapsedSeconds":0.011,"rowsPerSecond":0,"managedHeapPeakMiB":0.729,"processPeakRssMiB":26.156,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.714,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/guard-miniexcel.xlsx --ignore-header-count
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items
+{"candidate":"miniexcel","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items","elapsedSeconds":6.629,"rowsPerSecond":0,"managedHeapPeakMiB":20.943,"processPeakRssMiB":61.016,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":3903.322,"gen2Collections":1,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate miniexcel --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/split-miniexcel.xlsx --row-limit-policy split
+{"candidate":"miniexcel","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1100000,"sheets":2,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":7.767,"rowsPerSecond":141626.6,"managedHeapPeakMiB":20.813,"processPeakRssMiB":63.062,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":117.369,"allocatedMiB":4482.415,"gen2Collections":5,"sourceEnumerations":2,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/fit-openxml-default.xlsx --rows 1048575
+{"candidate":"openxml-default","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1048575,"sheets":1,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":16.355,"rowsPerSecond":64115.1,"managedHeapPeakMiB":1167.106,"processPeakRssMiB":1159.82,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":70.375,"allocatedMiB":3276.576,"gen2Collections":7,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/over-openxml-default.xlsx --rows 1048576
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576
+{"candidate":"openxml-default","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576","elapsedSeconds":0.012,"rowsPerSecond":0,"managedHeapPeakMiB":0.73,"processPeakRssMiB":26.316,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.715,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/full-openxml-default.xlsx 
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000
+{"candidate":"openxml-default","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000","elapsedSeconds":0.009,"rowsPerSecond":0,"managedHeapPeakMiB":0.73,"processPeakRssMiB":26.129,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.714,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/guard-openxml-default.xlsx --ignore-header-count
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items
+{"candidate":"openxml-default","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items","elapsedSeconds":16.497,"rowsPerSecond":0,"managedHeapPeakMiB":1165.686,"processPeakRssMiB":1157.043,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":3274.933,"gen2Collections":7,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-default --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/split-openxml-default.xlsx --row-limit-policy split
+{"candidate":"openxml-default","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1100000,"sheets":2,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":17.833,"rowsPerSecond":61685.1,"managedHeapPeakMiB":1159.646,"processPeakRssMiB":1183.496,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":73.804,"allocatedMiB":3822.014,"gen2Collections":7,"sourceEnumerations":2,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/fit-openxml-zip.xlsx --rows 1048575
+{"candidate":"openxml-zip","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1048575,"sheets":1,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":15.937,"rowsPerSecond":65796.3,"managedHeapPeakMiB":18.397,"processPeakRssMiB":57.793,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":70.396,"allocatedMiB":1735.476,"gen2Collections":1,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/over-openxml-zip.xlsx --rows 1048576
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576
+{"candidate":"openxml-zip","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1048576","elapsedSeconds":0.007,"rowsPerSecond":0,"managedHeapPeakMiB":0.738,"processPeakRssMiB":26.207,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.721,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/full-openxml-zip.xlsx 
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000
+{"candidate":"openxml-zip","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=1100000","elapsedSeconds":0.01,"rowsPerSecond":0,"managedHeapPeakMiB":0.737,"processPeakRssMiB":26.215,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":0.72,"gen2Collections":0,"sourceEnumerations":0,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/guard-openxml-zip.xlsx --ignore-header-count
+error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items
+{"candidate":"openxml-zip","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":0,"sheets":0,"outcome":"OUTPUT_LIMIT_EXCEEDED","errorCode":"OUTPUT_LIMIT_EXCEEDED","errorReason":"rows","errorRow":1048576,"errorColumn":"-","errorMessage":"error code=OUTPUT_LIMIT_EXCEEDED reason=rows row=1048576 column=- value=more than 1048575 data rows in sheet items","elapsedSeconds":15.325,"rowsPerSecond":0,"managedHeapPeakMiB":18.453,"processPeakRssMiB":57.777,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":0,"allocatedMiB":1228.382,"gen2Collections":1,"sourceEnumerations":1,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=3 outputFileExists=no
+$ write --candidate openxml-zip --input <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --output <out>/split-openxml-zip.xlsx --row-limit-policy split
+{"candidate":"openxml-zip","profile":"volume-exact-text","dataset":"header-items-v1.volume.1100k.json","rowsWritten":1100000,"sheets":2,"outcome":"ok","errorCode":null,"errorReason":null,"errorRow":null,"errorColumn":null,"errorMessage":null,"elapsedSeconds":17.44,"rowsPerSecond":63072,"managedHeapPeakMiB":18.367,"processPeakRssMiB":57.922,"chromiumTreePeakRssMiB":null,"tempDiskPeakMiB":0,"outputMiB":73.826,"allocatedMiB":2190.923,"gen2Collections":1,"sourceEnumerations":2,"os":"Microsoft Windows 10.0.26300","runtime":".NET 10.0.13","gcMode":"workstation, concurrent"}
+exit=0 outputFileExists=yes
+
+$ inspect --input <out>/fit-miniexcel.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --rows 1048575
+inspect file=fit-miniexcel.xlsx
+  sharedStrings: present bytes=162 count=0 uniqueCount=0
+  cellXfs: 6
+  sheet items: rows=1048576 cells n=2097150 str=5242882 f=0
+  compare: dataRows=1048575 mismatches=0 headersOk=true sequenceContinuous=true
+PASS inspect fit-miniexcel.xlsx
+$ inspect --input <out>/split-miniexcel.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --probes <out>/split-miniexcel.probes.json
+inspect file=split-miniexcel.xlsx
+  sharedStrings: present bytes=162 count=0 uniqueCount=0
+  cellXfs: 6
+  sheet items: rows=1048576 cells n=2097150 str=5242882 f=0
+  sheet items-2: rows=51426 cells n=102850 str=257132 f=0
+  compare: dataRows=1100000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 11 written to split-miniexcel.probes.json
+PASS inspect split-miniexcel.xlsx
+$ inspect --input <out>/fit-openxml-default.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --rows 1048575
+inspect file=fit-openxml-default.xlsx
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1048576 cells inlineStr=5242882 n=2097150 f=0
+  compare: dataRows=1048575 mismatches=0 headersOk=true sequenceContinuous=true
+PASS inspect fit-openxml-default.xlsx
+$ inspect --input <out>/split-openxml-default.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --probes <out>/split-openxml-default.probes.json
+inspect file=split-openxml-default.xlsx
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1048576 cells inlineStr=5242882 n=2097150 f=0
+  sheet items-2: rows=51426 cells inlineStr=257132 n=102850 f=0
+  compare: dataRows=1100000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 11 written to split-openxml-default.probes.json
+PASS inspect split-openxml-default.xlsx
+$ inspect --input <out>/fit-openxml-zip.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --rows 1048575
+inspect file=fit-openxml-zip.xlsx
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1048576 cells inlineStr=5242882 n=2097150 f=0
+  compare: dataRows=1048575 mismatches=0 headersOk=true sequenceContinuous=true
+PASS inspect fit-openxml-zip.xlsx
+$ inspect --input <out>/split-openxml-zip.xlsx --source <D>/header-items-v1.volume.1100k.json --columns profiles/volume-exact-text.json --probes <out>/split-openxml-zip.probes.json
+inspect file=split-openxml-zip.xlsx
+  sharedStrings: absent
+  cellXfs: 1
+  sheet items: rows=1048576 cells inlineStr=5242882 n=2097150 f=0
+  sheet items-2: rows=51426 cells inlineStr=257132 n=102850 f=0
+  compare: dataRows=1100000 mismatches=0 headersOk=true sequenceContinuous=true
+  probes: 11 written to split-openxml-zip.probes.json
+PASS inspect split-openxml-zip.xlsx
+
+== 5. OpenXmlValidator on the small kept outputs
+$ validate --input <work>/typing/kept/<case>-<candidate>.xlsx
+PASS validate file=C1-miniexcel.xlsx errors=0
+PASS validate file=C1-openxml-default.xlsx errors=0
+PASS validate file=C1-openxml-zip.xlsx errors=0
+PASS validate file=C2-miniexcel.xlsx errors=0
+PASS validate file=C2-openxml-default.xlsx errors=0
+PASS validate file=C2-openxml-zip.xlsx errors=0
+PASS validate file=T16-miniexcel.xlsx errors=0
+PASS validate file=T16-openxml-default.xlsx errors=0
+PASS validate file=T16-openxml-zip.xlsx errors=0
+
+== 6. Excel open check (tools/open-in-excel.ps1, read-only, alerts enabled, timeout 600 s)
+{"file":"C1-miniexcel.xlsx","result":"pass","seconds":3.4,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":16}],"probes":29,"mismatches":[],"error":null}
+{"file":"C1-openxml-default.xlsx","result":"pass","seconds":2.7,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":16}],"probes":29,"mismatches":[],"error":null}
+{"file":"C1-openxml-zip.xlsx","result":"pass","seconds":2.8,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":16}],"probes":29,"mismatches":[],"error":null}
+{"file":"C2-miniexcel.xlsx","result":"pass","seconds":3,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":10}],"probes":21,"mismatches":[],"error":null}
+{"file":"C2-openxml-default.xlsx","result":"pass","seconds":3.1,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":10}],"probes":21,"mismatches":[],"error":null}
+{"file":"C2-openxml-zip.xlsx","result":"pass","seconds":2.4,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":10}],"probes":21,"mismatches":[],"error":null}
+{"file":"T16-miniexcel.xlsx","result":"pass","seconds":2.5,"worksheets":3,"sheets":[{"columns":7,"name":"items","rows":1001},{"columns":7,"name":"items-2","rows":1001},{"columns":7,"name":"items-3","rows":501}],"probes":8,"mismatches":[],"error":null}
+{"file":"T16-openxml-default.xlsx","result":"pass","seconds":2.5,"worksheets":3,"sheets":[{"columns":7,"name":"items","rows":1001},{"columns":7,"name":"items-2","rows":1001},{"columns":7,"name":"items-3","rows":501}],"probes":8,"mismatches":[],"error":null}
+{"file":"T16-openxml-zip.xlsx","result":"pass","seconds":2.7,"worksheets":3,"sheets":[{"columns":7,"name":"items","rows":1001},{"columns":7,"name":"items-2","rows":1001},{"columns":7,"name":"items-3","rows":501}],"probes":8,"mismatches":[],"error":null}
+{"file":"miniexcel-1m.xlsx","result":"pass","seconds":29.8,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":1000001}],"probes":10,"mismatches":[],"error":null}
+{"file":"openxml-default-1m.xlsx","result":"pass","seconds":28.8,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":1000001}],"probes":10,"mismatches":[],"error":null}
+{"file":"openxml-zip-1m.xlsx","result":"pass","seconds":28.3,"worksheets":1,"sheets":[{"columns":7,"name":"items","rows":1000001}],"probes":10,"mismatches":[],"error":null}
+{"file":"split-miniexcel.xlsx","result":"pass","seconds":31.5,"worksheets":2,"sheets":[{"columns":7,"name":"items","rows":1048576},{"columns":7,"name":"items-2","rows":51426}],"probes":11,"mismatches":[],"error":null}
+{"file":"split-openxml-default.xlsx","result":"pass","seconds":31.4,"worksheets":2,"sheets":[{"columns":7,"name":"items","rows":1048576},{"columns":7,"name":"items-2","rows":51426}],"probes":11,"mismatches":[],"error":null}
+{"file":"split-openxml-zip.xlsx","result":"pass","seconds":34,"worksheets":2,"sheets":[{"columns":7,"name":"items","rows":1048576},{"columns":7,"name":"items-2","rows":51426}],"probes":11,"mismatches":[],"error":null}
+
+== 7. Packages and vulnerabilities
+$ dotnet list spikes/04-xlsx-writer/XlsxWriterSpike package --include-transitive
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+Project 'XlsxWriterSpike' has the following package references
+   [net10.0]: 
+   Top-level Package             Requested   Resolved
+   > DocumentFormat.OpenXml      3.5.1       3.5.1   
+   > MiniExcel                   1.46.0      1.46.0  
+
+   Transitive Package                      Resolved
+   > DocumentFormat.OpenXml.Framework      3.5.1   
+   > System.IO.Packaging                   10.0.2  
+
+$ dotnet list spikes/04-xlsx-writer/XlsxWriterSpike package --vulnerable --include-transitive
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+The given project `XlsxWriterSpike` has no vulnerable packages given the current sources.

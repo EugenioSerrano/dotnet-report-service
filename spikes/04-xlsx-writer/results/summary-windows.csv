@@ -1,0 +1,16 @@
+candidate,size,runs,okRuns,managedHeapPeakMiB,processPeakRssMiB,chromiumTreePeakRssMiB,tempDiskPeakMiB,outputMiB,rowsPerSecond,elapsedSeconds,allocatedMiB,gen2Collections,sourceEnumerations,rssRatio,heapRatio,verdict
+miniexcel,100k,3,3,19.859,62.418,n/a,0,10.638,83388,1.199,408.81,2,1,1,1.048,flat
+miniexcel,500k,3,3,20.819,62.754,n/a,0,53.333,166560,3.002,1884.675,2,1,1,1.048,flat
+miniexcel,1m,3,3,20.812,62.395,n/a,0,106.707,170256,5.874,3732.262,2,1,1,1.048,flat
+openxml-default,100k,3,3,65.795,135.414,n/a,0,6.667,51833,1.929,258.558,3,1,8.494,17.715,grows
+openxml-default,500k,3,3,590.531,624.711,n/a,0,33.497,72999,6.849,1599.448,6,1,8.494,17.715,grows
+openxml-default,1m,3,3,1165.545,1150.16,n/a,0,67.088,79288,12.612,3191.252,7,1,8.494,17.715,grows
+openxml-writeonly,100k,3,0,,,n/a,,,,,,,,,,failed at 100k
+openxml-writeonly,500k,3,0,,,n/a,,,,,,,,,,failed at 100k
+openxml-writeonly,1m,3,0,,,n/a,,,,,,,,,,failed at 100k
+openxml-zip,100k,3,3,18.233,61.289,n/a,0,6.669,51197,1.953,167.619,0,1,0.943,1.015,flat
+openxml-zip,500k,3,3,18.538,61.434,n/a,0,33.508,76338,6.55,826.519,0,1,0.943,1.015,flat
+openxml-zip,1m,3,3,18.513,57.785,n/a,0,67.108,80029,12.496,1655.949,1,1,0.943,1.015,flat
+read-only,100k,3,3,17.535,47.445,n/a,0,0,199419,0.501,95.839,0,1,1.1,0.975,flat
+read-only,500k,3,3,17.137,52.453,n/a,0,0,420194,1.19,337.838,0,1,1.1,0.975,flat
+read-only,1m,3,3,17.105,52.191,n/a,0,0,574146,1.742,634.085,0,1,1.1,0.975,flat

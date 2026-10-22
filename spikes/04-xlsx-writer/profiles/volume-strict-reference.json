@@ -1,0 +1,12 @@
+{
+  "sheetName": "items",
+  "columns": [
+    { "name": "sequence", "type": "integer" },
+    { "name": "groupId", "type": "string" },
+    { "name": "accountId", "type": "string" },
+    { "name": "description", "type": "string" },
+    { "name": "quantity", "type": "string" },
+    { "name": "amount", "type": "decimal" },
+    { "name": "reference", "type": "integer" }
+  ]
+}

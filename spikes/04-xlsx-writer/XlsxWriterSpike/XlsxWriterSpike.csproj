@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Throwaway experiment: writes a large JSON dataset to XLSX with several
+    writers and measures memory. Not part of the product solution.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>XlsxWriterSpike</RootNamespace>
+    <AssemblyName>XlsxWriterSpike</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="MiniExcel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\profiles\*.json" Link="profiles\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
