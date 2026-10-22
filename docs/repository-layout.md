@@ -108,7 +108,7 @@ that needs each package adds it; the packages present so far (Aspire hosting
 | ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:10.0.13-noble` | Base of the PDF base image (and of every .NET image) |
 | Local development registry | `registry:3.1.2` (pinned by digest) | Local composition only, on `127.0.0.1:5055`; holds the PDF base image; never shipped |
 | PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-noble` (now `1.63.0-10.0.13-noble`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
-| Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.1.0`) | Local composition (`render-worker`) |
+| Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.2.0-dev`) | Local composition (`render-worker`) |
 
 The digests of these images as last run are recorded in
 [`reference-environment.md`](reference-environment.md).
@@ -152,7 +152,8 @@ The digests of these images as last run are recorded in
   3. tag that `main` commit with the annotated tag `vX.Y.Z` and push it;
   4. on `develop`, open the next version line (next MINOR by default while at
      0.y.z) with `VersionSuffix` `dev` again.
-- Current version: **0.1.0**, released 2026-10-22 (tag `v0.1.0`).
+- Current line: **0.2.0 — in progress** (`0.2.0-dev`); latest release
+  **0.1.0** (2026-10-22, tag `v0.1.0`).
 
 ## Why this layout
 

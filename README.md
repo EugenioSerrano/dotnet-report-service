@@ -5,7 +5,8 @@ immutable JSON snapshot plus one versioned template into downloadable **PDF,
 HTML, Excel and Markdown** files — durably, asynchronously, and with memory
 that stays bounded no matter how large the report is.
 
-> **Version: 0.1.0** — released 2026-10-22. See [CHANGELOG.md](CHANGELOG.md).
+> **Version: 0.2.0 — in progress** (builds report `0.2.0-dev`; not released
+> yet). Latest release: **0.1.0** (2026-10-22). See [CHANGELOG.md](CHANGELOG.md).
 >
 > **Project status: groundwork released, product implementation not started.**
 > Release 0.1.0 completes the first milestone of the [roadmap](#roadmap)
@@ -458,12 +459,12 @@ above are delivered — no API or contract stability is promised until then —
 and the first operational version ships as **1.0.0**. Every release is listed
 in [CHANGELOG.md](CHANGELOG.md) and tagged `vX.Y.Z`.
 
-Between releases, builds carry a `-dev` pre-release label; a released
-version carries none (the latest release is `0.1.0`). A version is released
-when the maintainer declares it: the label is removed, the changelog gets
-the dated version section, `develop` is merged into `main`, and `main` is
-tagged `vX.Y.Z`. `main` always holds the latest release; `develop` holds the
-work in progress.
+Between releases, builds carry a `-dev` pre-release label (currently
+`0.2.0-dev`; the latest release is `0.1.0`). A version is released when the
+maintainer declares it: the label is removed, the changelog gets the dated
+version section, `develop` is merged into `main`, and `main` is tagged
+`vX.Y.Z`. `main` always holds the latest release; `develop` holds the work in
+progress.
 
 ## Technology decisions
 
