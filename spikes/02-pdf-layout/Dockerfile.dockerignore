@@ -1,0 +1,12 @@
+# Allow-list build context for this experiment's image: everything is
+# excluded, then only the files the build stage copies are let back in.
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/02-pdf-layout/Directory.Packages.props
+!spikes/02-pdf-layout/PdfLayoutSpike/**
+spikes/02-pdf-layout/PdfLayoutSpike/bin
+spikes/02-pdf-layout/PdfLayoutSpike/obj

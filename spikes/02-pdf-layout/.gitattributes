@@ -1,0 +1,5 @@
+# The vendored pagination library and its licence keep the exact upstream
+# bytes; their SHA-256 hashes are part of the results report.
+PdfLayoutSpike/assets/vendor/** -text
+*.pdf binary
+*.png binary
