@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Package versions for this experiment only. The repository-wide file is
+    imported first, so central package management stays on; the versions
+    below are the evaluation versions of the three template engines.
+  -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <PackageVersion Include="Fluid.Core" Version="2.40.0" />
+    <PackageVersion Include="Handlebars.Net" Version="2.4.3" />
+    <PackageVersion Include="Scriban" Version="7.5.1" />
+  </ItemGroup>
+</Project>

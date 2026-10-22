@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Measurement program for the incremental envelope reader and the three
+    template engines. Not part of the product solution; see ../README.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StreamingDataSpike</RootNamespace>
+    <!-- The console defaults, stated so that the measured garbage collector mode is on record. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <!-- The policy text encoder for Liquid implements the pointer-based members of TextEncoder. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fluid.Core" />
+    <PackageReference Include="Handlebars.Net" />
+    <PackageReference Include="Scriban" />
+  </ItemGroup>
+
+</Project>
