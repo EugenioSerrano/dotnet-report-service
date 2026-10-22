@@ -1,0 +1,1 @@
+| {{ item.sequence }} | {{ item.description | md_escape }} | {{ item.quantity }} | {{ item.unitPrice }} | {{ item.amount }} |

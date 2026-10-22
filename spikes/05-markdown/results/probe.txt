@@ -1,0 +1,111 @@
+Library: ReverseMarkdown 6.2.1.0
+Configuration: Flavor=Default (GitHub-compatible pipe tables), Tags.Unknown=Drop, Formatting.RemoveComments=true, Formatting.OutputLineEnding=LF, Tables.WithoutHeaderRow=EmptyRow
+
+== a: a table row alone
+-- input
+<tr><td>1</td><td>x</td></tr>
+-- output
+1x
+
+== b: a full table with a header
+-- input
+<table><thead><tr><th>#</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>a</td></tr><tr><td>2</td><td>b</td></tr></tbody></table>
+-- output
+| # | Name |
+| --- | --- |
+| 1 | a |
+| 2 | b |
+
+== c: a table without a header
+-- input
+<table><tbody><tr><td>1</td><td>a</td></tr><tr><td>2</td><td>b</td></tr></tbody></table>
+-- output
+| <!----> | <!----> |
+| --- | --- |
+| 1 | a |
+| 2 | b |
+
+== d: cells with special characters, long and non-ASCII text
+-- input
+<table><thead><tr><th>Text</th><th>Other</th></tr></thead><tbody><tr><td>a|b &lt;b&gt;bold&lt;/b&gt; &amp;amp; * _ [x] \ `</td><td>Tom &amp; Jerry &quot;quoted&quot; &lt;script&gt;alert(1)&lt;/script&gt;</td></tr><tr><td>x…(2 000 characters)…x</td><td>reparación tensión € ñ</td></tr></tbody></table>
+-- output
+| Text | Other |
+| --- | --- |
+| a\|b &lt;b&gt;bold&lt;/b&gt; &amp; \* \_ [x] \ ` | Tom & Jerry "quoted" &lt;script&gt;alert(1)&lt;/script&gt; |
+| x…(2 000 characters)…x | reparación tensión € ñ |
+
+== e: a table foot row
+-- input
+<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody><tfoot><tr><td>Total</td><td>2</td></tr></tfoot></table>
+-- output
+| A | B |
+| --- | --- |
+| 1 | 2 |
+| Total | 2 |
+
+== f: group sections with a spanning heading and a spanning subtotal (the grouped package's shape)
+-- input
+<table class="items"><thead><tr><th class="num">#</th><th>Group</th><th>Amount</th></tr></thead><tbody class="group"><tr class="group-heading"><th colspan="3">G0001 East plant</th></tr><tr><td class="num">1</td><td>G0001</td><td class="num">10.00</td></tr><tr class="group-subtotal"><td colspan="2">Subtotal G0001</td><td class="num">10.00</td></tr></tbody><tbody class="group"><tr class="group-heading"><th colspan="3">G0002 West</th></tr></tbody></table>
+-- output
+| # | Group | Amount |
+| --- | --- | --- |
+| G0001 East plant | G0001 East plant | G0001 East plant |
+| 1 | G0001 | 10.00 |
+| Subtotal G0001 | 10.00 |  |
+| G0002 West | G0002 West | G0002 West |
+
+== g: the document start of the grouped package (head, header, an open table)
+-- input
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <title>Report &amp; title</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="document-header">
+  <h1>Report &amp; title</h1>
+  <p class="customer">Demo (C1)</p>
+</header>
+<table class="items">
+  <thead>
+    <tr><th>#</th><th>Name</th></tr>
+  </thead>
+</table></body></html>
+-- output
+# Report & title
+
+Demo (C1)
+
+| # | Name |
+| --- | --- |
+
+== h: template-like text in a cell and a closing section
+-- input
+<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>{{ header.customer.name }} ${7*7} {% raw %}{{ 7*7 }}{% endraw %} '; DROP TABLE items; --</td></tr></tbody></table><section class="document-totals"><p>Records: 3</p><p>Total: 1000.00 ARS</p></section>
+-- output
+| A |
+| --- |
+| {{ header.customer.name }} ${7\*7} {% raw %}{{ 7\*7 }}{% endraw %} '; DROP TABLE items; -- |
+
+Records: 3
+
+Total: 1000.00 ARS
+
+== i: probe b with Flavor=GitHub (the documented GitHub value, not used)
+-- input
+<table><thead><tr><th>#</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>a</td></tr><tr><td>2</td><td>b</td></tr></tbody></table>
+-- output
+<table><thead><tr><th>#</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>a</td></tr><tr><td>2</td><td>b</td></tr></tbody></table>
+
+== j: probe b split after its first body row, converted per fragment and stitched
+-- input
+<table><thead><tr><th>#</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>a</td></tr>  ||  <tr><td>2</td><td>b</td></tr></tbody></table>
+-- output
+| # | Name |
+| --- | --- |
+| 1 | a |
+| 2 | b |
+
+

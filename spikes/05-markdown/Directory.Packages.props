@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Package versions of the Markdown spike only. This file deliberately does
+    not import the repository's Directory.Packages.props: the spike pins its
+    own exact versions and never changes the product's.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="ReverseMarkdown" Version="6.2.1" />
+    <PackageVersion Include="Scriban" Version="7.5.1" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,4 @@
+
+Records: {{ header.totals.recordCount }}
+
+Total: {{ header.totals.amount }} {{ header.currency | md_escape }}

@@ -1,0 +1,23 @@
+@charset on meta	1
+@class on header	1
+@class on p	2
+@class on section	1
+@class on table	1
+@class on tbody	1
+@class on td	241
+@class on th	6
+@class on tr	2
+@colspan on td	1
+@colspan on th	1
+@href on link	1
+@lang on html	1
+@rel on link	1
+body	1
+declaration	1
+head	1
+header	1
+html	1
+link	1
+meta	1
+section	1
+title	1

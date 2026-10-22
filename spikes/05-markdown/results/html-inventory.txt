@@ -1,0 +1,64 @@
+package pilot-grouped
+  parts parsed without errors: DocumentStart, GroupStart, Row, GroupEnd, DocumentEnd
+  sample data: sample.json  records=40  groups=1
+  rendered HTML characters: 12011
+  elements (start tags, count):
+    body         1   attributes: -
+    h1           1   attributes: -
+    head         1   attributes: -
+    header       1   attributes: class
+    html         1   attributes: lang
+    link         1   attributes: href rel
+    meta         1   attributes: charset
+    p            4   attributes: class
+    section      1   attributes: class
+    table        1   attributes: class
+    tbody        1   attributes: class
+    td         242   attributes: class colspan
+    th           7   attributes: class colspan
+    thead        1   attributes: -
+    title        1   attributes: -
+    tr          43   attributes: class
+  table structure by part (opens / closes):
+    DocumentStart  opens: table thead   closes: thead   rows: 1
+    GroupStart     opens: tbody   closes: -   rows: 1
+    Row            opens: -   closes: -   rows: 1
+    GroupEnd       opens: -   closes: tbody   rows: 1
+    DocumentEnd    opens: -   closes: table   rows: 0
+  table layout: per-document (one table opened by the document start part)
+  column headers: # | Group | Group name | Date | Description | Amount
+  heading rows per group (group start): 1
+  subtotal rows per group (group end): 1
+  tfoot rows: 0
+
+package pilot-simple
+  parts parsed without errors: DocumentStart, Row, DocumentEnd
+  sample data: sample.json  records=25  groups=0
+  rendered HTML characters: 4703
+  elements (start tags, count):
+    body         1   attributes: -
+    h1           1   attributes: -
+    head         1   attributes: -
+    header       1   attributes: class
+    html         1   attributes: lang
+    link         1   attributes: href rel
+    meta         1   attributes: charset
+    p            4   attributes: class
+    section      1   attributes: class
+    table        1   attributes: class
+    tbody        1   attributes: -
+    td         125   attributes: class
+    th           5   attributes: class
+    thead        1   attributes: -
+    title        1   attributes: -
+    tr          26   attributes: -
+  table structure by part (opens / closes):
+    DocumentStart  opens: table thead tbody   closes: thead   rows: 1
+    Row            opens: -   closes: -   rows: 1
+    DocumentEnd    opens: -   closes: tbody table   rows: 0
+  table layout: per-document (one table opened by the document start part)
+  column headers: # | Description | Quantity | Unit price | Amount
+  heading rows per group (group start): 0
+  subtotal rows per group (group end): 0
+  tfoot rows: 0
+

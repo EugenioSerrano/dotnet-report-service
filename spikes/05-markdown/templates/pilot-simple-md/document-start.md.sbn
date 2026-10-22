@@ -1,0 +1,8 @@
+# {{ header.reportTitle | md_escape }}
+
+{{ header.customer.name | md_escape }} ({{ header.customer.id | md_escape }})
+
+{{ header.generatedAt | md_escape }} · {{ header.currency | md_escape }}
+
+| # | Description | Quantity | Unit price | Amount |
+| --- | --- | --- | --- | --- |

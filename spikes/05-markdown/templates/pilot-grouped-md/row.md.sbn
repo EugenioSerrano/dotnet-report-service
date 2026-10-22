@@ -1,0 +1,1 @@
+| {{ item.sequence }} | {{ item.groupId | md_escape }} | {{ item.groupName | md_escape }} | {{ item.date | md_escape }} | {{ item.description | md_escape }} | {{ item.amount }} |
