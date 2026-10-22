@@ -22,5 +22,18 @@ Work towards **0.1.0** (in progress — builds report `0.1.0-dev`).
 - Product version line 0.1.0, with pre-release builds reporting `0.1.0-dev`,
   and this changelog.
 - README describing the product design, and `docs/repository-layout.md`.
+- Local development composition started with one command
+  (`dotnet run --project src/ReportService.AppHost`): an API stub, PostgreSQL
+  18, Valkey 9.1, the Temporal development server and a render worker
+  container, each with a health check; the render worker image is built by
+  the .NET SDK on a base image that holds only the Chromium headless shell.
+- PDF base image definition (`eng/pdf-base/`) and a local development
+  registry, bound to the loopback address, used by the local composition.
+- Seeded pilot dataset generator (simple, grouped and high-volume datasets in
+  the `header-items-v1` envelope) with a `verify` command and the expected
+  hashes in `samples/datasets/SHA256SUMS`.
+- Three sample template packages, one per pilot dataset.
+- Reference environment description for published measurements
+  (`docs/reference-environment.md`).
 
 [Unreleased]: https://github.com/EugenioSerrano/dotnet-report-service/commits/develop

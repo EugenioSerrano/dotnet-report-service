@@ -1,0 +1,8 @@
+  </tbody>
+</table>
+<section class="document-totals">
+  <p>Records: {{ header.totals.recordCount }}</p>
+  <p>Total: {{ header.totals.amount }} {{ header.currency | html.escape }}</p>
+</section>
+</body>
+</html>

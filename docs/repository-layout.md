@@ -13,6 +13,7 @@ dotnet-report-service/
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page)
 ├── eng/                       Build and engineering assets
+│   └── pdf-base/              The PDF base image (Chromium headless shell)
 ├── spikes/                    Stage 0 experiments (not part of the product)
 ├── dotnet-report-service.slnx Product solution
 ├── global.json                .NET SDK pin (10.0.4xx band)
@@ -20,6 +21,7 @@ dotnet-report-service/
 ├── Directory.Packages.props   Central package versions
 ├── NuGet.config               Package sources (nuget.org only)
 ├── .editorconfig              Code style and whitespace rules
+├── .dockerignore              Files kept out of container build contexts
 ├── .gitattributes             Line endings (LF) and binary files
 ├── CHANGELOG.md               Release history
 ├── README.md
@@ -35,12 +37,16 @@ dotnet-report-service/
 | Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project | `tests/ReportService.Workers.Pdf.Tests/` |
 | Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |
+| Sample tool | `samples/<area>/ReportService.Samples.<Tool>/` | `samples/datasets/ReportService.Samples.DatasetGenerator/` |
+| Image built from a Dockerfile | `eng/<image>/Dockerfile` — only for images that need operating-system steps; product images are built by the .NET SDK from their project file | `eng/pdf-base/Dockerfile` |
+| Engineering tool | `eng/<area>/ReportService.Eng.<Tool>/` | `eng/pdf-base/ReportService.Eng.PlaywrightInstaller/` |
 | Spike | `spikes/NN-<topic>/` | `spikes/01-streaming-parser/` |
 | Documentation page | kebab-case `.md` in `docs/` | `docs/template-authoring.md` |
 
 Product and test projects are added to `dotnet-report-service.slnx` under the
-`src` and `tests` solution folders (`dotnet sln add <path> --solution-folder src`).
-Spikes are never added.
+`src` and `tests` solution folders (`dotnet sln add <path> --solution-folder src`);
+sample tools go under the `samples` solution folder and engineering tools
+under the `eng` solution folder, so they build with the same rules. Spikes are never added.
 
 ## Shared configuration
 
@@ -84,11 +90,28 @@ Spikes are never added.
 | Temporal | .NET SDK 1.21.0; dev server image `temporalio/temporal:1.9.1`; production reference server 1.32.x with PostgreSQL | |
 | PostgreSQL | 18 (client Npgsql 10.0.3) | |
 | Cache | Valkey 9.1 | Redis protocol — Redis works as well |
-| Playwright / Chromium | Playwright 1.63.0 → Chromium 153 | Installed into the PDF worker image at build time |
+| Playwright / Chromium | Playwright 1.63.0 → Chromium 153 | Installed into the PDF base image at build time; the worker image is built on it by the .NET SDK |
 | Paged.js | 0.4.3 | Vendored in the render image; no Node.js at runtime |
 
 Package versions appear in `Directory.Packages.props` as the first change
-that needs each package adds it.
+that needs each package adds it; the packages present so far (Aspire hosting
+13.6.2, Microsoft.Playwright 1.63.0) are listed there.
+
+### Container images
+
+| Image | Tag | Used by |
+|-------|-----|---------|
+| PostgreSQL | `postgres:18.6` | Local composition (metadata database) |
+| Valkey | `valkey/valkey:9.1.2` | Local composition (distributed cache) |
+| Temporal development server | `temporalio/temporal:1.9.1` | Local composition (`server start-dev`) |
+| .NET SDK | `mcr.microsoft.com/dotnet/sdk:10.0.402-noble` | Build stage of the PDF base image |
+| ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:10.0.13-noble` | Base of the PDF base image (and of every .NET image) |
+| Local development registry | `registry:3.1.2` (pinned by digest) | Local composition only, on `127.0.0.1:5055`; holds the PDF base image; never shipped |
+| PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-noble` (now `1.63.0-10.0.13-noble`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
+| Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.1.0-dev`) | Local composition (`render-worker`) |
+
+The digests of these images as last run are recorded in
+[`reference-environment.md`](reference-environment.md).
 
 ### Dependency rules
 

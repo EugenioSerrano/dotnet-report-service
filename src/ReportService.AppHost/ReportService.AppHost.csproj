@@ -1,0 +1,29 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.2">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UserSecretsId>c198e5be-9e05-4d7e-9647-24917db69352</UserSecretsId>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      The dashboard and orchestration packages are restored from NuGet and
+      pinned centrally in Directory.Packages.props; the Aspire CLI bundle is
+      not used. The warning that recommends the bundle is therefore turned
+      off for this project only.
+    -->
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.Valkey" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Api\ReportService.Api.csproj" />
+  </ItemGroup>
+
+</Project>

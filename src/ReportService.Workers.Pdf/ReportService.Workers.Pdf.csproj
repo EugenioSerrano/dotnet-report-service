@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <!--
+    Container image of the PDF render worker, built by the .NET SDK:
+      dotnet publish -c Release -t:PublishContainer -p:PdfBaseImageDigest=sha256:<digest>
+    The base is the project-owned PDF base image (ASP.NET Core runtime plus the
+    Chromium headless shell), held in the local development registry. Its tag
+    names the browser automation package version and the runtime it was built
+    for; both change together with the package version.
+    The worker runs only as a Linux container, so it is built for linux-x64:
+    the browser automation package then carries its Linux driver.
+  -->
+  <PropertyGroup>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PdfBaseImageRegistry>localhost:5055</PdfBaseImageRegistry>
+    <PdfBaseImageRepository>report-service-pdf-base</PdfBaseImageRepository>
+    <PdfBaseImageTag>1.63.0-10.0.13-noble</PdfBaseImageTag>
+    <PdfBaseImageDigest></PdfBaseImageDigest>
+    <ContainerBaseImage>$(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)@$(PdfBaseImageDigest)</ContainerBaseImage>
+    <ContainerRepository>report-service-render-worker</ContainerRepository>
+    <ContainerImageTag>$(VersionPrefix)</ContainerImageTag>
+    <ContainerImageTag Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</ContainerImageTag>
+    <ContainerUser>app</ContainerUser>
+    <ContainerRuntimeIdentifier>linux-x64</ContainerRuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ContainerPort Include="8080" Type="tcp" />
+  </ItemGroup>
+
+  <!-- Refuses to publish on a base that is not pinned by digest or not built for this package version. -->
+  <Target Name="CheckPdfBaseImage" BeforeTargets="ComputeContainerBaseImage">
+    <PropertyGroup>
+      <_PdfBasePlaywrightVersion>@(PackageVersion->WithMetadataValue('Identity', 'Microsoft.Playwright')->'%(Version)')</_PdfBasePlaywrightVersion>
+    </PropertyGroup>
+    <Error Condition="'$(PdfBaseImageDigest)' == ''"
+           Text="The PDF base image digest is not set. Run the local composition, or pass -p:PdfBaseImageDigest=sha256:... with the digest of $(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)." />
+    <Error Condition="!$(PdfBaseImageTag.StartsWith('$(_PdfBasePlaywrightVersion)-'))"
+           Text="The PDF base image tag $(PdfBaseImageTag) does not match Microsoft.Playwright $(_PdfBasePlaywrightVersion); rebuild the base for this version and update PdfBaseImageTag." />
+  </Target>
+
+</Project>

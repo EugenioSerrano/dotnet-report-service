@@ -55,3 +55,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Generated pilot datasets (regenerate with the dataset generator)
+samples/datasets/header-items-v1.*.json

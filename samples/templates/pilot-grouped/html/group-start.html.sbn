@@ -1,0 +1,2 @@
+  <tbody class="group">
+    <tr class="group-heading"><th colspan="6">{{ group.groupId | html.escape }} {{ group.groupName | html.escape }}</th></tr>

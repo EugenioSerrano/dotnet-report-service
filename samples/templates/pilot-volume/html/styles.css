@@ -1,0 +1,67 @@
+/* Page size and margins match outputs.pdf in template.yaml. No header or
+   footer content is reserved here: page totals and running headers are
+   added by the layout step. */
+@page {
+  size: A4 landscape;
+  margin: 15mm 12mm 18mm 12mm;
+}
+
+body {
+  margin: 0;
+  color: #222;
+  font-family: sans-serif;
+  font-size: 9pt;
+}
+
+.document-header h1 {
+  margin: 0 0 4pt;
+  font-size: 14pt;
+}
+
+.document-header p {
+  margin: 0 0 2pt;
+}
+
+table.items {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.items thead {
+  display: table-header-group;
+}
+
+table.items th,
+table.items td {
+  padding: 2pt 4pt;
+  border-bottom: 0.5pt solid #ccc;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.items .text {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+table.items .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-heading th {
+  padding-top: 6pt;
+  border-bottom: 1pt solid #888;
+}
+
+.group-subtotal td {
+  font-weight: bold;
+  border-bottom: 1pt solid #888;
+}
+
+.document-totals {
+  margin-top: 8pt;
+  font-weight: bold;
+}

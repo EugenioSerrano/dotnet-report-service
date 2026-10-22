@@ -1,0 +1,341 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "datasetId": "pilot-grouped",
+    "reportTitle": "Pilot dataset: grouped statement",
+    "generatedAt": "2026-10-01T00:00:00Z",
+    "seed": 20261021,
+    "currency": "ARS",
+    "customer": {
+      "id": "C607302",
+      "name": "Demo Industrial Services"
+    },
+    "totals": {
+      "recordCount": 40,
+      "groupCount": 1,
+      "amount": 1053758.65
+    }
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-28",
+      "description": "cable office filter reparación journey freight cable hinge tensión energy of",
+      "amount": 32720.44
+    },
+    {
+      "sequence": 2,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-16",
+      "description": "for repair office zone office depósito",
+      "amount": 49997.19
+    },
+    {
+      "sequence": 3,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-07",
+      "description": "annual hinge región office medición zone for quarterly valve reparación nozzle engine valve región",
+      "amount": 28844.13
+    },
+    {
+      "sequence": 4,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-11",
+      "description": "inspection maintenance inspection nozzle",
+      "amount": 15197.82
+    },
+    {
+      "sequence": 5,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-29",
+      "description": "sensor insulation quarterly",
+      "amount": 33549.25
+    },
+    {
+      "sequence": 6,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-17",
+      "description": "información switch rail handling año año cañería switch rail sensor labour sensor drill hinge hinge depósito annual señal € cargo adjustment lamp señal joint quarterly of depósito network annual general balance joint rail energy with zone quarterly inspection labour kilowatt información network energía wiring tensión nozzle panel valve reparación yard sección información delivery delivery with gasket transport pallet quarterly yard office network meter panel rail warehouse sección annual",
+      "amount": 49355.50
+    },
+    {
+      "sequence": 7,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-12",
+      "description": "pallet año cable insulation with kilowatt handling cañería office sección for hinge service warehouse pallet gasket sensor joint handling of voltage filter pallet región sensor voltage medición office switch mantenimiento medición cable energía network cargo engine handling lamp utility energía sensor medición repair mantenimiento balance año tensión año reparación switch energía € € cable delivery energía hinge año zone freight meter utility nozzle repair filter panel inspection bracket energy sensor",
+      "amount": 23870.53
+    },
+    {
+      "sequence": 8,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-28",
+      "description": "depósito yard información zone",
+      "amount": 47144.56
+    },
+    {
+      "sequence": 9,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-29",
+      "description": "kilowatt bracket cañería pallet quarterly filter información información valve general balance service pallet energía quarterly rail adjustment energy journey kilowatt handling adjustment gasket of nozzle información joint cañería medición sección switch mantenimiento pallet drill adjustment adjustment yard año bracket rail gasket depósito voltage yard meter depósito with pallet for reparación and",
+      "amount": 9292.01
+    },
+    {
+      "sequence": 10,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-30",
+      "description": "office rail inspection switch mantenimiento",
+      "amount": 42175.95
+    },
+    {
+      "sequence": 11,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-03",
+      "description": "bracket insulation rail yard annual network lamp journey insulation depósito señal",
+      "amount": 22262.53
+    },
+    {
+      "sequence": 12,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-22",
+      "description": "switch quarterly filter of wiring meter",
+      "amount": 29720.20
+    },
+    {
+      "sequence": 13,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-26",
+      "description": "kilowatt labour",
+      "amount": 19827.66
+    },
+    {
+      "sequence": 14,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-06",
+      "description": "nozzle sensor información of joint pallet información sección general",
+      "amount": 48364.10
+    },
+    {
+      "sequence": 15,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-04",
+      "description": "nozzle insulation",
+      "amount": 19373.30
+    },
+    {
+      "sequence": 16,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-16",
+      "description": "pump labour tensión inspection medición señal wiring panel yard valve sensor kilowatt joint quarterly adjustment tensión energía office handling maintenance",
+      "amount": 5129.57
+    },
+    {
+      "sequence": 17,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-19",
+      "description": "voltage switch and network",
+      "amount": 28958.12
+    },
+    {
+      "sequence": 18,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-15",
+      "description": "yard región of cargo",
+      "amount": 43771.71
+    },
+    {
+      "sequence": 19,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-16",
+      "description": "voltage valve transport pallet pump",
+      "amount": 3585.47
+    },
+    {
+      "sequence": 20,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-04",
+      "description": "pallet cañería insulation depósito",
+      "amount": 41445.94
+    },
+    {
+      "sequence": 21,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-10",
+      "description": "repair freight gasket",
+      "amount": 45872.47
+    },
+    {
+      "sequence": 22,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-06",
+      "description": "utility kilowatt",
+      "amount": 19597.38
+    },
+    {
+      "sequence": 23,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-05",
+      "description": "energía energy hinge cable zone meter voltage nozzle",
+      "amount": -4699.91
+    },
+    {
+      "sequence": 24,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-25",
+      "description": "{% raw %}{{ 7*7 }}{% endraw %}",
+      "amount": 16404.61
+    },
+    {
+      "sequence": 25,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-02",
+      "description": "cable sensor yard journey wiring for journey panel drill drill gasket nozzle repair labour drill cargo",
+      "amount": 19542.58
+    },
+    {
+      "sequence": 26,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-08",
+      "description": "and región labour mantenimiento",
+      "amount": 3444.41
+    },
+    {
+      "sequence": 27,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-06",
+      "description": "of drill of cañería zone warehouse zone transport energía transport quarterly joint energía meter cable depósito insulation adjustment lamp reparación bracket drill medición transport",
+      "amount": 41403.24
+    },
+    {
+      "sequence": 28,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-15",
+      "description": "rail reparación energy service",
+      "amount": 30594.72
+    },
+    {
+      "sequence": 29,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-07",
+      "description": "año handling with cable",
+      "amount": 26537.44
+    },
+    {
+      "sequence": 30,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-15",
+      "description": "señal señal año repair rail",
+      "amount": 6090.96
+    },
+    {
+      "sequence": 31,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-27",
+      "description": "{{ header.customer.name }}",
+      "amount": 5509.41
+    },
+    {
+      "sequence": 32,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-17",
+      "description": "pump labour switch handling adjustment cable transport señal insulation zone service utility network general freight wiring región journey yard joint € and pump",
+      "amount": 47765.74
+    },
+    {
+      "sequence": 33,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-01",
+      "description": "información office cargo engine of",
+      "amount": 25086.52
+    },
+    {
+      "sequence": 34,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-21",
+      "description": "inspection pallet labour general",
+      "amount": 33166.74
+    },
+    {
+      "sequence": 35,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-19",
+      "description": "journey mantenimiento network and pump journey señal señal with lamp sección",
+      "amount": 14870.37
+    },
+    {
+      "sequence": 36,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-19",
+      "description": "transport service service pallet cañería",
+      "amount": 19666.78
+    },
+    {
+      "sequence": 37,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-23",
+      "description": "región filter balance sensor valve bracket € wiring",
+      "amount": 34866.73
+    },
+    {
+      "sequence": 38,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-23",
+      "description": "office depósito depósito",
+      "amount": 8846.71
+    },
+    {
+      "sequence": 39,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-09",
+      "description": "repair hinge yard handling hinge € zone pump rail handling sensor voltage service general transport cañería filter and and delivery pump kilowatt inspection kilowatt hinge service delivery",
+      "amount": 22531.20
+    },
+    {
+      "sequence": 40,
+      "groupId": "G0001",
+      "groupName": "East plant",
+      "date": "2026-09-12",
+      "description": "kilowatt rail warehouse pallet hinge pallet",
+      "amount": 42074.57
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <title>{{ header.reportTitle | html.escape }}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="document-header">
+  <h1>{{ header.reportTitle | html.escape }}</h1>
+  <p class="customer">{{ header.customer.name | html.escape }} ({{ header.customer.id | html.escape }})</p>
+  <p class="generated">{{ header.generatedAt | html.escape }} · {{ header.currency | html.escape }}</p>
+</header>
+<table class="items pilot-volume">
+  <thead>
+    <tr><th class="num">#</th><th class="text">Group</th><th class="text">Account</th><th class="text">Description</th><th class="num">Quantity</th><th class="num">Amount</th><th class="num">Reference</th></tr>
+  </thead>

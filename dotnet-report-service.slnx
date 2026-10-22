@@ -1,2 +1,13 @@
 <Solution>
+  <Folder Name="/eng/">
+    <Project Path="eng/pdf-base/ReportService.Eng.PlaywrightInstaller/ReportService.Eng.PlaywrightInstaller.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/datasets/ReportService.Samples.DatasetGenerator/ReportService.Samples.DatasetGenerator.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
+    <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
+    <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
+  </Folder>
 </Solution>

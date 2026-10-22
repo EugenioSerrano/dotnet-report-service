@@ -1,0 +1,1 @@
+    <tr><td class="num">{{ item.sequence }}</td><td class="text">{{ item.groupId | html.escape }}</td><td class="text">{{ item.accountId | html.escape }}</td><td class="text">{{ item.description | html.escape }}</td><td class="num">{{ item.quantity }}</td><td class="num">{{ item.amount }}</td><td class="num">{{ item.reference }}</td></tr>

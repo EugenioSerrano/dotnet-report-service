@@ -8,10 +8,14 @@ and that anyone can run against a local instance.
 ## What goes here
 
 - `templates/<template-id>/` — sample template packages (manifest, schema,
-  sample data, template parts, styles, assets), one per template.
+  sample data, template parts, styles, assets), one per template. The three
+  pilot packages `pilot-simple`, `pilot-grouped` and `pilot-volume` render
+  the three pilot datasets — see [`templates/README.md`](templates/README.md).
 - `datasets/` — the seeded synthetic pilot datasets (simple; grouped with
   subtotals; high volume) and the generator that produces them
-  reproducibly.
+  reproducibly. The dataset files are generated, not committed;
+  `datasets/SHA256SUMS` holds their expected hashes and is the
+  reproducibility contract — see [`datasets/README.md`](datasets/README.md).
 
 ## What does not go here
 

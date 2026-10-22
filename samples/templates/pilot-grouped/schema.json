@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pilot grouped dataset (header-items-v1)",
+  "description": "Data contract of the sample template: the header-items-v1 envelope, a small header followed by the items in final order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "header",
+    "items"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "1.0"
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "datasetId",
+        "reportTitle",
+        "generatedAt",
+        "seed",
+        "currency",
+        "customer",
+        "totals"
+      ],
+      "properties": {
+        "datasetId": {
+          "const": "pilot-grouped"
+        },
+        "reportTitle": {
+          "type": "string"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "name"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recordCount",
+            "groupCount",
+            "amount"
+          ],
+          "properties": {
+            "recordCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "groupCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "amount": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "groupId",
+        "groupName",
+        "date",
+        "description",
+        "amount"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "groupId": {
+          "type": "string",
+          "pattern": "^G[0-9]{4}$"
+        },
+        "groupName": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

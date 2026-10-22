@@ -1,0 +1,195 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "datasetId": "pilot-simple",
+    "reportTitle": "Pilot dataset: simple invoice",
+    "generatedAt": "2026-10-01T00:00:00Z",
+    "seed": 20261021,
+    "currency": "ARS",
+    "customer": {
+      "id": "C598231",
+      "name": "Demo Industrial Services"
+    },
+    "totals": {
+      "recordCount": 25,
+      "amount": 547654.34
+    }
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "description": "Inspección anual",
+      "quantity": 10,
+      "unitPrice": 3072.37,
+      "amount": 30723.70
+    },
+    {
+      "sequence": 2,
+      "description": "Rail section, 2 m",
+      "quantity": 2,
+      "unitPrice": 2217.24,
+      "amount": 4434.48
+    },
+    {
+      "sequence": 3,
+      "description": "Insulation repair",
+      "quantity": 5,
+      "unitPrice": 904.70,
+      "amount": 4523.50
+    },
+    {
+      "sequence": 4,
+      "description": "Insulation repair",
+      "quantity": 3,
+      "unitPrice": 25.68,
+      "amount": 77.04
+    },
+    {
+      "sequence": 5,
+      "description": "Insulation repair",
+      "quantity": 13,
+      "unitPrice": 2764.94,
+      "amount": 35944.22
+    },
+    {
+      "sequence": 6,
+      "description": "Depósito de garantía",
+      "quantity": 12,
+      "unitPrice": 2336.34,
+      "amount": 28036.08
+    },
+    {
+      "sequence": 7,
+      "description": "<script>alert(1)</script>",
+      "quantity": 5,
+      "unitPrice": 805.00,
+      "amount": 4025.00
+    },
+    {
+      "sequence": 8,
+      "description": "Señalización de obra",
+      "quantity": 7,
+      "unitPrice": 2769.34,
+      "amount": 19385.38
+    },
+    {
+      "sequence": 9,
+      "description": "Gasket set",
+      "quantity": 15,
+      "unitPrice": 513.39,
+      "amount": 7700.85
+    },
+    {
+      "sequence": 10,
+      "description": "Insulation repair",
+      "quantity": 13,
+      "unitPrice": 1154.18,
+      "amount": 15004.34
+    },
+    {
+      "sequence": 11,
+      "description": "Valve replacement",
+      "quantity": 4,
+      "unitPrice": 2696.66,
+      "amount": 10786.64
+    },
+    {
+      "sequence": 12,
+      "description": "Mantenimiento mensual",
+      "quantity": 13,
+      "unitPrice": 4752.03,
+      "amount": 61776.39
+    },
+    {
+      "sequence": 13,
+      "description": "Office supplies",
+      "quantity": 15,
+      "unitPrice": 3183.33,
+      "amount": 47749.95
+    },
+    {
+      "sequence": 14,
+      "description": "Reparación de cañería",
+      "quantity": 12,
+      "unitPrice": 4849.15,
+      "amount": 58189.80
+    },
+    {
+      "sequence": 15,
+      "description": "Office supplies",
+      "quantity": 6,
+      "unitPrice": 4914.31,
+      "amount": 29485.86
+    },
+    {
+      "sequence": 16,
+      "description": "Hinge kit",
+      "quantity": 18,
+      "unitPrice": 2835.36,
+      "amount": 51036.48
+    },
+    {
+      "sequence": 17,
+      "description": "Switchboard check",
+      "quantity": 3,
+      "unitPrice": 1038.05,
+      "amount": 3114.15
+    },
+    {
+      "sequence": 18,
+      "description": "Waste removal",
+      "quantity": 8,
+      "unitPrice": 1109.85,
+      "amount": 8878.80
+    },
+    {
+      "sequence": 19,
+      "description": "Tom & Jerry \"quoted\" <b>bold</b>",
+      "quantity": 3,
+      "unitPrice": 1844.53,
+      "amount": 5533.59
+    },
+    {
+      "sequence": 20,
+      "description": "Waste removal",
+      "quantity": 1,
+      "unitPrice": 1016.58,
+      "amount": 1016.58
+    },
+    {
+      "sequence": 21,
+      "description": "Monthly maintenance service",
+      "quantity": 15,
+      "unitPrice": 3753.10,
+      "amount": 56296.50
+    },
+    {
+      "sequence": 22,
+      "description": "Remote monitoring, 30 days",
+      "quantity": 5,
+      "unitPrice": 920.77,
+      "amount": 4603.85
+    },
+    {
+      "sequence": 23,
+      "description": "Depósito de garantía",
+      "quantity": 1,
+      "unitPrice": 34.21,
+      "amount": 34.21
+    },
+    {
+      "sequence": 24,
+      "description": "Inspección anual",
+      "quantity": 12,
+      "unitPrice": 4533.62,
+      "amount": 54403.44
+    },
+    {
+      "sequence": 25,
+      "description": "Insulation repair",
+      "quantity": 1,
+      "unitPrice": 4893.51,
+      "amount": 4893.51
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+    <tr><td class="num">{{ item.sequence }}</td><td class="text">{{ item.groupId | html.escape }}</td><td class="text">{{ item.groupName | html.escape }}</td><td class="text">{{ item.date | html.escape }}</td><td class="text">{{ item.description | html.escape }}</td><td class="num">{{ item.amount }}</td></tr>

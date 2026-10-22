@@ -478,13 +478,112 @@ downloaded from the internet during a job.
 
 ## Development
 
-The repository layout, its conventions and the toolchain pin are in place
-(.NET 10 SDK, 10.0.4xx band — see `global.json`); projects arrive with the
-next milestones. Until then there is nothing to build or run. When the
-first projects land, this section will cover prerequisites (.NET SDK,
-Docker), running the Aspire AppHost (API, Temporal, PostgreSQL, Valkey,
-storage and workers in one command), the seeded pilot datasets and the test
-suites.
+### Prerequisites
+
+- The **.NET 10 SDK**, 10.0.402 or a later 10.0.4xx patch (see `global.json`).
+- **Docker with Linux containers and BuildKit (the buildx plugin)**, reachable
+  by the `docker` command (Docker Desktop, Rancher Desktop or Docker Engine
+  with buildx) — only needed to run the local composition, whose first run
+  builds the PDF base image from a Dockerfile; building the solution needs
+  neither.
+- The loopback port **`127.0.0.1:5055` free** for the local development
+  registry the composition uses.
+- **On Windows, a short clone path or long-path support.** The browser
+  automation package copies driver files into the render worker's build
+  output whose paths exceed the 260-character limit under deep clone paths.
+  Clone near the drive root (for example `C:\src\dotnet-report-service`), or
+  enable the Windows long-path setting and run `git config core.longpaths true`.
+
+### Build
+
+```bash
+dotnet build dotnet-report-service.slnx
+```
+
+Warnings are errors and code style is enforced, so a clean build has no
+warnings.
+
+### Run the local composition
+
+```bash
+dotnet run --project src/ReportService.AppHost
+```
+
+Before any resource starts, the command prepares the render worker image:
+
+1. it makes sure the local development registry container
+   `report-service-dev-registry` is running — the pinned `registry` image,
+   published on `127.0.0.1:5055` only, so it is reachable from this machine
+   and nowhere else;
+2. if the PDF base image (the ASP.NET Core runtime plus the Chromium headless
+   shell, defined in [`eng/pdf-base/`](eng/pdf-base/)) is not in that registry
+   yet, it builds it with BuildKit and stores it there — **first run only**,
+   a few minutes;
+3. it publishes the render worker image with the .NET SDK on that base, by
+   the digest the registry reports (about 20 seconds), into the local
+   container runtime.
+
+If one of these steps fails, the command stops with the failing step's
+output before any resource starts. It then starts, on the local machine only:
+
+- `api` — the API (for now a stub with `/health`, on `http://localhost:5080`);
+- `postgres` — PostgreSQL 18 with the `reportservice` database;
+- `cache` — Valkey 9.1;
+- `temporal` — the Temporal development server (gRPC on 7233, web UI on 8233
+  inside the container);
+- `render-worker` — the PDF render worker container, built by the .NET SDK on
+  a base image with the Chromium headless shell.
+
+The console prints the dashboard URL (with its login link); the dashboard
+shows every resource, its health and its logs. The API starts only when the
+other resources are healthy, so `http://localhost:5080/health` answering
+`Healthy` means the whole composition is up. To see every resource state
+change in the console as well, run:
+
+```bash
+dotnet run --project src/ReportService.AppHost -- --Logging:LogLevel:Aspire.Hosting=Debug
+```
+
+Stopping the command (Ctrl+C) removes the containers of the composition and
+their data. The registry container is not part of the composition: it stays,
+stopped or running, with the PDF base image in it, so later starts skip the
+base build. The base is built only when its tag is missing from the registry,
+so after a change to its definition (`eng/pdf-base/`) either give it a new
+tag (`PdfBaseImageTag` in the render worker's project file) or remove the
+registry container by name, which also discards the stored base:
+
+```bash
+docker rm -f report-service-dev-registry
+```
+
+The render worker image can also be published by hand, with the digest of
+the base in the registry:
+
+```bash
+dotnet publish src/ReportService.Workers.Pdf -c Release -t:PublishContainer -p:PdfBaseImageDigest=sha256:<digest>
+```
+
+(spelled `-t:`, which every shell passes unchanged).
+
+### Pilot datasets and sample templates
+
+```bash
+dotnet run --project samples/datasets/ReportService.Samples.DatasetGenerator -c Release -- generate
+dotnet run --project samples/datasets/ReportService.Samples.DatasetGenerator -c Release -- verify
+```
+
+`generate` writes the three seeded pilot datasets (simple, grouped, 1 000 000
+records) into `samples/datasets/`; `verify` checks that they are reproduced
+byte for byte and match `samples/datasets/SHA256SUMS`. See
+[`samples/datasets/README.md`](samples/datasets/README.md) for the datasets,
+options and hashes, [`samples/templates/README.md`](samples/templates/README.md)
+for the sample template packages, and
+[`docs/reference-environment.md`](docs/reference-environment.md) for the
+environment every published measurement runs on and how measurements are
+reported.
+
+### Layout
+
 
 ```text
 dotnet-report-service/

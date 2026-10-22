@@ -1,0 +1,291 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "datasetId": "pilot-volume",
+    "reportTitle": "Pilot dataset: high-volume ledger",
+    "generatedAt": "2026-10-01T00:00:00Z",
+    "seed": 20261021,
+    "currency": "ARS",
+    "customer": {
+      "id": "C199878",
+      "name": "Demo Industrial Services"
+    },
+    "totals": {
+      "recordCount": 30,
+      "groupCount": 1,
+      "amount": 709631.46
+    }
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "groupId": "G000001",
+      "accountId": "00372741704060656211",
+      "description": "maintenance cañería señal insulation",
+      "quantity": 4286.563028959435,
+      "amount": 681.58,
+      "reference": 9007199254740994
+    },
+    {
+      "sequence": 2,
+      "groupId": "G000001",
+      "accountId": "00000095250697339450",
+      "description": "Ref-0000002 energía energy service",
+      "quantity": 6433.671201717176,
+      "amount": 48235.02,
+      "reference": 9007199254740995
+    },
+    {
+      "sequence": 3,
+      "groupId": "G000001",
+      "accountId": "00096036259108114816",
+      "description": "handling rail",
+      "quantity": 2327.330397073973,
+      "amount": 10665.21,
+      "reference": 9007199254740996
+    },
+    {
+      "sequence": 4,
+      "groupId": "G000001",
+      "accountId": "00570142959014440204",
+      "description": "warehouse office with",
+      "quantity": 9605.271947322693,
+      "amount": 37770.09,
+      "reference": 9007199254740997
+    },
+    {
+      "sequence": 5,
+      "groupId": "G000001",
+      "accountId": "00900878025438247155",
+      "description": "gasket pump office",
+      "quantity": 4978.750712412862,
+      "amount": 44445.08,
+      "reference": 9007199254740998
+    },
+    {
+      "sequence": 6,
+      "groupId": "G000001",
+      "accountId": "00031069733736119010",
+      "description": "depósito for voltage sección",
+      "quantity": 9760.304257630531,
+      "amount": 4970.51,
+      "reference": 9007199254740999
+    },
+    {
+      "sequence": 7,
+      "groupId": "G000001",
+      "accountId": "00894036987033324495",
+      "description": "Ref-0000007 voltage año repair",
+      "quantity": 6726.784909595445,
+      "amount": 33221.27,
+      "reference": 9007199254741000
+    },
+    {
+      "sequence": 8,
+      "groupId": "G000001",
+      "accountId": "00082539752427290538",
+      "description": "labour filter pump handling",
+      "quantity": 7370.936310143358,
+      "amount": 36476.09,
+      "reference": 9007199254741001
+    },
+    {
+      "sequence": 9,
+      "groupId": "G000001",
+      "accountId": "00000090473810859378",
+      "description": "labour service reparación kilowatt kilowatt",
+      "quantity": 1847.601311841155,
+      "amount": 9618.25,
+      "reference": 9007199254741002
+    },
+    {
+      "sequence": 10,
+      "groupId": "G000001",
+      "accountId": "00000068452191717779",
+      "description": "mantenimiento mantenimiento meter of delivery",
+      "quantity": 4388.040312972221,
+      "amount": 16392.70,
+      "reference": 9007199254741003
+    },
+    {
+      "sequence": 11,
+      "groupId": "G000001",
+      "accountId": "00000661503505641795",
+      "description": "Ref-0000011 balance general office tensión",
+      "quantity": 8791.278666921704,
+      "amount": 37824.68,
+      "reference": 9007199254741004
+    },
+    {
+      "sequence": 12,
+      "groupId": "G000001",
+      "accountId": "00000931128342951572",
+      "description": "reparación handling",
+      "quantity": 4882.114257436622,
+      "amount": 30746.05,
+      "reference": 9007199254741005
+    },
+    {
+      "sequence": 13,
+      "groupId": "G000001",
+      "accountId": "00000773262958848135",
+      "description": "reparación handling",
+      "quantity": 3086.564698368993,
+      "amount": 15932.84,
+      "reference": 9007199254741006
+    },
+    {
+      "sequence": 14,
+      "groupId": "G000001",
+      "accountId": "00000021864116984880",
+      "description": "año lamp",
+      "quantity": 7333.641008870776,
+      "amount": 24818.17,
+      "reference": 9007199254741007
+    },
+    {
+      "sequence": 15,
+      "groupId": "G000001",
+      "accountId": "00885265077619261793",
+      "description": "repair annual for inspection cañería",
+      "quantity": 4492.161338612155,
+      "amount": 24005.34,
+      "reference": 9007199254741008
+    },
+    {
+      "sequence": 16,
+      "groupId": "G000001",
+      "accountId": "00456421622443118676",
+      "description": "Ref-0000016 información delivery panel nozzle",
+      "quantity": 4614.865077693065,
+      "amount": 15773.16,
+      "reference": 9007199254741009
+    },
+    {
+      "sequence": 17,
+      "groupId": "G000001",
+      "accountId": "00007090163646083253",
+      "description": "zone medición rail información panel",
+      "quantity": 1061.402112675641,
+      "amount": 2672.72,
+      "reference": 9007199254741010
+    },
+    {
+      "sequence": 18,
+      "groupId": "G000001",
+      "accountId": "00002416793469591358",
+      "description": "Ref-0000018 repair repair quarterly",
+      "quantity": 5043.000240812060,
+      "amount": 21343.61,
+      "reference": 9007199254741011
+    },
+    {
+      "sequence": 19,
+      "groupId": "G000001",
+      "accountId": "00025423733221485372",
+      "description": "delivery repair energía medición quarterly",
+      "quantity": 4739.169842474674,
+      "amount": 24420.62,
+      "reference": 9007199254741012
+    },
+    {
+      "sequence": 20,
+      "groupId": "G000001",
+      "accountId": "00020575769446068276",
+      "description": "nozzle valve rail joint",
+      "quantity": 9393.460861342207,
+      "amount": -556.81,
+      "reference": 9007199254741013
+    },
+    {
+      "sequence": 21,
+      "groupId": "G000001",
+      "accountId": "00000038507291906637",
+      "description": "panel nozzle información with",
+      "quantity": 7093.355257486989,
+      "amount": 35269.41,
+      "reference": 9007199254741014
+    },
+    {
+      "sequence": 22,
+      "groupId": "G000001",
+      "accountId": "00378333053613993888",
+      "description": "energía región",
+      "quantity": 3658.120087685217,
+      "amount": 37134.12,
+      "reference": 9007199254741015
+    },
+    {
+      "sequence": 23,
+      "groupId": "G000001",
+      "accountId": "00524140416301297131",
+      "description": "año cañería annual panel wiring",
+      "quantity": 8930.991094400438,
+      "amount": 46703.81,
+      "reference": 9007199254741016
+    },
+    {
+      "sequence": 24,
+      "groupId": "G000001",
+      "accountId": "00271352357901218235",
+      "description": "€ pump general inspection",
+      "quantity": 3990.643993149058,
+      "amount": 2320.61,
+      "reference": 9007199254741017
+    },
+    {
+      "sequence": 25,
+      "groupId": "G000001",
+      "accountId": "00008470984790779203",
+      "description": "Ref-0000025 network valve delivery",
+      "quantity": 8116.369362331317,
+      "amount": 27296.98,
+      "reference": 9007199254741018
+    },
+    {
+      "sequence": 26,
+      "groupId": "G000001",
+      "accountId": "00076039300259097034",
+      "description": "Tom & Jerry \"quoted\" <b>bold</b>",
+      "quantity": 7540.560530680184,
+      "amount": 1566.58,
+      "reference": 9007199254741019
+    },
+    {
+      "sequence": 27,
+      "groupId": "G000001",
+      "accountId": "00000070495494986018",
+      "description": "freight mantenimiento adjustment",
+      "quantity": 5487.117003421189,
+      "amount": 46129.89,
+      "reference": 9007199254741020
+    },
+    {
+      "sequence": 28,
+      "groupId": "G000001",
+      "accountId": "00007702109644622058",
+      "description": "=1+1",
+      "quantity": 1429.926850798834,
+      "amount": 40656.52,
+      "reference": 9007199254741021
+    },
+    {
+      "sequence": 29,
+      "groupId": "G000001",
+      "accountId": "00565621503109773861",
+      "description": "pump rail service",
+      "quantity": 6639.888065665659,
+      "amount": 20880.54,
+      "reference": 9007199254741022
+    },
+    {
+      "sequence": 30,
+      "groupId": "G000001",
+      "accountId": "00008500408336864135",
+      "description": "Ref-0000030 freight handling región",
+      "quantity": 4832.519820935982,
+      "amount": 12216.82,
+      "reference": 9007199254741023
+    }
+  ]
+}
