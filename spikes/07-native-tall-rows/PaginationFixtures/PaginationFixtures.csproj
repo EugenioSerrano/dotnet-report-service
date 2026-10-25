@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fixture series of the native pagination experiment: the fixture model, the
+    deterministic generator, the fixture file reader and writer and the declared
+    page geometry. No package. Referenced by the layout harness (reader only)
+    and by the text-integrity checker.
+  -->
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PaginationFixtures</RootNamespace>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,15 @@
+# Allow-list build context for the layout harness image: everything is
+# excluded, then only the files the build stage copies are let back in.
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/07-native-tall-rows/Directory.Packages.props
+!spikes/07-native-tall-rows/PaginationFixtures/**
+!spikes/07-native-tall-rows/NativeLayoutSpike/**
+spikes/07-native-tall-rows/PaginationFixtures/bin
+spikes/07-native-tall-rows/PaginationFixtures/obj
+spikes/07-native-tall-rows/NativeLayoutSpike/bin
+spikes/07-native-tall-rows/NativeLayoutSpike/obj

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Native layout harness: prints fixtures with Chromium's own print layout
+    (no pagination script) inside the PDF base image, one fresh process per run,
+    and records memory and time. It reads fixture files; it never generates them.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NativeLayoutSpike</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

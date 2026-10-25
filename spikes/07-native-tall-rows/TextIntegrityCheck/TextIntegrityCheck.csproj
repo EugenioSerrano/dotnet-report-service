@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Text-integrity checker: reads a printed PDF back with poppler-utils
+    (pdftotext -bbox, pdfinfo) and compares its text with the fixture it was
+    printed from. It references the fixture library only, never a layout
+    harness, and its image holds no browser.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TextIntegrityCheck</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+</Project>

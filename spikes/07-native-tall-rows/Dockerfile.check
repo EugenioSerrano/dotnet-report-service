@@ -1,0 +1,29 @@
+# Text-integrity checker image: the .NET runtime base plus poppler-utils, which
+# reads printed PDFs back. It holds no browser and no browser automation, so the
+# checker is independent of the engine whose output it checks. Requires BuildKit.
+
+# Build stage — same SDK band as global.json.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+WORKDIR /repo
+COPY global.json Directory.Build.props NuGet.config .editorconfig ./
+COPY spikes/Directory.Build.props spikes/
+COPY spikes/07-native-tall-rows/Directory.Packages.props spikes/07-native-tall-rows/
+COPY spikes/07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/07-native-tall-rows/TextIntegrityCheck/TextIntegrityCheck.csproj spikes/07-native-tall-rows/TextIntegrityCheck/
+RUN dotnet restore spikes/07-native-tall-rows/TextIntegrityCheck/TextIntegrityCheck.csproj
+COPY spikes/07-native-tall-rows/PaginationFixtures/ spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/07-native-tall-rows/TextIntegrityCheck/ spikes/07-native-tall-rows/TextIntegrityCheck/
+RUN dotnet publish spikes/07-native-tall-rows/TextIntegrityCheck/TextIntegrityCheck.csproj \
+    -c Release --no-restore -o /app \
+    -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false
+
+# Runtime stage — the same .NET runtime base as the product's images, plus the
+# PDF reading tools from the Ubuntu archive. This image is never published.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble AS final
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /out && chown "$APP_UID" /out
+WORKDIR /app
+COPY --from=build /app ./
+USER $APP_UID
+ENTRYPOINT ["dotnet", "TextIntegrityCheck.dll"]
