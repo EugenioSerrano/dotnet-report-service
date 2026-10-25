@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Accounting checker of the two-pass experiment: reads the printed PDFs back
+    with poppler-utils and qpdf, feeds the earlier layout spike's accounting
+    rules from them, and judges the second pass's reading, the area outside the
+    reserved area and the page boxes. No package; its image holds no browser and
+    no PDF library. The files below are linked unchanged from their folders.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PageAccountingCheck</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/Poppler.cs" Link="Reused/Poppler.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs" Link="Reused/PrintedDocument.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs" Link="Reused/TextNormalisation.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs" Link="Reused/IntegrityRules.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs" Link="Reused/AccountingVerifier.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/BlockSource.cs" Link="Reused/BlockSource.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs" Link="Reused/ProcessTreeSampler.cs" />
+    <Compile Include="../../03-pdf-assembly/PdfAssemblySpike/PgmImage.cs" Link="Reused/PgmImage.cs" />
+  </ItemGroup>
+</Project>

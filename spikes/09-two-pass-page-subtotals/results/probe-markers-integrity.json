@@ -1,0 +1,494 @@
+{
+  "checker": {
+    "poppler": {
+      "pdftotext": "pdftotext version 24.02.0",
+      "pdfinfo": "pdfinfo version 24.02.0"
+    },
+    "startedAt": "2026-10-23T04:52:51\u002B00:00",
+    "endedAt": "2026-10-23T04:52:53\u002B00:00",
+    "timeoutSeconds": 300,
+    "fixtureSumsSha256": "db1ce1a7f0dcab7571f84aec2f437e94d8b976c46d3421269cb2c20e3d57c52c",
+    "normalisation": "NFKC, then every whitespace character removed; nothing else"
+  },
+  "runs": [
+    {
+      "runId": "B100-table-c-r1.p1",
+      "fixtureId": "B100",
+      "markup": "table",
+      "repetition": 1,
+      "outcome": "ok",
+      "verdict": "pass",
+      "pages": 4,
+      "contentSha256": "7e5db0d96a2c85d27cd4b98fda3d78e8f4656a3ca6c5c4075c18bebf2fff85a4",
+      "pageWordCounts": [
+        487,
+        465,
+        565,
+        204
+      ],
+      "failureCount": 0,
+      "failureClasses": [],
+      "failures": [],
+      "rules": {
+        "TI-1": "pass",
+        "TI-2": "pass",
+        "TI-3": "pass",
+        "TI-4": "pass",
+        "TI-5": "pass",
+        "TI-6": "pass",
+        "TI-7": "pass",
+        "TI-8": "pass"
+      },
+      "observations": {
+        "multiPageRows": [],
+        "rowsSpanningThreeOrMorePages": [],
+        "tallRows": [
+          {
+            "row": 50,
+            "firstPage": 2,
+            "lastPage": 2,
+            "pages": 1,
+            "amountPage": 2,
+            "amountPosition": "last"
+          }
+        ],
+        "headerRowsPerPage": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1
+        },
+        "textsCompared": 302,
+        "textsWithWordBoundaryDifferences": 0,
+        "expectedWords": 1598,
+        "actualWords": 1598,
+        "rawLigatures": 0,
+        "groupStarts": [
+          {
+            "group": "G0001",
+            "page": 1,
+            "lastLineOfPage": false
+          }
+        ],
+        "bands": [
+          {
+            "page": 1,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 1 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 2,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 2 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 3,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 3 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 4,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 4 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          }
+        ]
+      },
+      "checkSeconds": 0.43
+    },
+    {
+      "runId": "B100-grid-c-r1.p1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "outcome": "ok",
+      "verdict": "pass",
+      "pages": 4,
+      "contentSha256": "22e36d6d8ec9647bd420c7963bc196fb5cfba15926090ef89e5bd1dbf496a34d",
+      "pageWordCounts": [
+        487,
+        469,
+        575,
+        178
+      ],
+      "failureCount": 0,
+      "failureClasses": [],
+      "failures": [],
+      "rules": {
+        "TI-1": "pass",
+        "TI-2": "pass",
+        "TI-3": "pass",
+        "TI-4": "pass",
+        "TI-5": "pass",
+        "TI-6": "pass",
+        "TI-7": "pass",
+        "TI-8": "pass"
+      },
+      "observations": {
+        "multiPageRows": [],
+        "rowsSpanningThreeOrMorePages": [],
+        "tallRows": [
+          {
+            "row": 50,
+            "firstPage": 2,
+            "lastPage": 2,
+            "pages": 1,
+            "amountPage": 2,
+            "amountPosition": "last"
+          }
+        ],
+        "headerRowsPerPage": {
+          "1": 1
+        },
+        "textsCompared": 302,
+        "textsWithWordBoundaryDifferences": 0,
+        "expectedWords": 1598,
+        "actualWords": 1598,
+        "rawLigatures": 0,
+        "groupStarts": [
+          {
+            "group": "G0001",
+            "page": 1,
+            "lastLineOfPage": false
+          }
+        ],
+        "bands": [
+          {
+            "page": 1,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 1 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 2,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 2 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 3,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 3 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 4,
+            "headerLeft": "Pagination fixture B100",
+            "headerCentre": "",
+            "headerRight": "Page 4 of 4",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          }
+        ]
+      },
+      "checkSeconds": 0.3
+    },
+    {
+      "runId": "T300u-table-c-r1.p1",
+      "fixtureId": "T300u",
+      "markup": "table",
+      "repetition": 1,
+      "outcome": "ok",
+      "verdict": "pass",
+      "pages": 7,
+      "contentSha256": "fe7803fbb887d5eba128c6e4c2d9a500355c2cd8a7b96a53b40c36c208f747d9",
+      "pageWordCounts": [
+        487,
+        219,
+        733,
+        723,
+        730,
+        548,
+        489
+      ],
+      "failureCount": 0,
+      "failureClasses": [],
+      "failures": [],
+      "rules": {
+        "TI-1": "pass",
+        "TI-2": "pass",
+        "TI-3": "pass",
+        "TI-4": "pass",
+        "TI-5": "pass",
+        "TI-6": "pass",
+        "TI-7": "pass",
+        "TI-8": "pass"
+      },
+      "observations": {
+        "multiPageRows": [
+          {
+            "row": 50,
+            "firstPage": 3,
+            "lastPage": 6,
+            "pages": 4,
+            "amountPage": 3,
+            "amountPosition": "first"
+          }
+        ],
+        "rowsSpanningThreeOrMorePages": [
+          50
+        ],
+        "tallRows": [
+          {
+            "row": 50,
+            "firstPage": 3,
+            "lastPage": 6,
+            "pages": 4,
+            "amountPage": 3,
+            "amountPosition": "first"
+          }
+        ],
+        "headerRowsPerPage": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1,
+          "6": 1,
+          "7": 1
+        },
+        "textsCompared": 302,
+        "textsWithWordBoundaryDifferences": 0,
+        "expectedWords": 3794,
+        "actualWords": 3794,
+        "rawLigatures": 0,
+        "groupStarts": [
+          {
+            "group": "G0001",
+            "page": 1,
+            "lastLineOfPage": false
+          }
+        ],
+        "bands": [
+          {
+            "page": 1,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 1 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 2,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 2 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 3,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 3 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 4,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 4 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 5,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 5 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 6,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 6 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 7,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 7 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          }
+        ]
+      },
+      "checkSeconds": 0.4
+    },
+    {
+      "runId": "T300u-grid-c-r1.p1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "outcome": "ok",
+      "verdict": "pass",
+      "pages": 7,
+      "contentSha256": "145173986be9b2c4df324557581939d0bcd241c7ebc1d07eda3533186a0a61f9",
+      "pageWordCounts": [
+        487,
+        215,
+        740,
+        730,
+        736,
+        537,
+        460
+      ],
+      "failureCount": 0,
+      "failureClasses": [],
+      "failures": [],
+      "rules": {
+        "TI-1": "pass",
+        "TI-2": "pass",
+        "TI-3": "pass",
+        "TI-4": "pass",
+        "TI-5": "pass",
+        "TI-6": "pass",
+        "TI-7": "pass",
+        "TI-8": "pass"
+      },
+      "observations": {
+        "multiPageRows": [
+          {
+            "row": 50,
+            "firstPage": 3,
+            "lastPage": 6,
+            "pages": 4,
+            "amountPage": 3,
+            "amountPosition": "first"
+          }
+        ],
+        "rowsSpanningThreeOrMorePages": [
+          50
+        ],
+        "tallRows": [
+          {
+            "row": 50,
+            "firstPage": 3,
+            "lastPage": 6,
+            "pages": 4,
+            "amountPage": 3,
+            "amountPosition": "first"
+          }
+        ],
+        "headerRowsPerPage": {
+          "1": 1
+        },
+        "textsCompared": 302,
+        "textsWithWordBoundaryDifferences": 0,
+        "expectedWords": 3794,
+        "actualWords": 3794,
+        "rawLigatures": 0,
+        "groupStarts": [
+          {
+            "group": "G0001",
+            "page": 1,
+            "lastLineOfPage": false
+          }
+        ],
+        "bands": [
+          {
+            "page": 1,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 1 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 2,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 2 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 3,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 3 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 4,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 4 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 5,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 5 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 6,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 6 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          },
+          {
+            "page": 7,
+            "headerLeft": "Pagination fixture T300u",
+            "headerCentre": "",
+            "headerRight": "Page 7 of 7",
+            "footerLeft": "",
+            "footerCentre": "",
+            "footerRight": ""
+          }
+        ]
+      },
+      "checkSeconds": 0.37
+    }
+  ]
+}

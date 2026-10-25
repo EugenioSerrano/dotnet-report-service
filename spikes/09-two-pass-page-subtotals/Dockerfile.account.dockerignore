@@ -1,0 +1,23 @@
+# Allow-list build context for the accounting checker image: everything is
+# excluded, then only the files the build stage copies are let back in.
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/07-native-tall-rows/PaginationFixtures/**
+!spikes/07-native-tall-rows/TextIntegrityCheck/Poppler.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs
+!spikes/03-pdf-assembly/PdfAssemblySpike/PgmImage.cs
+!spikes/09-two-pass-page-subtotals/Directory.Packages.props
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/**
+spikes/07-native-tall-rows/PaginationFixtures/bin
+spikes/07-native-tall-rows/PaginationFixtures/obj
+spikes/09-two-pass-page-subtotals/PageAccountingCheck/bin
+spikes/09-two-pass-page-subtotals/PageAccountingCheck/obj

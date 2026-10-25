@@ -1,0 +1,175 @@
+/*
+  Base stylesheet of the native layout experiment. Page size, margins, the
+  header and the page counter (native @page margin boxes) and the font family
+  are generated per run, next to this file, by the HTML builder. Cell padding
+  and column widths are those of the earlier layout spike
+  (spikes/02-pdf-layout): the 2 mm text gutter between columns keeps a PDF
+  reader from merging words of neighbouring cells.
+*/
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-size: 9pt;
+    line-height: 1.25;
+    color: #000;
+    hyphens: manual;
+}
+
+h1.title {
+    font-size: 13pt;
+    margin: 0 0 3mm 0;
+}
+
+.free p {
+    margin: 0 0 2mm 0;
+}
+
+.free-after {
+    margin-top: 3mm;
+}
+
+/* Row markup "table" */
+table.rows {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+table.rows col.c-seq {
+    width: 14mm;
+}
+
+table.rows col.c-date {
+    width: 22mm;
+}
+
+table.rows col.c-note {
+    width: 60mm;
+}
+
+table.rows col.c-amount {
+    width: 30mm;
+}
+
+table.rows th,
+table.rows td {
+    padding: 0.6mm 1mm;
+    vertical-align: top;
+    text-align: left;
+}
+
+table.rows th {
+    border-bottom: 0.3mm solid #000;
+}
+
+.align-bottom table.rows tr.item td.amount {
+    vertical-align: bottom;
+}
+
+/* Row markup "grid" */
+.rows-grid .grid-head,
+.rows-grid .item,
+.rows-grid .group-end,
+.rows-grid .block-total {
+    display: grid;
+    grid-template-columns: 14mm 22mm 1fr 30mm;
+}
+
+.five-column .rows-grid .grid-head,
+.five-column .rows-grid .item,
+.five-column .rows-grid .group-end,
+.five-column .rows-grid .block-total {
+    grid-template-columns: 14mm 22mm 1fr 60mm 30mm;
+}
+
+.rows-grid .grid-head {
+    font-weight: bold;
+    border-bottom: 0.3mm solid #000;
+}
+
+.rows-grid .grid-head > div,
+.rows-grid .item > div,
+.rows-grid .group-end > div,
+.rows-grid .block-total > div,
+.rows-grid .group-start {
+    padding: 0.6mm 1mm;
+}
+
+.rows-grid .seq {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.rows-grid .date {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.rows-grid .desc {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.rows-grid .note {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+.rows-grid .amount {
+    grid-column: -2;
+    grid-row: 1;
+}
+
+.rows-grid .label {
+    grid-column: 1 / -2;
+    grid-row: 1;
+}
+
+.align-bottom .rows-grid .item .amount {
+    align-self: end;
+}
+
+/* Common to both markups */
+.amount {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.desc,
+.note {
+    overflow-wrap: anywhere;
+}
+
+.pre-line .desc,
+.pre-line .note {
+    white-space: pre-line;
+}
+
+.group-start,
+.group-start td {
+    font-weight: bold;
+    padding-top: 1.5mm;
+}
+
+.group-end,
+.group-end td,
+.block-total,
+.block-total td {
+    font-weight: bold;
+}
+
+/* Keep policy: rows are kept together when they fit; taller rows fragment natively. */
+.item {
+    break-inside: avoid;
+}
+
+/* Row markers: links around text the row prints anyway; they must not change how it looks. */
+.mk {
+    color: inherit;
+    text-decoration: none;
+}

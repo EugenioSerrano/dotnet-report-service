@@ -1,0 +1,35 @@
+# Accounting checker image: the .NET runtime base plus poppler-utils (reads the
+# printed text and renders pages) and qpdf (reads the PDF structure as written).
+# It holds no browser, no browser automation and no PDF library, so the checker is
+# independent of the engine and of the second pass whose output it checks.
+# Requires BuildKit.
+
+# Build stage — same SDK band as global.json. The checker links files of three
+# earlier experiments unchanged, so those files are in the context.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+WORKDIR /repo
+COPY global.json Directory.Build.props NuGet.config .editorconfig ./
+COPY spikes/Directory.Build.props spikes/
+COPY spikes/07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/09-two-pass-page-subtotals/Directory.Packages.props spikes/09-two-pass-page-subtotals/
+COPY spikes/09-two-pass-page-subtotals/PageAccountingCheck/PageAccountingCheck.csproj spikes/09-two-pass-page-subtotals/PageAccountingCheck/
+RUN dotnet restore spikes/09-two-pass-page-subtotals/PageAccountingCheck/PageAccountingCheck.csproj
+COPY spikes/07-native-tall-rows/PaginationFixtures/ spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/07-native-tall-rows/TextIntegrityCheck/Poppler.cs spikes/07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs spikes/07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs spikes/07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs spikes/07-native-tall-rows/TextIntegrityCheck/
+COPY spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs spikes/02-pdf-layout/PdfLayoutSpike/
+COPY spikes/03-pdf-assembly/PdfAssemblySpike/PgmImage.cs spikes/03-pdf-assembly/PdfAssemblySpike/
+COPY spikes/09-two-pass-page-subtotals/PageAccountingCheck/ spikes/09-two-pass-page-subtotals/PageAccountingCheck/
+RUN dotnet publish spikes/09-two-pass-page-subtotals/PageAccountingCheck/PageAccountingCheck.csproj \
+    -c Release --no-restore -o /app \
+    -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false
+
+# Runtime stage — the same .NET runtime base as the product's images, plus the
+# PDF reading tools from the Ubuntu archive. This image is never published.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble AS final
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils qpdf \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /out /work && chown "$APP_UID" /out /work
+WORKDIR /app
+COPY --from=build /app ./
+USER $APP_UID
+ENTRYPOINT ["dotnet", "PageAccountingCheck.dll"]

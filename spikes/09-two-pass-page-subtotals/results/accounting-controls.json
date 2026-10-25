@@ -1,0 +1,64 @@
+{
+  "controls": [
+    {
+      "id": "BX-1",
+      "base": "B100-grid-s-r1.p1",
+      "change": "the rounded reference built from the pass-1 PDF",
+      "expected": "every construction check holds",
+      "behaved": "yes",
+      "counted": true,
+      "observed": [],
+      "detail": "4 pages, 32 differing bytes, all inside the box numbers; size 72630; check exit 0, 0 warnings; sha256 57e4c1d345009a9754027f0534df438a906041b98fe1088d3888fda556121c3a"
+    },
+    {
+      "id": "BX-2",
+      "base": "B100-grid-s-r1.p2",
+      "change": "a copy of the pass-2 PDF with the width of the first page box in the file byte-edited to 594.97",
+      "expected": "box-differs on that page only",
+      "behaved": "yes",
+      "counted": true,
+      "observed": [
+        "box-differs p1"
+      ],
+      "detail": "\u0027594.96\u0027 edited to \u0027594.97\u0027 at byte 367; 4 pages read"
+    },
+    {
+      "id": "XC-1",
+      "base": "T300u-grid-s-r1.p2",
+      "change": "every footer mark moved into the continuing row\u0027s amount band, same page",
+      "expected": "rules 1\u20138 pass (either placement accepted)",
+      "behaved": "yes",
+      "counted": true,
+      "observed": [],
+      "detail": "3 marks moved: pages 3,4,5"
+    },
+    {
+      "id": "XC-2",
+      "base": "T300u-grid-s-r1.p2",
+      "change": "on the first page with a mark, the mark kept in the footer and also printed in the row\u0027s amount band",
+      "expected": "continues-marks fails on that page only",
+      "behaved": "yes",
+      "counted": true,
+      "observed": [
+        "continues-marks p3"
+      ],
+      "detail": "page 3"
+    },
+    {
+      "id": "RB-3-swap",
+      "base": "B100-grid-s-r1",
+      "change": "the labels of rows 10 and 11 exchanged in the reported read-back (the first definition of the order fault)",
+      "expected": "recorded only: shows which checks a label swap fails",
+      "behaved": "recorded",
+      "counted": false,
+      "observed": [
+        "RB-c readback-order: position 10: row 11 where the block has row 10",
+        "RB-d readback-position: row 11: the start rectangle does not hold the sequence number\u0027s centre (41.25, 431.13)",
+        "RB-d readback-position: row 11: the end rectangle does not hold the centre (451.04, 431.13) of \u0027se\u00F1al\u0027",
+        "RB-d readback-position: row 10: the start rectangle does not hold the sequence number\u0027s centre (41.58, 416.13)",
+        "RB-d readback-position: row 10: the end rectangle does not hold the centre (277.02, 416.13) of \u0027mantenimiento\u0027"
+      ],
+      "detail": "2 check(s) fail: RB-c, RB-d"
+    }
+  ]
+}

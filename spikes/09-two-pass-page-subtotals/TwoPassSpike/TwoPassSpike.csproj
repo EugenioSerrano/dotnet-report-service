@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Two-pass harness: the first pass prints a fixture with Chromium's own print
+    layout and invisible row markers; the second pass reads the markers back
+    from the PDF, computes the page subtotals and the brought/carried-forward
+    chain, stamps them into the reserved bottom margin, removes the markers and
+    saves. One fresh process per pass. It reads fixture files; it never
+    generates them.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TwoPassSpike</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="PDFsharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
