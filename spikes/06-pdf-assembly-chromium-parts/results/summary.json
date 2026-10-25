@@ -1,0 +1,900 @@
+{
+  "started": "2026-10-23T04:09:26.3216837\u002B00:00",
+  "finished": "2026-10-23T04:27:43.0462353\u002B00:00",
+  "quick": false,
+  "repetitions": 3,
+  "sizes": [
+    1000,
+    5000,
+    10000
+  ],
+  "batchSize": 25,
+  "environment": {
+    "runtimeVersion": "10.0.13",
+    "frameworkDescription": ".NET 10.0.13",
+    "osDescription": "Ubuntu 24.04.5 LTS",
+    "processArchitecture": "X64",
+    "processorCount": 4,
+    "serverGc": false,
+    "pdfLibraryAssemblyVersion": "6.2.4.0",
+    "pdfLibraryInformationalVersion": "6.2.4\u002B362d80539100d2d5bba04d58dd13ae14e12cd780",
+    "qpdf": "qpdf version 12.4.2",
+    "qpdfReleaseVersion": "12.4.2",
+    "qpdfArchiveSha256": "db367d897829f22c4198ce1094143c9d467bd6ee7dfabc44ba6f02056b24f8b1",
+    "pdftotext": "pdftotext version 24.02.0",
+    "pdftoppm": "pdftoppm version 24.02.0",
+    "gnuTime": "time (GNU Time) UNKNOWN",
+    "packageList": [
+      "fonts-dejavu-core\t2.37-8",
+      "poppler-utils\t24.02.0-1ubuntu9.11",
+      "time\t1.9-0.2build1"
+    ],
+    "memoryMax": "8589934592",
+    "memorySwapMax": "0",
+    "cpuMax": "400000 100000",
+    "userId": "1654",
+    "fontsPresent": true,
+    "timeLabelsPresent": true,
+    "loadAverageStart": "1.02 1.64 1.52 1/426 14",
+    "loadAverageEnd": "1.21 1.27 1.34 1/432 13521",
+    "hostContainersBefore": "report-service-dev-registry registry:3.1.2 Up 2 hours"
+  },
+  "isolation": {
+    "loadAverageStart": "1.02 1.64 1.52 1/426 14",
+    "processorCount": 4,
+    "memoryMax": "8589934592",
+    "memorySwapMax": "0",
+    "cpuMax": "400000 100000",
+    "hostContainersBefore": "report-service-dev-registry registry:3.1.2 Up 2 hours",
+    "loadAverageEnd": "1.21 1.27 1.34 1/432 13521"
+  },
+  "sets": {
+    "1000": {
+      "parts": 50,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 3680742,
+      "bytesPerPage": 3680.7,
+      "manifestSha256": "066520ee46b238958f0051c05cc5068d91f9df38cf297d7fa749e6006cc15130",
+      "manifestSha256Note": "raw; carries the parts\u0027 raw hashes, which change with the print time",
+      "contentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+      "producer": {
+        "codeCommit": "eebc9ba",
+        "pagedJsVersion": "0.4.3",
+        "pagedJsSha256": "f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f",
+        "configuration": "paged-table-keep",
+        "footer": "on",
+        "playwrightVersion": "1.63.0",
+        "chromiumVersion": "153.0.8010.12",
+        "baseImageDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+        "font": "Liberation Sans",
+        "dotnetVersion": "10.0.13"
+      },
+      "dataset": {
+        "file": "header-items-v1.grouped.200k.json",
+        "sha256": "f36e6f4115bc71c13c5c0aebf399015357d0ddc54b3ee0a90712c2dc87db9615",
+        "records": 200000,
+        "exclusion": {
+          "rule": "A record is ordinary exactly when its description has fewer than 1500 UTF-16 code units; every other record is left out of every part.",
+          "threshold": 1500,
+          "excludedCount": 1990,
+          "ordinaryRecords": 198010,
+          "largestBelow": 609,
+          "smallestAtOrAbove": 1500
+        }
+      },
+      "recordsUsed": 16558
+    },
+    "5000": {
+      "parts": 250,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 18429928,
+      "bytesPerPage": 3686,
+      "manifestSha256": "d31b3c8dea4847224e5951afb554b64c5d20663693e92f2a43f47ef9e4ec99b1",
+      "manifestSha256Note": "raw; carries the parts\u0027 raw hashes, which change with the print time",
+      "contentSetDigest": "22b1b06cd8a636697f6844ffcbc59a3d3af212b0b18f6ca9fdb491f51a59eff8",
+      "producer": {
+        "codeCommit": "eebc9ba",
+        "pagedJsVersion": "0.4.3",
+        "pagedJsSha256": "f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f",
+        "configuration": "paged-table-keep",
+        "footer": "on",
+        "playwrightVersion": "1.63.0",
+        "chromiumVersion": "153.0.8010.12",
+        "baseImageDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+        "font": "Liberation Sans",
+        "dotnetVersion": "10.0.13"
+      },
+      "dataset": {
+        "file": "header-items-v1.grouped.200k.json",
+        "sha256": "f36e6f4115bc71c13c5c0aebf399015357d0ddc54b3ee0a90712c2dc87db9615",
+        "records": 200000,
+        "exclusion": {
+          "rule": "A record is ordinary exactly when its description has fewer than 1500 UTF-16 code units; every other record is left out of every part.",
+          "threshold": 1500,
+          "excludedCount": 1990,
+          "ordinaryRecords": 198010,
+          "largestBelow": 609,
+          "smallestAtOrAbove": 1500
+        }
+      },
+      "recordsUsed": 81844
+    },
+    "10000": {
+      "parts": 500,
+      "minPagesPerPart": 10,
+      "maxPagesPerPart": 30,
+      "inputBytes": 36840699,
+      "bytesPerPage": 3684.1,
+      "manifestSha256": "9f76a12713eba7dca6a80d9e4f9b3234979c5353c057b448c038d4f1756af518",
+      "manifestSha256Note": "raw; carries the parts\u0027 raw hashes, which change with the print time",
+      "contentSetDigest": "749bf5c7e47e364e01dc5cc883c5d06e1ad63bb01edfe9ae8d01f22a2990de5e",
+      "producer": {
+        "codeCommit": "eebc9ba",
+        "pagedJsVersion": "0.4.3",
+        "pagedJsSha256": "f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f",
+        "configuration": "paged-table-keep",
+        "footer": "on",
+        "playwrightVersion": "1.63.0",
+        "chromiumVersion": "153.0.8010.12",
+        "baseImageDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+        "font": "Liberation Sans",
+        "dotnetVersion": "10.0.13"
+      },
+      "dataset": {
+        "file": "header-items-v1.grouped.200k.json",
+        "sha256": "f36e6f4115bc71c13c5c0aebf399015357d0ddc54b3ee0a90712c2dc87db9615",
+        "records": 200000,
+        "exclusion": {
+          "rule": "A record is ordinary exactly when its description has fewer than 1500 UTF-16 code units; every other record is left out of every part.",
+          "threshold": 1500,
+          "excludedCount": 1990,
+          "ordinaryRecords": 198010,
+          "largestBelow": 609,
+          "smallestAtOrAbove": 1500
+        }
+      },
+      "recordsUsed": 163374
+    }
+  },
+  "repeatSet": {
+    "parts": 50,
+    "minPagesPerPart": 10,
+    "maxPagesPerPart": 30,
+    "inputBytes": 3680742,
+    "bytesPerPage": 3680.7,
+    "manifestSha256": "72c119398a6e22fda21489125fe30f24e412a10434ad05ce23309bd95b2c6e93",
+    "manifestSha256Note": "raw; carries the parts\u0027 raw hashes, which change with the print time",
+    "contentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+    "producer": {
+      "codeCommit": "eebc9ba",
+      "pagedJsVersion": "0.4.3",
+      "pagedJsSha256": "f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f",
+      "configuration": "paged-table-keep",
+      "footer": "on",
+      "playwrightVersion": "1.63.0",
+      "chromiumVersion": "153.0.8010.12",
+      "baseImageDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+      "font": "Liberation Sans",
+      "dotnetVersion": "10.0.13"
+    },
+    "dataset": {
+      "file": "header-items-v1.grouped.200k.json",
+      "sha256": "f36e6f4115bc71c13c5c0aebf399015357d0ddc54b3ee0a90712c2dc87db9615",
+      "records": 200000,
+      "exclusion": {
+        "rule": "A record is ordinary exactly when its description has fewer than 1500 UTF-16 code units; every other record is left out of every part.",
+        "threshold": 1500,
+        "excludedCount": 1990,
+        "ordinaryRecords": 198010,
+        "largestBelow": 609,
+        "smallestAtOrAbove": 1500
+      }
+    },
+    "recordsUsed": 16558
+  },
+  "reproducibility": {
+    "withinRun": {
+      "parts": 850,
+      "mismatchesAfterCopy": 0,
+      "mismatchesAtEnd": 0,
+      "firstMismatch": null,
+      "identical": true
+    },
+    "acrossGenerations": {
+      "size": 1000,
+      "verdict": "content-identical",
+      "pairs": 50,
+      "contentIdentical": 50,
+      "firstContentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+      "repeatContentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+      "classifications": {
+        "info-dates-only": 50
+      },
+      "rawDifferingBytesMin": 6,
+      "rawDifferingBytesMax": 6,
+      "rawBytesNote": "recorded and classified, never a pass condition; nothing is masked",
+      "controlsPass": true
+    }
+  },
+  "inputRows": {
+    "1000": {
+      "pass": true,
+      "recordsUsed": 16558,
+      "usedFirstSequence": 1,
+      "usedLastSequence": 16723,
+      "excludedInUsedRange": 165,
+      "longestUsedDescription": 606,
+      "excludedInDataset": 1990,
+      "threshold": 1500,
+      "largestBelow": 609,
+      "smallestAtOrAbove": 1500,
+      "firstFailure": null
+    },
+    "5000": {
+      "pass": true,
+      "recordsUsed": 81844,
+      "usedFirstSequence": 1,
+      "usedLastSequence": 82665,
+      "excludedInUsedRange": 821,
+      "longestUsedDescription": 608,
+      "excludedInDataset": 1990,
+      "threshold": 1500,
+      "largestBelow": 609,
+      "smallestAtOrAbove": 1500,
+      "firstFailure": null
+    },
+    "10000": {
+      "pass": true,
+      "recordsUsed": 163374,
+      "usedFirstSequence": 1,
+      "usedLastSequence": 165033,
+      "excludedInUsedRange": 1659,
+      "longestUsedDescription": 609,
+      "excludedInDataset": 1990,
+      "threshold": 1500,
+      "largestBelow": 609,
+      "smallestAtOrAbove": 1500,
+      "firstFailure": null
+    },
+    "1000-repeat": {
+      "pass": true,
+      "recordsUsed": 16558,
+      "usedFirstSequence": 1,
+      "usedLastSequence": 16723,
+      "excludedInUsedRange": 165,
+      "longestUsedDescription": 606,
+      "excludedInDataset": 1990,
+      "threshold": 1500,
+      "largestBelow": 609,
+      "smallestAtOrAbove": 1500,
+      "firstFailure": null
+    }
+  },
+  "fixture": {
+    "1000": {
+      "pages": 1000,
+      "areaEmpty": true,
+      "pagesWithWordInArea": 0,
+      "pixelPagesChecked": 1000,
+      "pixelPagesNotWhite": 0,
+      "pagesUnique": true,
+      "ownCounter": true,
+      "bottomBandPages": 1000,
+      "bottomBandDistinctPatterns": 1,
+      "bottomBandPatterns": [
+        {
+          "pattern": "Brought forward: # Page subtotal: # Carried forward: #",
+          "pages": 1000
+        }
+      ],
+      "contentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+      "boxesPass": true,
+      "sourceBoxValues": [
+        {
+          "box": "[0 0 594.95996 841.91998]",
+          "pages": 1000
+        }
+      ],
+      "roundedPixelPagesNotWhite": 0,
+      "roundedCopiesBuilt": 50
+    },
+    "5000": {
+      "pages": 5000,
+      "areaEmpty": true,
+      "pagesWithWordInArea": 0,
+      "pixelPagesChecked": 30,
+      "pixelPagesNotWhite": 0,
+      "pagesUnique": true,
+      "ownCounter": true,
+      "bottomBandPages": 5000,
+      "bottomBandDistinctPatterns": 1,
+      "bottomBandPatterns": [
+        {
+          "pattern": "Brought forward: # Page subtotal: # Carried forward: #",
+          "pages": 5000
+        }
+      ],
+      "contentSetDigest": "22b1b06cd8a636697f6844ffcbc59a3d3af212b0b18f6ca9fdb491f51a59eff8",
+      "boxesPass": true,
+      "sourceBoxValues": [
+        {
+          "box": "[0 0 594.95996 841.91998]",
+          "pages": 5000
+        }
+      ],
+      "roundedPixelPagesNotWhite": 0,
+      "roundedCopiesBuilt": 250
+    },
+    "10000": {
+      "pages": 10000,
+      "areaEmpty": true,
+      "pagesWithWordInArea": 0,
+      "pixelPagesChecked": 30,
+      "pixelPagesNotWhite": 0,
+      "pagesUnique": true,
+      "ownCounter": true,
+      "bottomBandPages": 10000,
+      "bottomBandDistinctPatterns": 1,
+      "bottomBandPatterns": [
+        {
+          "pattern": "Brought forward: # Page subtotal: # Carried forward: #",
+          "pages": 10000
+        }
+      ],
+      "contentSetDigest": "749bf5c7e47e364e01dc5cc883c5d06e1ad63bb01edfe9ae8d01f22a2990de5e",
+      "boxesPass": true,
+      "sourceBoxValues": [
+        {
+          "box": "[0 0 594.95996 841.91998]",
+          "pages": 10000
+        }
+      ],
+      "roundedPixelPagesNotWhite": 0,
+      "roundedCopiesBuilt": 500
+    },
+    "1000-repeat": {
+      "pages": 1000,
+      "areaEmpty": true,
+      "pagesWithWordInArea": 0,
+      "pixelPagesChecked": 1000,
+      "pixelPagesNotWhite": 0,
+      "pagesUnique": true,
+      "ownCounter": true,
+      "bottomBandPages": 1000,
+      "bottomBandDistinctPatterns": 1,
+      "bottomBandPatterns": [
+        {
+          "pattern": "Brought forward: # Page subtotal: # Carried forward: #",
+          "pages": 1000
+        }
+      ],
+      "contentSetDigest": "3268b8076f9298a83e727a650dc0c7580909724a695b534d5db801890dfa2526",
+      "boxesPass": true,
+      "sourceBoxValues": [
+        {
+          "box": "[0 0 594.95996 841.91998]",
+          "pages": 1000
+        }
+      ],
+      "roundedPixelPagesNotWhite": 0,
+      "roundedCopiesBuilt": 50
+    }
+  },
+  "controlsPass": true,
+  "sourcePartChecks": {
+    "1000": {
+      "targetPages": 1000,
+      "parts": 50,
+      "passClean": 50,
+      "passExempt": 0,
+      "fail": 0,
+      "minWarningLines": 0,
+      "maxWarningLines": 0,
+      "sumWarningLines": 0,
+      "sumExemptWarningLines": 0
+    },
+    "5000": {
+      "targetPages": 5000,
+      "parts": 250,
+      "passClean": 250,
+      "passExempt": 0,
+      "fail": 0,
+      "minWarningLines": 0,
+      "maxWarningLines": 0,
+      "sumWarningLines": 0,
+      "sumExemptWarningLines": 0
+    },
+    "10000": {
+      "targetPages": 10000,
+      "parts": 500,
+      "passClean": 500,
+      "passExempt": 0,
+      "fail": 0,
+      "minWarningLines": 0,
+      "maxWarningLines": 0,
+      "sumWarningLines": 0,
+      "sumExemptWarningLines": 0
+    },
+    "1000-repeat": {
+      "targetPages": 1000,
+      "parts": 50,
+      "passClean": 50,
+      "passExempt": 0,
+      "fail": 0,
+      "minWarningLines": 0,
+      "maxWarningLines": 0,
+      "sumWarningLines": 0,
+      "sumExemptWarningLines": 0
+    }
+  },
+  "outputChecks": {
+    "outputs": 45,
+    "passClean": 18,
+    "passExempt": 27,
+    "fail": 0,
+    "minWarningLines": 0,
+    "maxWarningLines": 40500
+  },
+  "combinations": [
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 76.62,
+        "max": 76.65
+      },
+      "managedHeapPeakMiB": {
+        "median": 22.3,
+        "max": 22.3
+      },
+      "wallSeconds": {
+        "median": 0.44,
+        "max": 0.48
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.49,
+        "max": 3.49
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 105.86,
+        "max": 106.29
+      },
+      "managedHeapPeakMiB": {
+        "median": 40.55,
+        "max": 41.51
+      },
+      "wallSeconds": {
+        "median": 0.82,
+        "max": 0.82
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.69,
+        "max": 3.69
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 96.77,
+        "max": 96.91
+      },
+      "managedHeapPeakMiB": {
+        "median": 34.94,
+        "max": 36.1
+      },
+      "wallSeconds": {
+        "median": 1.15,
+        "max": 1.17
+      },
+      "tempDiskPeakMiB": {
+        "median": 3.7,
+        "max": 3.7
+      },
+      "outputMiB": {
+        "median": 3.71,
+        "max": 3.71
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 24.41,
+        "max": 24.52
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 0.12,
+        "max": 0.12
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 3.5,
+        "max": 3.5
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 1000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 70.25,
+        "max": 71.16
+      },
+      "managedHeapPeakMiB": {
+        "median": 20.96,
+        "max": 21.09
+      },
+      "wallSeconds": {
+        "median": 0.94,
+        "max": 0.97
+      },
+      "tempDiskPeakMiB": {
+        "median": 4.76,
+        "max": 4.76
+      },
+      "outputMiB": {
+        "median": 4.74,
+        "max": 4.74
+      }
+    },
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 111.7,
+        "max": 111.85
+      },
+      "managedHeapPeakMiB": {
+        "median": 56.67,
+        "max": 57.1
+      },
+      "wallSeconds": {
+        "median": 1.47,
+        "max": 1.58
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 17.46,
+        "max": 17.46
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 203.25,
+        "max": 203.73
+      },
+      "managedHeapPeakMiB": {
+        "median": 140.59,
+        "max": 141.04
+      },
+      "wallSeconds": {
+        "median": 3.01,
+        "max": 3.06
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 18.39,
+        "max": 18.39
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 144.06,
+        "max": 144.32
+      },
+      "managedHeapPeakMiB": {
+        "median": 75.95,
+        "max": 78.77
+      },
+      "wallSeconds": {
+        "median": 3.98,
+        "max": 4.07
+      },
+      "tempDiskPeakMiB": {
+        "median": 18.55,
+        "max": 18.55
+      },
+      "outputMiB": {
+        "median": 18.59,
+        "max": 18.59
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 81.75,
+        "max": 81.86
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 0.76,
+        "max": 0.77
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 17.55,
+        "max": 17.55
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 5000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 122.83,
+        "max": 123.05
+      },
+      "managedHeapPeakMiB": {
+        "median": 23.07,
+        "max": 23.27
+      },
+      "wallSeconds": {
+        "median": 3.86,
+        "max": 3.91
+      },
+      "tempDiskPeakMiB": {
+        "median": 23.83,
+        "max": 23.83
+      },
+      "outputMiB": {
+        "median": 23.74,
+        "max": 23.74
+      }
+    },
+    {
+      "variant": "V1",
+      "variantName": "pdfsharp-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 155.98,
+        "max": 156.73
+      },
+      "managedHeapPeakMiB": {
+        "median": 94.63,
+        "max": 95.78
+      },
+      "wallSeconds": {
+        "median": 2.77,
+        "max": 3
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 34.94,
+        "max": 34.94
+      }
+    },
+    {
+      "variant": "V2",
+      "variantName": "pdfsharp-merge-stamp",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 335.28,
+        "max": 341.23
+      },
+      "managedHeapPeakMiB": {
+        "median": 270.43,
+        "max": 270.56
+      },
+      "wallSeconds": {
+        "median": 5.61,
+        "max": 6.22
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 36.77,
+        "max": 36.77
+      }
+    },
+    {
+      "variant": "V3",
+      "variantName": "pdfsharp-staged",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 192.67,
+        "max": 197.35
+      },
+      "managedHeapPeakMiB": {
+        "median": 115.62,
+        "max": 119.04
+      },
+      "wallSeconds": {
+        "median": 6.11,
+        "max": 6.36
+      },
+      "tempDiskPeakMiB": {
+        "median": 37.08,
+        "max": 37.08
+      },
+      "outputMiB": {
+        "median": 37.2,
+        "max": 37.2
+      }
+    },
+    {
+      "variant": "V4",
+      "variantName": "qpdf-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 154.41,
+        "max": 154.41
+      },
+      "managedHeapPeakMiB": {
+        "median": null,
+        "max": null
+      },
+      "wallSeconds": {
+        "median": 1.55,
+        "max": 1.63
+      },
+      "tempDiskPeakMiB": {
+        "median": 0,
+        "max": 0
+      },
+      "outputMiB": {
+        "median": 35.11,
+        "max": 35.11
+      }
+    },
+    {
+      "variant": "V5",
+      "variantName": "pdfsharp-stamp-qpdf-merge",
+      "size": 10000,
+      "repetitions": 3,
+      "successful": 3,
+      "limits": [],
+      "peakRssMiB": {
+        "median": 236.7,
+        "max": 236.82
+      },
+      "managedHeapPeakMiB": {
+        "median": 24.74,
+        "max": 25.18
+      },
+      "wallSeconds": {
+        "median": 7.27,
+        "max": 7.31
+      },
+      "tempDiskPeakMiB": {
+        "median": 47.64,
+        "max": 47.64
+      },
+      "outputMiB": {
+        "median": 47.5,
+        "max": 47.5
+      }
+    }
+  ],
+  "bounded": [
+    {
+      "variant": "V1",
+      "name": "pdfsharp-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 2.04,
+      "heapRatio10000To1000": 4.24
+    },
+    {
+      "variant": "V2",
+      "name": "pdfsharp-merge-stamp",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 3.17,
+      "heapRatio10000To1000": 6.67
+    },
+    {
+      "variant": "V3",
+      "name": "pdfsharp-staged",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 1.99,
+      "heapRatio10000To1000": 3.31
+    },
+    {
+      "variant": "V4",
+      "name": "qpdf-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 6.33,
+      "heapRatio10000To1000": null
+    },
+    {
+      "variant": "V5",
+      "name": "pdfsharp-stamp-qpdf-merge",
+      "verdict": "not bounded",
+      "rssRatio10000To1000": 3.37,
+      "heapRatio10000To1000": 1.18
+    }
+  ],
+  "allVerificationsPass": true
+}

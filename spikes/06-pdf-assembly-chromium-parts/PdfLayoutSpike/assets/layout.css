@@ -1,0 +1,131 @@
+/*
+  Base stylesheet of the layout experiment. Page size, margins, the header,
+  the page counter, the footer boxes, the font family and the keep policy are
+  generated per run, next to this file, by the HTML builder.
+*/
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-size: 9pt;
+    line-height: 1.25;
+    color: #000;
+}
+
+.title {
+    margin: 0 0 3mm 0;
+}
+
+.title h1 {
+    font-size: 13pt;
+    margin: 0 0 1mm 0;
+}
+
+.title p {
+    margin: 0;
+}
+
+/* Row markup "table" */
+table.rows {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+table.rows col.c-seq {
+    width: 14mm;
+}
+
+table.rows col.c-date {
+    width: 22mm;
+}
+
+table.rows col.c-amount {
+    width: 30mm;
+}
+
+table.rows th,
+table.rows td {
+    padding: 0.6mm 1mm;
+    vertical-align: top;
+    text-align: left;
+}
+
+table.rows th {
+    border-bottom: 0.3mm solid #000;
+}
+
+/* Row markup "grid" */
+.rows-grid .grid-head,
+.rows-grid .item,
+.rows-grid .group-end {
+    display: grid;
+    grid-template-columns: 14mm 22mm 1fr 30mm;
+}
+
+.rows-grid .grid-head {
+    font-weight: bold;
+    border-bottom: 0.3mm solid #000;
+}
+
+.rows-grid .grid-head > div,
+.rows-grid .item > div,
+.rows-grid .group-end > div,
+.rows-grid .group-start {
+    padding: 0.6mm 1mm;
+}
+
+.rows-grid .seq {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.rows-grid .date {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.rows-grid .desc {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.rows-grid .amount {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+.rows-grid .group-end .label {
+    grid-column: 1 / span 3;
+    grid-row: 1;
+}
+
+/* Common to both markups */
+.amount {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.desc {
+    overflow-wrap: anywhere;
+}
+
+.group-start,
+.group-start td {
+    font-weight: bold;
+    padding-top: 1.5mm;
+}
+
+.group-end,
+.group-end td {
+    font-weight: bold;
+}
+
+.continues {
+    font-style: italic;
+    white-space: nowrap;
+}

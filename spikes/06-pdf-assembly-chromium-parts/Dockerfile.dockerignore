@@ -1,0 +1,10 @@
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/06-pdf-assembly-chromium-parts/PdfAssemblySpike/**
+!spikes/06-pdf-assembly-chromium-parts/fixtures/pdfsharp-part.pdf
+spikes/06-pdf-assembly-chromium-parts/PdfAssemblySpike/bin
+spikes/06-pdf-assembly-chromium-parts/PdfAssemblySpike/obj

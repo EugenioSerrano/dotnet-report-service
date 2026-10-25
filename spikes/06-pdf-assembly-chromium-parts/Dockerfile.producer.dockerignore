@@ -1,0 +1,11 @@
+# Allow-list build context for the producer image: everything is excluded, then
+# only the files the build stage copies are let back in.
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/06-pdf-assembly-chromium-parts/PdfLayoutSpike/**
+spikes/06-pdf-assembly-chromium-parts/PdfLayoutSpike/bin
+spikes/06-pdf-assembly-chromium-parts/PdfLayoutSpike/obj
