@@ -1,0 +1,95 @@
+{
+  "baseRun": "G200-split-t1.00-f0.90-off-r1",
+  "baseFixture": "G200",
+  "baseChoice": "named",
+  "controls": [
+    {
+      "id": "E1",
+      "mutation": "delete the first description word of row 50 on page 4",
+      "expected": "text-dropped at row 50, page 4",
+      "behaved": "yes",
+      "observed": [
+        "TI-3 text-dropped row 50 field description page 4"
+      ]
+    },
+    {
+      "id": "E2",
+      "mutation": "copy the last line of page 3 (row 50) to the top of page 4",
+      "expected": "text-repeated at row 50",
+      "behaved": "yes",
+      "observed": [
+        "TI-3 text-repeated row 50 field description page 4"
+      ]
+    },
+    {
+      "id": "E3",
+      "mutation": "delete every line of row 50",
+      "expected": "row-lost at row 50",
+      "behaved": "yes",
+      "observed": [
+        "TI-2 row-lost row 50 page 2"
+      ]
+    },
+    {
+      "id": "E4",
+      "mutation": "swap two adjacent description words of row 50 on page 4",
+      "expected": "text-altered at row 50",
+      "behaved": "yes",
+      "observed": [
+        "TI-3 text-altered row 50 field description page 4"
+      ]
+    },
+    {
+      "id": "E5",
+      "mutation": "amount of row 50 on its last page, a mark in its amount band on pages 3,4",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "behaved": "no",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ]
+    },
+    {
+      "id": "E6",
+      "mutation": "as E5, plus a mark on the row\u0027s final page 5",
+      "expected": "mark-wrong at row 50",
+      "behaved": "yes",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 5 (1 mark(s) on the page where the row ends)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ]
+    },
+    {
+      "id": "E7",
+      "mutation": "amount of row 50 on its last page, a mark in the footer band of pages 3,4",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "behaved": "no",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ]
+    },
+    {
+      "id": "E8",
+      "mutation": "as E5, with the mark of page 3 dropped",
+      "expected": "mark-wrong at row 50",
+      "behaved": "yes",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 3 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ]
+    }
+  ]
+}

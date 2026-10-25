@@ -1,0 +1,279 @@
+{
+  "trigger": 1,
+  "partLimit": 0.9,
+  "triggerCase": "a",
+  "outcome": "selected",
+  "candidates": [
+    0.9,
+    0.75,
+    0.5
+  ],
+  "passingCandidates": [
+    0.9,
+    0.75,
+    0.5
+  ],
+  "stage1ElapsedSeconds": 67.8,
+  "remainingBudgetSeconds": 10732.2,
+  "sweepA": [
+    {
+      "runId": "S080-measure-only-on-r1",
+      "fixture": "S080",
+      "outcome": "ok",
+      "fraction": 0.8013,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": true
+    },
+    {
+      "runId": "S090-measure-only-on-r1",
+      "fixture": "S090",
+      "outcome": "ok",
+      "fraction": 0.9065,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": true
+    },
+    {
+      "runId": "S095-measure-only-on-r1",
+      "fixture": "S095",
+      "outcome": "ok",
+      "fraction": 0.9516,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": true
+    },
+    {
+      "runId": "S098-measure-only-on-r1",
+      "fixture": "S098",
+      "outcome": "ok",
+      "fraction": 0.9817,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": true
+    },
+    {
+      "runId": "S100-measure-only-on-r1",
+      "fixture": "S100",
+      "outcome": "ok",
+      "fraction": 1.0118,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": false
+    },
+    {
+      "runId": "S102-measure-only-on-r1",
+      "fixture": "S102",
+      "outcome": "ok",
+      "fraction": 1.0268,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": false
+    },
+    {
+      "runId": "S105-measure-only-on-r1",
+      "fixture": "S105",
+      "outcome": "ok",
+      "fraction": 1.0569,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": false
+    },
+    {
+      "runId": "S110-measure-only-on-r1",
+      "fixture": "S110",
+      "outcome": "ok",
+      "fraction": 1.102,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": false
+    },
+    {
+      "runId": "S125-measure-only-on-r1",
+      "fixture": "S125",
+      "outcome": "ok",
+      "fraction": 1.2523,
+      "rules1To5": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "input": false
+    }
+  ],
+  "sweepB": [
+    {
+      "runId": "T500u-split-t1.00-f0.50-on-r1",
+      "fixture": "T500u",
+      "partLimit": 0.5,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "T500u-split-t1.00-f0.75-on-r1",
+      "fixture": "T500u",
+      "partLimit": 0.75,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "T500u-split-t1.00-f0.90-on-r1",
+      "fixture": "T500u",
+      "partLimit": 0.9,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "T500u-split-t1.00-f0.95-on-r1",
+      "fixture": "T500u",
+      "partLimit": 0.95,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    },
+    {
+      "runId": "T500u-split-t1.00-f0.98-on-r1",
+      "fixture": "T500u",
+      "partLimit": 0.98,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    },
+    {
+      "runId": "T500u-split-t1.00-f1.00-on-r1",
+      "fixture": "T500u",
+      "partLimit": 1,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    },
+    {
+      "runId": "X64K-split-t1.00-f0.50-on-r1",
+      "fixture": "X64K",
+      "partLimit": 0.5,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "X64K-split-t1.00-f0.75-on-r1",
+      "fixture": "X64K",
+      "partLimit": 0.75,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "X64K-split-t1.00-f0.90-on-r1",
+      "fixture": "X64K",
+      "partLimit": 0.9,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": true
+    },
+    {
+      "runId": "X64K-split-t1.00-f0.95-on-r1",
+      "fixture": "X64K",
+      "partLimit": 0.95,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    },
+    {
+      "runId": "X64K-split-t1.00-f0.98-on-r1",
+      "fixture": "X64K",
+      "partLimit": 0.98,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    },
+    {
+      "runId": "X64K-split-t1.00-f1.00-on-r1",
+      "fixture": "X64K",
+      "partLimit": 1,
+      "outcome": "ok",
+      "rules": true,
+      "ti": "pass",
+      "layoutRepeatedError": false,
+      "layoutRepeatedAnyLevel": false,
+      "passes": true,
+      "selectable": false
+    }
+  ],
+  "inputs": {
+    "runsJsonlSha256": "7513036f3d42063d251edecd11509c3986b10954aead6fc1a6e6c0b12bc954f9",
+    "integritySha256": "d59fe1cfa907480309b9af31f837c670ea0b7339b4323d8c7ea8a15ebc56c5a4",
+    "stage1ElapsedSeconds": 67.8
+  }
+}

@@ -1,0 +1,85 @@
+/*
+  Fixture stylesheet of the pre-split layout experiment, loaded after the
+  unchanged base stylesheet of spikes/02-pdf-layout (layout.css): the title,
+  free text, the header and block-total rows of the grid markup, the
+  five-column geometry, hard line breaks, the keep policy and the forced page
+  break before every continuation part of a split row.
+*/
+
+body {
+    hyphens: manual;
+}
+
+h1.title {
+    font-size: 13pt;
+    margin: 0 0 3mm 0;
+}
+
+.free p {
+    margin: 0 0 2mm 0;
+}
+
+.free-after {
+    margin-top: 3mm;
+}
+
+.rows-grid .block-total {
+    display: grid;
+    grid-template-columns: 14mm 22mm 1fr 30mm;
+    font-weight: bold;
+}
+
+.rows-grid .block-total > div {
+    padding: 0.6mm 1mm;
+}
+
+.rows-grid .block-total .label {
+    grid-column: 1 / span 3;
+    grid-row: 1;
+}
+
+/* Five-column geometry: description and note share the free width equally. */
+.rows-grid.five-column .grid-head,
+.rows-grid.five-column .item,
+.rows-grid.five-column .group-end,
+.rows-grid.five-column .block-total {
+    grid-template-columns: 14mm 22mm 1fr 1fr 30mm;
+}
+
+.rows-grid.five-column .note {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+.rows-grid.five-column .amount {
+    grid-column: 5;
+}
+
+.rows-grid.five-column .group-end .label,
+.rows-grid.five-column .block-total .label {
+    grid-column: 1 / span 4;
+}
+
+.rows-grid .note {
+    overflow-wrap: anywhere;
+}
+
+.rows-grid .grid-head > div.note {
+    padding: 0.6mm 1mm;
+}
+
+/* Hard line breaks in description and note. */
+.rows-grid.pre-line .desc,
+.rows-grid.pre-line .note {
+    white-space: pre-line;
+}
+
+/* Keep policy: every row is kept together. */
+.item {
+    break-inside: avoid;
+}
+
+/* Parts 2 ... n of a split row start a new page; the first part never gets a forced break. */
+.item.part.continuation {
+    break-before: page;
+}

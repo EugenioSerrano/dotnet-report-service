@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pre-split layout harness: lays fixtures out with the pagination library of
+    spikes/02-pdf-layout after splitting rows taller than a page into
+    continuation parts, inside the PDF base image, one fresh process per run.
+    It reads fixture files from the native-layout experiment
+    (spikes/07-native-tall-rows); it never generates them.
+
+    The verifier, the sampler, the result types, the accounting script, the base
+    stylesheet and the vendored pagination library of spikes/02-pdf-layout are
+    linked here unchanged; nothing in that folder is edited or copied.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PreSplitLayoutSpike</RootNamespace>
+    <EarlierLayoutSpike>$(MSBuildThisFileDirectory)../../02-pdf-layout/PdfLayoutSpike/</EarlierLayoutSpike>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Used: rules 1-9 and the failure-signature evaluation. -->
+    <Compile Include="$(EarlierLayoutSpike)AccountingVerifier.cs" Link="Linked/AccountingVerifier.cs" />
+    <!-- Used as it is: the process-tree sampler. -->
+    <Compile Include="$(EarlierLayoutSpike)ProcessTreeSampler.cs" Link="Linked/ProcessTreeSampler.cs" />
+    <!-- Types only: the dataset record, block and block row types. -->
+    <Compile Include="$(EarlierLayoutSpike)BlockSource.cs" Link="Linked/BlockSource.cs" />
+    <!-- Types only: run and layout result types; its runner is never called. -->
+    <Compile Include="$(EarlierLayoutSpike)LayoutRunner.cs" Link="Linked/LayoutRunner.cs" />
+    <!-- Types only: the layout mode enumeration the runner file needs; the builder is never called. -->
+    <Compile Include="$(EarlierLayoutSpike)BlockHtmlBuilder.cs" Link="Linked/BlockHtmlBuilder.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(EarlierLayoutSpike)assets/layout.css" Link="assets/layout.css" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/paged-layout.js" Link="assets/paged-layout.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/paged.polyfill.js" Link="assets/vendor/pagedjs-0.4.3/paged.polyfill.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/LICENSE.md" Link="assets/vendor/pagedjs-0.4.3/LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

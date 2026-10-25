@@ -1,0 +1,23 @@
+# Allow-list build context for the pre-split harness image: everything is
+# excluded, then only the files the build stage copies are let back in (the
+# files of spikes/02-pdf-layout and spikes/07-native-tall-rows read only).
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/08-pagedjs-pre-split/Directory.Packages.props
+!spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/**
+!spikes/07-native-tall-rows/Directory.Packages.props
+!spikes/07-native-tall-rows/PaginationFixtures/**
+!spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockHtmlBuilder.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/LayoutRunner.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/assets/**
+spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/bin
+spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/obj
+spikes/07-native-tall-rows/PaginationFixtures/bin
+spikes/07-native-tall-rows/PaginationFixtures/obj
