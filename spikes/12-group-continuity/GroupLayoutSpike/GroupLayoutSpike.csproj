@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Layout harness of the group-continuity experiment: the grid path of
+    spikes/10-pagedjs-table-strict-accounting (itself the grid path of
+    spikes/08-pagedjs-pre-split), whose runner and driver are linked here
+    unchanged, driven by this folder's grid-only plan and program.
+    The assembly is named as the linked driver starts its child process
+    (PagedMarkupSpike.dll); the root namespace is the linked files' own.
+    Linked files are never edited; nothing in their folders changes.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>PagedMarkupSpike</AssemblyName>
+    <RootNamespace>PreSplitLayoutSpike</RootNamespace>
+    <EarlierLayoutSpike>$(MSBuildThisFileDirectory)../../02-pdf-layout/PdfLayoutSpike/</EarlierLayoutSpike>
+    <PreSplitSpike>$(MSBuildThisFileDirectory)../../08-pagedjs-pre-split/PreSplitLayoutSpike/</PreSplitSpike>
+    <MarkupSpike>$(MSBuildThisFileDirectory)../../10-pagedjs-table-strict-accounting/PagedMarkupSpike/</MarkupSpike>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- spikes/02-pdf-layout: rules 1-9; the sampler; types only for the rest. -->
+    <Compile Include="$(EarlierLayoutSpike)AccountingVerifier.cs" Link="Linked/AccountingVerifier.cs" />
+    <Compile Include="$(EarlierLayoutSpike)ProcessTreeSampler.cs" Link="Linked/ProcessTreeSampler.cs" />
+    <Compile Include="$(EarlierLayoutSpike)BlockSource.cs" Link="Linked/BlockSource.cs" />
+    <Compile Include="$(EarlierLayoutSpike)LayoutRunner.cs" Link="Linked/LayoutRunner.cs" />
+    <Compile Include="$(EarlierLayoutSpike)BlockHtmlBuilder.cs" Link="Linked/BlockHtmlBuilder.cs" />
+    <!-- spikes/08-pagedjs-pre-split: the grid pages and fixture adapter, and the run record. -->
+    <Compile Include="$(PreSplitSpike)PageBuilder.cs" Link="Linked/PageBuilder.cs" />
+    <Compile Include="$(PreSplitSpike)RunRecord.cs" Link="Linked/RunRecord.cs" />
+    <!-- spikes/10-pagedjs-table-strict-accounting: one run, and the stage driver with its caps and ceilings. -->
+    <Compile Include="$(MarkupSpike)PreSplitRunner.cs" Link="Linked/PreSplitRunner.cs" />
+    <Compile Include="$(MarkupSpike)MatrixDriver.cs" Link="Linked/MatrixDriver.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(EarlierLayoutSpike)assets/layout.css" Link="assets/layout.css" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/paged-layout.js" Link="assets/paged-layout.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/paged.polyfill.js" Link="assets/vendor/pagedjs-0.4.3/paged.polyfill.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/LICENSE.md" Link="assets/vendor/pagedjs-0.4.3/LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PreSplitSpike)assets/pre-split.js" Link="assets/pre-split.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PreSplitSpike)assets/fixture.css" Link="assets/fixture.css" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,3 @@
+# Local run output of this experiment (fixtures, the raw stage folder and large PDFs are never committed)
+results/raw/
+out/

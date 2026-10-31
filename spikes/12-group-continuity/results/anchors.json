@@ -1,0 +1,861 @@
+{
+ "runsCompared": 19,
+ "differences": 0,
+ "runs": [
+  {
+   "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+   "reference": "s1-B100-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "fca36176966454147a95efa50311cb14f3e850382fe93e28296731de15767988",
+    "reference": "fca36176966454147a95efa50311cb14f3e850382fe93e28296731de15767988"
+   },
+   "htmlBytes": {
+    "here": "34567",
+    "reference": "34567"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "22e36d6d8ec9647bd420c7963bc196fb5cfba15926090ef89e5bd1dbf496a34d",
+    "reference": "22e36d6d8ec9647bd420c7963bc196fb5cfba15926090ef89e5bd1dbf496a34d"
+   },
+   "pdfPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+   "reference": "s1-K1-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "1",
+    "reference": "1"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "b545992590c0ed468f9a2d1ebffcd6ef45298313e4ca4bf21de015d6b07d005d",
+    "reference": "b545992590c0ed468f9a2d1ebffcd6ef45298313e4ca4bf21de015d6b07d005d"
+   },
+   "htmlBytes": {
+    "here": "8040",
+    "reference": "8040"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "3afb41d3ddc4eaf09244e2f8f0f0655fdc7e17e809b8112abe77ed5bfba7976c",
+    "reference": "3afb41d3ddc4eaf09244e2f8f0f0655fdc7e17e809b8112abe77ed5bfba7976c"
+   },
+   "pdfPages": {
+    "here": "1",
+    "reference": "1"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "reference": "s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "d6f43942970601c828382103ebe88e71d053f2d5b434892548d0f85e96e505fd",
+    "reference": "d6f43942970601c828382103ebe88e71d053f2d5b434892548d0f85e96e505fd"
+   },
+   "htmlBytes": {
+    "here": "34553",
+    "reference": "34553"
+   },
+   "textVerdict": {
+    "here": "fail",
+    "reference": "fail"
+   },
+   "contentSha256": {
+    "here": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e",
+    "reference": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e"
+   },
+   "pdfPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "reference": "s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "d4daf10a9907e694f0c36e305bdebc128e51b0876fc113793b27e7a3a21a75a3",
+    "reference": "d4daf10a9907e694f0c36e305bdebc128e51b0876fc113793b27e7a3a21a75a3"
+   },
+   "htmlBytes": {
+    "here": "34652",
+    "reference": "34652"
+   },
+   "textVerdict": {
+    "here": "fail",
+    "reference": "fail"
+   },
+   "contentSha256": {
+    "here": "56a70253d7e8486f0f3f88b8c195d94addb50452976d7480984bbc0be3d97328",
+    "reference": "56a70253d7e8486f0f3f88b8c195d94addb50452976d7480984bbc0be3d97328"
+   },
+   "pdfPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "reference": "s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "3a0f11a88ce2242f4aa6851f8aa1ba1d1a851155269149541763575a2e1c7c34",
+    "reference": "3a0f11a88ce2242f4aa6851f8aa1ba1d1a851155269149541763575a2e1c7c34"
+   },
+   "htmlBytes": {
+    "here": "34360",
+    "reference": "34360"
+   },
+   "textVerdict": {
+    "here": "fail",
+    "reference": "fail"
+   },
+   "contentSha256": {
+    "here": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0",
+    "reference": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0"
+   },
+   "pdfPages": {
+    "here": "4",
+    "reference": "4"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "reference": "s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "5",
+    "reference": "5"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "b9dfad4e9a1ecd02e2a65140da987e0cbb35197fac525bdf14e7b6a741225d2d",
+    "reference": "b9dfad4e9a1ecd02e2a65140da987e0cbb35197fac525bdf14e7b6a741225d2d"
+   },
+   "htmlBytes": {
+    "here": "40346",
+    "reference": "40346"
+   },
+   "textVerdict": {
+    "here": "fail",
+    "reference": "fail"
+   },
+   "contentSha256": {
+    "here": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11",
+    "reference": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11"
+   },
+   "pdfPages": {
+    "here": "5",
+    "reference": "5"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r1",
+   "reference": "s1-B1000-off-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "",
+    "reference": ""
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r2",
+   "reference": "s1-B1000-off-on-r2",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "",
+    "reference": ""
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r3",
+   "reference": "s1-B1000-off-on-r3",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "",
+    "reference": ""
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+   "reference": "s1-B1000-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+   "reference": "s1-B1000-split-t1.00-f0.90-on-r2",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+   "reference": "s1-B1000-split-t1.00-f0.90-on-r3",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311376",
+    "reference": "311376"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-off-r1",
+   "reference": "s1-B1000-split-t1.00-f0.90-off-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "parts": {
+    "here": "0",
+    "reference": "0"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+    "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+   },
+   "htmlBytes": {
+    "here": "311377",
+    "reference": "311377"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+    "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+   },
+   "pdfPages": {
+    "here": "36",
+    "reference": "36"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+   "reference": "s2-T300u-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "8",
+    "reference": "8"
+   },
+   "parts": {
+    "here": "4",
+    "reference": "4"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "1e18a5aff46b182f2f010192316abc0a8e09a70015bfa01c4d94cba248f0f9cd",
+    "reference": "1e18a5aff46b182f2f010192316abc0a8e09a70015bfa01c4d94cba248f0f9cd"
+   },
+   "htmlBytes": {
+    "here": "51922",
+    "reference": "51922"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754",
+    "reference": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754"
+   },
+   "pdfPages": {
+    "here": "8",
+    "reference": "8"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+   "reference": "s2-X64K-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "parts": {
+    "here": "14",
+    "reference": "14"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "cee8e6739395b13cff84f2d01df36e6d798f28665534e478226a1124f7e47119",
+    "reference": "cee8e6739395b13cff84f2d01df36e6d798f28665534e478226a1124f7e47119"
+   },
+   "htmlBytes": {
+    "here": "105533",
+    "reference": "105533"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "6f329b07ccbf59394c1dcb20e8742ad5823a68413ec7f4e7b1333818e004edb4",
+    "reference": "6f329b07ccbf59394c1dcb20e8742ad5823a68413ec7f4e7b1333818e004edb4"
+   },
+   "pdfPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+   "reference": "s2-X1M-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "224",
+    "reference": "224"
+   },
+   "parts": {
+    "here": "220",
+    "reference": "220"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "9ed190e3339d3abbf26c48a800905172428b90d55ddd20d59b4855cb73fad52b",
+    "reference": "9ed190e3339d3abbf26c48a800905172428b90d55ddd20d59b4855cb73fad52b"
+   },
+   "htmlBytes": {
+    "here": "1171918",
+    "reference": "1171918"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f",
+    "reference": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f"
+   },
+   "pdfPages": {
+    "here": "224",
+    "reference": "224"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+   "reference": "s2-G200-split-t1.00-f0.90-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "parts": {
+    "here": "10",
+    "reference": "10"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f",
+    "reference": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f"
+   },
+   "htmlBytes": {
+    "here": "126626",
+    "reference": "126626"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b",
+    "reference": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b"
+   },
+   "pdfPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+   "reference": "s2-G200-split-t1.00-f0.90-off-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "parts": {
+    "here": "10",
+    "reference": "10"
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "False",
+    "reference": "False"
+   },
+   "semInnerSha256": {
+    "here": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f",
+    "reference": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f"
+   },
+   "htmlBytes": {
+    "here": "126627",
+    "reference": "126627"
+   },
+   "textVerdict": {
+    "here": "pass",
+    "reference": "pass"
+   },
+   "contentSha256": {
+    "here": "919aee9ec9f219cca50da23f94e463d58ee194765e5c0e0ef004b31eaeeb911b",
+    "reference": "919aee9ec9f219cca50da23f94e463d58ee194765e5c0e0ef004b31eaeeb911b"
+   },
+   "pdfPages": {
+    "here": "18",
+    "reference": "18"
+   },
+   "differences": []
+  },
+  {
+   "run": "s1-grid-s2-G200-off-on-r1",
+   "reference": "s2-G200-off-on-r1",
+   "class": {
+    "here": "ok",
+    "reference": "ok"
+   },
+   "libraryPages": {
+    "here": "10",
+    "reference": "10"
+   },
+   "parts": {
+    "here": "",
+    "reference": ""
+   },
+   "libraryRules": {
+    "here": "rows-not-lost-or-duplicated:F end-page-subtotals:P brought-carried-chain:F visible-amounts:F continues-marks:P split-attributes-agree:F geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+    "reference": "rows-not-lost-or-duplicated:F end-page-subtotals:P brought-carried-chain:F visible-amounts:F continues-marks:P split-attributes-agree:F geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+   },
+   "layoutRepeated": {
+    "here": "True",
+    "reference": "True"
+   },
+   "semInnerSha256": {
+    "here": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f",
+    "reference": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f"
+   },
+   "htmlBytes": {
+    "here": "126626",
+    "reference": "126626"
+   },
+   "textVerdict": {
+    "here": "fail",
+    "reference": "fail"
+   },
+   "contentSha256": {
+    "here": "4dbfcb63be37f4cb7da81def1a36b445b93aad70c7b600b1b4503030e8db2eb2",
+    "reference": "4dbfcb63be37f4cb7da81def1a36b445b93aad70c7b600b1b4503030e8db2eb2"
+   },
+   "pdfPages": {
+    "here": "10",
+    "reference": "10"
+   },
+   "differences": []
+  }
+ ]
+}

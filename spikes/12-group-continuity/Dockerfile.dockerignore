@@ -1,0 +1,29 @@
+# Allow-list build context for the group-continuity harness image: everything is
+# excluded, then only the files the build stage copies are let back in (the
+# files of spikes/02, 07, 08 and 10 read only).
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/12-group-continuity/Directory.Packages.props
+!spikes/12-group-continuity/GroupLayoutSpike/**
+!spikes/10-pagedjs-table-strict-accounting/PagedMarkupSpike/PreSplitRunner.cs
+!spikes/10-pagedjs-table-strict-accounting/PagedMarkupSpike/MatrixDriver.cs
+!spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/PageBuilder.cs
+!spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/RunRecord.cs
+!spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/assets/pre-split.js
+!spikes/08-pagedjs-pre-split/PreSplitLayoutSpike/assets/fixture.css
+!spikes/07-native-tall-rows/Directory.Packages.props
+!spikes/07-native-tall-rows/PaginationFixtures/**
+!spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockHtmlBuilder.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/LayoutRunner.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/assets/**
+spikes/12-group-continuity/GroupLayoutSpike/bin
+spikes/12-group-continuity/GroupLayoutSpike/obj
+spikes/07-native-tall-rows/PaginationFixtures/bin
+spikes/07-native-tall-rows/PaginationFixtures/obj

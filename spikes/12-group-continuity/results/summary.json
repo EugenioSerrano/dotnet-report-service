@@ -1,0 +1,4653 @@
+{
+ "generatedAt": "2026-10-26T07:40:30+00:00",
+ "environment": {
+  "matrix": "stage1-grid",
+  "startedAt": "2026-10-26T07:35:21+00:00",
+  "endedAt": "2026-10-26T07:38:01+00:00",
+  "elapsedSeconds": 160.4,
+  "budgetSeconds": 3600,
+  "fixtureSumsSha256": "10267bf9cbb61eae20883470c08cb01b20dbbac08e6bf2921cd4f76ca2ba93ae",
+  "environment": {
+   "pdfBaseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+   "chromium": "153.0.8010.12",
+   "playwright": "1.63.0",
+   "dotnet": "10.0.13",
+   "processors": 16,
+   "memoryMax": "4294967296",
+   "memorySwapMax": "0",
+   "memoryTotalKiB": 12244636
+  },
+  "counts": {
+   "ok": 64
+  },
+  "registry": {
+   "image": "registry:3.1.2@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8",
+   "address": "127.0.0.1:5055",
+   "baseTag": "report-service-pdf-base:1.63.0-10.0.13-noble",
+   "baseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d"
+  },
+  "images": {
+   "group-continuity-spike:local": "sha256:3091732ff5c512fa31945d5fa9fe4d2e70e3cac412769aeb93ff07e37b8f551f",
+   "group-continuity-check:local": "sha256:510c4ae442536354047835c7f65968f6d827ef2439c4e44fa4eae9e63cac3859",
+   "text-integrity-check:local": "sha256:9e013c3b2f5148592698e3be7213c364fa1c2c40e3f148f8126521424168c3a6"
+  },
+  "memoryNote": "cgroupMemoryPeakBytes is the container running peak (the stage container up to that run), not a per-run figure; the near-ceiling rule reads the Chromium process-tree peak; oom_kill is the out-of-memory evidence"
+ },
+ "checker": {
+  "poppler": "pdftotext version 24.02.0",
+  "startedAt": "2026-10-26T07:39:00+00:00",
+  "endedAt": "2026-10-26T07:39:34+00:00",
+  "timeoutSeconds": 300,
+  "fixtureSumsSha256": "10267bf9cbb61eae20883470c08cb01b20dbbac08e6bf2921cd4f76ca2ba93ae"
+ },
+ "fixtures": {
+  "dataset": {
+   "file": "header-items-v1.grouped.10k.json",
+   "sha256": "d1969e96b5413f21c2f04f1ec789b01fe9ea30e3d6ad78691521350ec580c753",
+   "records": 10000
+  },
+  "selfCheck": "B100 and B1000 reproduced byte for byte",
+  "secondBuild": "identical",
+  "sumsSha256": "10267bf9cbb61eae20883470c08cb01b20dbbac08e6bf2921cd4f76ca2ba93ae",
+  "fixtures": [
+   {
+    "fixture": "GE30",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 329,
+      "lines": 30
+     }
+    ]
+   },
+   {
+    "fixture": "GE31",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 340,
+      "lines": 31
+     }
+    ]
+   },
+   {
+    "fixture": "GE32",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 351,
+      "lines": 32
+     }
+    ]
+   },
+   {
+    "fixture": "GE33",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 362,
+      "lines": 33
+     }
+    ]
+   },
+   {
+    "fixture": "GE34",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 373,
+      "lines": 34
+     }
+    ]
+   },
+   {
+    "fixture": "GE35",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 384,
+      "lines": 35
+     }
+    ]
+   },
+   {
+    "fixture": "GE36",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 395,
+      "lines": 36
+     }
+    ]
+   },
+   {
+    "fixture": "GE37",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 406,
+      "lines": 37
+     }
+    ]
+   },
+   {
+    "fixture": "GE38",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 417,
+      "lines": 38
+     }
+    ]
+   },
+   {
+    "fixture": "GE39",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 428,
+      "lines": 39
+     }
+    ]
+   },
+   {
+    "fixture": "GE40",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 439,
+      "lines": 40
+     }
+    ]
+   },
+   {
+    "fixture": "GE41",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 450,
+      "lines": 41
+     }
+    ]
+   },
+   {
+    "fixture": "GE42",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 461,
+      "lines": 42
+     }
+    ]
+   },
+   {
+    "fixture": "GE43",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 472,
+      "lines": 43
+     }
+    ]
+   },
+   {
+    "fixture": "GE44",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 483,
+      "lines": 44
+     }
+    ]
+   },
+   {
+    "fixture": "GE45",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 494,
+      "lines": 45
+     }
+    ]
+   },
+   {
+    "fixture": "GE46",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 505,
+      "lines": 46
+     }
+    ]
+   },
+   {
+    "fixture": "GE47",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 516,
+      "lines": 47
+     }
+    ]
+   },
+   {
+    "fixture": "GE48",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 527,
+      "lines": 48
+     }
+    ]
+   },
+   {
+    "fixture": "GE49",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 538,
+      "lines": 49
+     }
+    ]
+   },
+   {
+    "fixture": "GE50",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 549,
+      "lines": 50
+     }
+    ]
+   },
+   {
+    "fixture": "GE51",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 560,
+      "lines": 51
+     }
+    ]
+   },
+   {
+    "fixture": "GE52",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 571,
+      "lines": 52
+     }
+    ]
+   },
+   {
+    "fixture": "GE53",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 582,
+      "lines": 53
+     }
+    ]
+   },
+   {
+    "fixture": "GE54",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 593,
+      "lines": 54
+     }
+    ]
+   },
+   {
+    "fixture": "GE55",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 604,
+      "lines": 55
+     }
+    ]
+   },
+   {
+    "fixture": "GE56",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 615,
+      "lines": 56
+     }
+    ]
+   },
+   {
+    "fixture": "GE57",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 626,
+      "lines": 57
+     }
+    ]
+   },
+   {
+    "fixture": "GE58",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 637,
+      "lines": 58
+     }
+    ]
+   },
+   {
+    "fixture": "GE59",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 648,
+      "lines": 59
+     }
+    ]
+   },
+   {
+    "fixture": "GE60",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 659,
+      "lines": 60
+     }
+    ]
+   },
+   {
+    "fixture": "GE61",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 670,
+      "lines": 61
+     }
+    ]
+   },
+   {
+    "fixture": "GE62",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 681,
+      "lines": 62
+     }
+    ]
+   },
+   {
+    "fixture": "GE63",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 692,
+      "lines": 63
+     }
+    ]
+   },
+   {
+    "fixture": "GE64",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 703,
+      "lines": 64
+     }
+    ]
+   },
+   {
+    "fixture": "GE65",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 714,
+      "lines": 65
+     }
+    ]
+   },
+   {
+    "fixture": "GE66",
+    "case": "group starting near a page end",
+    "records": {
+     "first": 401,
+     "last": 650,
+     "count": 250
+    },
+    "whiteSpace": "pre-line",
+    "groups": [
+     {
+      "id": "G0003",
+      "firstSequence": 402,
+      "lastSequence": 402,
+      "items": 1,
+      "closed": true
+     },
+     {
+      "id": "G0004",
+      "firstSequence": 403,
+      "lastSequence": 594,
+      "items": 192,
+      "closed": true
+     },
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 651,
+      "items": 57,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 402,
+      "characters": 725,
+      "lines": 66
+     }
+    ]
+   },
+   {
+    "fixture": "GS1200",
+    "case": "group spanning several pages",
+    "records": {
+     "first": 594,
+     "last": 1959,
+     "count": 1366
+    },
+    "whiteSpace": "normal",
+    "groups": [
+     {
+      "id": "G0005",
+      "firstSequence": 595,
+      "lastSequence": 754,
+      "items": 160,
+      "closed": true
+     },
+     {
+      "id": "G0006",
+      "firstSequence": 755,
+      "lastSequence": 1954,
+      "items": 1200,
+      "closed": true
+     },
+     {
+      "id": "G0007",
+      "firstSequence": 1955,
+      "lastSequence": 1960,
+      "items": 6,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": []
+   },
+   {
+    "fixture": "GS2400",
+    "case": "group spanning many pages",
+    "records": {
+     "first": 3152,
+     "last": 5559,
+     "count": 2408
+    },
+    "whiteSpace": "normal",
+    "groups": [
+     {
+      "id": "G0012",
+      "firstSequence": 3153,
+      "lastSequence": 5552,
+      "items": 2400,
+      "closed": true
+     },
+     {
+      "id": "G0013",
+      "firstSequence": 5553,
+      "lastSequence": 5560,
+      "items": 8,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": []
+   },
+   {
+    "fixture": "GTL300u",
+    "case": "over-tall row as a group's last row",
+    "records": {
+     "first": 0,
+     "last": 259,
+     "count": 260
+    },
+    "whiteSpace": "normal",
+    "groups": [
+     {
+      "id": "G0001",
+      "firstSequence": 1,
+      "lastSequence": 182,
+      "items": 182,
+      "closed": true
+     },
+     {
+      "id": "G0002",
+      "firstSequence": 183,
+      "lastSequence": 260,
+      "items": 78,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 182,
+      "characters": 15930,
+      "lines": 1
+     }
+    ]
+   },
+   {
+    "fixture": "GTF300u",
+    "case": "over-tall row as a group's first row",
+    "records": {
+     "first": 0,
+     "last": 259,
+     "count": 260
+    },
+    "whiteSpace": "normal",
+    "groups": [
+     {
+      "id": "G0001",
+      "firstSequence": 1,
+      "lastSequence": 182,
+      "items": 182,
+      "closed": true
+     },
+     {
+      "id": "G0002",
+      "firstSequence": 183,
+      "lastSequence": 260,
+      "items": 78,
+      "closed": false
+     }
+    ],
+    "changedDescriptions": [
+     {
+      "sequence": 183,
+      "characters": 15930,
+      "lines": 1
+     }
+    ]
+   }
+  ]
+ },
+ "verdict": {
+  "exitCode": 0,
+  "reasons": []
+ },
+ "controls": {
+  "trusted": true,
+  "items": [
+   {
+    "group": "text",
+    "id": "positive",
+    "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+    "expected": "pass",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "text",
+    "id": "positive",
+    "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+    "expected": "pass",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "text",
+    "id": "NC-W",
+    "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+    "expected": "text-dropped row 50",
+    "observed": [
+     "TI-3 text-dropped row 50 p2"
+    ],
+    "behaved": "yes",
+    "note": "any failure matches: True"
+   },
+   {
+    "group": "text",
+    "id": "NC-L",
+    "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+    "expected": "text-repeated row 50",
+    "observed": [
+     "TI-3 text-repeated row 50 p2"
+    ],
+    "behaved": "yes",
+    "note": "any failure matches: True"
+   },
+   {
+    "group": "text",
+    "id": "NC-R",
+    "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+    "expected": "row-lost row 51",
+    "observed": [
+     "TI-2 row-lost row 51 p2"
+    ],
+    "behaved": "yes",
+    "note": "any failure matches: True"
+   },
+   {
+    "group": "text",
+    "id": "NC-F",
+    "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+    "expected": "text-dropped free-after",
+    "observed": [
+     "TI-6 text-dropped free-after p1"
+    ],
+    "behaved": "yes",
+    "note": "any failure matches: True"
+   },
+   {
+    "group": "text",
+    "id": "E1",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "text-dropped at row 50, page 4",
+    "observed": [
+     "TI-3 text-dropped row 50 field description page 4"
+    ],
+    "behaved": "yes",
+    "note": "its own result: yes"
+   },
+   {
+    "group": "text",
+    "id": "E2",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "text-repeated at row 50",
+    "observed": [
+     "TI-3 text-repeated row 50 field description page 4"
+    ],
+    "behaved": "yes",
+    "note": "its own result: yes"
+   },
+   {
+    "group": "text",
+    "id": "E3",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "row-lost at row 50",
+    "observed": [
+     "TI-2 row-lost row 50 page 2"
+    ],
+    "behaved": "yes",
+    "note": "its own result: yes"
+   },
+   {
+    "group": "text",
+    "id": "E4",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "text-altered at row 50",
+    "observed": [
+     "TI-3 text-altered row 50 field description page 4"
+    ],
+    "behaved": "yes",
+    "note": "its own result: yes"
+   },
+   {
+    "group": "text",
+    "id": "E5",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "TI-7 pass (and TI-4 pass)",
+    "observed": [
+     "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+    ],
+    "behaved": "not evaluable",
+    "note": "the text oracle's controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: no"
+   },
+   {
+    "group": "text",
+    "id": "E6",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "mark-wrong at row 50",
+    "observed": [
+     "TI-7 mark-wrong row 50 page 5 (1 mark(s) on the page where the row ends)",
+     "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+    ],
+    "behaved": "not evaluable",
+    "note": "the text oracle's controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: yes"
+   },
+   {
+    "group": "text",
+    "id": "E7",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "TI-7 pass (and TI-4 pass)",
+    "observed": [
+     "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+    ],
+    "behaved": "not evaluable",
+    "note": "the text oracle's controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: no"
+   },
+   {
+    "group": "text",
+    "id": "E8",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+    "expected": "mark-wrong at row 50",
+    "observed": [
+     "TI-7 mark-wrong row 50 page 3 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+     "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+    ],
+    "behaved": "not evaluable",
+    "note": "the text oracle's controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: yes"
+   },
+   {
+    "group": "strict",
+    "id": "positive",
+    "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "strict",
+    "id": "positive",
+    "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "strict",
+    "id": "NC-W",
+    "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "strict",
+    "id": "NC-L",
+    "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "strict",
+    "id": "NC-R",
+    "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+    "expected": "rows-not-lost-or-duplicated|p (sequence 51 missing); brought-carried-chain|p<last page>",
+    "observed": [
+     "rows-not-lost-or-duplicated|p",
+     "brought-carried-chain|p4"
+    ],
+    "behaved": "yes"
+   },
+   {
+    "group": "strict",
+    "id": "NC-F",
+    "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "faults",
+    "id": "AX-1",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+    "expected": "end-page-subtotals|p2; brought-carried-chain|p2",
+    "observed": [
+     "end-page-subtotals|p2",
+     "brought-carried-chain|p2"
+    ],
+    "behaved": "yes",
+    "note": "page 2 footer value subtotal: 454051.50 -> 454051.51"
+   },
+   {
+    "group": "faults",
+    "id": "AX-2",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+    "expected": "brought-carried-chain|p3",
+    "observed": [
+     "brought-carried-chain|p3"
+    ],
+    "behaved": "yes",
+    "note": "page 3 footer value forward: 1258934.79 -> 1258934.80"
+   },
+   {
+    "group": "faults",
+    "id": "AX-3",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+    "expected": "continues-marks|p3",
+    "observed": [
+     "continues-marks|p3"
+    ],
+    "behaved": "yes",
+    "note": "removed 1 '(continues)' of row 50 on page 3"
+   },
+   {
+    "group": "faults",
+    "id": "AX-4",
+    "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+    "expected": "rows-not-lost-or-duplicated|p; end-page-subtotals|p2",
+    "observed": [
+     "rows-not-lost-or-duplicated|p",
+     "end-page-subtotals|p2"
+    ],
+    "behaved": "yes",
+    "note": "removed the 2 lines of row 32"
+   },
+   {
+    "group": "character-agreement",
+    "id": "NC-W",
+    "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+    "expected": "agreement",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "character-agreement",
+    "id": "NC-L",
+    "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+    "expected": "agreement",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "character-agreement",
+    "id": "NC-R",
+    "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+    "expected": "agreement",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "character-agreement",
+    "id": "NC-F",
+    "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+    "expected": "agreement",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "character-agreement",
+    "id": "row-by-row",
+    "run": "s1-grid-s2-G200-off-on-r1",
+    "expected": "agreement",
+    "observed": [
+     "155 text failures, only 100 listed"
+    ],
+    "behaved": "not evaluable",
+    "note": "the text oracle lists at most 100 failures: not compared row by row"
+   },
+   {
+    "group": "character-agreement",
+    "id": "summary",
+    "run": "grid",
+    "expected": "agreement on every row",
+    "observed": [
+     "63 runs compared"
+    ],
+    "behaved": "yes"
+   },
+   {
+    "group": "group-positive",
+    "id": "positive",
+    "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "group-positive",
+    "id": "positive",
+    "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "group-positive",
+    "id": "positive",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "-",
+    "observed": [],
+    "behaved": "yes"
+   },
+   {
+    "group": "group-faults",
+    "id": "GX-1",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "GC-1|header-missing|G0002",
+    "observed": [
+     "GC-1|header-missing|G0002"
+    ],
+    "behaved": "yes",
+    "note": "removed the header line of G0002 (line 374, page 7)"
+   },
+   {
+    "group": "group-faults",
+    "id": "GX-2",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "GC-2|total-wrong|G0001",
+    "observed": [
+     "GC-2|total-wrong|G0001"
+    ],
+    "behaved": "yes",
+    "note": "G0001 total 4681665.40 -> 4681665.41"
+   },
+   {
+    "group": "group-faults",
+    "id": "GX-3",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "GC-2|total-duplicated|G0001",
+    "observed": [
+     "GC-2|total-duplicated|G0001"
+    ],
+    "behaved": "yes",
+    "note": "duplicated the total line of G0001 on page 7"
+   },
+   {
+    "group": "group-faults",
+    "id": "GX-4",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "GC-3|row-outside-group|G0001",
+    "observed": [
+     "GC-3|row-outside-group|G0001"
+    ],
+    "behaved": "yes",
+    "note": "moved the total line of G0001 above its last row 182 (page 7)"
+   },
+   {
+    "group": "group-faults",
+    "id": "GX-5",
+    "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+    "expected": "GC-4|block-total-wrong|-",
+    "observed": [
+     "GC-4|block-total-wrong|-"
+    ],
+    "behaved": "yes",
+    "note": "block total 24182111.23 -> 24182111.24"
+   },
+   {
+    "group": "probe",
+    "id": "G200-split-t1.00-f0.90-on-r1.pdf",
+    "run": "G200-split-t1.00-f0.90-on-r1.pdf",
+    "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+    "observed": [
+     "rule 1 PASS (200 rows on 18 pages, 2 split); rule 3 PASS (starts at 0.00, ends at 5155412.18 = block total)"
+    ],
+    "behaved": "yes"
+   },
+   {
+    "group": "probe",
+    "id": "X1M-split-t1.00-f0.90-on-r1.pdf",
+    "run": "X1M-split-t1.00-f0.90-on-r1.pdf",
+    "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+    "observed": [
+     "rule 1 PASS (100 rows on 224 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)"
+    ],
+    "behaved": "yes"
+   },
+   {
+    "group": "probe",
+    "id": "W2a-split-t1.00-f0.90-on-r1.pdf",
+    "run": "W2a-split-t1.00-f0.90-on-r1.pdf",
+    "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+    "observed": [
+     "rule 1 PASS (100 rows on 14 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)"
+    ],
+    "behaved": "yes"
+   },
+   {
+    "group": "probe",
+    "id": "G200-off-on-r1.pdf",
+    "run": "G200-off-on-r1.pdf",
+    "expected": "rule 1 FAIL; none of the 150 sequences after 50 in the reading",
+    "observed": [
+     "rule 1 FAIL (150 sequences missing, first 51); 0 of them present"
+    ],
+    "behaved": "yes"
+   }
+  ]
+ },
+ "statements": {
+  "anchors and ordinary blocks": {
+   "runs": 10,
+   "runsChecked": 10,
+   "G1Headers": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G2GroupSubtotalsStaticText": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3Membership": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3BlockTotal": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G4PageAccounting": {
+    "statement": "exact",
+    "footerOnRuns": 9,
+    "inexact": []
+   },
+   "outcomes": {
+    "confirmed": 10
+   }
+  },
+  "group starting near a page end (GE)": {
+   "runs": 39,
+   "runsChecked": 39,
+   "G1Headers": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G2GroupSubtotalsStaticText": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3Membership": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3BlockTotal": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G4PageAccounting": {
+    "statement": "exact",
+    "footerOnRuns": 37,
+    "inexact": []
+   },
+   "outcomes": {
+    "confirmed": 39
+   }
+  },
+  "group spanning several or many pages (GS)": {
+   "runs": 3,
+   "runsChecked": 3,
+   "G1Headers": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G2GroupSubtotalsStaticText": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3Membership": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3BlockTotal": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G4PageAccounting": {
+    "statement": "exact",
+    "footerOnRuns": 2,
+    "inexact": []
+   },
+   "outcomes": {
+    "confirmed": 3
+   }
+  },
+  "groups containing over-tall rows (GT)": {
+   "runs": 7,
+   "runsChecked": 7,
+   "G1Headers": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G2GroupSubtotalsStaticText": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3Membership": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G3BlockTotal": {
+    "statement": "confirmed",
+    "failing": []
+   },
+   "G4PageAccounting": {
+    "statement": "exact",
+    "footerOnRuns": 6,
+    "inexact": []
+   },
+   "outcomes": {
+    "confirmed": 7
+   }
+  },
+  "note": "The group-total text is static text written from the fixture: G2 shows whether it survives pagination, not whether the layout library computes it. The page subtotals and the chain (G4) are what the accounting script computes after layout."
+ },
+ "anchors": {
+  "runsCompared": 19,
+  "differences": 0
+ },
+ "placement": [
+  {
+   "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 3,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 0,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 3,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 3,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 3,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 0,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": [
+    "p2 subtotal 'Page subtotal: 0.00'",
+    "p3 subtotal 'Page subtotal: 0.00'",
+    "p4 subtotal 'Page subtotal: 0.00'",
+    "p5 subtotal 'Page subtotal: 0.00'"
+   ]
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r2",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r3",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-off-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p15"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 35,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0004 p1"
+   ],
+   "headersAsLastLine": [
+    "G0004 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 1,
+   "totals": [
+    "G0003 total p2, last row p1: next page, first content line",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1",
+   "headersAlone": 2,
+   "headersAlonePages": [
+    "G0003 p1",
+    "G0004 p2"
+   ],
+   "headersAsLastLine": [
+    "G0003 p1",
+    "G0004 p2"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p2, last row p2: same page as the last row",
+    "G0004 total p9, last row p9: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1",
+   "headersAlone": 2,
+   "headersAlonePages": [
+    "G0003 p1",
+    "G0004 p2"
+   ],
+   "headersAsLastLine": [
+    "G0003 p1",
+    "G0004 p2"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p2, last row p2: same page as the last row",
+    "G0004 total p9, last row p9: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0003 p1"
+   ],
+   "headersAsLastLine": [
+    "G0003 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p2, last row p2: same page as the last row",
+    "G0004 total p9, last row p9: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0003 p1"
+   ],
+   "headersAsLastLine": [
+    "G0003 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 1,
+   "totals": [
+    "G0003 total p3, last row p2: next page, first content line",
+    "G0004 total p9, last row p9: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0003 p1"
+   ],
+   "headersAsLastLine": [
+    "G0003 p1"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 1,
+   "totals": [
+    "G0003 total p3, last row p2: next page, first content line",
+    "G0004 total p9, last row p9: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 8,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0003 total p1, last row p1: same page as the last row",
+    "G0004 total p8, last row p8: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 47,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0005 total p5, last row p5: same page as the last row",
+    "G0006 total p48, last row p48: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 47,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0005 total p5, last row p5: same page as the last row",
+    "G0006 total p48, last row p48: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 80,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0012 total p81, last row p81: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 7,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 17,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 223,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 17,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p17, last row p17: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 17,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p17, last row p17: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 13,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p11, last row p11: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+   "headersAlone": 1,
+   "headersAlonePages": [
+    "G0002 p7"
+   ],
+   "headersAsLastLine": [
+    "G0002 p7"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 13,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-s2-G200-off-on-r1",
+   "headersAlone": 0,
+   "headersAlonePages": [],
+   "headersAsLastLine": [],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 9,
+   "totalsSeparated": 0,
+   "totals": [],
+   "pagesWithoutDetail": []
+  },
+  {
+   "run": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1",
+   "headersAlone": 2,
+   "headersAlonePages": [
+    "G0004 p15",
+    "G0008 p80"
+   ],
+   "headersAsLastLine": [
+    "G0004 p15",
+    "G0008 p80"
+   ],
+   "headersRepeated": 0,
+   "continuationPagesWithoutHeader": 142,
+   "totalsSeparated": 0,
+   "totals": [
+    "G0001 total p7, last row p7: same page as the last row",
+    "G0002 total p15, last row p15: same page as the last row",
+    "G0003 total p15, last row p15: same page as the last row",
+    "G0004 total p22, last row p22: same page as the last row",
+    "G0005 total p27, last row p27: same page as the last row",
+    "G0006 total p70, last row p70: same page as the last row",
+    "G0007 total p80, last row p80: same page as the last row",
+    "G0008 total p87, last row p87: same page as the last row",
+    "G0009 total p90, last row p90: same page as the last row",
+    "G0010 total p101, last row p101: same page as the last row",
+    "G0011 total p114, last row p114: same page as the last row"
+   ],
+   "pagesWithoutDetail": []
+  }
+ ],
+ "costs": [
+  {
+   "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+   "pages": 4,
+   "layoutMs": 286.3871,
+   "wallMs": 2409.1598,
+   "chromiumTreePeakRssKiB": 463256,
+   "containerRunningPeakBytes": 310992896
+  },
+  {
+   "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+   "pages": 1,
+   "layoutMs": 56.4587,
+   "wallMs": 1600.2306,
+   "chromiumTreePeakRssKiB": 432824,
+   "containerRunningPeakBytes": 310992896
+  },
+  {
+   "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "pages": 4,
+   "layoutMs": 223.3232,
+   "wallMs": 1743.6028,
+   "chromiumTreePeakRssKiB": 463500,
+   "containerRunningPeakBytes": 311476224
+  },
+  {
+   "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "pages": 4,
+   "layoutMs": 261.8396,
+   "wallMs": 1678.7348,
+   "chromiumTreePeakRssKiB": 462108,
+   "containerRunningPeakBytes": 311476224
+  },
+  {
+   "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "pages": 4,
+   "layoutMs": 252.8311,
+   "wallMs": 1710.6401,
+   "chromiumTreePeakRssKiB": 462816,
+   "containerRunningPeakBytes": 313335808
+  },
+  {
+   "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "pages": 5,
+   "layoutMs": 202.3434,
+   "wallMs": 1610.9454,
+   "chromiumTreePeakRssKiB": 453264,
+   "containerRunningPeakBytes": 313335808
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r1",
+   "pages": 36,
+   "layoutMs": 981.535,
+   "wallMs": 3008.6558,
+   "chromiumTreePeakRssKiB": 551140,
+   "containerRunningPeakBytes": 461250560
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r2",
+   "pages": 36,
+   "layoutMs": 949.7796,
+   "wallMs": 3004.9783,
+   "chromiumTreePeakRssKiB": 551424,
+   "containerRunningPeakBytes": 461357056
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r3",
+   "pages": 36,
+   "layoutMs": 924.8265,
+   "wallMs": 2889.3834,
+   "chromiumTreePeakRssKiB": 551148,
+   "containerRunningPeakBytes": 466300928
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+   "pages": 36,
+   "layoutMs": 832.4987,
+   "wallMs": 2913.3026,
+   "chromiumTreePeakRssKiB": 553104,
+   "containerRunningPeakBytes": 466300928
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+   "pages": 36,
+   "layoutMs": 870.9936,
+   "wallMs": 2956.5043,
+   "chromiumTreePeakRssKiB": 551440,
+   "containerRunningPeakBytes": 466300928
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+   "pages": 36,
+   "layoutMs": 837.6137,
+   "wallMs": 3027.3687,
+   "chromiumTreePeakRssKiB": 552776,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-off-r1",
+   "pages": 36,
+   "layoutMs": 914.0044,
+   "wallMs": 2995.7684,
+   "chromiumTreePeakRssKiB": 550264,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 471.6427,
+   "wallMs": 1983.6442,
+   "chromiumTreePeakRssKiB": 508472,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 455.293,
+   "wallMs": 2017.9237,
+   "chromiumTreePeakRssKiB": 508232,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 464.129,
+   "wallMs": 1990.5875,
+   "chromiumTreePeakRssKiB": 509156,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 491.7907,
+   "wallMs": 2104.8101,
+   "chromiumTreePeakRssKiB": 511544,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 680.0901,
+   "wallMs": 2540.4419,
+   "chromiumTreePeakRssKiB": 512780,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 548.8501,
+   "wallMs": 2315.8648,
+   "chromiumTreePeakRssKiB": 512416,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 464.1466,
+   "wallMs": 2101.2219,
+   "chromiumTreePeakRssKiB": 512720,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 470.6028,
+   "wallMs": 1998.142,
+   "chromiumTreePeakRssKiB": 512080,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 495.7545,
+   "wallMs": 2071.6269,
+   "chromiumTreePeakRssKiB": 513012,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 452.9733,
+   "wallMs": 1995.0959,
+   "chromiumTreePeakRssKiB": 513672,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 499.2742,
+   "wallMs": 1975.884,
+   "chromiumTreePeakRssKiB": 513860,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 462.2578,
+   "wallMs": 1998.1302,
+   "chromiumTreePeakRssKiB": 512196,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 451.5988,
+   "wallMs": 1921.4551,
+   "chromiumTreePeakRssKiB": 511648,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 499.5659,
+   "wallMs": 1993.3262,
+   "chromiumTreePeakRssKiB": 513240,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 451.6989,
+   "wallMs": 2014.3384,
+   "chromiumTreePeakRssKiB": 512348,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 499.8295,
+   "wallMs": 2042.8461,
+   "chromiumTreePeakRssKiB": 512668,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 720.622,
+   "wallMs": 2564.0799,
+   "chromiumTreePeakRssKiB": 511844,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 502.171,
+   "wallMs": 2254.8342,
+   "chromiumTreePeakRssKiB": 515328,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 543.3544,
+   "wallMs": 2033.1011,
+   "chromiumTreePeakRssKiB": 514380,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1",
+   "pages": 9,
+   "layoutMs": 513.793,
+   "wallMs": 2060.2468,
+   "chromiumTreePeakRssKiB": 513628,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 493.6182,
+   "wallMs": 2029.1423,
+   "chromiumTreePeakRssKiB": 518212,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 541.7052,
+   "wallMs": 2113.4533,
+   "chromiumTreePeakRssKiB": 519572,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 623.7928,
+   "wallMs": 2090.5122,
+   "chromiumTreePeakRssKiB": 533896,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 596.1726,
+   "wallMs": 2184.7703,
+   "chromiumTreePeakRssKiB": 535568,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 659.0165,
+   "wallMs": 2164.7413,
+   "chromiumTreePeakRssKiB": 536144,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 627.2984,
+   "wallMs": 2102.1103,
+   "chromiumTreePeakRssKiB": 534736,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 625.6002,
+   "wallMs": 2197.2208,
+   "chromiumTreePeakRssKiB": 536672,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 622.1799,
+   "wallMs": 2241.2588,
+   "chromiumTreePeakRssKiB": 536432,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 535.2773,
+   "wallMs": 2063.3013,
+   "chromiumTreePeakRssKiB": 537844,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 558.9361,
+   "wallMs": 2071.4234,
+   "chromiumTreePeakRssKiB": 534528,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 611.0008,
+   "wallMs": 2137.6159,
+   "chromiumTreePeakRssKiB": 535008,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+   "pages": 10,
+   "layoutMs": 624.4262,
+   "wallMs": 2042.2914,
+   "chromiumTreePeakRssKiB": 533072,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1",
+   "pages": 11,
+   "layoutMs": 663.2304,
+   "wallMs": 2227.9136,
+   "chromiumTreePeakRssKiB": 532688,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1",
+   "pages": 11,
+   "layoutMs": 652.6665,
+   "wallMs": 2106.1175,
+   "chromiumTreePeakRssKiB": 534188,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1",
+   "pages": 11,
+   "layoutMs": 636.7195,
+   "wallMs": 2177.0859,
+   "chromiumTreePeakRssKiB": 533408,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1",
+   "pages": 11,
+   "layoutMs": 661.3902,
+   "wallMs": 2140.0905,
+   "chromiumTreePeakRssKiB": 532832,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1",
+   "pages": 11,
+   "layoutMs": 623.9967,
+   "wallMs": 2099.3007,
+   "chromiumTreePeakRssKiB": 530916,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1",
+   "pages": 10,
+   "layoutMs": 538.4062,
+   "wallMs": 2036.1024,
+   "chromiumTreePeakRssKiB": 519280,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1",
+   "pages": 10,
+   "layoutMs": 604.537,
+   "wallMs": 2167.1456,
+   "chromiumTreePeakRssKiB": 534532,
+   "containerRunningPeakBytes": 466694144
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+   "pages": 48,
+   "layoutMs": 1076.992,
+   "wallMs": 3499.3035,
+   "chromiumTreePeakRssKiB": 565584,
+   "containerRunningPeakBytes": 538628096
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1",
+   "pages": 48,
+   "layoutMs": 1051.7604,
+   "wallMs": 3343.0946,
+   "chromiumTreePeakRssKiB": 560436,
+   "containerRunningPeakBytes": 538628096
+  },
+  {
+   "run": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1",
+   "pages": 81,
+   "layoutMs": 2099.164,
+   "wallMs": 5491.8351,
+   "chromiumTreePeakRssKiB": 771356,
+   "containerRunningPeakBytes": 795885568
+  },
+  {
+   "run": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+   "pages": 8,
+   "layoutMs": 227.4234,
+   "wallMs": 1699.1598,
+   "chromiumTreePeakRssKiB": 468760,
+   "containerRunningPeakBytes": 795885568
+  },
+  {
+   "run": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+   "pages": 18,
+   "layoutMs": 423.8,
+   "wallMs": 1966.689,
+   "chromiumTreePeakRssKiB": 491892,
+   "containerRunningPeakBytes": 795885568
+  },
+  {
+   "run": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+   "pages": 224,
+   "layoutMs": 4333.7028,
+   "wallMs": 9545.3391,
+   "chromiumTreePeakRssKiB": 832412,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+   "pages": 18,
+   "layoutMs": 456.6396,
+   "wallMs": 2334.7022,
+   "chromiumTreePeakRssKiB": 502436,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+   "pages": 18,
+   "layoutMs": 442.6479,
+   "wallMs": 2084.9749,
+   "chromiumTreePeakRssKiB": 500948,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+   "pages": 14,
+   "layoutMs": 471.3067,
+   "wallMs": 2049.6252,
+   "chromiumTreePeakRssKiB": 505548,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+   "pages": 14,
+   "layoutMs": 462.0327,
+   "wallMs": 2092.8644,
+   "chromiumTreePeakRssKiB": 507496,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-s2-G200-off-on-r1",
+   "pages": 10,
+   "layoutMs": 352.3776,
+   "wallMs": 1869.5936,
+   "chromiumTreePeakRssKiB": 484936,
+   "containerRunningPeakBytes": 916058112
+  },
+  {
+   "run": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1",
+   "pages": 143,
+   "layoutMs": 3812.0059,
+   "wallMs": 9015.9851,
+   "chromiumTreePeakRssKiB": 840576,
+   "containerRunningPeakBytes": 954195968
+  }
+ ],
+ "counts": {
+  "planned": 64,
+  "classes": {
+   "ok": 64
+  },
+  "outcomes": {
+   "confirmed": 59,
+   "control": 4,
+   "baseline exception (the giant-row signature without the split)": 1
+  }
+ },
+ "outcomes": [
+  {
+   "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+   "fixture": "B100",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+   "fixture": "K1",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "fixture": "B100",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "control",
+   "refuting": [
+    "character text-dropped row 50: offset 75: expected 'htformantenimientovalveañogeneralnetworkdepósitoinformaciónmediciónkilowattrepai', printed 'htformantenimientovalveañogeneralnetworkinformaciónmediciónkilowattrepairenergya'",
+    "TI-3 text-dropped row 50 p2"
+   ],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "fixture": "B100",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "control",
+   "refuting": [
+    "character text-repeated row 50: offset 78: expected 'ormantenimientovalveañogeneralnetworkdepósitoinformaciónmediciónkilowattrepairen', printed 'ormantenimientovalveañogeneralnetworkdepgineutilitymaintenancefreightformantenim'",
+    "TI-3 text-repeated row 50 p2"
+   ],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "fixture": "B100",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "control",
+   "refuting": [
+    "rule 1 rows-not-lost-or-duplicated p: 1 sequences missing, first 51",
+    "rule 3 brought-carried-chain p4: ends at 2658211.34 but block total is 2708053.13",
+    "character row-lost row 51: no word of the row in the printed reading",
+    "TI-2 row-lost row 51 p2"
+   ],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "fixture": "F26K-a",
+   "row": 1,
+   "footerOn": true,
+   "outcome": "control",
+   "refuting": [
+    "TI-6 text-dropped p1"
+   ],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r1",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r2",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r3",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-off-r1",
+   "fixture": "B1000",
+   "row": 2,
+   "footerOn": false,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1",
+   "fixture": "GE30",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1",
+   "fixture": "GE31",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1",
+   "fixture": "GE32",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1",
+   "fixture": "GE33",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1",
+   "fixture": "GE34",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1",
+   "fixture": "GE35",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1",
+   "fixture": "GE36",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1",
+   "fixture": "GE37",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1",
+   "fixture": "GE38",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1",
+   "fixture": "GE39",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1",
+   "fixture": "GE40",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1",
+   "fixture": "GE41",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1",
+   "fixture": "GE42",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1",
+   "fixture": "GE43",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1",
+   "fixture": "GE44",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1",
+   "fixture": "GE45",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1",
+   "fixture": "GE46",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1",
+   "fixture": "GE47",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1",
+   "fixture": "GE48",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1",
+   "fixture": "GE49",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1",
+   "fixture": "GE50",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1",
+   "fixture": "GE51",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+   "fixture": "GE52",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1",
+   "fixture": "GE53",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1",
+   "fixture": "GE54",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1",
+   "fixture": "GE55",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1",
+   "fixture": "GE56",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1",
+   "fixture": "GE57",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1",
+   "fixture": "GE58",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1",
+   "fixture": "GE59",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1",
+   "fixture": "GE60",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+   "fixture": "GE61",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1",
+   "fixture": "GE62",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1",
+   "fixture": "GE63",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1",
+   "fixture": "GE64",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1",
+   "fixture": "GE65",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1",
+   "fixture": "GE66",
+   "row": 3,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1",
+   "fixture": "GE50",
+   "row": 4,
+   "footerOn": false,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1",
+   "fixture": "GE60",
+   "row": 4,
+   "footerOn": false,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+   "fixture": "GS1200",
+   "row": 5,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1",
+   "fixture": "GS1200",
+   "row": 5,
+   "footerOn": false,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1",
+   "fixture": "GS2400",
+   "row": 5,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+   "fixture": "T300u",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+   "fixture": "X64K",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+   "fixture": "X1M",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+   "fixture": "G200",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+   "fixture": "G200",
+   "row": 6,
+   "footerOn": false,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+   "fixture": "GTL300u",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+   "fixture": "GTF300u",
+   "row": 6,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  },
+  {
+   "run": "s1-grid-s2-G200-off-on-r1",
+   "fixture": "G200",
+   "row": 7,
+   "footerOn": true,
+   "outcome": "baseline exception (the giant-row signature without the split)",
+   "refuting": [
+    "rule 1 rows-not-lost-or-duplicated p: 150 sequences missing, first 51",
+    "rule 2 end-page-subtotals p10: unreadable footer ''",
+    "rule 3 brought-carried-chain p10: unreadable footer",
+    "GC-1 header-missing G0002: no header line for G0002 — Región Sur",
+    "GC-2 total-missing G0001: expected 4681665.40",
+    "GC-4 block-total-wrong: printed none, expected 5155412.18",
+    "character amount-missing row 50: no word equal to the amount '46323.27'",
+    "character row-lost row 51: no word of the row in the printed reading",
+    "character row-lost row 52: no word of the row in the printed reading",
+    "character row-lost row 53: no word of the row in the printed reading",
+    "character row-lost row 54: no word of the row in the printed reading",
+    "character row-lost row 55: no word of the row in the printed reading",
+    "character row-lost row 56: no word of the row in the printed reading",
+    "character row-lost row 57: no word of the row in the printed reading",
+    "character row-lost row 58: no word of the row in the printed reading",
+    "character row-lost row 59: no word of the row in the printed reading",
+    "character row-lost row 60: no word of the row in the printed reading",
+    "character row-lost row 61: no word of the row in the printed reading",
+    "character row-lost row 62: no word of the row in the printed reading",
+    "character row-lost row 63: no word of the row in the printed reading",
+    "character row-lost row 64: no word of the row in the printed reading",
+    "character row-lost row 65: no word of the row in the printed reading",
+    "character row-lost row 66: no word of the row in the printed reading",
+    "character row-lost row 67: no word of the row in the printed reading",
+    "character row-lost row 68: no word of the row in the printed reading",
+    "character row-lost row 69: no word of the row in the printed reading",
+    "character row-lost row 70: no word of the row in the printed reading",
+    "character row-lost row 71: no word of the row in the printed reading",
+    "character row-lost row 72: no word of the row in the printed reading",
+    "character row-lost row 73: no word of the row in the printed reading",
+    "character row-lost row 74: no word of the row in the printed reading",
+    "character row-lost row 75: no word of the row in the printed reading",
+    "character row-lost row 76: no word of the row in the printed reading",
+    "character row-lost row 77: no word of the row in the printed reading",
+    "character row-lost row 78: no word of the row in the printed reading",
+    "character row-lost row 79: no word of the row in the printed reading",
+    "character row-lost row 80: no word of the row in the printed reading",
+    "character row-lost row 81: no word of the row in the printed reading",
+    "character row-lost row 82: no word of the row in the printed reading",
+    "character row-lost row 83: no word of the row in the printed reading",
+    "character row-lost row 84: no word of the row in the printed reading",
+    "character row-lost row 85: no word of the row in the printed reading",
+    "character row-lost row 86: no word of the row in the printed reading",
+    "character row-lost row 87: no word of the row in the printed reading",
+    "character row-lost row 88: no word of the row in the printed reading",
+    "character row-lost row 89: no word of the row in the printed reading",
+    "character row-lost row 90: no word of the row in the printed reading",
+    "character row-lost row 91: no word of the row in the printed reading",
+    "character row-lost row 92: no word of the row in the printed reading",
+    "character row-lost row 93: no word of the row in the printed reading",
+    "character row-lost row 94: no word of the row in the printed reading",
+    "character row-lost row 95: no word of the row in the printed reading",
+    "character row-lost row 96: no word of the row in the printed reading",
+    "character row-lost row 97: no word of the row in the printed reading",
+    "character row-lost row 98: no word of the row in the printed reading",
+    "character row-lost row 99: no word of the row in the printed reading",
+    "character row-lost row 100: no word of the row in the printed reading",
+    "character row-lost row 101: no word of the row in the printed reading",
+    "character row-lost row 102: no word of the row in the printed reading",
+    "character row-lost row 103: no word of the row in the printed reading",
+    "character row-lost row 104: no word of the row in the printed reading",
+    "character row-lost row 105: no word of the row in the printed reading",
+    "character row-lost row 106: no word of the row in the printed reading",
+    "character row-lost row 107: no word of the row in the printed reading",
+    "character row-lost row 108: no word of the row in the printed reading",
+    "character row-lost row 109: no word of the row in the printed reading",
+    "character row-lost row 110: no word of the row in the printed reading",
+    "character row-lost row 111: no word of the row in the printed reading",
+    "character row-lost row 112: no word of the row in the printed reading",
+    "character row-lost row 113: no word of the row in the printed reading",
+    "character row-lost row 114: no word of the row in the printed reading",
+    "character row-lost row 115: no word of the row in the printed reading",
+    "character row-lost row 116: no word of the row in the printed reading",
+    "character row-lost row 117: no word of the row in the printed reading",
+    "character row-lost row 118: no word of the row in the printed reading",
+    "character row-lost row 119: no word of the row in the printed reading",
+    "character row-lost row 120: no word of the row in the printed reading",
+    "character row-lost row 121: no word of the row in the printed reading",
+    "character row-lost row 122: no word of the row in the printed reading",
+    "character row-lost row 123: no word of the row in the printed reading",
+    "character row-lost row 124: no word of the row in the printed reading",
+    "character row-lost row 125: no word of the row in the printed reading",
+    "character row-lost row 126: no word of the row in the printed reading",
+    "character row-lost row 127: no word of the row in the printed reading",
+    "character row-lost row 128: no word of the row in the printed reading",
+    "character row-lost row 129: no word of the row in the printed reading",
+    "character row-lost row 130: no word of the row in the printed reading",
+    "character row-lost row 131: no word of the row in the printed reading",
+    "character row-lost row 132: no word of the row in the printed reading",
+    "character row-lost row 133: no word of the row in the printed reading",
+    "character row-lost row 134: no word of the row in the printed reading",
+    "character row-lost row 135: no word of the row in the printed reading",
+    "character row-lost row 136: no word of the row in the printed reading",
+    "character row-lost row 137: no word of the row in the printed reading",
+    "character row-lost row 138: no word of the row in the printed reading",
+    "character row-lost row 139: no word of the row in the printed reading",
+    "character row-lost row 140: no word of the row in the printed reading",
+    "character row-lost row 141: no word of the row in the printed reading",
+    "character row-lost row 142: no word of the row in the printed reading",
+    "character row-lost row 143: no word of the row in the printed reading",
+    "character row-lost row 144: no word of the row in the printed reading",
+    "character row-lost row 145: no word of the row in the printed reading",
+    "character row-lost row 146: no word of the row in the printed reading",
+    "character row-lost row 147: no word of the row in the printed reading",
+    "character row-lost row 148: no word of the row in the printed reading",
+    "character row-lost row 149: no word of the row in the printed reading",
+    "character row-lost row 150: no word of the row in the printed reading",
+    "character row-lost row 151: no word of the row in the printed reading",
+    "character row-lost row 152: no word of the row in the printed reading",
+    "character row-lost row 153: no word of the row in the printed reading",
+    "character row-lost row 154: no word of the row in the printed reading",
+    "character row-lost row 155: no word of the row in the printed reading",
+    "character row-lost row 156: no word of the row in the printed reading",
+    "character row-lost row 157: no word of the row in the printed reading",
+    "character row-lost row 158: no word of the row in the printed reading",
+    "character row-lost row 159: no word of the row in the printed reading",
+    "character row-lost row 160: no word of the row in the printed reading",
+    "character row-lost row 161: no word of the row in the printed reading",
+    "character row-lost row 162: no word of the row in the printed reading",
+    "character row-lost row 163: no word of the row in the printed reading",
+    "character row-lost row 164: no word of the row in the printed reading",
+    "character row-lost row 165: no word of the row in the printed reading",
+    "character row-lost row 166: no word of the row in the printed reading",
+    "character row-lost row 167: no word of the row in the printed reading",
+    "character row-lost row 168: no word of the row in the printed reading",
+    "character row-lost row 169: no word of the row in the printed reading",
+    "character row-lost row 170: no word of the row in the printed reading",
+    "character row-lost row 171: no word of the row in the printed reading",
+    "character row-lost row 172: no word of the row in the printed reading",
+    "character row-lost row 173: no word of the row in the printed reading",
+    "character row-lost row 174: no word of the row in the printed reading",
+    "character row-lost row 175: no word of the row in the printed reading",
+    "character row-lost row 176: no word of the row in the printed reading",
+    "character row-lost row 177: no word of the row in the printed reading",
+    "character row-lost row 178: no word of the row in the printed reading",
+    "character row-lost row 179: no word of the row in the printed reading",
+    "character row-lost row 180: no word of the row in the printed reading",
+    "character row-lost row 181: no word of the row in the printed reading",
+    "character row-lost row 182: no word of the row in the printed reading",
+    "character row-lost row 183: no word of the row in the printed reading",
+    "character row-lost row 184: no word of the row in the printed reading",
+    "character row-lost row 185: no word of the row in the printed reading",
+    "character row-lost row 186: no word of the row in the printed reading",
+    "character row-lost row 187: no word of the row in the printed reading",
+    "character row-lost row 188: no word of the row in the printed reading",
+    "character row-lost row 189: no word of the row in the printed reading",
+    "character row-lost row 190: no word of the row in the printed reading",
+    "character row-lost row 191: no word of the row in the printed reading",
+    "character row-lost row 192: no word of the row in the printed reading",
+    "character row-lost row 193: no word of the row in the printed reading",
+    "character row-lost row 194: no word of the row in the printed reading",
+    "character row-lost row 195: no word of the row in the printed reading",
+    "character row-lost row 196: no word of the row in the printed reading",
+    "character row-lost row 197: no word of the row in the printed reading",
+    "character row-lost row 198: no word of the row in the printed reading",
+    "character row-lost row 199: no word of the row in the printed reading",
+    "character row-lost row 200: no word of the row in the printed reading",
+    "TI-2 row-lost row 51 p10",
+    "TI-2 row-lost row 52 p10",
+    "TI-2 row-lost row 53 p10",
+    "TI-2 row-lost row 54 p10",
+    "TI-2 row-lost row 55 p10",
+    "TI-2 row-lost row 56 p10",
+    "TI-2 row-lost row 57 p10",
+    "TI-2 row-lost row 58 p10",
+    "TI-2 row-lost row 59 p10",
+    "TI-2 row-lost row 60 p10",
+    "TI-2 row-lost row 61 p10",
+    "TI-2 row-lost row 62 p10",
+    "TI-2 row-lost row 63 p10",
+    "TI-2 row-lost row 64 p10",
+    "TI-2 row-lost row 65 p10",
+    "TI-2 row-lost row 66 p10",
+    "TI-2 row-lost row 67 p10",
+    "TI-2 row-lost row 68 p10",
+    "TI-2 row-lost row 69 p10",
+    "TI-2 row-lost row 70 p10",
+    "TI-2 row-lost row 71 p10",
+    "TI-2 row-lost row 72 p10",
+    "TI-2 row-lost row 73 p10",
+    "TI-2 row-lost row 74 p10",
+    "TI-2 row-lost row 75 p10",
+    "TI-2 row-lost row 76 p10",
+    "TI-2 row-lost row 77 p10",
+    "TI-2 row-lost row 78 p10",
+    "TI-2 row-lost row 79 p10",
+    "TI-2 row-lost row 80 p10",
+    "TI-2 row-lost row 81 p10",
+    "TI-2 row-lost row 82 p10",
+    "TI-2 row-lost row 83 p10",
+    "TI-2 row-lost row 84 p10",
+    "TI-2 row-lost row 85 p10",
+    "TI-2 row-lost row 86 p10",
+    "TI-2 row-lost row 87 p10",
+    "TI-2 row-lost row 88 p10",
+    "TI-2 row-lost row 89 p10",
+    "TI-2 row-lost row 90 p10",
+    "TI-2 row-lost row 91 p10",
+    "TI-2 row-lost row 92 p10",
+    "TI-2 row-lost row 93 p10",
+    "TI-2 row-lost row 94 p10",
+    "TI-2 row-lost row 95 p10",
+    "TI-2 row-lost row 96 p10",
+    "TI-2 row-lost row 97 p10",
+    "TI-2 row-lost row 98 p10",
+    "TI-2 row-lost row 99 p10",
+    "TI-2 row-lost row 100 p10",
+    "TI-2 row-lost row 101 p10",
+    "TI-2 row-lost row 102 p10",
+    "TI-2 row-lost row 103 p10",
+    "TI-2 row-lost row 104 p10",
+    "TI-2 row-lost row 105 p10",
+    "TI-2 row-lost row 106 p10",
+    "TI-2 row-lost row 107 p10",
+    "TI-2 row-lost row 108 p10",
+    "TI-2 row-lost row 109 p10",
+    "TI-2 row-lost row 110 p10",
+    "TI-2 row-lost row 111 p10",
+    "TI-2 row-lost row 112 p10",
+    "TI-2 row-lost row 113 p10",
+    "TI-2 row-lost row 114 p10",
+    "TI-2 row-lost row 115 p10",
+    "TI-2 row-lost row 116 p10",
+    "TI-2 row-lost row 117 p10",
+    "TI-2 row-lost row 118 p10",
+    "TI-2 row-lost row 119 p10",
+    "TI-2 row-lost row 120 p10",
+    "TI-2 row-lost row 121 p10",
+    "TI-2 row-lost row 122 p10",
+    "TI-2 row-lost row 123 p10",
+    "TI-2 row-lost row 124 p10",
+    "TI-2 row-lost row 125 p10",
+    "TI-2 row-lost row 126 p10",
+    "TI-2 row-lost row 127 p10",
+    "TI-2 row-lost row 128 p10",
+    "TI-2 row-lost row 129 p10",
+    "TI-2 row-lost row 130 p10",
+    "TI-2 row-lost row 131 p10",
+    "TI-2 row-lost row 132 p10",
+    "TI-2 row-lost row 133 p10",
+    "TI-2 row-lost row 134 p10",
+    "TI-2 row-lost row 135 p10",
+    "TI-2 row-lost row 136 p10",
+    "TI-2 row-lost row 137 p10",
+    "TI-2 row-lost row 138 p10",
+    "TI-2 row-lost row 139 p10",
+    "TI-2 row-lost row 140 p10",
+    "TI-2 row-lost row 141 p10",
+    "TI-2 row-lost row 142 p10",
+    "TI-2 row-lost row 143 p10",
+    "TI-2 row-lost row 144 p10",
+    "TI-2 row-lost row 145 p10",
+    "TI-2 row-lost row 146 p10",
+    "TI-2 row-lost row 147 p10",
+    "TI-2 row-lost row 148 p10",
+    "TI-2 row-lost row 149 p10"
+   ],
+   "partial": [
+    "rule 4 visible-amounts p10: sequence 50 fragment 8/8 shows '', expected '46323.27'",
+    "rule 6 geometry p: bottom margin boxes not found",
+    "TI-1 structure-lost",
+    "\"Layout repeated\" signalled by the layout library"
+   ],
+   "unlistedTextFailures": 55
+  },
+  {
+   "run": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1",
+   "fixture": "B4000",
+   "row": 8,
+   "footerOn": true,
+   "outcome": "confirmed",
+   "refuting": [],
+   "partial": [],
+   "unlistedTextFailures": 0
+  }
+ ]
+}

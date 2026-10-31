@@ -1,0 +1,1619 @@
+{
+ "dataset": {
+  "file": "header-items-v1.grouped.10k.json",
+  "sha256": "d1969e96b5413f21c2f04f1ec789b01fe9ea30e3d6ad78691521350ec580c753",
+  "records": 10000
+ },
+ "selfCheck": "B100 and B1000 reproduced byte for byte",
+ "secondBuild": "identical",
+ "sumsSha256": "10267bf9cbb61eae20883470c08cb01b20dbbac08e6bf2921cd4f76ca2ba93ae",
+ "fixtures": [
+  {
+   "fixture": "GE30",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 329,
+     "lines": 30
+    }
+   ]
+  },
+  {
+   "fixture": "GE31",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 340,
+     "lines": 31
+    }
+   ]
+  },
+  {
+   "fixture": "GE32",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 351,
+     "lines": 32
+    }
+   ]
+  },
+  {
+   "fixture": "GE33",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 362,
+     "lines": 33
+    }
+   ]
+  },
+  {
+   "fixture": "GE34",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 373,
+     "lines": 34
+    }
+   ]
+  },
+  {
+   "fixture": "GE35",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 384,
+     "lines": 35
+    }
+   ]
+  },
+  {
+   "fixture": "GE36",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 395,
+     "lines": 36
+    }
+   ]
+  },
+  {
+   "fixture": "GE37",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 406,
+     "lines": 37
+    }
+   ]
+  },
+  {
+   "fixture": "GE38",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 417,
+     "lines": 38
+    }
+   ]
+  },
+  {
+   "fixture": "GE39",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 428,
+     "lines": 39
+    }
+   ]
+  },
+  {
+   "fixture": "GE40",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 439,
+     "lines": 40
+    }
+   ]
+  },
+  {
+   "fixture": "GE41",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 450,
+     "lines": 41
+    }
+   ]
+  },
+  {
+   "fixture": "GE42",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 461,
+     "lines": 42
+    }
+   ]
+  },
+  {
+   "fixture": "GE43",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 472,
+     "lines": 43
+    }
+   ]
+  },
+  {
+   "fixture": "GE44",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 483,
+     "lines": 44
+    }
+   ]
+  },
+  {
+   "fixture": "GE45",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 494,
+     "lines": 45
+    }
+   ]
+  },
+  {
+   "fixture": "GE46",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 505,
+     "lines": 46
+    }
+   ]
+  },
+  {
+   "fixture": "GE47",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 516,
+     "lines": 47
+    }
+   ]
+  },
+  {
+   "fixture": "GE48",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 527,
+     "lines": 48
+    }
+   ]
+  },
+  {
+   "fixture": "GE49",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 538,
+     "lines": 49
+    }
+   ]
+  },
+  {
+   "fixture": "GE50",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 549,
+     "lines": 50
+    }
+   ]
+  },
+  {
+   "fixture": "GE51",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 560,
+     "lines": 51
+    }
+   ]
+  },
+  {
+   "fixture": "GE52",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 571,
+     "lines": 52
+    }
+   ]
+  },
+  {
+   "fixture": "GE53",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 582,
+     "lines": 53
+    }
+   ]
+  },
+  {
+   "fixture": "GE54",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 593,
+     "lines": 54
+    }
+   ]
+  },
+  {
+   "fixture": "GE55",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 604,
+     "lines": 55
+    }
+   ]
+  },
+  {
+   "fixture": "GE56",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 615,
+     "lines": 56
+    }
+   ]
+  },
+  {
+   "fixture": "GE57",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 626,
+     "lines": 57
+    }
+   ]
+  },
+  {
+   "fixture": "GE58",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 637,
+     "lines": 58
+    }
+   ]
+  },
+  {
+   "fixture": "GE59",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 648,
+     "lines": 59
+    }
+   ]
+  },
+  {
+   "fixture": "GE60",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 659,
+     "lines": 60
+    }
+   ]
+  },
+  {
+   "fixture": "GE61",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 670,
+     "lines": 61
+    }
+   ]
+  },
+  {
+   "fixture": "GE62",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 681,
+     "lines": 62
+    }
+   ]
+  },
+  {
+   "fixture": "GE63",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 692,
+     "lines": 63
+    }
+   ]
+  },
+  {
+   "fixture": "GE64",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 703,
+     "lines": 64
+    }
+   ]
+  },
+  {
+   "fixture": "GE65",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 714,
+     "lines": 65
+    }
+   ]
+  },
+  {
+   "fixture": "GE66",
+   "case": "group starting near a page end",
+   "records": {
+    "first": 401,
+    "last": 650,
+    "count": 250
+   },
+   "whiteSpace": "pre-line",
+   "groups": [
+    {
+     "id": "G0003",
+     "firstSequence": 402,
+     "lastSequence": 402,
+     "items": 1,
+     "closed": true
+    },
+    {
+     "id": "G0004",
+     "firstSequence": 403,
+     "lastSequence": 594,
+     "items": 192,
+     "closed": true
+    },
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 651,
+     "items": 57,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 402,
+     "characters": 725,
+     "lines": 66
+    }
+   ]
+  },
+  {
+   "fixture": "GS1200",
+   "case": "group spanning several pages",
+   "records": {
+    "first": 594,
+    "last": 1959,
+    "count": 1366
+   },
+   "whiteSpace": "normal",
+   "groups": [
+    {
+     "id": "G0005",
+     "firstSequence": 595,
+     "lastSequence": 754,
+     "items": 160,
+     "closed": true
+    },
+    {
+     "id": "G0006",
+     "firstSequence": 755,
+     "lastSequence": 1954,
+     "items": 1200,
+     "closed": true
+    },
+    {
+     "id": "G0007",
+     "firstSequence": 1955,
+     "lastSequence": 1960,
+     "items": 6,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": []
+  },
+  {
+   "fixture": "GS2400",
+   "case": "group spanning many pages",
+   "records": {
+    "first": 3152,
+    "last": 5559,
+    "count": 2408
+   },
+   "whiteSpace": "normal",
+   "groups": [
+    {
+     "id": "G0012",
+     "firstSequence": 3153,
+     "lastSequence": 5552,
+     "items": 2400,
+     "closed": true
+    },
+    {
+     "id": "G0013",
+     "firstSequence": 5553,
+     "lastSequence": 5560,
+     "items": 8,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": []
+  },
+  {
+   "fixture": "GTL300u",
+   "case": "over-tall row as a group's last row",
+   "records": {
+    "first": 0,
+    "last": 259,
+    "count": 260
+   },
+   "whiteSpace": "normal",
+   "groups": [
+    {
+     "id": "G0001",
+     "firstSequence": 1,
+     "lastSequence": 182,
+     "items": 182,
+     "closed": true
+    },
+    {
+     "id": "G0002",
+     "firstSequence": 183,
+     "lastSequence": 260,
+     "items": 78,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 182,
+     "characters": 15930,
+     "lines": 1
+    }
+   ]
+  },
+  {
+   "fixture": "GTF300u",
+   "case": "over-tall row as a group's first row",
+   "records": {
+    "first": 0,
+    "last": 259,
+    "count": 260
+   },
+   "whiteSpace": "normal",
+   "groups": [
+    {
+     "id": "G0001",
+     "firstSequence": 1,
+     "lastSequence": 182,
+     "items": 182,
+     "closed": true
+    },
+    {
+     "id": "G0002",
+     "firstSequence": 183,
+     "lastSequence": 260,
+     "items": 78,
+     "closed": false
+    }
+   ],
+   "changedDescriptions": [
+    {
+     "sequence": 183,
+     "characters": 15930,
+     "lines": 1
+    }
+   ]
+  }
+ ]
+}

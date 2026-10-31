@@ -1,0 +1,10230 @@
+{
+ "runs": [
+  {
+   "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B100",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4
+      ],
+      "lastItemPage": 4
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 3,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.28
+  },
+  {
+   "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+   "fixtureId": "K1",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: -2873.58",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 0,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.08
+  },
+  {
+   "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B100",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4
+      ],
+      "lastItemPage": 4
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 3,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.14
+  },
+  {
+   "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B100",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4
+      ],
+      "lastItemPage": 4
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 3,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.15
+  },
+  {
+   "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B100",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4
+      ],
+      "lastItemPage": 4
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 3,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.13
+  },
+  {
+   "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+   "fixtureId": "F26K-a",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 20,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 594585.98",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": true,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": true,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": true,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": true,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 0,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.17
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r1",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.81
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r2",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.76
+  },
+  {
+   "run": "s1-grid-s1-B1000-off-on-r3",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.81
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.76
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.71
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+   "fixtureId": "B1000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.7
+  },
+  {
+   "run": "s1-grid-s1-B1000-split-t1.00-f0.90-off-r1",
+   "fixtureId": "B1000",
+   "footerOn": false,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": false,
+      "items": 246,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36
+      ],
+      "lastItemPage": 36
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 35,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.67
+  },
+  {
+   "run": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE30",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 390910.72",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE31",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 390910.72",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE32",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 390910.72",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.24
+  },
+  {
+   "run": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE33",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 351614.13",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE34",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 317389.22",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.26
+  },
+  {
+   "run": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE35",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 317389.22",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE36",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 295296.46",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE37",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 280580.24",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE38",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 239203.72",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE39",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 239203.72",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE40",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 231686.40",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE41",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 197863.18",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.24
+  },
+  {
+   "run": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE42",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 175416.75",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE43",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 139852.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE44",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 139852.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE45",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 139852.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE46",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 140919.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE47",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 93305.48",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE48",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 77705.78",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE49",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       9
+      ],
+      "lastItemPage": 9
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 77705.78",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 891224.11",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE50",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 51463.80",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 749538.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE51",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 51463.80",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 749538.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.24
+  },
+  {
+   "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE52",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.24
+  },
+  {
+   "run": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE53",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.26
+  },
+  {
+   "run": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE54",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.27
+  },
+  {
+   "run": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE55",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.27
+  },
+  {
+   "run": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE56",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE57",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE58",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE59",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE60",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.27
+  },
+  {
+   "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE61",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 2,
+      "totalPlacement": "next page, first content line"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 1,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.28
+  },
+  {
+   "run": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE62",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 2,
+      "totalPage": 2,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [
+       2
+      ],
+      "headerLastLinePages": [
+       2
+      ],
+      "itemPages": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "lastItemPage": 9,
+      "totalPage": 9,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       9
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       10,
+       11
+      ],
+      "lastItemPage": 11
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 2,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.29
+  },
+  {
+   "run": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE63",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 2,
+      "totalPage": 2,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [
+       2
+      ],
+      "headerLastLinePages": [
+       2
+      ],
+      "itemPages": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "lastItemPage": 9,
+      "totalPage": 9,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       9
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       10,
+       11
+      ],
+      "lastItemPage": 11
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 2,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.27
+  },
+  {
+   "run": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE64",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 2,
+      "totalPage": 2,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       3
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "lastItemPage": 9,
+      "totalPage": 9,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       9
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       10,
+       11
+      ],
+      "lastItemPage": 11
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 4757.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.26
+  },
+  {
+   "run": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE65",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 2,
+      "totalPage": 3,
+      "totalPlacement": "next page, first content line"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       3
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "lastItemPage": 9,
+      "totalPage": 9,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       9
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       10,
+       11
+      ],
+      "lastItemPage": 11
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 1,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.27
+  },
+  {
+   "run": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GE66",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [
+       1
+      ],
+      "headerLastLinePages": [
+       1
+      ],
+      "itemPages": [
+       2
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 2,
+      "totalPage": 3,
+      "totalPlacement": "next page, first content line"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       3
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "itemPagesWithoutHeader": [
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ],
+      "lastItemPage": 9,
+      "totalPage": 9,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       9
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       10,
+       11
+      ],
+      "lastItemPage": 11
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 759877.39",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 1,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.26
+  },
+  {
+   "run": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1",
+   "fixtureId": "GE50",
+   "footerOn": false,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1",
+   "fixtureId": "GE60",
+   "footerOn": false,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 1,
+      "totalPage": 1,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       2
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8,
+      "totalPage": 8,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": false,
+      "items": 57,
+      "headerLines": 1,
+      "headerPages": [
+       8
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 2,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0004"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 8,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.23
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GS1200",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5
+      ],
+      "lastItemPage": 5,
+      "totalPage": 5,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": true,
+      "items": 1200,
+      "headerLines": 1,
+      "headerPages": [
+       5
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48
+      ],
+      "itemPagesWithoutHeader": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48
+      ],
+      "lastItemPage": 48,
+      "totalPage": 48,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0007",
+      "closed": false,
+      "items": 6,
+      "headerLines": 1,
+      "headerPages": [
+       48
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       48
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 48
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 820536.23",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 730221.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 48,
+      "groupsEnding": [
+       "G0006"
+      ],
+      "groupsStarting": [
+       "G0007"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 601028.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 47,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.93
+  },
+  {
+   "run": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1",
+   "fixtureId": "GS1200",
+   "footerOn": false,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5
+      ],
+      "lastItemPage": 5,
+      "totalPage": 5,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": true,
+      "items": 1200,
+      "headerLines": 1,
+      "headerPages": [
+       5
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48
+      ],
+      "itemPagesWithoutHeader": [
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48
+      ],
+      "lastItemPage": 48,
+      "totalPage": 48,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0007",
+      "closed": false,
+      "items": 6,
+      "headerLines": 1,
+      "headerPages": [
+       48
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       48
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 48
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 48,
+      "groupsEnding": [
+       "G0006"
+      ],
+      "groupsStarting": [
+       "G0007"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 47,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.93
+  },
+  {
+   "run": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GS2400",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0012",
+      "closed": true,
+      "items": 2400,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70,
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80,
+       81
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70,
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80,
+       81
+      ],
+      "lastItemPage": 81,
+      "totalPage": 81,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0013",
+      "closed": false,
+      "items": 8,
+      "headerLines": 1,
+      "headerPages": [
+       81
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       81
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 81
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0012"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 784146.16",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 81,
+      "groupsEnding": [
+       "G0012"
+      ],
+      "groupsStarting": [
+       "G0013"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 354029.90",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 80,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 1.48
+  },
+  {
+   "run": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+   "fixtureId": "T300u",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ],
+      "lastItemPage": 8
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 7,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.22
+  },
+  {
+   "run": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+   "fixtureId": "X64K",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18
+      ],
+      "lastItemPage": 18
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 6,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 10,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 11,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 12,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 13,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 14,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 17,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.43
+  },
+  {
+   "run": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+   "fixtureId": "X1M",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": false,
+      "items": 100,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70,
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80,
+       81,
+       82,
+       83,
+       84,
+       85,
+       86,
+       87,
+       88,
+       89,
+       90,
+       91,
+       92,
+       93,
+       94,
+       95,
+       96,
+       97,
+       98,
+       99,
+       100,
+       101,
+       102,
+       103,
+       104,
+       105,
+       106,
+       107,
+       108,
+       109,
+       110,
+       111,
+       112,
+       113,
+       114,
+       115,
+       116,
+       117,
+       118,
+       119,
+       120,
+       121,
+       122,
+       123,
+       124,
+       125,
+       126,
+       127,
+       128,
+       129,
+       130,
+       131,
+       132,
+       133,
+       134,
+       135,
+       136,
+       137,
+       138,
+       139,
+       140,
+       141,
+       142,
+       143,
+       144,
+       145,
+       146,
+       147,
+       148,
+       149,
+       150,
+       151,
+       152,
+       153,
+       154,
+       155,
+       156,
+       157,
+       158,
+       159,
+       160,
+       161,
+       162,
+       163,
+       164,
+       165,
+       166,
+       167,
+       168,
+       169,
+       170,
+       171,
+       172,
+       173,
+       174,
+       175,
+       176,
+       177,
+       178,
+       179,
+       180,
+       181,
+       182,
+       183,
+       184,
+       185,
+       186,
+       187,
+       188,
+       189,
+       190,
+       191,
+       192,
+       193,
+       194,
+       195,
+       196,
+       197,
+       198,
+       199,
+       200,
+       201,
+       202,
+       203,
+       204,
+       205,
+       206,
+       207,
+       208,
+       209,
+       210,
+       211,
+       212,
+       213,
+       214,
+       215,
+       216,
+       217,
+       218,
+       219,
+       220,
+       221,
+       222,
+       223,
+       224
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70,
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80,
+       81,
+       82,
+       83,
+       84,
+       85,
+       86,
+       87,
+       88,
+       89,
+       90,
+       91,
+       92,
+       93,
+       94,
+       95,
+       96,
+       97,
+       98,
+       99,
+       100,
+       101,
+       102,
+       103,
+       104,
+       105,
+       106,
+       107,
+       108,
+       109,
+       110,
+       111,
+       112,
+       113,
+       114,
+       115,
+       116,
+       117,
+       118,
+       119,
+       120,
+       121,
+       122,
+       123,
+       124,
+       125,
+       126,
+       127,
+       128,
+       129,
+       130,
+       131,
+       132,
+       133,
+       134,
+       135,
+       136,
+       137,
+       138,
+       139,
+       140,
+       141,
+       142,
+       143,
+       144,
+       145,
+       146,
+       147,
+       148,
+       149,
+       150,
+       151,
+       152,
+       153,
+       154,
+       155,
+       156,
+       157,
+       158,
+       159,
+       160,
+       161,
+       162,
+       163,
+       164,
+       165,
+       166,
+       167,
+       168,
+       169,
+       170,
+       171,
+       172,
+       173,
+       174,
+       175,
+       176,
+       177,
+       178,
+       179,
+       180,
+       181,
+       182,
+       183,
+       184,
+       185,
+       186,
+       187,
+       188,
+       189,
+       190,
+       191,
+       192,
+       193,
+       194,
+       195,
+       196,
+       197,
+       198,
+       199,
+       200,
+       201,
+       202,
+       203,
+       204,
+       205,
+       206,
+       207,
+       208,
+       209,
+       210,
+       211,
+       212,
+       213,
+       214,
+       215,
+       216,
+       217,
+       218,
+       219,
+       220,
+       221,
+       222,
+       223,
+       224
+      ],
+      "lastItemPage": 224
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 6,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 10,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 11,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 12,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 13,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 14,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 16,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 17,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 18,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 19,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 20,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 21,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 23,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 24,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 25,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 26,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 28,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 29,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 30,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 31,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 32,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 33,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 34,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 35,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 36,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 37,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 38,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 39,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 40,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 41,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 223,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": [],
+    "pagesTotal": 220
+   },
+   "checkSeconds": 5.51
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+   "fixtureId": "G200",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17
+      ],
+      "lastItemPage": 17,
+      "totalPage": 17,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": false,
+      "items": 18,
+      "headerLines": 1,
+      "headerPages": [
+       17
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       17,
+       18
+      ],
+      "itemPagesWithoutHeader": [
+       18
+      ],
+      "lastItemPage": 18
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 10,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 11,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 12,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 13,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 14,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 120"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 17,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 620873.80",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 17,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.4
+  },
+  {
+   "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+   "fixtureId": "G200",
+   "footerOn": false,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17
+      ],
+      "lastItemPage": 17,
+      "totalPage": 17,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": false,
+      "items": 18,
+      "headerLines": 1,
+      "headerPages": [
+       17
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       17,
+       18
+      ],
+      "itemPagesWithoutHeader": [
+       18
+      ],
+      "lastItemPage": 18
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 17,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 17,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.34
+  },
+  {
+   "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GTL300u",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11
+      ],
+      "lastItemPage": 11,
+      "totalPage": 11,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": false,
+      "items": 78,
+      "headerLines": 1,
+      "headerPages": [
+       11
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       11,
+       12,
+       13,
+       14
+      ],
+      "itemPagesWithoutHeader": [
+       12,
+       13,
+       14
+      ],
+      "lastItemPage": 14
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 182"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 182"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 10,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 182"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 11,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 505747.86",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 13,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.35
+  },
+  {
+   "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+   "fixtureId": "GTF300u",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": false,
+      "items": 78,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [
+       7
+      ],
+      "headerLastLinePages": [
+       7
+      ],
+      "itemPages": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14
+      ],
+      "lastItemPage": 14
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 556423.16",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0002 row 183"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0002 row 183"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 10,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0002 row 183"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 1,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 13,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.31
+  },
+  {
+   "run": "s1-grid-s2-G200-off-on-r1",
+   "fixtureId": "G200",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [
+     {
+      "rule": "GC-1",
+      "class": "header-missing",
+      "group": "G0002",
+      "detail": "no header line for G0002 — Región Sur",
+      "key": "GC-1|header-missing|G0002"
+     },
+     {
+      "rule": "GC-2",
+      "class": "total-missing",
+      "group": "G0001",
+      "detail": "expected 4681665.40",
+      "key": "GC-2|total-missing|G0001"
+     },
+     {
+      "rule": "GC-4",
+      "class": "block-total-wrong",
+      "detail": "printed none, expected 5155412.18",
+      "key": "GC-4|block-total-wrong|-"
+     }
+    ],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10
+      ],
+      "lastItemPage": 10
+     },
+     {
+      "group": "G0002",
+      "closed": false,
+      "items": 18,
+      "headerLines": 0,
+      "headerPages": [],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [],
+      "itemPagesWithoutHeader": []
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 3,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 4,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 5,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 6,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 8,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 9,
+      "groupsEnding": [],
+      "groupsStarting": [],
+      "markGroups": [
+       "G0001 row 50"
+      ],
+      "pageSubtotal": "Page subtotal: 0.00",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 0,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 9,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 0.25
+  },
+  {
+   "run": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1",
+   "fixtureId": "B4000",
+   "footerOn": true,
+   "verdict": "checked",
+   "result": {
+    "failures": [],
+    "groups": [
+     {
+      "group": "G0001",
+      "closed": true,
+      "items": 182,
+      "headerLines": 1,
+      "headerPages": [
+       1
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "itemPagesWithoutHeader": [
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ],
+      "lastItemPage": 7,
+      "totalPage": 7,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0002",
+      "closed": true,
+      "items": 219,
+      "headerLines": 1,
+      "headerPages": [
+       7
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "itemPagesWithoutHeader": [
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0003",
+      "closed": true,
+      "items": 1,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       15
+      ],
+      "itemPagesWithoutHeader": [],
+      "lastItemPage": 15,
+      "totalPage": 15,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0004",
+      "closed": true,
+      "items": 192,
+      "headerLines": 1,
+      "headerPages": [
+       15
+      ],
+      "headerAlonePages": [
+       15
+      ],
+      "headerLastLinePages": [
+       15
+      ],
+      "itemPages": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "itemPagesWithoutHeader": [
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22
+      ],
+      "lastItemPage": 22,
+      "totalPage": 22,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0005",
+      "closed": true,
+      "items": 160,
+      "headerLines": 1,
+      "headerPages": [
+       22
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "itemPagesWithoutHeader": [
+       23,
+       24,
+       25,
+       26,
+       27
+      ],
+      "lastItemPage": 27,
+      "totalPage": 27,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0006",
+      "closed": true,
+      "items": 1200,
+      "headerLines": 1,
+      "headerPages": [
+       27
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70
+      ],
+      "itemPagesWithoutHeader": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       42,
+       43,
+       44,
+       45,
+       46,
+       47,
+       48,
+       49,
+       50,
+       51,
+       52,
+       53,
+       54,
+       55,
+       56,
+       57,
+       58,
+       59,
+       60,
+       61,
+       62,
+       63,
+       64,
+       65,
+       66,
+       67,
+       68,
+       69,
+       70
+      ],
+      "lastItemPage": 70,
+      "totalPage": 70,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0007",
+      "closed": true,
+      "items": 289,
+      "headerLines": 1,
+      "headerPages": [
+       70
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       70,
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80
+      ],
+      "itemPagesWithoutHeader": [
+       71,
+       72,
+       73,
+       74,
+       75,
+       76,
+       77,
+       78,
+       79,
+       80
+      ],
+      "lastItemPage": 80,
+      "totalPage": 80,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0008",
+      "closed": true,
+      "items": 173,
+      "headerLines": 1,
+      "headerPages": [
+       80
+      ],
+      "headerAlonePages": [
+       80
+      ],
+      "headerLastLinePages": [
+       80
+      ],
+      "itemPages": [
+       81,
+       82,
+       83,
+       84,
+       85,
+       86,
+       87
+      ],
+      "itemPagesWithoutHeader": [
+       81,
+       82,
+       83,
+       84,
+       85,
+       86,
+       87
+      ],
+      "lastItemPage": 87,
+      "totalPage": 87,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0009",
+      "closed": true,
+      "items": 112,
+      "headerLines": 1,
+      "headerPages": [
+       87
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       87,
+       88,
+       89,
+       90
+      ],
+      "itemPagesWithoutHeader": [
+       88,
+       89,
+       90
+      ],
+      "lastItemPage": 90,
+      "totalPage": 90,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0010",
+      "closed": true,
+      "items": 301,
+      "headerLines": 1,
+      "headerPages": [
+       90
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       90,
+       91,
+       92,
+       93,
+       94,
+       95,
+       96,
+       97,
+       98,
+       99,
+       100,
+       101
+      ],
+      "itemPagesWithoutHeader": [
+       91,
+       92,
+       93,
+       94,
+       95,
+       96,
+       97,
+       98,
+       99,
+       100,
+       101
+      ],
+      "lastItemPage": 101,
+      "totalPage": 101,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0011",
+      "closed": true,
+      "items": 323,
+      "headerLines": 1,
+      "headerPages": [
+       101
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       101,
+       102,
+       103,
+       104,
+       105,
+       106,
+       107,
+       108,
+       109,
+       110,
+       111,
+       112,
+       113,
+       114
+      ],
+      "itemPagesWithoutHeader": [
+       102,
+       103,
+       104,
+       105,
+       106,
+       107,
+       108,
+       109,
+       110,
+       111,
+       112,
+       113,
+       114
+      ],
+      "lastItemPage": 114,
+      "totalPage": 114,
+      "totalPlacement": "same page as the last row"
+     },
+     {
+      "group": "G0012",
+      "closed": false,
+      "items": 848,
+      "headerLines": 1,
+      "headerPages": [
+       114
+      ],
+      "headerAlonePages": [],
+      "headerLastLinePages": [],
+      "itemPages": [
+       114,
+       115,
+       116,
+       117,
+       118,
+       119,
+       120,
+       121,
+       122,
+       123,
+       124,
+       125,
+       126,
+       127,
+       128,
+       129,
+       130,
+       131,
+       132,
+       133,
+       134,
+       135,
+       136,
+       137,
+       138,
+       139,
+       140,
+       141,
+       142,
+       143
+      ],
+      "itemPagesWithoutHeader": [
+       115,
+       116,
+       117,
+       118,
+       119,
+       120,
+       121,
+       122,
+       123,
+       124,
+       125,
+       126,
+       127,
+       128,
+       129,
+       130,
+       131,
+       132,
+       133,
+       134,
+       135,
+       136,
+       137,
+       138,
+       139,
+       140,
+       141,
+       142,
+       143
+      ],
+      "lastItemPage": 143
+     }
+    ],
+    "pages": [
+     {
+      "page": 1,
+      "groupsEnding": [],
+      "groupsStarting": [
+       "G0001"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 804883.29",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 7,
+      "groupsEnding": [
+       "G0001"
+      ],
+      "groupsStarting": [
+       "G0002"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 589520.53",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 15,
+      "groupsEnding": [
+       "G0002",
+       "G0003"
+      ],
+      "groupsStarting": [
+       "G0003",
+       "G0004"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 605580.17",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 22,
+      "groupsEnding": [
+       "G0004"
+      ],
+      "groupsStarting": [
+       "G0005"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 682771.26",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 27,
+      "groupsEnding": [
+       "G0005"
+      ],
+      "groupsStarting": [
+       "G0006"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 753327.59",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 70,
+      "groupsEnding": [
+       "G0006"
+      ],
+      "groupsStarting": [
+       "G0007"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 667681.32",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 80,
+      "groupsEnding": [
+       "G0007"
+      ],
+      "groupsStarting": [
+       "G0008"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 447670.79",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 87,
+      "groupsEnding": [
+       "G0008"
+      ],
+      "groupsStarting": [
+       "G0009"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 952977.98",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 90,
+      "groupsEnding": [
+       "G0009"
+      ],
+      "groupsStarting": [
+       "G0010"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 842645.83",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 101,
+      "groupsEnding": [
+       "G0010"
+      ],
+      "groupsStarting": [
+       "G0011"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 496367.68",
+      "withoutDetail": false,
+      "headerOnly": false
+     },
+     {
+      "page": 114,
+      "groupsEnding": [
+       "G0011"
+      ],
+      "groupsStarting": [
+       "G0012"
+      ],
+      "markGroups": [],
+      "pageSubtotal": "Page subtotal: 732013.74",
+      "withoutDetail": false,
+      "headerOnly": false
+     }
+    ],
+    "headersAlone": 2,
+    "headersRepeated": 0,
+    "continuationPagesWithoutHeader": 142,
+    "totalsSeparated": 0,
+    "fixtureTotalDefects": []
+   },
+   "checkSeconds": 2.62
+  }
+ ]
+}
