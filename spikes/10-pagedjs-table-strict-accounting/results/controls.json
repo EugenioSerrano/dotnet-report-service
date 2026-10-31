@@ -1,0 +1,792 @@
+{
+  "trusted": true,
+  "textGrid": true,
+  "strictGrid": true,
+  "characterAgreementGrid": true,
+  "probe": true,
+  "characterControlProvenTable": true,
+  "items": [
+    {
+      "group": "text-grid",
+      "id": "positive",
+      "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "positive",
+      "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-W",
+      "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "TI-3 text-dropped row 50 p2"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-L",
+      "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "TI-3 text-repeated row 50 p2"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-R",
+      "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "TI-2 row-lost row 51 p2"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-W",
+      "run": "s1-grid-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "TI-3 text-dropped row 50 p4"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-L",
+      "run": "s1-grid-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "TI-3 text-repeated row 50 p4"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-R",
+      "run": "s1-grid-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "TI-2 row-lost row 51 p6"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "NC-F",
+      "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped free-after",
+      "observed": [
+        "TI-6 text-dropped free-after p1"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-F26K-a-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-grid",
+      "id": "E1",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-dropped at row 50, page 4",
+      "observed": [
+        "TI-3 text-dropped row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "base choice named; its own result: yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "E2",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-repeated at row 50",
+      "observed": [
+        "TI-3 text-repeated row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "base choice named; its own result: yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "E3",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "row-lost at row 50",
+      "observed": [
+        "TI-2 row-lost row 50 page 2"
+      ],
+      "behaved": "yes",
+      "note": "base choice named; its own result: yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "E4",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-altered at row 50",
+      "observed": [
+        "TI-3 text-altered row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "base choice named; its own result: yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "E5",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: no"
+    },
+    {
+      "group": "text-grid",
+      "id": "E6",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "mark-wrong at row 50",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 5 (1 mark(s) on the page where the row ends)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: yes"
+    },
+    {
+      "group": "text-grid",
+      "id": "E7",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: no"
+    },
+    {
+      "group": "text-grid",
+      "id": "E8",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "mark-wrong at row 50",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 3 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls cannot take real marks (they add simulated marks and evaluate without the footer); its own result: yes"
+    },
+    {
+      "group": "strict-grid",
+      "id": "positive",
+      "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "strict-grid",
+      "id": "positive",
+      "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-W",
+      "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-L",
+      "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-R",
+      "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "rows-not-lost-or-duplicated|p (sequence 51 missing); brought-carried-chain|p\u003Clast page\u003E",
+      "observed": [
+        "rows-not-lost-or-duplicated|p",
+        "brought-carried-chain|p4"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s1-B100-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-W",
+      "run": "s1-grid-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-L",
+      "run": "s1-grid-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-R",
+      "run": "s1-grid-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "rows-not-lost-or-duplicated|p (sequence 51 missing); brought-carried-chain|p\u003Clast page\u003E",
+      "observed": [
+        "rows-not-lost-or-duplicated|p",
+        "brought-carried-chain|p8"
+      ],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-T300u-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "strict-grid",
+      "id": "NC-F",
+      "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s1-grid-s2-F26K-a-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "faults-grid",
+      "id": "AX-1",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+      "expected": "end-page-subtotals|p2; brought-carried-chain|p2",
+      "observed": [
+        "end-page-subtotals|p2",
+        "brought-carried-chain|p2"
+      ],
+      "behaved": "yes",
+      "note": "page 2 footer value subtotal: 454051.50 -\u003E 454051.51"
+    },
+    {
+      "group": "faults-grid",
+      "id": "AX-2",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+      "expected": "brought-carried-chain|p3",
+      "observed": [
+        "brought-carried-chain|p3"
+      ],
+      "behaved": "yes",
+      "note": "page 3 footer value forward: 1258934.79 -\u003E 1258934.80"
+    },
+    {
+      "group": "faults-grid",
+      "id": "AX-3",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+      "expected": "continues-marks|p3",
+      "observed": [
+        "continues-marks|p3"
+      ],
+      "behaved": "yes",
+      "note": "removed 1 \u0027(continues)\u0027 of row 50 on page 3"
+    },
+    {
+      "group": "faults-grid",
+      "id": "AX-4",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+      "expected": "rows-not-lost-or-duplicated|p; end-page-subtotals|p2",
+      "observed": [
+        "rows-not-lost-or-duplicated|p",
+        "end-page-subtotals|p2"
+      ],
+      "behaved": "yes",
+      "note": "removed the 2 lines of row 32"
+    },
+    {
+      "group": "text-table",
+      "id": "positive",
+      "run": "s2-table-s1-B100-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2",
+        "TI-4 text-dropped row 32"
+      ],
+      "behaved": "not evaluable",
+      "note": "B100 in table crosses into pages whose geometry is the effect under measurement: reported"
+    },
+    {
+      "group": "text-table",
+      "id": "positive",
+      "run": "s2-table-s1-K1-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-W",
+      "run": "s2-table-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2",
+        "TI-4 text-dropped row 32"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 text fail; any failure matches: True"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-L",
+      "run": "s2-table-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2",
+        "TI-4 text-dropped row 32"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 text fail; any failure matches: False"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-R",
+      "run": "s2-table-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "TI-2 row-lost row 51 p2",
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 text fail; any failure matches: True"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-W",
+      "run": "s2-table-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2",
+        "TI-4 text-dropped row 32"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 text fail; any failure matches: True"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-L",
+      "run": "s2-table-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2",
+        "TI-4 text-dropped row 32"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 text fail; any failure matches: False"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-R",
+      "run": "s2-table-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "TI-2 row-lost row 51 p12",
+        "TI-3 text-altered row 31 p2",
+        "TI-4 text-dropped row 31",
+        "TI-4 text-dropped row 31",
+        "TI-3 text-altered row 32 p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 text fail; any failure matches: True"
+    },
+    {
+      "group": "text-table",
+      "id": "NC-F",
+      "run": "s2-table-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped free-after",
+      "observed": [
+        "TI-6 text-dropped free-after p1"
+      ],
+      "behaved": "yes",
+      "note": "base s2-table-s2-F26K-a-split-t1.00-f0.90-on-r1 text pass; any failure matches: True"
+    },
+    {
+      "group": "text-table",
+      "id": "E1-E4",
+      "run": "-",
+      "expected": "each its one failure",
+      "observed": [],
+      "behaved": "not evaluable",
+      "note": "no extraction-control file"
+    },
+    {
+      "group": "strict-table",
+      "id": "positive",
+      "run": "s2-table-s1-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [
+        "visible-amounts|p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "B100 in table: reported"
+    },
+    {
+      "group": "strict-table",
+      "id": "positive",
+      "run": "s2-table-s1-K1-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-W",
+      "run": "s2-table-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [
+        "visible-amounts|p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 failures 1"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-L",
+      "run": "s2-table-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [
+        "visible-amounts|p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 failures 1"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-R",
+      "run": "s2-table-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "rows-not-lost-or-duplicated|p (sequence 51 missing); brought-carried-chain|p\u003Clast page\u003E",
+      "observed": [
+        "rows-not-lost-or-duplicated|p",
+        "brought-carried-chain|p6",
+        "visible-amounts|p2"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 failures 1"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-W",
+      "run": "s2-table-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [
+        "visible-amounts|p2",
+        "continues-marks|p3"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 failures 2"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-L",
+      "run": "s2-table-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [
+        "visible-amounts|p2",
+        "continues-marks|p3"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 failures 2"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-R",
+      "run": "s2-table-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "rows-not-lost-or-duplicated|p (sequence 51 missing); brought-carried-chain|p\u003Clast page\u003E",
+      "observed": [
+        "rows-not-lost-or-duplicated|p",
+        "brought-carried-chain|p16",
+        "visible-amounts|p2",
+        "continues-marks|p3"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 failures 2"
+    },
+    {
+      "group": "strict-table",
+      "id": "NC-F",
+      "run": "s2-table-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes",
+      "note": "base s2-table-s2-F26K-a-split-t1.00-f0.90-on-r1 failures 0"
+    },
+    {
+      "group": "faults-table",
+      "id": "AX-1",
+      "run": "-",
+      "expected": "-",
+      "observed": [],
+      "behaved": "not evaluable",
+      "note": "no base with rules 1-6 passing"
+    },
+    {
+      "group": "faults-table",
+      "id": "AX-2",
+      "run": "-",
+      "expected": "-",
+      "observed": [],
+      "behaved": "not evaluable",
+      "note": "no base with rules 1-6 passing"
+    },
+    {
+      "group": "faults-table",
+      "id": "AX-3",
+      "run": "-",
+      "expected": "-",
+      "observed": [],
+      "behaved": "not evaluable",
+      "note": "no base with rules 1-6 passing"
+    },
+    {
+      "group": "faults-table",
+      "id": "AX-4",
+      "run": "-",
+      "expected": "-",
+      "observed": [],
+      "behaved": "not evaluable",
+      "note": "no base with rules 1-6 passing"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-W",
+      "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-L",
+      "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-R",
+      "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-F",
+      "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "row-by-row",
+      "run": "s1-grid-s2-G200-off-on-r1",
+      "expected": "agreement",
+      "observed": [
+        "155 text failures, only 100 listed"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle lists at most 100 failures: not compared row by row"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-W",
+      "run": "s1-grid-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-L",
+      "run": "s1-grid-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "NC-R",
+      "run": "s1-grid-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "agreement",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-agreement",
+      "id": "summary",
+      "run": "grid",
+      "expected": "agreement on every row",
+      "observed": [
+        "94 grid runs compared"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-W",
+      "run": "s2-table-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "text-dropped row 50"
+      ],
+      "behaved": "yes",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 character failures 0; mutated row\u0027s pages: row on one page (or lost)"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-L",
+      "run": "s2-table-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "text-repeated row 50"
+      ],
+      "behaved": "yes",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 character failures 0; mutated row\u0027s pages: row on one page (or lost)"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-R",
+      "run": "s2-table-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "row-lost row 51"
+      ],
+      "behaved": "yes",
+      "note": "base s2-table-s1-B100-split-t1.00-f0.90-on-r1 character failures 0; mutated row\u0027s pages: row on one page (or lost)"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-W",
+      "run": "s2-table-s2-NC-W-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "text-altered row 50"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 character failures 1; mutated row\u0027s pages: p3 other,p4 other,p5 other,p6 other,p7 other,p8 other,p9 other,p10 other,p11 other,p12 other"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-L",
+      "run": "s2-table-s2-NC-L-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "text-altered row 50"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 character failures 1; mutated row\u0027s pages: p3 other,p4 other,p5 other,p6 other,p7 other,p8 other,p9 other,p10 other,p11 other,p12 other,p13 other"
+    },
+    {
+      "group": "character-table",
+      "id": "NC-R",
+      "run": "s2-table-s2-NC-R-T300u-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "text-altered row 50",
+        "row-lost row 51"
+      ],
+      "behaved": "not evaluable",
+      "note": "base s2-table-s2-T300u-split-t1.00-f0.90-on-r1 character failures 1; mutated row\u0027s pages: row on one page (or lost)"
+    },
+    {
+      "group": "probe",
+      "id": "G200-split-t1.00-f0.90-on-r1.pdf",
+      "run": "G200-split-t1.00-f0.90-on-r1.pdf",
+      "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observed": [
+        "rule 1 PASS (200 rows on 18 pages, 2 split); rule 3 PASS (starts at 0.00, ends at 5155412.18 = block total)"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "X1M-split-t1.00-f0.90-on-r1.pdf",
+      "run": "X1M-split-t1.00-f0.90-on-r1.pdf",
+      "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observed": [
+        "rule 1 PASS (100 rows on 224 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "W2a-split-t1.00-f0.90-on-r1.pdf",
+      "run": "W2a-split-t1.00-f0.90-on-r1.pdf",
+      "expected": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observed": [
+        "rule 1 PASS (100 rows on 14 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "G200-off-on-r1.pdf",
+      "run": "G200-off-on-r1.pdf",
+      "expected": "rule 1 FAIL; none of the 150 sequences after 50 in the reading",
+      "observed": [
+        "rule 1 FAIL (150 sequences missing, first 51); 0 of them present"
+      ],
+      "behaved": "yes"
+    }
+  ]
+}

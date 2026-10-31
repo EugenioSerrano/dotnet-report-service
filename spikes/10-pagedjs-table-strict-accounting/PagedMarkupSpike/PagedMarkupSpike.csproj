@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Layout harness of the table-and-grid experiment: lays fixtures out with the
+    pagination library of spikes/02-pdf-layout after rows taller than a page are
+    split into continuation parts, in grid markup (the pages, script and
+    stylesheet of spikes/08-pagedjs-pre-split, linked unchanged) and in table
+    markup (the table page builder, script copy and stylesheet of this folder),
+    inside the PDF base image, one fresh process per run. It reads fixture files
+    with the library of spikes/07-native-tall-rows; it never generates them.
+
+    Linked files are never edited here; nothing in their folders changes.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PreSplitLayoutSpike</RootNamespace>
+    <EarlierLayoutSpike>$(MSBuildThisFileDirectory)../../02-pdf-layout/PdfLayoutSpike/</EarlierLayoutSpike>
+    <PreSplitSpike>$(MSBuildThisFileDirectory)../../08-pagedjs-pre-split/PreSplitLayoutSpike/</PreSplitSpike>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- spikes/02-pdf-layout: rules 1-9 and the failure signature; the sampler; types only for the rest. -->
+    <Compile Include="$(EarlierLayoutSpike)AccountingVerifier.cs" Link="Linked/AccountingVerifier.cs" />
+    <Compile Include="$(EarlierLayoutSpike)ProcessTreeSampler.cs" Link="Linked/ProcessTreeSampler.cs" />
+    <Compile Include="$(EarlierLayoutSpike)BlockSource.cs" Link="Linked/BlockSource.cs" />
+    <Compile Include="$(EarlierLayoutSpike)LayoutRunner.cs" Link="Linked/LayoutRunner.cs" />
+    <Compile Include="$(EarlierLayoutSpike)BlockHtmlBuilder.cs" Link="Linked/BlockHtmlBuilder.cs" />
+    <!-- spikes/08-pagedjs-pre-split: the grid pages and fixture adapter, and the run record. -->
+    <Compile Include="$(PreSplitSpike)PageBuilder.cs" Link="Linked/PageBuilder.cs" />
+    <Compile Include="$(PreSplitSpike)RunRecord.cs" Link="Linked/RunRecord.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(EarlierLayoutSpike)assets/layout.css" Link="assets/layout.css" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/paged-layout.js" Link="assets/paged-layout.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/paged.polyfill.js" Link="assets/vendor/pagedjs-0.4.3/paged.polyfill.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(EarlierLayoutSpike)assets/vendor/pagedjs-0.4.3/LICENSE.md" Link="assets/vendor/pagedjs-0.4.3/LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PreSplitSpike)assets/pre-split.js" Link="assets/pre-split.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PreSplitSpike)assets/fixture.css" Link="assets/fixture.css" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

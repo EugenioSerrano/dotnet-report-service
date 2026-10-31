@@ -1,0 +1,36 @@
+# Strict accounting check image: the .NET runtime base plus poppler-utils (reads
+# the printed text). It holds no browser, no browser automation and no PDF
+# library, so the check is independent of the layout library whose output it
+# reads. Requires BuildKit.
+
+# Build stage — same SDK band as global.json. The check links files of four
+# earlier experiments unchanged, so those files are in the context.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+WORKDIR /repo
+COPY global.json Directory.Build.props NuGet.config .editorconfig ./
+COPY spikes/Directory.Build.props spikes/
+COPY spikes/07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/10-pagedjs-table-strict-accounting/Directory.Packages.props spikes/10-pagedjs-table-strict-accounting/
+COPY spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/StrictAccountingCheck.csproj spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/
+RUN dotnet restore spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/StrictAccountingCheck.csproj
+COPY spikes/07-native-tall-rows/PaginationFixtures/ spikes/07-native-tall-rows/PaginationFixtures/
+COPY spikes/07-native-tall-rows/TextIntegrityCheck/Poppler.cs spikes/07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs spikes/07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs spikes/07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs spikes/07-native-tall-rows/TextIntegrityCheck/
+COPY spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs spikes/02-pdf-layout/PdfLayoutSpike/
+COPY spikes/03-pdf-assembly/PdfAssemblySpike/PgmImage.cs spikes/03-pdf-assembly/PdfAssemblySpike/
+COPY spikes/09-two-pass-page-subtotals/PageAccountingCheck/Evaluation.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/PdfReading.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/Records.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/ReadBackJudge.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/UnchangedOutside.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/StampingSideEffects.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/Qpdf.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/Tool.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/
+COPY spikes/09-two-pass-page-subtotals/PageAccountingCheck/Reused/LayoutTypes.cs spikes/09-two-pass-page-subtotals/PageAccountingCheck/Reused/
+COPY spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/ spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/
+RUN dotnet publish spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/StrictAccountingCheck.csproj \
+    -c Release --no-restore -o /app \
+    -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false
+
+# Runtime stage — the same .NET runtime base as the product's images, plus the
+# PDF text tools from the Ubuntu archive. This image is never published.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble AS final
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /out /work && chown "$APP_UID" /out /work
+WORKDIR /app
+COPY --from=build /app ./
+USER $APP_UID
+ENTRYPOINT ["dotnet", "StrictAccountingCheck.dll"]

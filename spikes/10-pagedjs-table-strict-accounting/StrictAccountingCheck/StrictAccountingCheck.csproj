@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Strict accounting check of the table-and-grid experiment: reads each printed
+    PDF with poppler-utils and feeds the accounting rules of spikes/02-pdf-layout
+    from it, row set by row set and page by page, through the PDF reader, adapter
+    and full evaluation of spikes/09-two-pass-page-subtotals; adds a
+    column-agnostic character check, a column-geometry observation, its own
+    controls and the verdict. No package; its image holds no browser and no PDF
+    library. Every file below is linked unchanged from its folder; the parts of
+    the linked accounting check that judge a second pass or a re-saved PDF are
+    compiled and never called.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StrictAccountingCheck</RootNamespace>
+    <AccountingCheck>$(MSBuildThisFileDirectory)../../09-two-pass-page-subtotals/PageAccountingCheck/</AccountingCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/Poppler.cs" Link="Linked/Poppler.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs" Link="Linked/PrintedDocument.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs" Link="Linked/TextNormalisation.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs" Link="Linked/IntegrityRules.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs" Link="Linked/AccountingVerifier.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/BlockSource.cs" Link="Linked/BlockSource.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs" Link="Linked/ProcessTreeSampler.cs" />
+    <Compile Include="../../03-pdf-assembly/PdfAssemblySpike/PgmImage.cs" Link="Linked/PgmImage.cs" />
+    <Compile Include="$(AccountingCheck)Evaluation.cs" Link="Linked/Evaluation.cs" />
+    <Compile Include="$(AccountingCheck)PdfReading.cs" Link="Linked/PdfReading.cs" />
+    <Compile Include="$(AccountingCheck)Records.cs" Link="Linked/Records.cs" />
+    <Compile Include="$(AccountingCheck)ReadBackJudge.cs" Link="Linked/ReadBackJudge.cs" />
+    <Compile Include="$(AccountingCheck)UnchangedOutside.cs" Link="Linked/UnchangedOutside.cs" />
+    <Compile Include="$(AccountingCheck)StampingSideEffects.cs" Link="Linked/StampingSideEffects.cs" />
+    <Compile Include="$(AccountingCheck)Qpdf.cs" Link="Linked/Qpdf.cs" />
+    <Compile Include="$(AccountingCheck)Tool.cs" Link="Linked/Tool.cs" />
+    <Compile Include="$(AccountingCheck)Reused/LayoutTypes.cs" Link="Linked/LayoutTypes.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,56 @@
+{
+  "stage1": {
+    "matrix": "stage1-grid",
+    "startedAt": "2026-10-26T02:12:36+00:00",
+    "endedAt": "2026-10-26T02:17:58+00:00",
+    "elapsedSeconds": 321.9,
+    "budgetSeconds": 3600,
+    "fixtureSumsSha256": "db1ce1a7f0dcab7571f84aec2f437e94d8b976c46d3421269cb2c20e3d57c52c",
+    "environment": {
+      "pdfBaseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+      "chromium": "153.0.8010.12",
+      "playwright": "1.63.0",
+      "dotnet": "10.0.13",
+      "processors": 16,
+      "memoryMax": "4294967296",
+      "memorySwapMax": "0",
+      "memoryTotalKiB": 12244636
+    },
+    "counts": {
+      "ok": 95
+    }
+  },
+  "stage2": {
+    "matrix": "stage2-table",
+    "startedAt": "2026-10-26T02:18:46+00:00",
+    "endedAt": "2026-10-26T02:25:47+00:00",
+    "elapsedSeconds": 421.1,
+    "budgetSeconds": 7200,
+    "fixtureSumsSha256": "db1ce1a7f0dcab7571f84aec2f437e94d8b976c46d3421269cb2c20e3d57c52c",
+    "environment": {
+      "pdfBaseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+      "chromium": "153.0.8010.12",
+      "playwright": "1.63.0",
+      "dotnet": "10.0.13",
+      "processors": 16,
+      "memoryMax": "4294967296",
+      "memorySwapMax": "0",
+      "memoryTotalKiB": 12244636
+    },
+    "counts": {
+      "ok": 95
+    }
+  },
+  "registry": {
+    "image": "registry:3.1.2@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8",
+    "address": "127.0.0.1:5055",
+    "baseTag": "report-service-pdf-base:1.63.0-10.0.13-noble",
+    "baseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d"
+  },
+  "images": {
+    "pagedjs-markup-spike:local": "sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c",
+    "strict-accounting-check:local": "sha256:84b7d0922b6fc2bc98edf176ad14e5c3c8d8973305fd081709dba58938f4dc71",
+    "text-integrity-check:local": "sha256:9e013c3b2f5148592698e3be7213c364fa1c2c40e3f148f8126521424168c3a6"
+  },
+  "memoryNote": "cgroupMemoryPeakBytes is the container running peak (the whole stage container up to that run), not a per-run figure; the near-ceiling rule reads the run's Chromium process-tree peak RSS; oom_kill is the out-of-memory evidence"
+}

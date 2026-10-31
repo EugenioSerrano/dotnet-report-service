@@ -1,0 +1,1524 @@
+{
+  "knownAnswersHold": true,
+  "pdfs": [
+    {
+      "pdf": "G200-split-t1.00-f0.90-on-r1.pdf",
+      "fixture": "G200",
+      "knownAnswer": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observedKnown": "rule 1 PASS (200 rows on 18 pages, 2 split); rule 3 PASS (starts at 0.00, ends at 5155412.18 = block total)",
+      "holds": true,
+      "pages": 18,
+      "observations": {
+        "rules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "200 rows on 18 pages, 2 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "18 pages, 8 with no row ending (0.00); block total 5155412.18"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 5155412.18 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "8 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/10 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "2 split rows differ \u2014 sequence 50: 10608 of 12171 characters shown; sequence 120: 25666 of 30047 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "2 rows span two or more pages; longest description among them 30047 characters; largest span 7 pages"
+          }
+        ],
+        "fullEvaluation": [],
+        "characterRowsPassed": 200,
+        "characterFailures": [],
+        "characterFailureCount": 0,
+        "geometry": {
+          "declared": 18
+        },
+        "otherPages": [],
+        "headerRowPages": [
+          1
+        ],
+        "note": "rule 8 needs the run\u0027s record and is not evaluated here; only rules 1 and 3 (and the absent rows) are known answers"
+      }
+    },
+    {
+      "pdf": "X1M-split-t1.00-f0.90-on-r1.pdf",
+      "fixture": "X1M",
+      "knownAnswer": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observedKnown": "rule 1 PASS (100 rows on 224 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)",
+      "holds": true,
+      "pages": 224,
+      "observations": {
+        "rules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 224 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "224 pages, 219 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "219 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/220 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ \u2014 sequence 50: 883586 of 1026187 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 1026187 characters; largest span 220 pages"
+          }
+        ],
+        "fullEvaluation": [],
+        "characterRowsPassed": 100,
+        "characterFailures": [],
+        "characterFailureCount": 0,
+        "geometry": {
+          "declared": 224
+        },
+        "otherPages": [],
+        "headerRowPages": [
+          1
+        ],
+        "note": "rule 8 needs the run\u0027s record and is not evaluated here; only rules 1 and 3 (and the absent rows) are known answers"
+      }
+    },
+    {
+      "pdf": "W2a-split-t1.00-f0.90-on-r1.pdf",
+      "fixture": "W2a",
+      "knownAnswer": "rule 1 PASS; rule 3 PASS (every row printed; the chain closes on the block total)",
+      "observedKnown": "rule 1 PASS (100 rows on 14 pages, 1 split); rule 3 PASS (starts at 0.00, ends at 2708053.13 = block total)",
+      "holds": true,
+      "pages": 14,
+      "observations": {
+        "rules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 14 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "14 pages, 7 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "7 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/8 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ \u2014 sequence 50: 13719 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 8 pages"
+          }
+        ],
+        "fullEvaluation": [],
+        "characterRowsPassed": 100,
+        "characterFailures": [],
+        "characterFailureCount": 0,
+        "geometry": {
+          "declared": 14
+        },
+        "otherPages": [],
+        "headerRowPages": [
+          1
+        ],
+        "note": "rule 8 needs the run\u0027s record and is not evaluated here; only rules 1 and 3 (and the absent rows) are known answers"
+      }
+    },
+    {
+      "pdf": "G200-off-on-r1.pdf",
+      "fixture": "G200",
+      "knownAnswer": "rule 1 FAIL; none of the 150 sequences after 50 in the reading",
+      "observedKnown": "rule 1 FAIL (150 sequences missing, first 51); 0 of them present",
+      "holds": true,
+      "pages": 10,
+      "observations": {
+        "rules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "FAIL",
+            "detail": "150 sequences missing, first 51"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "unreadable footer \u0027\u0027"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "unreadable footer"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "sequence 50 fragment 8/8 shows \u0027\u0027, expected \u002746323.27\u0027"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "7 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "FAIL",
+            "detail": "bottom margin boxes not found"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/8 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ \u2014 sequence 50: 35317 of 12171 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 12171 characters; largest span 8 pages"
+          }
+        ],
+        "fullEvaluation": [
+          {
+            "rule": 1,
+            "row": 51,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 52,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 53,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 54,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 55,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 56,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 57,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 58,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 59,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 60,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 61,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 62,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 63,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 64,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 65,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 66,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 67,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 68,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 69,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 70,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 71,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 72,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 73,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 74,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 75,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 76,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 77,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 78,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 79,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 80,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 81,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 82,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 83,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 84,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 85,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 86,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 87,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 88,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 89,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 90,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 91,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 92,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 93,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 94,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 95,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 96,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 97,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 98,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 99,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 100,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 101,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 102,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 103,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 104,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 105,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 106,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 107,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 108,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 109,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 110,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 111,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 112,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 113,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 114,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 115,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 116,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 117,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 118,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 119,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 120,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 121,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 122,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 123,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 124,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 125,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 126,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 127,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 128,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 129,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 130,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 131,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 132,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 133,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 134,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 135,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 136,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 137,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 138,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 139,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 140,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 141,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 142,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 143,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 144,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 145,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 146,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 147,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 148,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 149,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 150,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 151,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 152,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 153,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 154,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 155,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 156,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 157,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 158,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 159,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 160,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 161,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 162,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 163,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 164,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 165,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 166,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 167,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 168,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 169,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 170,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 171,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 172,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 173,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 174,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 175,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 176,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 177,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 178,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 179,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 180,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 181,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 182,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 183,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 184,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 185,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 186,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 187,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 188,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 189,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 190,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 191,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 192,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 193,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 194,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 195,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 196,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 197,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 198,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 199,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 1,
+            "row": 200,
+            "cause": "missing-sequence",
+            "placement": false,
+            "detail": "no fragment"
+          },
+          {
+            "rule": 4,
+            "page": 10,
+            "row": 50,
+            "cause": "amount-wrong",
+            "placement": false,
+            "detail": "fragment 8/8 shows \u0027\u0027, expected \u002746323.27\u0027"
+          }
+        ],
+        "characterRowsPassed": 49,
+        "characterFailures": [
+          {
+            "row": 50,
+            "class": "amount-missing",
+            "detail": "no word equal to the amount \u002746323.27\u0027",
+            "pass": false
+          },
+          {
+            "row": 51,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 52,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 53,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 54,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 55,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 56,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 57,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 58,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 59,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 60,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 61,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 62,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 63,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 64,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 65,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 66,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 67,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 68,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          },
+          {
+            "row": 69,
+            "class": "row-lost",
+            "detail": "no word of the row in the printed reading",
+            "pass": false
+          }
+        ],
+        "characterFailureCount": 151,
+        "geometry": {
+          "declared": 10
+        },
+        "otherPages": [],
+        "headerRowPages": [
+          1
+        ],
+        "note": "rule 8 needs the run\u0027s record and is not evaluated here; only rules 1 and 3 (and the absent rows) are known answers"
+      }
+    }
+  ]
+}

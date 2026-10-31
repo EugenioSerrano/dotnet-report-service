@@ -1,0 +1,51 @@
+/*
+  Table stylesheet of the table-and-grid experiment, loaded after the
+  unchanged base stylesheet of spikes/02-pdf-layout (layout.css), which holds
+  the table's column widths, padding and header rule. This file holds only the
+  table equivalents of the grid experiment's fixture stylesheet: the title,
+  free text, the block-total row, the note cell, hard line breaks, the keep
+  policy and the forced page break before every continuation part of a split
+  row. It sets no width and changes no table display or layout, so whatever
+  the pagination library does to the table is measured as it is.
+*/
+
+body {
+    hyphens: manual;
+}
+
+h1.title {
+    font-size: 13pt;
+    margin: 0 0 3mm 0;
+}
+
+.free p {
+    margin: 0 0 2mm 0;
+}
+
+.free-after {
+    margin-top: 3mm;
+}
+
+table.rows tr.block-total td {
+    font-weight: bold;
+}
+
+table.rows td.note {
+    overflow-wrap: anywhere;
+}
+
+/* Hard line breaks in description and note. */
+table.rows.pre-line td.desc,
+table.rows.pre-line td.note {
+    white-space: pre-line;
+}
+
+/* Keep policy: every item row is kept together. */
+table.rows tr.item {
+    break-inside: avoid;
+}
+
+/* Parts 2 ... n of a split row start a new page; the first part never gets a forced break. */
+table.rows tr.item.part.continuation {
+    break-before: page;
+}

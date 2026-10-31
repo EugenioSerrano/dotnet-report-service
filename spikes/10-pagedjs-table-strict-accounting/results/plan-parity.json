@@ -1,0 +1,25 @@
+{
+  "referenceRuns": 91,
+  "stage1": {
+    "markup": "grid",
+    "runs": 95,
+    "runsAgainstReference": 91,
+    "equalToReference": true,
+    "firstDifference": null,
+    "memorySeries": true,
+    "idsUnique": true,
+    "markupAndPrefix": true
+  },
+  "stage2": {
+    "markup": "table",
+    "runs": 95,
+    "runsAgainstReference": 91,
+    "equalToReference": true,
+    "firstDifference": null,
+    "memorySeries": true,
+    "idsUnique": true,
+    "markupAndPrefix": true
+  },
+  "idsUniqueAcrossStages": true,
+  "pass": true
+}

@@ -1,0 +1,91 @@
+#!/bin/sh
+# Prints one line per reused file and per piece of reused evidence: expected
+# SHA-256, actual SHA-256, path. Run on the host from the repository root and
+# write the output to spikes/10-pagedjs-table-strict-accounting/results/identity.txt.
+# Every line must show two equal hashes. Nothing listed here is ever written by
+# this experiment: the fixture library and text check of
+# spikes/07-native-tall-rows, the layout files of spikes/02-pdf-layout, the
+# image reader of spikes/03-pdf-assembly, the pre-split harness of
+# spikes/08-pagedjs-pre-split with its committed results, and the accounting
+# check of spikes/09-two-pass-page-subtotals.
+set -eu
+
+file() { # expected path
+    printf '%s %s %s\n' "$1" "$(sha256sum < "$2" | cut -c1-64)" "$2"
+}
+
+N=spikes/07-native-tall-rows
+file c2cfaf0a6a46cebf18ff745ed0d4dd7b3e8bf0a22d2d7a832e48c560dbf7a422 $N/PaginationFixtures/ControlMutations.cs
+file 10ff2f88ccadf5d976b52e12c807862aa52377ad7dc86bed4756dc09379cd33e $N/PaginationFixtures/Dataset.cs
+file 07c0e4e13e31b4d0882b0eb6d230737dfafdce73eb11e03d69935f1716aaf5ef $N/PaginationFixtures/Fixture.cs
+file 0fce2a4ee253b8b73f71370580cebacd4a57f20357e75b4ce83de9d55c41acb5 $N/PaginationFixtures/FixtureFile.cs
+file 0fa81e0d3d94c5749e4b69b03a704b901718b6764f6796a69195c6dd04145e4a $N/PaginationFixtures/FixtureSeries.cs
+file 52c63cdcf53e351af7759f79d3a01213015bb0f1942ea87b4816b3adf5b42155 $N/PaginationFixtures/PaginationFixtures.csproj
+file 714bb1536ec527834af6001835e6e837e8362c5d1d87a3c8ef067d3b87e8552c $N/PaginationFixtures/UniqueText.cs
+file 3a04059f832bd2214ef9092ef10420b9e0833878c5589edb91c635bd8c1fd2f9 $N/TextIntegrityCheck/Commands.cs
+file 5dce94f5b75e5e5348410d086b1d7dd5d81584a3d390d3007a1652b2d61a15e6 $N/TextIntegrityCheck/ExtractionControls.cs
+file 3402e60d24278573e778f6eb53c34112ddadc3fadf75b85c007d5f6a98cd923b $N/TextIntegrityCheck/IntegrityRules.cs
+file 3848a6687ca031feff07d2a9680e692e7b6b485eee53eec9bc38ab23a55f7943 $N/TextIntegrityCheck/Poppler.cs
+file c15e2d260c96eb810149b2269cc07f79628b2ad98bdaa855434c00702f52a635 $N/TextIntegrityCheck/PrintedDocument.cs
+file 079a270736abff31ce6717ed4693677331b024227f5731b65dfcbed6de52a8d7 $N/TextIntegrityCheck/Program.cs
+file e2e61e9ff9b5fe21d26cbeeede85bb4144bcd2791084870a1fc826ec6a097834 $N/TextIntegrityCheck/RunRecords.cs
+file 3c16a9c9d429115b63017bbf667f14d700b4ec834ebf19092a58b540f9a0cd79 $N/TextIntegrityCheck/TextIntegrityCheck.csproj
+file b1d3a41309a96a6a8c7791408d3a5d6d3d46f500fde02470273197813fde998b $N/TextIntegrityCheck/TextNormalisation.cs
+file 8cd9f360311da3102ff503d4066aa4010b5fc03f4338f93fd938831c768b1ea7 $N/TextIntegrityCheck/VerdictCommand.cs
+file 2f75b899c5f6b39cd8b8075a797c07f7083156d3bcfd917d623c79ebd0d81d85 $N/Dockerfile.check
+file a47e928c9fcd1bc652e927689cc45a04bf7678709ad3c609d17b325483d062b2 $N/Dockerfile.check.dockerignore
+file c1576a4ec8b335bc9a7525dbe762933f7079b1a48882ea06b1fffe7d67190316 $N/results/fixtures.sha256
+file 81b0ea417774d33824bdd419b08d9c8a5b37e165e97a251f080a83964f6d6884 $N/results/integrity.json
+
+L=spikes/02-pdf-layout/PdfLayoutSpike
+file f1a5d47bf9fcaecdbb56c49f4a0f5e6e709fb10ca5ac05d33f41001f6a9d0ea5 $L/AccountingVerifier.cs
+file 970521e6119622d7059b5b0fdbcd8c4cda2751c6cf478c502132cfc4c60f9456 $L/BlockSource.cs
+file cf037715e1bf523fffdc6dcca2422409d2bdc6e0f90f7e3b069b025e00eba66d $L/LayoutRunner.cs
+file 77265ccf9637e3196f11f15f2b0be764a65642821a3ca2f07ae97b42ad5e21f6 $L/BlockHtmlBuilder.cs
+file 0da4b5d0171de290834f36af043aef4a1042caae0399532f48a473956456845b $L/ProcessTreeSampler.cs
+file 9323f0774db65c2c0658afbf696aa92cd851386208b055a817e4846f7f4477eb $L/assets/layout.css
+file 83f6c458cb30265ea8cf2b2ab3d61641467701b6984c03f2359cc747031445c1 $L/assets/paged-layout.js
+file f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f $L/assets/vendor/pagedjs-0.4.3/paged.polyfill.js
+file f49bdde202ca66880e2d7cb7fd8103f43a917a60b61681484a66cf370e7647e0 $L/assets/vendor/pagedjs-0.4.3/LICENSE.md
+file cf6b6ad648ab2a08a447aa814fe0ee5acf5dc2320e88e66ca0337467842123eb spikes/03-pdf-assembly/PdfAssemblySpike/PgmImage.cs
+
+P=spikes/08-pagedjs-pre-split
+file 8020a337b1a753d3f24fa5bb9aff2ef0dc8ec05bf81509cb62eb14c457ccadde $P/PreSplitLayoutSpike/PageBuilder.cs
+file dfdadd1dea8f2aa9dac9db9143f6aa9254d181421e238af952dbd55f1cc854bb $P/PreSplitLayoutSpike/assets/pre-split.js
+file a0c8c28fbc06d4566dcf942428a55649ee7537f30d914878ee97a4680a46a337 $P/PreSplitLayoutSpike/assets/fixture.css
+file 5b25649c4d8ce24986d9381ae53b5cf127f6f64e0d9b59e358ef326360fbec71 $P/PreSplitLayoutSpike/RunRecord.cs
+file 73446fc837d89e5f8e6578983a8ef2a24dbf6c9fa5b9cdfc12c42083e6de87cb $P/PreSplitLayoutSpike/PreSplitRunner.cs
+file b2798fb62fd7897256a961632f1a8b7f99e340b9584dddc562c7e9b2cea382bb $P/PreSplitLayoutSpike/MatrixDriver.cs
+file 589dda98b5c133bab7f16b45a36de647dc775de4f46133dd2ecbc6e6a47f859c $P/PreSplitLayoutSpike/Program.cs
+file 100f99201b7f0786b7ed508541eb121af4766d2b8b5690989a5c6db9896f56e3 $P/PreSplitLayoutSpike/Plan.cs
+file 793384c5b0d816c6033664b87e6cb17b8ff91f260d3ac5adecb6d339d6005b45 $P/PreSplitLayoutSpike/Evidence.cs
+file e033e2d9ba7f3443af1ccfd41fa64b27e9b285725c4de23a3ccd61d7cd5cd9c5 $P/PreSplitLayoutSpike/SelectCommand.cs
+file fde06878971b8cf0666fef3ff749a04901e6c79893c7ec87716d10bb1208bf1e $P/PreSplitLayoutSpike/VerdictCommand.cs
+file fe92c95342c3b5904021c0b2c60d1945beba55b4e41fa30afa881424373c0d00 $P/PreSplitLayoutSpike/PreSplitLayoutSpike.csproj
+file 9e4cfe029718d78d071057cba37705bc7fe6e817ca6a87b416ee45d3bd3882f6 $P/Dockerfile
+file 85aa64c78297628c1893967bb1caa204cd6a88b47453c40dbe01458061e49725 $P/Dockerfile.dockerignore
+file 8793328a15f0688ce0e8da99b811a389d20266c06eec3c98087b33389af84d79 $P/Directory.Packages.props
+file 2340337ac5aee17e1cf58950e37531d3962abf70c92f35ea2a6c240cd974dd21 $P/results/plan.json
+file 97bb17f73d068b2d76ee445aac46e142f1e47ad52cc04960a6387583472653ad $P/results/selection.json
+file 8f92e52ebbc2fbc7353d8112ee1c7815580a0fe89cf0d9db0fa1a1b998c0c239 $P/results/summary.json
+file 4b318b064bbee1a813fa041d53013cbaf8e513509aa679d804e7937e4488c5c1 $P/results/identity.sha256
+file dccd547efeb82c543874f19005862f96404156c7ee947e8d0e195a90e7a61eee $P/results/integrity.json
+file 478c5731477483747a783a581a01b423a7908fb3c4235b74f408e588860401de $P/results/pdf/G200-split-t1.00-f0.90-on-r1.pdf
+file c9c380ed3b6863b785d23811713d986093ceec40748c6a72e26f47454d5d74eb $P/results/pdf/G200-off-on-r1.pdf
+file 0f1c66317cb1699a3f25d015abc7345cc5562c6c1bf753e88b25a60fb07f844a $P/results/pdf/W2a-split-t1.00-f0.90-on-r1.pdf
+file 9501a777025f29491d585ffacdaa8ce2fedd40b2a0fd6a1fd47a2de5e474e909 $P/results/pdf/X1M-split-t1.00-f0.90-on-r1.pdf
+
+C=spikes/09-two-pass-page-subtotals
+file 9d918dff051da5045e31ca54fb3d083965d5276104cb7090d3adc54642f0649e $C/PageAccountingCheck/Evaluation.cs
+file 50a25921bf15619e174032f9d4a2586416ebed7a71ce7e451adc0ddc44ae3810 $C/PageAccountingCheck/PdfReading.cs
+file a88705672a1cbffef214ba7cd3d608c37e47fa7f622d7e5c12a45f0b2549a616 $C/PageAccountingCheck/Records.cs
+file 74e8017ef7543ebea3e8eec4d261ef9bc753874988a773facdd5b5b4a7576201 $C/PageAccountingCheck/ReadBackJudge.cs
+file c9b16d3d906bb24a7d95fa848df843b25a12e77e9c14db9c2334a36bea80e760 $C/PageAccountingCheck/UnchangedOutside.cs
+file a4a76b394495f15703e3867485b09526131e8d4b8a07c6d55a94402121ab6bc2 $C/PageAccountingCheck/StampingSideEffects.cs
+file eb8f227c512c46c7c6757380fbb41bf7b5c3913d5fe18d59301b6a08575239be $C/PageAccountingCheck/Qpdf.cs
+file 980b221a7661551fa853cfe59187a5579a12f5bde88aa04b25df2721e839d35d $C/PageAccountingCheck/Tool.cs
+file 29750f7679d229945abd5d511e22b0aa38014341f23cc6ff300428e6eadded2f $C/PageAccountingCheck/Reused/LayoutTypes.cs
+file 042c0f8d343d4a990dd14bb171760bd54e808f62188d45d4dc205b7146432420 $C/PageAccountingCheck/PageAccountingCheck.csproj
+file ed35d52fe00a5fa071d83d41e75161402c3934d8f5e59ef60c17992a3fc8e0dc $C/Dockerfile.account
+file 425cd36121b49b43ceaabf5d55cc595e8cbe315190c187d5e6ebfba19e002f4c $C/Dockerfile.account.dockerignore
+file db1ce1a7f0dcab7571f84aec2f437e94d8b976c46d3421269cb2c20e3d57c52c $C/results/fixtures.sha256
