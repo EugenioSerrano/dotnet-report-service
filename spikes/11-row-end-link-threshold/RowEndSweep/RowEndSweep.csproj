@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Row-end link experiment: builds the size sweep of one tall row, drives the
+    unchanged two-pass harness image (spikes/09-two-pass-page-subtotals) from
+    outside, one fresh process per pass, and joins the run records with the
+    readings of the separate, browser-free checkers. No package.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RowEndSweep</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Linked unchanged: only its SampleSummary type is used (the run records carry it). -->
+    <Compile Include="../../09-two-pass-page-subtotals/TwoPassSpike/ProcessTreeSampler.cs" Link="Reused/ProcessTreeSampler.cs" />
+  </ItemGroup>
+</Project>

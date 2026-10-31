@@ -1,0 +1,2879 @@
+{
+  "rounds": [
+    {
+      "round": "round-1",
+      "directory": "round-1",
+      "runs": 492,
+      "argvLines": 984,
+      "childProcessPaths": [
+        "/usr/share/dotnet/dotnet"
+      ],
+      "probeRuns": 492,
+      "probeExit": "1"
+    }
+  ],
+  "chromiumVersions": [
+    "153.0.8010.12"
+  ],
+  "instrument": {
+    "problems": [],
+    "stopAndAsk": [],
+    "measuredRuns": 492,
+    "countedRuns": 492,
+    "notCounted": [],
+    "notCountedNearALimit": [],
+    "readersDisagreeOnPresence": 0,
+    "readersDisagreeOnPageOnly": [],
+    "runsWithEscapes": [],
+    "cappedPasses": [],
+    "argvMatchesEarlierDriver": true
+  },
+  "reproduction": [
+    {
+      "check": "R-1",
+      "fixture": "X64K",
+      "markup": "table",
+      "runs": [
+        "X64K-table-c-r1: 17 pages, row 50 3-15 (13), end link p15[201 301.16998 232.5 311.66998], 300 annotations",
+        "X64K-table-c-r2: 17 pages, row 50 3-15 (13), end link p15[201 301.16998 232.5 311.66998], 300 annotations",
+        "X64K-table-c-r3: 17 pages, row 50 3-15 (13), end link p15[201 301.16998 232.5 311.66998], 300 annotations"
+      ],
+      "reference": "reference X64K-table-c-r1: 17 pages, row 50 3-15, 300 annotations, row 50 links p3 /Link /URI https://m.invalid/r/50/s [36.75 772.16998 46.5 782.66998] | p3 /Link /URI https://m.invalid/r/50/a [479.25 772.16998 516.75 782.66998] | p15 /Link /URI https://m.invalid/r/50/e [201 301.16998 232.5 311.66998]",
+      "referenceSplitRow": {
+        "run": "X64K-table-c-r1",
+        "fixture": "X64K",
+        "markup": "table",
+        "row": 50,
+        "rowPages": "3-15",
+        "e": {
+          "word": "gasketd",
+          "rectanglePage": 15,
+          "wordPage": 15,
+          "offsetYPt": 180.12,
+          "offsetXPt": -0.175,
+          "linesAbove": 26,
+          "intraFragmentDistancePt": 292.5,
+          "headerHeightPt": 13.5,
+          "fragmentIndex": 12,
+          "fragments": 13,
+          "class": "other"
+        },
+        "a": {
+          "word": "46323.27",
+          "rectanglePage": 3,
+          "wordPage": 3,
+          "offsetYPt": 0.12,
+          "offsetXPt": -0.312,
+          "linesAbove": 0,
+          "intraFragmentDistancePt": 0,
+          "headerHeightPt": 15,
+          "fragmentIndex": 0,
+          "fragments": 13,
+          "class": "within-tolerance"
+        }
+      },
+      "result": "reproduced",
+      "differences": []
+    },
+    {
+      "check": "R-2",
+      "fixture": "X128K",
+      "markup": "table",
+      "runs": [
+        "X128K-table-c-r1: 29 pages, row 50 3-27 (25), end link absent, 299 annotations",
+        "X128K-table-c-r2: 29 pages, row 50 3-27 (25), end link absent, 299 annotations",
+        "X128K-table-c-r3: 29 pages, row 50 3-27 (25), end link absent, 299 annotations"
+      ],
+      "reference": "reference X128K-table-c-r1: 29 pages, row 50 3-27, 299 annotations, row 50 links p3 /Link /URI https://m.invalid/r/50/s [36.75 772.16998 46.5 782.66998] | p3 /Link /URI https://m.invalid/r/50/a [479.25 772.16998 516.75 782.66998]",
+      "referenceSplitRow": null,
+      "result": "reproduced",
+      "differences": []
+    },
+    {
+      "check": "R-3",
+      "fixture": "X64K",
+      "markup": "grid",
+      "runs": [
+        "X64K-grid-c-r1: 17 pages, row 50 3-15 (13), end link p15[201 631.16998 232.5 641.66998], 300 annotations",
+        "X64K-grid-c-r2: 17 pages, row 50 3-15 (13), end link p15[201 631.16998 232.5 641.66998], 300 annotations",
+        "X64K-grid-c-r3: 17 pages, row 50 3-15 (13), end link p15[201 631.16998 232.5 641.66998], 300 annotations"
+      ],
+      "reference": "no reference PDF read",
+      "referenceSplitRow": {
+        "run": "X64K-grid-c-r1",
+        "fixture": "X64K",
+        "markup": "grid",
+        "row": 50,
+        "rowPages": "3-15",
+        "e": {
+          "word": "gasketd",
+          "rectanglePage": 15,
+          "wordPage": 15,
+          "offsetYPt": 0.12,
+          "offsetXPt": -0.175,
+          "linesAbove": 14,
+          "intraFragmentDistancePt": 157.5,
+          "headerHeightPt": 0,
+          "fragmentIndex": 12,
+          "fragments": 13,
+          "class": "within-tolerance"
+        },
+        "a": {
+          "word": "46323.27",
+          "rectanglePage": 3,
+          "wordPage": 3,
+          "offsetYPt": 0.12,
+          "offsetXPt": -0.148,
+          "linesAbove": 0,
+          "intraFragmentDistancePt": 0,
+          "headerHeightPt": 0,
+          "fragmentIndex": 0,
+          "fragments": 13,
+          "class": "within-tolerance"
+        }
+      },
+      "result": "reproduced",
+      "differences": []
+    },
+    {
+      "check": "new",
+      "fixture": "X128K",
+      "markup": "grid",
+      "runs": [
+        "X128K-grid-c-r1: 29 pages, row 50 3-27 (25), end link p27[288.75 439.91998 309 450.41998], 300 annotations",
+        "X128K-grid-c-r2: 29 pages, row 50 3-27 (25), end link p27[288.75 439.91998 309 450.41998], 300 annotations",
+        "X128K-grid-c-r3: 29 pages, row 50 3-27 (25), end link p27[288.75 439.91998 309 450.41998], 300 annotations"
+      ],
+      "reference": "no reference PDF read",
+      "referenceSplitRow": null,
+      "result": "recorded (no earlier counterpart)",
+      "differences": []
+    }
+  ],
+  "repeatAgreement": {
+    "fixtureMarkups": 164,
+    "notReproducible": [],
+    "incomplete": []
+  },
+  "classes": {
+    "table": {
+      "uniq": {
+        "class": "mixed",
+        "bracket": null,
+        "lastPresentSpan": null,
+        "firstAbsentSpan": null,
+        "countedRuns": 123,
+        "spans": {
+          "13": "mixed",
+          "14": "mixed",
+          "15": "mixed",
+          "16": "mixed",
+          "17": "present",
+          "18": "mixed",
+          "19": "mixed",
+          "20": "mixed",
+          "21": "mixed",
+          "22": "mixed",
+          "23": "mixed",
+          "24": "mixed",
+          "25": "mixed",
+          "26": "mixed",
+          "27": "mixed",
+          "28": "mixed"
+        },
+        "sizes": [
+          {
+            "kib": 64,
+            "fixture": "X64K",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 66,
+            "fixture": "U066",
+            "spans": [
+              13
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 68,
+            "fixture": "U068",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 70,
+            "fixture": "U070",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 72,
+            "fixture": "U072",
+            "spans": [
+              14
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 74,
+            "fixture": "U074",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 76,
+            "fixture": "U076",
+            "spans": [
+              15
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 78,
+            "fixture": "U078",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 80,
+            "fixture": "U080",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 82,
+            "fixture": "U082",
+            "spans": [
+              16
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 84,
+            "fixture": "U084",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 86,
+            "fixture": "U086",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 88,
+            "fixture": "U088",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 90,
+            "fixture": "U090",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 92,
+            "fixture": "U092",
+            "spans": [
+              18
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 94,
+            "fixture": "U094",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 96,
+            "fixture": "U096",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 98,
+            "fixture": "U098",
+            "spans": [
+              19
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 100,
+            "fixture": "U100",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 102,
+            "fixture": "U102",
+            "spans": [
+              20
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 104,
+            "fixture": "U104",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 106,
+            "fixture": "U106",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 108,
+            "fixture": "U108",
+            "spans": [
+              21
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 110,
+            "fixture": "U110",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 112,
+            "fixture": "U112",
+            "spans": [
+              22
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 114,
+            "fixture": "U114",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 116,
+            "fixture": "U116",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 118,
+            "fixture": "U118",
+            "spans": [
+              23
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 120,
+            "fixture": "U120",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 122,
+            "fixture": "U122",
+            "spans": [
+              24
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 124,
+            "fixture": "U124",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 126,
+            "fixture": "U126",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 128,
+            "fixture": "X128K",
+            "spans": [
+              25
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 130,
+            "fixture": "U130",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 132,
+            "fixture": "U132",
+            "spans": [
+              26
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 134,
+            "fixture": "U134",
+            "spans": [
+              26
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 136,
+            "fixture": "U136",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 138,
+            "fixture": "U138",
+            "spans": [
+              27
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 140,
+            "fixture": "U140",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 142,
+            "fixture": "U142",
+            "spans": [
+              28
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 144,
+            "fixture": "U144",
+            "spans": [
+              28
+            ],
+            "endLink": "absent"
+          }
+        ],
+        "coverage": {
+          "met": true,
+          "gaps": [],
+          "missingSpans13to25": [],
+          "largestSpan": 28,
+          "smallestSpan": 13
+        }
+      },
+      "rep": {
+        "class": "mixed",
+        "bracket": null,
+        "lastPresentSpan": null,
+        "firstAbsentSpan": null,
+        "countedRuns": 123,
+        "spans": {
+          "13": "present",
+          "14": "mixed",
+          "15": "mixed",
+          "16": "mixed",
+          "17": "mixed",
+          "18": "mixed",
+          "19": "mixed",
+          "20": "mixed",
+          "21": "mixed",
+          "22": "mixed",
+          "23": "mixed",
+          "24": "mixed",
+          "25": "mixed",
+          "26": "mixed",
+          "27": "mixed",
+          "28": "mixed",
+          "29": "mixed"
+        },
+        "sizes": [
+          {
+            "kib": 64,
+            "fixture": "R064",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 66,
+            "fixture": "R066",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 68,
+            "fixture": "R068",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 70,
+            "fixture": "R070",
+            "spans": [
+              14
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 72,
+            "fixture": "R072",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 74,
+            "fixture": "R074",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 76,
+            "fixture": "R076",
+            "spans": [
+              15
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 78,
+            "fixture": "R078",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 80,
+            "fixture": "R080",
+            "spans": [
+              16
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 82,
+            "fixture": "R082",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 84,
+            "fixture": "R084",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 86,
+            "fixture": "R086",
+            "spans": [
+              17
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 88,
+            "fixture": "R088",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 90,
+            "fixture": "R090",
+            "spans": [
+              18
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 92,
+            "fixture": "R092",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 94,
+            "fixture": "R094",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 96,
+            "fixture": "R096",
+            "spans": [
+              19
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 98,
+            "fixture": "R098",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 100,
+            "fixture": "R100",
+            "spans": [
+              20
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 102,
+            "fixture": "R102",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 104,
+            "fixture": "R104",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 106,
+            "fixture": "R106",
+            "spans": [
+              21
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 108,
+            "fixture": "R108",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 110,
+            "fixture": "R110",
+            "spans": [
+              22
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 112,
+            "fixture": "R112",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 114,
+            "fixture": "R114",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 116,
+            "fixture": "R116",
+            "spans": [
+              23
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 118,
+            "fixture": "R118",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 120,
+            "fixture": "R120",
+            "spans": [
+              24
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 122,
+            "fixture": "R122",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 124,
+            "fixture": "R124",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 126,
+            "fixture": "R126",
+            "spans": [
+              25
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 128,
+            "fixture": "R128",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 130,
+            "fixture": "R130",
+            "spans": [
+              26
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 132,
+            "fixture": "R132",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 134,
+            "fixture": "R134",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 136,
+            "fixture": "R136",
+            "spans": [
+              27
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 138,
+            "fixture": "R138",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 140,
+            "fixture": "R140",
+            "spans": [
+              28
+            ],
+            "endLink": "absent"
+          },
+          {
+            "kib": 142,
+            "fixture": "R142",
+            "spans": [
+              29
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 144,
+            "fixture": "R144",
+            "spans": [
+              29
+            ],
+            "endLink": "absent"
+          }
+        ],
+        "coverage": {
+          "met": true,
+          "gaps": [],
+          "missingSpans13to25": [],
+          "largestSpan": 29,
+          "smallestSpan": 13
+        }
+      },
+      "spanAlone": {
+        "verdict": "not span alone",
+        "commonSpans": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28
+        ],
+        "spansWithDifferentPresence": [
+          "13: uniq mixed, rep present",
+          "17: uniq present, rep mixed"
+        ],
+        "mixedSpans": [
+          "uniq 13",
+          "uniq 14",
+          "uniq 15",
+          "uniq 16",
+          "uniq 18",
+          "uniq 19",
+          "uniq 20",
+          "uniq 21",
+          "uniq 22",
+          "uniq 23",
+          "uniq 24",
+          "uniq 25",
+          "uniq 26",
+          "uniq 27",
+          "uniq 28",
+          "rep 14",
+          "rep 15",
+          "rep 16",
+          "rep 17",
+          "rep 18",
+          "rep 19",
+          "rep 20",
+          "rep 21",
+          "rep 22",
+          "rep 23",
+          "rep 24",
+          "rep 25",
+          "rep 26",
+          "rep 27",
+          "rep 28",
+          "rep 29"
+        ],
+        "classes": "uniq mixed, rep mixed"
+      }
+    },
+    "grid": {
+      "uniq": {
+        "class": "no limit in range",
+        "bracket": null,
+        "lastPresentSpan": 28,
+        "firstAbsentSpan": null,
+        "countedRuns": 123,
+        "spans": {
+          "13": "present",
+          "14": "present",
+          "15": "present",
+          "16": "present",
+          "17": "present",
+          "18": "present",
+          "19": "present",
+          "20": "present",
+          "21": "present",
+          "22": "present",
+          "23": "present",
+          "24": "present",
+          "25": "present",
+          "26": "present",
+          "27": "present",
+          "28": "present"
+        },
+        "sizes": [
+          {
+            "kib": 64,
+            "fixture": "X64K",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 66,
+            "fixture": "U066",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 68,
+            "fixture": "U068",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 70,
+            "fixture": "U070",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 72,
+            "fixture": "U072",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 74,
+            "fixture": "U074",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 76,
+            "fixture": "U076",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 78,
+            "fixture": "U078",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 80,
+            "fixture": "U080",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 82,
+            "fixture": "U082",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 84,
+            "fixture": "U084",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 86,
+            "fixture": "U086",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 88,
+            "fixture": "U088",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 90,
+            "fixture": "U090",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 92,
+            "fixture": "U092",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 94,
+            "fixture": "U094",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 96,
+            "fixture": "U096",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 98,
+            "fixture": "U098",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 100,
+            "fixture": "U100",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 102,
+            "fixture": "U102",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 104,
+            "fixture": "U104",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 106,
+            "fixture": "U106",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 108,
+            "fixture": "U108",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 110,
+            "fixture": "U110",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 112,
+            "fixture": "U112",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 114,
+            "fixture": "U114",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 116,
+            "fixture": "U116",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 118,
+            "fixture": "U118",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 120,
+            "fixture": "U120",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 122,
+            "fixture": "U122",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 124,
+            "fixture": "U124",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 126,
+            "fixture": "U126",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 128,
+            "fixture": "X128K",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 130,
+            "fixture": "U130",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 132,
+            "fixture": "U132",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 134,
+            "fixture": "U134",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 136,
+            "fixture": "U136",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 138,
+            "fixture": "U138",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 140,
+            "fixture": "U140",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 142,
+            "fixture": "U142",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 144,
+            "fixture": "U144",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          }
+        ],
+        "coverage": {
+          "met": true,
+          "gaps": [],
+          "missingSpans13to25": [],
+          "largestSpan": 28,
+          "smallestSpan": 13
+        }
+      },
+      "rep": {
+        "class": "no limit in range",
+        "bracket": null,
+        "lastPresentSpan": 29,
+        "firstAbsentSpan": null,
+        "countedRuns": 123,
+        "spans": {
+          "13": "present",
+          "14": "present",
+          "15": "present",
+          "16": "present",
+          "17": "present",
+          "18": "present",
+          "19": "present",
+          "20": "present",
+          "21": "present",
+          "22": "present",
+          "23": "present",
+          "24": "present",
+          "25": "present",
+          "26": "present",
+          "27": "present",
+          "28": "present",
+          "29": "present"
+        },
+        "sizes": [
+          {
+            "kib": 64,
+            "fixture": "R064",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 66,
+            "fixture": "R066",
+            "spans": [
+              13
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 68,
+            "fixture": "R068",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 70,
+            "fixture": "R070",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 72,
+            "fixture": "R072",
+            "spans": [
+              14
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 74,
+            "fixture": "R074",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 76,
+            "fixture": "R076",
+            "spans": [
+              15
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 78,
+            "fixture": "R078",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 80,
+            "fixture": "R080",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 82,
+            "fixture": "R082",
+            "spans": [
+              16
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 84,
+            "fixture": "R084",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 86,
+            "fixture": "R086",
+            "spans": [
+              17
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 88,
+            "fixture": "R088",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 90,
+            "fixture": "R090",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 92,
+            "fixture": "R092",
+            "spans": [
+              18
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 94,
+            "fixture": "R094",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 96,
+            "fixture": "R096",
+            "spans": [
+              19
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 98,
+            "fixture": "R098",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 100,
+            "fixture": "R100",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 102,
+            "fixture": "R102",
+            "spans": [
+              20
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 104,
+            "fixture": "R104",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 106,
+            "fixture": "R106",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 108,
+            "fixture": "R108",
+            "spans": [
+              21
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 110,
+            "fixture": "R110",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 112,
+            "fixture": "R112",
+            "spans": [
+              22
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 114,
+            "fixture": "R114",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 116,
+            "fixture": "R116",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 118,
+            "fixture": "R118",
+            "spans": [
+              23
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 120,
+            "fixture": "R120",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 122,
+            "fixture": "R122",
+            "spans": [
+              24
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 124,
+            "fixture": "R124",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 126,
+            "fixture": "R126",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 128,
+            "fixture": "R128",
+            "spans": [
+              25
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 130,
+            "fixture": "R130",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 132,
+            "fixture": "R132",
+            "spans": [
+              26
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 134,
+            "fixture": "R134",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 136,
+            "fixture": "R136",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 138,
+            "fixture": "R138",
+            "spans": [
+              27
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 140,
+            "fixture": "R140",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 142,
+            "fixture": "R142",
+            "spans": [
+              28
+            ],
+            "endLink": "present"
+          },
+          {
+            "kib": 144,
+            "fixture": "R144",
+            "spans": [
+              29
+            ],
+            "endLink": "present"
+          }
+        ],
+        "coverage": {
+          "met": true,
+          "gaps": [],
+          "missingSpans13to25": [],
+          "largestSpan": 29,
+          "smallestSpan": 13
+        }
+      },
+      "spanAlone": {
+        "verdict": "consistent with span alone",
+        "commonSpans": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28
+        ],
+        "spansWithDifferentPresence": [],
+        "mixedSpans": [],
+        "classes": "uniq no limit in range, rep no limit in range"
+      }
+    }
+  },
+  "offsetObservation": [
+    {
+      "run": "R064-grid-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 0.12,
+      "linesAbove": 28,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R066-grid-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 0.12,
+      "linesAbove": 54,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R068-grid-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 0.12,
+      "linesAbove": 13,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R070-grid-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 0.12,
+      "linesAbove": 39,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R072-grid-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 0.12,
+      "linesAbove": 65,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R074-grid-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 0.12,
+      "linesAbove": 24,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R076-grid-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 0.12,
+      "linesAbove": 50,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R078-grid-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 0.12,
+      "linesAbove": 10,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R080-grid-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 0.12,
+      "linesAbove": 35,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R082-grid-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 0.12,
+      "linesAbove": 61,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R084-grid-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 0.12,
+      "linesAbove": 21,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R086-grid-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 0.12,
+      "linesAbove": 47,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R088-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 6,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R090-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 32,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R092-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 58,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R094-grid-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 0.12,
+      "linesAbove": 17,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R096-grid-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 0.12,
+      "linesAbove": 43,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R098-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 3,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R100-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 28,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R102-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 54,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R104-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 14,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R106-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 39,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R108-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 65,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R110-grid-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 0.12,
+      "linesAbove": 25,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R112-grid-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 0.12,
+      "linesAbove": 51,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R114-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 10,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R116-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 36,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R118-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 62,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R120-grid-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 0.12,
+      "linesAbove": 21,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R122-grid-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 0.12,
+      "linesAbove": 47,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R124-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R126-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 32,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R128-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 58,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R130-grid-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 0.12,
+      "linesAbove": 18,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R132-grid-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 0.12,
+      "linesAbove": 43,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R134-grid-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 0.12,
+      "linesAbove": 3,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R136-grid-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 0.12,
+      "linesAbove": 29,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R138-grid-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 0.12,
+      "linesAbove": 54,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R140-grid-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 0.12,
+      "linesAbove": 14,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R142-grid-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 0.12,
+      "linesAbove": 40,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R144-grid-c-r1",
+      "span": 29,
+      "fragmentIndex": 28,
+      "fragments": 29,
+      "offsetYPt": 0.12,
+      "linesAbove": 1,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "X64K-grid-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 0.12,
+      "linesAbove": 14,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U066-grid-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 0.12,
+      "linesAbove": 39,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U068-grid-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 0.12,
+      "linesAbove": 64,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U070-grid-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 0.12,
+      "linesAbove": 23,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U072-grid-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 0.12,
+      "linesAbove": 46,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U074-grid-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 0.12,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U076-grid-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 0.12,
+      "linesAbove": 33,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U078-grid-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 0.12,
+      "linesAbove": 58,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U080-grid-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 0.12,
+      "linesAbove": 16,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U082-grid-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 0.12,
+      "linesAbove": 43,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U084-grid-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 0.12,
+      "linesAbove": 3,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U086-grid-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 0.12,
+      "linesAbove": 27,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U088-grid-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 0.12,
+      "linesAbove": 53,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U090-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 11,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U092-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 36,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U094-grid-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 0.12,
+      "linesAbove": 61,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U096-grid-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 0.12,
+      "linesAbove": 21,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U098-grid-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 0.12,
+      "linesAbove": 45,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U100-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 5,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U102-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 31,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U104-grid-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 0.12,
+      "linesAbove": 55,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U106-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 14,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U108-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 40,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U110-grid-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 0.12,
+      "linesAbove": 64,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U112-grid-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 0.12,
+      "linesAbove": 25,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U114-grid-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 0.12,
+      "linesAbove": 51,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U116-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U118-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 35,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U120-grid-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 0.12,
+      "linesAbove": 58,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U122-grid-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 0.12,
+      "linesAbove": 19,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U124-grid-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 0.12,
+      "linesAbove": 43,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U126-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 3,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "X128K-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 31,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U130-grid-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 0.12,
+      "linesAbove": 53,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U132-grid-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 0.12,
+      "linesAbove": 10,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U134-grid-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 0.12,
+      "linesAbove": 38,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U136-grid-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 0.12,
+      "linesAbove": 60,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U138-grid-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 0.12,
+      "linesAbove": 24,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U140-grid-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 0.12,
+      "linesAbove": 47,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U142-grid-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 0.12,
+      "linesAbove": 6,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U144-grid-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 0.12,
+      "linesAbove": 36,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R064-table-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 180.12,
+      "linesAbove": 40,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R066-table-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 195.12,
+      "linesAbove": 1,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R068-table-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 195.12,
+      "linesAbove": 26,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R072-table-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 210.12,
+      "linesAbove": 13,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R074-table-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 210.12,
+      "linesAbove": 38,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R078-table-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 225.87,
+      "linesAbove": 25,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R082-table-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 240.87,
+      "linesAbove": 11,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R084-table-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 240.87,
+      "linesAbove": 37,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R088-table-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 255.87,
+      "linesAbove": 23,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R092-table-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 270.87,
+      "linesAbove": 10,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R094-table-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 270.87,
+      "linesAbove": 35,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R098-table-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 285.87,
+      "linesAbove": 22,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R102-table-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 300.87,
+      "linesAbove": 8,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R104-table-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 300.87,
+      "linesAbove": 34,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R108-table-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 315.87,
+      "linesAbove": 20,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R112-table-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 330.87,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R114-table-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 330.87,
+      "linesAbove": 32,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R118-table-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 345.87,
+      "linesAbove": 19,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R122-table-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 360.87,
+      "linesAbove": 5,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R124-table-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 360.87,
+      "linesAbove": 31,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R128-table-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 375.87,
+      "linesAbove": 17,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R132-table-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 390.87,
+      "linesAbove": 3,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R134-table-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 390.87,
+      "linesAbove": 29,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R138-table-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 405.87,
+      "linesAbove": 15,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "R142-table-c-r1",
+      "span": 29,
+      "fragmentIndex": 28,
+      "fragments": 29,
+      "offsetYPt": 420.87,
+      "linesAbove": 2,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "X64K-table-c-r1",
+      "span": 13,
+      "fragmentIndex": 12,
+      "fragments": 13,
+      "offsetYPt": 180.12,
+      "linesAbove": 26,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U068-table-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 195.12,
+      "linesAbove": 11,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U070-table-c-r1",
+      "span": 14,
+      "fragmentIndex": 13,
+      "fragments": 14,
+      "offsetYPt": 195.12,
+      "linesAbove": 36,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U074-table-c-r1",
+      "span": 15,
+      "fragmentIndex": 14,
+      "fragments": 15,
+      "offsetYPt": 210.12,
+      "linesAbove": 21,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U078-table-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 225.87,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U080-table-c-r1",
+      "span": 16,
+      "fragmentIndex": 15,
+      "fragments": 16,
+      "offsetYPt": 225.87,
+      "linesAbove": 31,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U084-table-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 240.87,
+      "linesAbove": 19,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U086-table-c-r1",
+      "span": 17,
+      "fragmentIndex": 16,
+      "fragments": 17,
+      "offsetYPt": 240.044,
+      "linesAbove": 43,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U088-table-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 255.87,
+      "linesAbove": 4,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U090-table-c-r1",
+      "span": 18,
+      "fragmentIndex": 17,
+      "fragments": 18,
+      "offsetYPt": 255.87,
+      "linesAbove": 28,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U094-table-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 270.87,
+      "linesAbove": 13,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U096-table-c-r1",
+      "span": 19,
+      "fragmentIndex": 18,
+      "fragments": 19,
+      "offsetYPt": 270.87,
+      "linesAbove": 39,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U100-table-c-r1",
+      "span": 20,
+      "fragmentIndex": 19,
+      "fragments": 20,
+      "offsetYPt": 285.87,
+      "linesAbove": 24,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U104-table-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 300.87,
+      "linesAbove": 9,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U106-table-c-r1",
+      "span": 21,
+      "fragmentIndex": 20,
+      "fragments": 21,
+      "offsetYPt": 300.87,
+      "linesAbove": 34,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U110-table-c-r1",
+      "span": 22,
+      "fragmentIndex": 21,
+      "fragments": 22,
+      "offsetYPt": 315.87,
+      "linesAbove": 19,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U114-table-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 330.87,
+      "linesAbove": 7,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U116-table-c-r1",
+      "span": 23,
+      "fragmentIndex": 22,
+      "fragments": 23,
+      "offsetYPt": 330.87,
+      "linesAbove": 29,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U120-table-c-r1",
+      "span": 24,
+      "fragmentIndex": 23,
+      "fragments": 24,
+      "offsetYPt": 345.87,
+      "linesAbove": 15,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U124-table-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 360.87,
+      "linesAbove": 1,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U126-table-c-r1",
+      "span": 25,
+      "fragmentIndex": 24,
+      "fragments": 25,
+      "offsetYPt": 360.87,
+      "linesAbove": 27,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U130-table-c-r1",
+      "span": 26,
+      "fragmentIndex": 25,
+      "fragments": 26,
+      "offsetYPt": 375.87,
+      "linesAbove": 12,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U136-table-c-r1",
+      "span": 27,
+      "fragmentIndex": 26,
+      "fragments": 27,
+      "offsetYPt": 390.87,
+      "linesAbove": 20,
+      "endOnRowLastPage": true
+    },
+    {
+      "run": "U140-table-c-r1",
+      "span": 28,
+      "fragmentIndex": 27,
+      "fragments": 28,
+      "offsetYPt": 405.87,
+      "linesAbove": 8,
+      "endOnRowLastPage": true
+    }
+  ],
+  "proposedSecondRound": []
+}

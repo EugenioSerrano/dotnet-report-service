@@ -1,0 +1,46 @@
+{
+  "measuredImage": {
+    "tag": "two-pass-spike:local",
+    "id": "sha256:0237b3c5f187aeded03caffe509e9d035f9eb9dfd18a65204e61b128b610c808",
+    "platform": "linux/amd64",
+    "pdfBaseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d"
+  },
+  "versions": {
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "dotnet": "10.0.13",
+    "pdfLibrary": "6.2.4",
+    "headlessShell": "chromium_headless_shell-1243",
+    "imageOs": "Ubuntu 24.04.5 LTS",
+    "user": "uid=1654(app) gid=1654(app) groups=1654(app)",
+    "stampFont": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "runtimes": [
+      "Microsoft.AspNetCore.App 10.0.13 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]",
+      "Microsoft.NETCore.App 10.0.13 [/usr/share/dotnet/shared/Microsoft.NETCore.App]"
+    ]
+  },
+  "readers": {
+    "checkerImage": {
+      "tag": "page-accounting-check:local",
+      "id": "sha256:eb23473f72536e3adbcca6ad738107fb9cb0ee28026c17fb48b10d1a7493e6e5"
+    },
+    "textCheckImage": {
+      "tag": "text-integrity-check:local",
+      "id": "sha256:9e013c3b2f5148592698e3be7213c364fa1c2c40e3f148f8126521424168c3a6"
+    },
+    "qpdf": "qpdf version 11.9.0",
+    "poppler": "pdftotext version 24.02.0",
+    "browserInCheckerImage": "none (ls: cannot access '/ms-playwright': No such file or directory)"
+  },
+  "engine": {
+    "version": "client 29.6.1-rd server 29.4.0-ce linux/amd64",
+    "info": "os=openSUSE Leap 16.0 kernel=6.18.33.2-microsoft-standard-WSL2 arch=x86_64 ncpu=16 mem=12538507264 cgroup=2 driver=overlayfs",
+    "containerKernel": "6.18.33.2-microsoft-standard-WSL2"
+  },
+  "host": {
+    "os": "Microsoft Windows 11 Pro",
+    "version": "10.0.26300",
+    "build": "26300"
+  },
+  "note": "The result holds for this Chromium build and platform only."
+}
