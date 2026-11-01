@@ -142,6 +142,29 @@ public sealed class TelemetryEndpointTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task ThePropagationRouteRefusesAMalformedWorkerAddressWithTheDesignedRefusal()
+    {
+        // The composition can state an address the request cannot turn into one: the route
+        // keeps its designed refusal instead of escaping as an unhandled fault.
+        Environment.SetEnvironmentVariable(TelemetryDiagnostics.OrchestrationWorkerAddressEntry, "not-an-absolute-address");
+        try
+        {
+            await using var api = Api(diagnostics: true);
+            using var client = api.CreateClient();
+
+            using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.PropagateRoute, UriKind.Relative), Cancellation);
+            var body = await response.Content.ReadAsStringAsync(Cancellation);
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Contains("telemetry.worker-unreachable", body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(TelemetryDiagnostics.OrchestrationWorkerAddressEntry, null);
+        }
+    }
+
     private WebApplicationFactory<Program> Api(bool diagnostics) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

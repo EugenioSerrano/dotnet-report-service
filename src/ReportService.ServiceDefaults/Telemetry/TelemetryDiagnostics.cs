@@ -183,8 +183,10 @@ public static class TelemetryDiagnostics
                 var answer = await response.Content.ReadFromJsonAsync<WorkerTrace>(RequestOptions, context.RequestAborted).ConfigureAwait(false);
                 workerTraceId = answer?.TraceId ?? string.Empty;
             }
-            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException or UriFormatException)
             {
+                // A malformed address is as uncallable as an unreachable one: it keeps the
+                // designed refusal instead of escaping as an unhandled fault.
                 await RefuseAsync(context, StatusCodes.Status503ServiceUnavailable, "telemetry.worker-unreachable", exception.GetType().Name).ConfigureAwait(false);
                 return;
             }

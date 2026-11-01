@@ -45,7 +45,12 @@ internal static class TestComposition
     /// </summary>
     public const int RequestedReceiverPort = 19701;
 
-    /// <summary>The name the PDF worker's container reaches this machine by.</summary>
+    /// <summary>
+    /// The name the local container runtime gives the machine the composition
+    /// runs on. It is used to discover the interface a container reaches this
+    /// machine by; it is never the name the container dials, because inside the
+    /// container it resolves to the runtime's own gateway, not to that interface.
+    /// </summary>
     public const string ContainerHostName = "host.docker.internal";
 
     /// <summary>Creates the testing builder of the composition, ready to build.</summary>
@@ -124,7 +129,19 @@ internal static class TestComposition
     /// <summary>
     /// The receiver as the PDF worker's container reaches it: the port the run
     /// gave the view's receiver, which the model reports once the run allocated
-    /// it — never the port this composition asked for.
+    /// it — never the port this composition asked for — on the address the
+    /// receiver is bound to.
+    /// <para>
+    /// The address is the one <see cref="Address"/> answers, stated literally in
+    /// the container's destination. The name <see cref="ContainerHostName"/> is
+    /// not usable here: it resolves to this machine on the host, but inside a
+    /// container it resolves to the container runtime's own gateway, which
+    /// forwards to the host's loopback only — and the receiver is bound on the
+    /// interface, so a container dialling that name is refused. Measured on the
+    /// reference environment: <c>host.docker.internal</c> resolves to
+    /// <c>192.168.65.254</c> inside the container, a dial there is refused, and a
+    /// dial to the interface address the receiver is bound on connects.
+    /// </para>
     /// </summary>
     /// <exception cref="InvalidOperationException">The run has no receiver endpoint to point the container at.</exception>
     public static Uri ContainerReceiver(IDistributedApplicationTestingBuilder builder)
@@ -141,8 +158,18 @@ internal static class TestComposition
             ?? throw new InvalidOperationException(
                 $"The run had not allocated the telemetry view's receiver when the PDF worker's container was created, so the composition cannot tell the worker where to send its telemetry.");
 
-        return new UriBuilder(Uri.UriSchemeHttp, ContainerHostName, allocated.Port).Uri;
+        return ContainerReceiver(Address(), allocated.Port);
     }
+
+    /// <summary>
+    /// The receiver as a container reaches it: the address the receiver is bound
+    /// on, and the port the run allocated. The two halves are the same address on
+    /// purpose — a container that is handed any other name exports into the void.
+    /// </summary>
+    /// <param name="receiverAddress">The address the receiver is bound on.</param>
+    /// <param name="allocatedPort">The port the run allocated to the receiver.</param>
+    public static Uri ContainerReceiver(IPAddress receiverAddress, int allocatedPort) =>
+        new UriBuilder(Uri.UriSchemeHttp, receiverAddress.ToString(), allocatedPort).Uri;
 
     /// <summary>The address a process receives its telemetry destination from, as text.</summary>
     public static string Text(Uri endpoint) => endpoint.GetLeftPart(UriPartial.Authority);
