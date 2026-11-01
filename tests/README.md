@@ -30,6 +30,10 @@ failed.
   [README](../README.md)). Their tests are compiled and checked with every
   change, and run in a separate integration cycle against the real
   dependencies.
+- The runner's `integration` command is the supported entry point for the
+  integration level, because it switches off the Testcontainers resource
+  reaper (the tests remove their own containers); running the project
+  directly with `dotnet test` would start the reaper's extra container.
 
 ### Run evidence
 

@@ -28,8 +28,13 @@ public sealed class CompositionSmokeTests
         AssertImage(appHost.Resources, "cache", pins.Cache);
         AssertImage(appHost.Resources, "temporal", pins.WorkflowEngine);
 
-        // Every resource that can report readiness, enumerated from the model so a resource added later is covered.
-        var resources = appHost.Resources.OfType<IResourceWithWaitSupport>().Select(r => r.Name).ToList();
+        // Every resource the composition declares that can report readiness, enumerated from the model so a
+        // resource added later is covered.
+        var resources = appHost.Resources
+            .OfType<IResourceWithWaitSupport>()
+            .Where(IsStartedWithTheComposition)
+            .Select(r => r.Name)
+            .ToList();
         var containerNames = appHost.Resources.OfType<ContainerResource>().Select(r => r.Name).ToList();
         Assert.NotEmpty(resources);
 
@@ -73,6 +78,15 @@ public sealed class CompositionSmokeTests
             cancellationToken);
         Assert.Empty(leftovers);
     }
+
+    /// <summary>
+    /// Leaves out the helper resources the hosting library adds by itself, such as the one that rebuilds a
+    /// project on request: they are always hidden and never started with the composition, so they never
+    /// report healthy. A resource the composition declares carries neither mark.
+    /// </summary>
+    private static bool IsStartedWithTheComposition(IResource resource) =>
+        !resource.Annotations.OfType<ExplicitStartupAnnotation>().Any()
+        && !resource.Annotations.OfType<HiddenAnnotation>().Any(hidden => hidden.Behavior == HiddenBehavior.Always);
 
     private static void AssertImage(IResourceCollection resources, string name, PinnedImage pin)
     {
