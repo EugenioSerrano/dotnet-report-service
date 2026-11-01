@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-L183-H1-r1//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 93,
+    "exemptWarningLines": 93,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 23,
+  "expectedPages": 23,
+  "structurePass": true,
+  "textPagesChecked": 23,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 23,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 188,
+  "maxChangedInside": 224,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 23,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 23
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 23
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 23,
+    "minOutside": 9305,
+    "maxOutside": 16291,
+    "sumOutside": 286351,
+    "minInside": 188,
+    "maxInside": 224
+  },
+  "pass": true
+}

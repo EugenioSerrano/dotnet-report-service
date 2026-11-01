@@ -1,0 +1,6119 @@
+{
+  "decidedAt": "2026-10-31T21:36:57-03:00",
+  "referenceDecidedAt": "2026-10-31T21:28:36-03:00",
+  "firstCandidateRun": "2026-11-01T00:29:10.466+00:00",
+  "rows": [
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 5
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 5
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-repeated"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-repeated"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 1
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 1
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 4
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 4
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/B1000-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-ab-grid-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/X64K-ab-grid-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 5
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 5
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 10
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 12
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-altered"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ]
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-repeated"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-repeated"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 1
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 1
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/F1M-a-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/X1M-table-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "fail",
+        "classes": [
+          "row-lost"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "fail",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 4
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "fail",
+        "classes": [],
+        "page": 4
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "fail",
+        "classes": [
+          "text-dropped"
+        ],
+        "page": 2
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-2",
+      "reference": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-3",
+      "reference": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-4",
+      "reference": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-4",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "TI-6",
+      "reference": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "TI-6",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S1",
+      "reference": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S1",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S2",
+      "reference": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S2",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "rule": "S3",
+      "reference": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "candidate": {
+        "rule": "S3",
+        "outcome": "pass",
+        "classes": []
+      },
+      "same": true,
+      "candidateStatus": "checked"
+    }
+  ]
+}

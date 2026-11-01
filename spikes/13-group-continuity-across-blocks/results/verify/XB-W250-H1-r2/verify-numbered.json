@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-W250-H1-r2//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 201,
+    "exemptWarningLines": 201,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 50,
+  "expectedPages": 50,
+  "structurePass": true,
+  "textPagesChecked": 50,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 50,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 192,
+  "maxChangedInside": 234,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 50,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 50
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 50
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 50,
+    "minOutside": 7443,
+    "maxOutside": 17515,
+    "sumOutside": 622472,
+    "minInside": 192,
+    "maxInside": 234
+  },
+  "pass": true
+}

@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-TL150-H1-r1//unnumbered.pdf",
+  "mode": "all",
+  "numbered": false,
+  "qpdfCheck": {
+    "exitCode": 0,
+    "verdict": "pass-clean",
+    "warningLines": 0,
+    "exemptWarningLines": 0,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 27,
+  "expectedPages": 27,
+  "structurePass": true,
+  "textPagesChecked": 27,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 27,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 0,
+  "maxChangedInside": 0,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-only",
+    "pages": 27,
+    "values": [
+      {
+        "box": "[0 0 594.95996 841.91998]",
+        "pages": 27
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "source": 27
+    },
+    "verdict": "box-source",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 27,
+    "minOutside": 0,
+    "maxOutside": 0,
+    "sumOutside": 0,
+    "minInside": 0,
+    "maxInside": 0
+  },
+  "pass": true
+}

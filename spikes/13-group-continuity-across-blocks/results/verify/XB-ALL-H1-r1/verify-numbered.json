@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-ALL-H1-r1//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 1417,
+    "exemptWarningLines": 1417,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 354,
+  "expectedPages": 354,
+  "structurePass": true,
+  "textPagesChecked": 354,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 354,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 210,
+  "maxChangedInside": 276,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 354,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 354
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 354
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 354,
+    "minOutside": 1883,
+    "maxOutside": 17863,
+    "sumOutside": 4383458,
+    "minInside": 210,
+    "maxInside": 276
+  },
+  "pass": true
+}

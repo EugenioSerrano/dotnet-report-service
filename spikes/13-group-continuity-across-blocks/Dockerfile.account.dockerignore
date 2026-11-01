@@ -1,0 +1,37 @@
+# Allow-list build context for the group-continuity-across-blocks check image: everything is
+# excluded, then only the files the build stage copies are let back in.
+*
+!global.json
+!Directory.Build.props
+!NuGet.config
+!.editorconfig
+!spikes/Directory.Build.props
+!spikes/07-native-tall-rows/PaginationFixtures/**
+!spikes/07-native-tall-rows/TextIntegrityCheck/Poppler.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs
+!spikes/07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/BlockSource.cs
+!spikes/02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs
+!spikes/03-pdf-assembly/PdfAssemblySpike/PgmImage.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/Evaluation.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/PdfReading.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/Records.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/ReadBackJudge.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/UnchangedOutside.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/StampingSideEffects.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/Qpdf.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/Tool.cs
+!spikes/09-two-pass-page-subtotals/PageAccountingCheck/Reused/LayoutTypes.cs
+!spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/Account.cs
+!spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/CharacterCheck.cs
+!spikes/10-pagedjs-table-strict-accounting/StrictAccountingCheck/HarnessRecords.cs
+!spikes/13-group-continuity-across-blocks/Directory.Packages.props
+!spikes/12-group-continuity/GroupContinuityCheck/GroupFixtures.cs
+!spikes/12-group-continuity/GroupContinuityCheck/GroupCheck.cs
+!spikes/13-group-continuity-across-blocks/CrossBlockCheck/**
+spikes/07-native-tall-rows/PaginationFixtures/bin
+spikes/07-native-tall-rows/PaginationFixtures/obj
+spikes/13-group-continuity-across-blocks/CrossBlockCheck/bin
+spikes/13-group-continuity-across-blocks/CrossBlockCheck/obj

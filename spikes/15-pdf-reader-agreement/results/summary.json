@@ -1,0 +1,203 @@
+{
+  "decidedAt": "2026-10-31T21:36:57-03:00",
+  "labels": {
+    "pdfpig-a": {
+      "label": "verdicts agree, extraction differs",
+      "licence": true,
+      "pdfsCompared": 42,
+      "pdfsAgree": 41,
+      "verdictsCompared": 174,
+      "verdictsAgree": 174,
+      "knownBadChecks": 20,
+      "detected": 20,
+      "missing": 0,
+      "notOk": [],
+      "deterministic": true
+    },
+    "pdfpig-b": {
+      "label": "verdicts agree, extraction differs",
+      "licence": true,
+      "pdfsCompared": 42,
+      "pdfsAgree": 40,
+      "verdictsCompared": 174,
+      "verdictsAgree": 174,
+      "knownBadChecks": 20,
+      "detected": 20,
+      "missing": 0,
+      "notOk": [],
+      "deterministic": true
+    },
+    "pdfsharp": {
+      "label": "not evaluable",
+      "licence": true,
+      "probes": 42,
+      "runsOk": 42,
+      "runsNotOk": [],
+      "pagesEqualToReference": 42,
+      "unicodeTextOnAnyPdf": false,
+      "positionsOnAnyPdf": false,
+      "textShowingOperators": 271595,
+      "example": {
+        "pdfSha256": "1cc3abe61a5e1a3fdaeb535facb8552591f86b3241842f044df02497c35b6b4a",
+        "pages": 36,
+        "pageSizes": [
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ],
+          [
+            594.95996,
+            841.91998
+          ]
+        ],
+        "textShowingOperators": 6824,
+        "stringOperands": 6824,
+        "firstOperandHex": "0033",
+        "firstOperandValue": "\\u00003",
+        "firstFont": "/F4",
+        "firstFontObjectType": "PdfSharp.Pdf.PdfDictionary",
+        "firstFontHasToUnicode": true,
+        "unicodeText": false,
+        "positions": false,
+        "finding": "PDFsharp exposes the content stream's operators and their raw string operands (font-encoded bytes, here glyph codes), and the font dictionaries as plain dictionaries. No public member maps an operand to Unicode text or gives its position on the page; doing so needs a character-map parser and a text-matrix engine, which is building a reader."
+      }
+    }
+  },
+  "excluded": []
+}

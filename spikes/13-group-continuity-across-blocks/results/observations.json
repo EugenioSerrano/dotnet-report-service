@@ -1,0 +1,3494 @@
+{
+  "instances": [
+    {
+      "instance": "XB-L180-H1-r1",
+      "report": "XB-L180-H1",
+      "variant": "H1",
+      "pages": 23,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0001",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 19,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 8,
+          "totalPage": 8,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 23,
+          "totalPage": 23,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0001",
+          "case": "last rows open the next part",
+          "produced": true,
+          "totalPage": 8,
+          "lastRowPage": 8
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 7,
+          "contentLines": 48,
+          "lastContentBottomPt": 658.2,
+          "contentFill": 0.823,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 14,
+          "contentLines": 41,
+          "lastContentBottomPt": 586.2,
+          "contentFill": 0.726,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 21,
+          "contentLines": 16,
+          "lastContentBottomPt": 247.2,
+          "contentFill": 0.273,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 23,
+          "contentLines": 35,
+          "lastContentBottomPt": 505.2,
+          "contentFill": 0.618,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 180,
+          "class": "near-end",
+          "openGroup": "G0001",
+          "recordsBefore": 180,
+          "recordsAfter": 2,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 360,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 178,
+          "recordsAfter": 41,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 540,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 138,
+          "recordsAfter": 54,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4619329.56",
+          "broughtAfter": "4619329.56",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8812503.27",
+          "broughtAfter": "8812503.27",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13094761.78",
+          "broughtAfter": "13094761.78",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L181-H1-r1",
+      "report": "XB-L181-H1",
+      "variant": "H1",
+      "pages": 23,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0001",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 19,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 8,
+          "totalPage": 8,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 23,
+          "totalPage": 23,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0001",
+          "case": "last rows open the next part",
+          "produced": true,
+          "totalPage": 8,
+          "lastRowPage": 8
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 7,
+          "contentLines": 50,
+          "lastContentBottomPt": 683.7,
+          "contentFill": 0.857,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 14,
+          "contentLines": 36,
+          "lastContentBottomPt": 519.4,
+          "contentFill": 0.637,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 21,
+          "contentLines": 19,
+          "lastContentBottomPt": 290.7,
+          "contentFill": 0.332,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 23,
+          "contentLines": 32,
+          "lastContentBottomPt": 464.7,
+          "contentFill": 0.564,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 181,
+          "class": "near-end",
+          "openGroup": "G0001",
+          "recordsBefore": 181,
+          "recordsAfter": 1,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 362,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 180,
+          "recordsAfter": 39,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 543,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 141,
+          "recordsAfter": 51,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4636402.54",
+          "broughtAfter": "4636402.54",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8842607.15",
+          "broughtAfter": "8842607.15",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13148827.53",
+          "broughtAfter": "13148827.53",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L182-H1-r1",
+      "report": "XB-L182-H1",
+      "variant": "H1",
+      "pages": 23,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 19,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 23,
+          "totalPage": 23,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0001",
+          "case": "closes in a part\u0027s last rows",
+          "produced": true,
+          "totalPage": 7,
+          "lastRowPage": 7
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 7,
+          "contentLines": 52,
+          "lastContentBottomPt": 712.9,
+          "contentFill": 0.896,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 14,
+          "contentLines": 35,
+          "lastContentBottomPt": 505.2,
+          "contentFill": 0.618,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 21,
+          "contentLines": 24,
+          "lastContentBottomPt": 357.4,
+          "contentFill": 0.421,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 23,
+          "contentLines": 29,
+          "lastContentBottomPt": 420.4,
+          "contentFill": 0.505,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 182,
+          "class": "between",
+          "openGroup": null,
+          "closingGroup": "G0001"
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 364,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 182,
+          "recordsAfter": 37,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 546,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 144,
+          "recordsAfter": 48,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4681665.40",
+          "broughtAfter": "4681665.40",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8920567.49",
+          "broughtAfter": "8920567.49",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13199876.90",
+          "broughtAfter": "13199876.90",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L183-H1-r1",
+      "report": "XB-L183-H1",
+      "variant": "H1",
+      "pages": 23,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 19,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 23,
+          "totalPage": 23,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0001",
+          "case": "closes in a part\u0027s last rows",
+          "produced": true,
+          "totalPage": 7,
+          "lastRowPage": 7
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 7,
+          "contentLines": 54,
+          "lastContentBottomPt": 742.2,
+          "contentFill": 0.935,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 14,
+          "contentLines": 40,
+          "lastContentBottomPt": 568.2,
+          "contentFill": 0.702,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 21,
+          "contentLines": 28,
+          "lastContentBottomPt": 412.2,
+          "contentFill": 0.494,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 23,
+          "contentLines": 23,
+          "lastContentBottomPt": 339.4,
+          "contentFill": 0.397,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 183,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 1,
+          "recordsAfter": 218,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 366,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 184,
+          "recordsAfter": 35,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 549,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 147,
+          "recordsAfter": 45,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4714762.77",
+          "broughtAfter": "4714762.77",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "9003118.49",
+          "broughtAfter": "9003118.49",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13323022.28",
+          "broughtAfter": "13323022.28",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L184-H1-r1",
+      "report": "XB-L184-H1",
+      "variant": "H1",
+      "pages": 24,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 20,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 24,
+          "totalPage": 24,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0001",
+          "case": "closes in a part\u0027s last rows",
+          "produced": true,
+          "totalPage": 7,
+          "lastRowPage": 7
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 8,
+          "contentLines": 7,
+          "lastContentBottomPt": 124.9,
+          "contentFill": 0.11,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 15,
+          "contentLines": 34,
+          "lastContentBottomPt": 496.9,
+          "contentFill": 0.607,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 22,
+          "contentLines": 31,
+          "lastContentBottomPt": 456.4,
+          "contentFill": 0.553,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 24,
+          "contentLines": 20,
+          "lastContentBottomPt": 295.2,
+          "contentFill": 0.338,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 184,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 2,
+          "recordsAfter": 217,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 368,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 186,
+          "recordsAfter": 33,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 552,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 150,
+          "recordsAfter": 42,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4754164.54",
+          "broughtAfter": "4754164.54",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "9082133.31",
+          "broughtAfter": "9082133.31",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "13395013.97",
+          "broughtAfter": "13395013.97",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L185-H1-r1",
+      "report": "XB-L185-H1",
+      "variant": "H1",
+      "pages": 24,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 20,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 24,
+          "totalPage": 24,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 8,
+          "contentLines": 9,
+          "lastContentBottomPt": 151.2,
+          "contentFill": 0.145,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 15,
+          "contentLines": 38,
+          "lastContentBottomPt": 548.7,
+          "contentFill": 0.676,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 22,
+          "contentLines": 39,
+          "lastContentBottomPt": 556.9,
+          "contentFill": 0.687,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 24,
+          "contentLines": 12,
+          "lastContentBottomPt": 202.2,
+          "contentFill": 0.213,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 185,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 3,
+          "recordsAfter": 216,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 370,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 188,
+          "recordsAfter": 31,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 555,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 153,
+          "recordsAfter": 39,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4775581.89",
+          "broughtAfter": "4775581.89",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "9102703.44",
+          "broughtAfter": "9102703.44",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "13457734.69",
+          "broughtAfter": "13457734.69",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L201-H1-r1",
+      "report": "XB-L201-H1",
+      "variant": "H1",
+      "pages": 23,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 20,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 16,
+          "totalPage": 16,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 23,
+          "totalPage": 23,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [
+        {
+          "group": "G0002",
+          "case": "closes in a part\u0027s last rows",
+          "produced": true,
+          "totalPage": 16,
+          "lastRowPage": 16
+        },
+        {
+          "group": "G0003",
+          "case": "closes in a part\u0027s last rows",
+          "produced": true,
+          "totalPage": 16,
+          "lastRowPage": 16
+        }
+      ],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 8,
+          "contentLines": 37,
+          "lastContentBottomPt": 520.9,
+          "contentFill": 0.639,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 16,
+          "contentLines": 45,
+          "lastContentBottomPt": 624.4,
+          "contentFill": 0.778,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 23,
+          "contentLines": 46,
+          "lastContentBottomPt": 649.2,
+          "contentFill": 0.811,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 201,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 19,
+          "recordsAfter": 200,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 402,
+          "class": "between",
+          "openGroup": null,
+          "closingGroup": "G0003"
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "5202605.15",
+          "broughtAfter": "5202605.15",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "9905848.18",
+          "broughtAfter": "9905848.18",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-TL150-H1-r1",
+      "report": "XB-TL150-H1",
+      "variant": "H1",
+      "pages": 27,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0001",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 23,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 12,
+          "totalPage": 12,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 20,
+          "totalPage": 20,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 20,
+          "totalPage": 20,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 27,
+          "totalPage": 27,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 10,
+          "contentLines": 24,
+          "lastContentBottomPt": 316.2,
+          "contentFill": 0.366,
+          "onlyGroupOrTotalLines": true
+        },
+        {
+          "part": 2,
+          "page": 16,
+          "contentLines": 51,
+          "lastContentBottomPt": 715.2,
+          "contentFill": 0.899,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 22,
+          "contentLines": 8,
+          "lastContentBottomPt": 153.4,
+          "contentFill": 0.148,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 27,
+          "contentLines": 46,
+          "lastContentBottomPt": 649.2,
+          "contentFill": 0.811,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 150,
+          "class": "middle",
+          "openGroup": "G0001",
+          "recordsBefore": 150,
+          "recordsAfter": 32,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 300,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 118,
+          "recordsAfter": 101,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 450,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 48,
+          "recordsAfter": 144,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 11,
+          "carriedBefore": "3931963.75",
+          "broughtAfter": "3931963.75",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "7555219.84",
+          "broughtAfter": "7555219.84",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "11011196.98",
+          "broughtAfter": "11011196.98",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-TF150-H1-r1",
+      "report": "XB-TF150-H1",
+      "variant": "H1",
+      "pages": 27,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0001",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 23,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 11,
+          "totalPage": 11,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 20,
+          "totalPage": 20,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 20,
+          "totalPage": 20,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 27,
+          "totalPage": 27,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 6,
+          "contentLines": 42,
+          "lastContentBottomPt": 583.9,
+          "contentFill": 0.723,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 16,
+          "contentLines": 27,
+          "lastContentBottomPt": 394.2,
+          "contentFill": 0.47,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 22,
+          "contentLines": 8,
+          "lastContentBottomPt": 153.4,
+          "contentFill": 0.148,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 27,
+          "contentLines": 46,
+          "lastContentBottomPt": 649.2,
+          "contentFill": 0.811,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 150,
+          "class": "middle",
+          "openGroup": "G0001",
+          "recordsBefore": 150,
+          "recordsAfter": 32,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 300,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 118,
+          "recordsAfter": 101,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 450,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 48,
+          "recordsAfter": 144,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 7,
+          "carriedBefore": "3931963.75",
+          "broughtAfter": "3931963.75",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "7555219.84",
+          "broughtAfter": "7555219.84",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "11011196.98",
+          "broughtAfter": "11011196.98",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-W250-H1-r1",
+      "report": "XB-W250-H1",
+      "variant": "H1",
+      "pages": 50,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 44,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0005",
+          "lastRowPage": 5,
+          "totalPage": 5,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 50,
+          "totalPage": 50,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 9,
+          "contentLines": 39,
+          "lastContentBottomPt": 508.9,
+          "contentFill": 0.623,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 18,
+          "contentLines": 46,
+          "lastContentBottomPt": 604.9,
+          "contentFill": 0.752,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 28,
+          "contentLines": 32,
+          "lastContentBottomPt": 447.4,
+          "contentFill": 0.541,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 36,
+          "contentLines": 41,
+          "lastContentBottomPt": 599.7,
+          "contentFill": 0.744,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 46,
+          "contentLines": 17,
+          "lastContentBottomPt": 278.7,
+          "contentFill": 0.316,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 50,
+          "contentLines": 20,
+          "lastContentBottomPt": 305.7,
+          "contentFill": 0.352,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-W250-H1-r2",
+      "report": "XB-W250-H1",
+      "variant": "H1",
+      "pages": 50,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 44,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0005",
+          "lastRowPage": 5,
+          "totalPage": 5,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 50,
+          "totalPage": 50,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 9,
+          "contentLines": 39,
+          "lastContentBottomPt": 508.9,
+          "contentFill": 0.623,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 18,
+          "contentLines": 46,
+          "lastContentBottomPt": 604.9,
+          "contentFill": 0.752,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 28,
+          "contentLines": 32,
+          "lastContentBottomPt": 447.4,
+          "contentFill": 0.541,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 36,
+          "contentLines": 41,
+          "lastContentBottomPt": 599.7,
+          "contentFill": 0.744,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 46,
+          "contentLines": 17,
+          "lastContentBottomPt": 278.7,
+          "contentFill": 0.316,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 50,
+          "contentLines": 20,
+          "lastContentBottomPt": 305.7,
+          "contentFill": 0.352,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-W250-H1-r3",
+      "report": "XB-W250-H1",
+      "variant": "H1",
+      "pages": 50,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 44,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0005",
+          "lastRowPage": 5,
+          "totalPage": 5,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 50,
+          "totalPage": 50,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 9,
+          "contentLines": 39,
+          "lastContentBottomPt": 508.9,
+          "contentFill": 0.623,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 18,
+          "contentLines": 46,
+          "lastContentBottomPt": 604.9,
+          "contentFill": 0.752,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 28,
+          "contentLines": 32,
+          "lastContentBottomPt": 447.4,
+          "contentFill": 0.541,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 36,
+          "contentLines": 41,
+          "lastContentBottomPt": 599.7,
+          "contentFill": 0.744,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 46,
+          "contentLines": 17,
+          "lastContentBottomPt": 278.7,
+          "contentFill": 0.316,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 50,
+          "contentLines": 20,
+          "lastContentBottomPt": 305.7,
+          "contentFill": 0.352,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-G500-H1-r1",
+      "report": "XB-G500-H1",
+      "variant": "H1",
+      "pages": 83,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 78,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0012",
+          "lastRowPage": 83,
+          "totalPage": 83,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 19,
+          "contentLines": 4,
+          "lastContentBottomPt": 94.9,
+          "contentFill": 0.07,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 35,
+          "contentLines": 56,
+          "lastContentBottomPt": 778.2,
+          "contentFill": 0.983,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 51,
+          "contentLines": 7,
+          "lastContentBottomPt": 135.4,
+          "contentFill": 0.124,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 67,
+          "contentLines": 43,
+          "lastContentBottomPt": 574.2,
+          "contentFill": 0.71,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 83,
+          "contentLines": 17,
+          "lastContentBottomPt": 274.9,
+          "contentFill": 0.311,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 3652,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 500,
+          "recordsAfter": 1900,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 4152,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1000,
+          "recordsAfter": 1400,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 4652,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1500,
+          "recordsAfter": 900,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 5152,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 2000,
+          "recordsAfter": 400,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 20,
+          "carriedBefore": "12243137.59",
+          "broughtAfter": "12243137.59",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 36,
+          "carriedBefore": "24309966.00",
+          "broughtAfter": "24309966.00",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 52,
+          "carriedBefore": "36460593.39",
+          "broughtAfter": "36460593.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 68,
+          "carriedBefore": "49463933.44",
+          "broughtAfter": "49463933.44",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-PB-H1-r1",
+      "report": "XB-PB-H1",
+      "variant": "H1",
+      "pages": 51,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 45,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0005",
+          "lastRowPage": 5,
+          "totalPage": 5,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 51,
+          "totalPage": 51,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 8,
+          "contentLines": 63,
+          "lastContentBottomPt": 782.7,
+          "contentFill": 0.989,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 17,
+          "contentLines": 32,
+          "lastContentBottomPt": 457.2,
+          "contentFill": 0.554,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 27,
+          "contentLines": 3,
+          "lastContentBottomPt": 79.9,
+          "contentFill": 0.05,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 36,
+          "contentLines": 6,
+          "lastContentBottomPt": 127.9,
+          "contentFill": 0.114,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 45,
+          "contentLines": 14,
+          "lastContentBottomPt": 214.2,
+          "contentFill": 0.229,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 51,
+          "contentLines": 38,
+          "lastContentBottomPt": 538.9,
+          "contentFill": 0.663,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 836,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 82,
+          "recordsAfter": 1118,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1078,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 324,
+          "recordsAfter": 876,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1320,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 566,
+          "recordsAfter": 634,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1562,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 808,
+          "recordsAfter": 392,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1804,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1050,
+          "recordsAfter": 150,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "5663759.97",
+          "broughtAfter": "5663759.97",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 18,
+          "carriedBefore": "11952657.12",
+          "broughtAfter": "11952657.12",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 28,
+          "carriedBefore": "17560601.07",
+          "broughtAfter": "17560601.07",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "23300224.98",
+          "broughtAfter": "23300224.98",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 46,
+          "carriedBefore": "29481487.61",
+          "broughtAfter": "29481487.61",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-ALL-H1-r1",
+      "report": "XB-ALL-H1",
+      "variant": "H1",
+      "pages": 354,
+      "pb1HeadersAlone": [
+        {
+          "group": "G0004",
+          "page": 15,
+          "form": "header",
+          "partLastPage": false
+        },
+        {
+          "group": "G0019",
+          "page": 244,
+          "form": "header",
+          "partLastPage": false
+        },
+        {
+          "group": "G0022",
+          "page": 265,
+          "form": "header",
+          "partLastPage": false
+        }
+      ],
+      "pb1HeadersAloneCount": 3,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 7,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 8,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 9,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 10,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "group": "G0007",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "group": "G0011",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "group": "G0012",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 7,
+          "group": "G0015",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 8,
+          "group": "G0019",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 9,
+          "group": "G0024",
+          "firstLine": "continuation",
+          "produced": true
+        },
+        {
+          "beforePart": 10,
+          "group": "G0028",
+          "firstLine": "continuation",
+          "produced": true
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 341,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 15,
+          "totalPage": 15,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 15,
+          "totalPage": 15,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 22,
+          "totalPage": 22,
+          "samePage": true
+        },
+        {
+          "group": "G0005",
+          "lastRowPage": 27,
+          "totalPage": 27,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 70,
+          "totalPage": 70,
+          "samePage": true
+        },
+        {
+          "group": "G0007",
+          "lastRowPage": 81,
+          "totalPage": 81,
+          "samePage": true
+        },
+        {
+          "group": "G0008",
+          "lastRowPage": 87,
+          "totalPage": 87,
+          "samePage": true
+        },
+        {
+          "group": "G0009",
+          "lastRowPage": 91,
+          "totalPage": 91,
+          "samePage": true
+        },
+        {
+          "group": "G0010",
+          "lastRowPage": 102,
+          "totalPage": 102,
+          "samePage": true
+        },
+        {
+          "group": "G0011",
+          "lastRowPage": 116,
+          "totalPage": 116,
+          "samePage": true
+        },
+        {
+          "group": "G0012",
+          "lastRowPage": 198,
+          "totalPage": 198,
+          "samePage": true
+        },
+        {
+          "group": "G0013",
+          "lastRowPage": 209,
+          "totalPage": 209,
+          "samePage": true
+        },
+        {
+          "group": "G0014",
+          "lastRowPage": 210,
+          "totalPage": 210,
+          "samePage": true
+        },
+        {
+          "group": "G0015",
+          "lastRowPage": 221,
+          "totalPage": 221,
+          "samePage": true
+        },
+        {
+          "group": "G0016",
+          "lastRowPage": 229,
+          "totalPage": 229,
+          "samePage": true
+        },
+        {
+          "group": "G0017",
+          "lastRowPage": 239,
+          "totalPage": 239,
+          "samePage": true
+        },
+        {
+          "group": "G0018",
+          "lastRowPage": 244,
+          "totalPage": 244,
+          "samePage": true
+        },
+        {
+          "group": "G0019",
+          "lastRowPage": 254,
+          "totalPage": 254,
+          "samePage": true
+        },
+        {
+          "group": "G0020",
+          "lastRowPage": 263,
+          "totalPage": 263,
+          "samePage": true
+        },
+        {
+          "group": "G0021",
+          "lastRowPage": 265,
+          "totalPage": 265,
+          "samePage": true
+        },
+        {
+          "group": "G0022",
+          "lastRowPage": 275,
+          "totalPage": 275,
+          "samePage": true
+        },
+        {
+          "group": "G0023",
+          "lastRowPage": 279,
+          "totalPage": 279,
+          "samePage": true
+        },
+        {
+          "group": "G0024",
+          "lastRowPage": 286,
+          "totalPage": 286,
+          "samePage": true
+        },
+        {
+          "group": "G0025",
+          "lastRowPage": 294,
+          "totalPage": 294,
+          "samePage": true
+        },
+        {
+          "group": "G0026",
+          "lastRowPage": 307,
+          "totalPage": 307,
+          "samePage": true
+        },
+        {
+          "group": "G0027",
+          "lastRowPage": 312,
+          "totalPage": 312,
+          "samePage": true
+        },
+        {
+          "group": "G0028",
+          "lastRowPage": 327,
+          "totalPage": 327,
+          "samePage": true
+        },
+        {
+          "group": "G0029",
+          "lastRowPage": 332,
+          "totalPage": 332,
+          "samePage": true
+        },
+        {
+          "group": "G0030",
+          "lastRowPage": 344,
+          "totalPage": 344,
+          "samePage": true
+        },
+        {
+          "group": "G0031",
+          "lastRowPage": 354,
+          "totalPage": 354,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 36,
+          "contentLines": 51,
+          "lastContentBottomPt": 715.2,
+          "contentFill": 0.899,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 72,
+          "contentLines": 10,
+          "lastContentBottomPt": 169.2,
+          "contentFill": 0.169,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 110,
+          "contentLines": 10,
+          "lastContentBottomPt": 169.2,
+          "contentFill": 0.169,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 145,
+          "contentLines": 8,
+          "lastContentBottomPt": 153.4,
+          "contentFill": 0.148,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 176,
+          "contentLines": 8,
+          "lastContentBottomPt": 150.4,
+          "contentFill": 0.144,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 212,
+          "contentLines": 35,
+          "lastContentBottomPt": 514.9,
+          "contentFill": 0.631,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 7,
+          "page": 247,
+          "contentLines": 8,
+          "lastContentBottomPt": 150.4,
+          "contentFill": 0.144,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 8,
+          "page": 283,
+          "contentLines": 13,
+          "lastContentBottomPt": 223.2,
+          "contentFill": 0.241,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 9,
+          "page": 319,
+          "contentLines": 37,
+          "lastContentBottomPt": 541.2,
+          "contentFill": 0.666,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 10,
+          "page": 354,
+          "contentLines": 26,
+          "lastContentBottomPt": 406.9,
+          "contentFill": 0.487,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 1000,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 246,
+          "recordsAfter": 954,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 2000,
+          "class": "middle",
+          "openGroup": "G0007",
+          "recordsBefore": 46,
+          "recordsAfter": 243,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 3000,
+          "class": "middle",
+          "openGroup": "G0011",
+          "recordsBefore": 171,
+          "recordsAfter": 152,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 4000,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 848,
+          "recordsAfter": 1552,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 5000,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1848,
+          "recordsAfter": 552,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 7,
+          "firstRecord": 6000,
+          "class": "middle",
+          "openGroup": "G0015",
+          "recordsBefore": 57,
+          "recordsAfter": 220,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 8,
+          "firstRecord": 7000,
+          "class": "middle",
+          "openGroup": "G0019",
+          "recordsBefore": 74,
+          "recordsAfter": 184,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 9,
+          "firstRecord": 8000,
+          "class": "middle",
+          "openGroup": "G0024",
+          "recordsBefore": 109,
+          "recordsAfter": 86,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 10,
+          "firstRecord": 9000,
+          "class": "middle",
+          "openGroup": "G0028",
+          "recordsBefore": 195,
+          "recordsAfter": 197,
+          "spansWholePart": false
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 37,
+          "carriedBefore": "24182111.23",
+          "broughtAfter": "24182111.23",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 73,
+          "carriedBefore": "48587548.23",
+          "broughtAfter": "48587548.23",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 111,
+          "carriedBefore": "71999496.91",
+          "broughtAfter": "71999496.91",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 146,
+          "carriedBefore": "96298319.91",
+          "broughtAfter": "96298319.91",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 177,
+          "carriedBefore": "121506486.42",
+          "broughtAfter": "121506486.42",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 7,
+          "page": 213,
+          "carriedBefore": "146020516.01",
+          "broughtAfter": "146020516.01",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 8,
+          "page": 248,
+          "carriedBefore": "170217174.27",
+          "broughtAfter": "170217174.27",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 9,
+          "page": 284,
+          "carriedBefore": "193550558.01",
+          "broughtAfter": "193550558.01",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 10,
+          "page": 320,
+          "carriedBefore": "218069877.77",
+          "broughtAfter": "218069877.77",
+          "state": "continuous"
+        }
+      ]
+    },
+    {
+      "instance": "XB-L185-H0-r1",
+      "report": "XB-L185-H0",
+      "variant": "H0",
+      "pages": 24,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0002",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 3,
+          "group": "G0002",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 4,
+          "group": "G0004",
+          "firstLine": "header",
+          "produced": false
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 20,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0001",
+          "lastRowPage": 7,
+          "totalPage": 7,
+          "samePage": true
+        },
+        {
+          "group": "G0002",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0003",
+          "lastRowPage": 17,
+          "totalPage": 17,
+          "samePage": true
+        },
+        {
+          "group": "G0004",
+          "lastRowPage": 24,
+          "totalPage": 24,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 8,
+          "contentLines": 9,
+          "lastContentBottomPt": 151.2,
+          "contentFill": 0.145,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 15,
+          "contentLines": 38,
+          "lastContentBottomPt": 548.7,
+          "contentFill": 0.676,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 22,
+          "contentLines": 39,
+          "lastContentBottomPt": 556.9,
+          "contentFill": 0.687,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 24,
+          "contentLines": 12,
+          "lastContentBottomPt": 202.2,
+          "contentFill": 0.213,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 185,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 3,
+          "recordsAfter": 216,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 370,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 188,
+          "recordsAfter": 31,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 555,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 153,
+          "recordsAfter": 39,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4775581.89",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "4327121.55",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "4355031.25",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        }
+      ]
+    },
+    {
+      "instance": "XB-W250-H0-r1",
+      "report": "XB-W250-H0",
+      "variant": "H0",
+      "pages": 50,
+      "pb1HeadersAlone": [],
+      "pb1HeadersAloneCount": 0,
+      "pb1AtPartLastPage": 0,
+      "behaviour1AtBoundary": [
+        {
+          "beforePart": 2,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 3,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 4,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 5,
+          "lastLine": "block",
+          "produced": true
+        },
+        {
+          "beforePart": 6,
+          "lastLine": "block",
+          "produced": true
+        }
+      ],
+      "behaviour2AtBoundary": [
+        {
+          "beforePart": 2,
+          "group": "G0006",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 3,
+          "group": "G0006",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 4,
+          "group": "G0006",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 5,
+          "group": "G0006",
+          "firstLine": "header",
+          "produced": false
+        },
+        {
+          "beforePart": 6,
+          "group": "G0006",
+          "firstLine": "header",
+          "produced": false
+        }
+      ],
+      "pb2PagesWithoutHeaderInParts": 44,
+      "pb2PartStartsWithoutHeader": 0,
+      "behaviour2OnInPartContinuationPages": 0,
+      "pb3Totals": [
+        {
+          "group": "G0005",
+          "lastRowPage": 5,
+          "totalPage": 5,
+          "samePage": true
+        },
+        {
+          "group": "G0006",
+          "lastRowPage": 50,
+          "totalPage": 50,
+          "samePage": true
+        }
+      ],
+      "pb3TotalsSeparated": 0,
+      "behaviour3AtBoundary": [],
+      "pb4PartLastPages": [
+        {
+          "part": 1,
+          "page": 9,
+          "contentLines": 39,
+          "lastContentBottomPt": 508.9,
+          "contentFill": 0.623,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 2,
+          "page": 18,
+          "contentLines": 46,
+          "lastContentBottomPt": 604.9,
+          "contentFill": 0.752,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 3,
+          "page": 28,
+          "contentLines": 32,
+          "lastContentBottomPt": 447.4,
+          "contentFill": 0.541,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 4,
+          "page": 36,
+          "contentLines": 41,
+          "lastContentBottomPt": 599.7,
+          "contentFill": 0.744,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 5,
+          "page": 46,
+          "contentLines": 17,
+          "lastContentBottomPt": 278.7,
+          "contentFill": 0.316,
+          "onlyGroupOrTotalLines": false
+        },
+        {
+          "part": 6,
+          "page": 50,
+          "contentLines": 20,
+          "lastContentBottomPt": 305.7,
+          "contentFill": 0.352,
+          "onlyGroupOrTotalLines": false
+        }
+      ],
+      "pb5PagesWithoutDetail": [],
+      "pb6Boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "pb7Chain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "6440158.06",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "5817957.97",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "5967483.28",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "6463271.94",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        }
+      ]
+    }
+  ]
+}

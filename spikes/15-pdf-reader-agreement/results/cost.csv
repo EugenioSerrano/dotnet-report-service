@@ -1,0 +1,127 @@
+reader,pdf,class,layout,pages,runs_ok,runs_not_ok,extract_ms_median,extract_ms_max,ms_per_page_median,ms_per_page_max,tree_peak_rss_kib_max,vmhwm_kib_max,managed_heap_peak_bytes_max,process_wall_ms_max
+oracle,02/native-table-B1000-r1,"ordinary block (checked on the page, not the PDF)",layout-dom,35,3,0,843.2,878.7,24.091,25.106,77060,70432,14003152,1036.7
+oracle,02/paged-grid-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,10,3,0,257.5,261.7,25.75,26.17,67280,57192,5709200,384
+oracle,02/paged-table-keep-B1000-on-r1,"ordinary block, rows kept whole",layout-dom,78,3,0,1127.9,1234,14.46,15.821,79064,74952,14603544,1399
+oracle,02/paged-table-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,22,3,0,408,463.2,18.545,21.055,66680,56976,5304656,614.4
+oracle,03/partial-part-0001,"assembled part (also 06 fixtures/pdfsharp-part.pdf, byte-identical)",assembly,12,3,0,220.4,265.2,18.367,22.1,64164,54044,2343376,403.7
+oracle,03/three-parts-numbered,"assembled and stamped",assembly,49,3,0,999.9,1017.2,20.406,20.759,73812,63544,8011136,1159.2
+oracle,06/partial-part-0001,"assembled part",assembly,12,3,0,215.9,268.7,17.992,22.392,65332,54656,3234568,384.2
+oracle,06/three-parts-numbered,"assembled and stamped",assembly,49,3,0,1047.6,1084.1,21.38,22.124,76240,67172,11697768,1249.8
+oracle,07/B1000-table-r1,"ordinary block",native,36,3,0,848.7,899.5,23.575,24.986,77260,73164,12959416,1045.6
+oracle,07/T300u-ab-grid-r1,"tall row split into parts",native,9,3,0,202.1,227.5,22.456,25.278,65696,55364,3723288,360.5
+oracle,07/T300u-table-r1,"tall row split into parts",native,7,3,0,219.5,258.4,31.357,36.914,65752,55600,3743216,426
+oracle,07/X64K-ab-grid-r1,"tall row split into parts",native,28,3,0,449.6,454.6,16.057,16.236,69912,60876,9960664,584.5
+oracle,08/s2-G200-off-on-r1,"known-bad: lost rows (no split)",paged,10,3,0,259,299.2,25.9,29.92,66564,57024,5700832,429.7
+oracle,08/s2-G200-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,18,3,0,393.6,404.5,21.867,22.472,69172,60536,9513456,538.4
+oracle,08/s2-W2a-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,14,3,0,286.5,309.8,20.464,22.129,67152,57232,5876968,444.7
+oracle,08/s2-X1M-split-t1.00-f0.90-on-r1,"tall row split into parts; largest Paged.js PDF",paged,224,3,0,5169.4,5403.7,23.078,24.124,127896,127912,71494144,5821.6
+oracle,09/B100-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,4,3,0,230.7,270.5,57.675,67.625,64964,53576,1943744,387.7
+oracle,09/B100-grid-s-r1.p2,"ordinary block",native-two-pass,4,3,0,135.5,166.2,33.875,41.55,64348,53612,2020144,283.5
+oracle,09/T300u-ab-grid-c-r1.p1,"tall row split into parts",native-two-pass,9,3,0,358.4,382.2,39.822,42.467,66216,55392,3749040,524.1
+oracle,09/T300u-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,7,3,0,306,321,43.714,45.857,66024,55420,3661272,474.9
+oracle,09/T300u-grid-s-r1.p2,"tall row split into parts",native-two-pass,7,3,0,235.4,239.7,33.629,34.243,65900,55524,3796680,386.8
+oracle,09/T300u-table-c-r1.p1,"tall row split into parts",native-two-pass,7,3,0,371,419.8,53,59.971,88304,55180,3743456,577.4
+oracle,10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,8,3,0,205.8,237.9,25.725,29.738,65528,55300,3776592,382.5
+oracle,10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,78,3,0,1047,1079.9,13.423,13.845,79768,72816,12517936,1255.2
+oracle,10/s2-table-s2-T150-split-t1.00-f0.90-on-r1,"known-bad: lost rows (table)",paged,12,3,0,281.2,321.9,23.433,26.825,65188,54732,3170864,515.2
+oracle,10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,16,3,0,300.7,335.1,18.794,20.944,65624,55184,3678816,482.5
+oracle,11/U066-table-c-r1.p1,"row-end link sweep",native-two-pass,17,3,0,623.5,635.4,36.676,37.376,70432,61040,10107112,792.8
+oracle,11/X64K-table-c-r1.p1,"row-end link sweep",native-two-pass,17,3,0,663.7,688.1,39.041,40.476,70768,61044,9926792,873
+oracle,12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,3,0,250.6,266.5,25.06,26.65,66016,55668,4061896,414.1
+oracle,12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,3,0,249.6,265.6,24.96,26.56,65740,55772,4070584,411.7
+oracle,12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,3,0,344.5,381.6,24.607,27.257,68348,58460,6680296,513.6
+oracle,12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,3,0,297.5,345.7,21.25,24.693,67480,57900,6680064,468.6
+oracle,R/07/F1M-a-table-r1,"long free text",native,129,3,0,2809.6,3106.8,21.78,24.084,118372,118232,53634552,3663.6
+oracle,R/07/NC-F-F26K-a-table-r1,"known-bad: free-text word dropped",native,5,3,0,165.9,177.1,33.18,35.42,66136,55532,3789528,304.6
+oracle,R/07/NC-L-B100-table-r1,"known-bad: line repeated",native,4,3,0,179.7,206.1,44.925,51.525,64588,53576,2004472,335.2
+oracle,R/07/NC-R-B100-table-r1,"known-bad: row lost",native,4,3,0,142.2,220.6,35.55,55.15,64328,53604,1987832,354.8
+oracle,R/07/NC-W-B100-table-r1,"known-bad: word dropped",native,4,3,0,163.3,172.5,40.825,43.125,64436,53460,2011832,314
+oracle,R/07/X1M-table-r1,"largest native table",native,203,3,0,4618.9,4676.7,22.753,23.038,127100,127108,71093040,5135.6
+oracle,R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1,"ordinary block",paged,36,3,0,638,656.7,17.722,18.242,77488,70580,12528896,797.5
+oracle,R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1,"known-bad: row lost",paged,4,3,0,132.5,136.9,33.125,34.225,63912,53656,2004080,272.2
+oracle,R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1,"known-bad: word dropped",paged,4,3,0,115.5,141.1,28.875,35.275,64300,53784,2023544,267.1
+oracle,R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1,"long free text",paged,129,3,0,2597.2,2695.8,20.133,20.898,118256,119136,53901648,3092.3
+pdfpig,02/native-table-B1000-r1,"ordinary block (checked on the page, not the PDF)",layout-dom,35,3,0,1057.1,1084.8,30.203,30.994,101440,101672,33192944,1317.6
+pdfpig,02/paged-grid-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,10,3,0,618.1,661.9,61.81,66.19,87708,88256,20747520,783.9
+pdfpig,02/paged-table-keep-B1000-on-r1,"ordinary block, rows kept whole",layout-dom,78,3,0,1001.9,1101.3,12.845,14.119,98236,99716,27850176,1310.9
+pdfpig,02/paged-table-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,22,3,0,655.7,728.6,29.805,33.118,87788,87468,23098248,871.4
+pdfpig,03/partial-part-0001,"assembled part (also 06 fixtures/pdfsharp-part.pdf, byte-identical)",assembly,12,3,0,531.9,538.8,44.325,44.9,83568,83336,18259744,695.7
+pdfpig,03/three-parts-numbered,"assembled and stamped",assembly,49,3,0,683.2,715,13.943,14.592,86072,88192,24337472,901.9
+pdfpig,06/partial-part-0001,"assembled part",assembly,12,3,0,587.6,592.1,48.967,49.342,85500,85456,20859976,735.4
+pdfpig,06/three-parts-numbered,"assembled and stamped",assembly,49,3,0,1030.7,1049.6,21.035,21.42,97012,98232,27176808,1236.7
+pdfpig,07/B1000-table-r1,"ordinary block",native,36,3,0,943,1160.1,26.194,32.225,100976,101424,31365392,1393.2
+pdfpig,07/T300u-ab-grid-r1,"tall row split into parts",native,9,3,0,577.4,601.3,64.156,66.811,86316,86312,19546872,727.8
+pdfpig,07/T300u-table-r1,"tall row split into parts",native,7,3,0,579.7,596.4,82.814,85.2,84556,86488,18847336,756.3
+pdfpig,07/X64K-ab-grid-r1,"tall row split into parts",native,28,3,0,883.9,886.2,31.568,31.65,97092,97116,27556328,1085.7
+pdfpig,08/s2-G200-off-on-r1,"known-bad: lost rows (no split)",paged,10,3,0,629.8,774.4,62.98,77.44,88092,88524,22164376,918.9
+pdfpig,08/s2-G200-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,18,3,0,745.3,767.1,41.406,42.617,94160,95812,30974712,987.9
+pdfpig,08/s2-W2a-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,14,3,0,608.6,692.4,43.471,49.457,88588,88460,20335648,816.6
+pdfpig,08/s2-X1M-split-t1.00-f0.90-on-r1,"tall row split into parts; largest Paged.js PDF",paged,224,3,0,1641.9,1771,7.33,7.906,186360,186304,115233528,2775.9
+pdfpig,09/B100-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,4,3,0,639.6,656.2,159.9,164.05,81376,82664,21177568,838.5
+pdfpig,09/B100-grid-s-r1.p2,"ordinary block",native-two-pass,4,3,0,537.2,574.1,134.3,143.525,82860,84732,20059416,708.4
+pdfpig,09/T300u-ab-grid-c-r1.p1,"tall row split into parts",native-two-pass,9,3,0,534.1,585.8,59.344,65.089,84060,86212,19833024,705.9
+pdfpig,09/T300u-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,7,3,0,540.3,687.3,77.186,98.186,84304,83860,20522672,817.3
+pdfpig,09/T300u-grid-s-r1.p2,"tall row split into parts",native-two-pass,7,3,0,717.7,768.8,102.529,109.829,85116,86924,20483408,916.2
+pdfpig,09/T300u-table-c-r1.p1,"tall row split into parts",native-two-pass,7,3,0,570.9,576.5,81.557,82.357,86244,86368,19091576,716.2
+pdfpig,10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,8,3,0,569.1,629.4,71.138,78.675,85188,86620,19528488,795.7
+pdfpig,10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,78,3,0,994.9,1083.5,12.755,13.891,99240,99768,25283520,1283.1
+pdfpig,10/s2-table-s2-T150-split-t1.00-f0.90-on-r1,"known-bad: lost rows (table)",paged,12,3,0,569.8,571.9,47.483,47.658,83852,85152,20825072,707.2
+pdfpig,10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,16,3,0,513.2,612.5,32.075,38.281,86124,85992,20810992,722.7
+pdfpig,11/U066-table-c-r1.p1,"row-end link sweep",native-two-pass,17,3,0,794.2,934.3,46.718,54.959,96276,97280,25463752,1116.9
+pdfpig,11/X64K-table-c-r1.p1,"row-end link sweep",native-two-pass,17,3,0,787,938.6,46.294,55.212,97132,97760,26634784,1146.2
+pdfpig,12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,3,0,592,605.8,59.2,60.58,87236,87232,22508608,750.7
+pdfpig,12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,3,0,615.2,694.3,61.52,69.43,87740,87516,22569016,815.9
+pdfpig,12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,3,0,668.4,672.3,47.743,48.021,87960,88624,21350496,827.5
+pdfpig,12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,3,0,619.5,629.1,44.25,44.936,86052,88708,21325920,762.3
+pdfpig,R/07/F1M-a-table-r1,"long free text",native,129,3,0,1480.8,1494.7,11.479,11.587,184104,186836,112924400,2298.7
+pdfpig,R/07/NC-F-F26K-a-table-r1,"known-bad: free-text word dropped",native,5,3,0,538.1,573,107.62,114.6,84080,84508,20660200,701.1
+pdfpig,R/07/NC-L-B100-table-r1,"known-bad: line repeated",native,4,3,0,547.3,606.7,136.825,151.675,81952,82860,19037040,759.8
+pdfpig,R/07/NC-R-B100-table-r1,"known-bad: row lost",native,4,3,0,534.8,540.2,133.7,135.05,82576,82740,20355264,691.5
+pdfpig,R/07/NC-W-B100-table-r1,"known-bad: word dropped",native,4,3,0,531.2,575.1,132.8,143.775,82264,82672,20190592,712.5
+pdfpig,R/07/X1M-table-r1,"largest native table",native,203,3,0,1656.9,1762.6,8.162,8.683,185252,185012,114397768,2631.7
+pdfpig,R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1,"ordinary block",paged,36,3,0,1052.9,1066.4,29.247,29.622,99840,101448,31120256,1267.2
+pdfpig,R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1,"known-bad: row lost",paged,4,3,0,503,651.8,125.75,162.95,82604,82804,20665072,789.8
+pdfpig,R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1,"known-bad: word dropped",paged,4,3,0,447.5,534.1,111.875,133.525,82332,82312,19342744,660.9
+pdfpig,R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1,"long free text",paged,129,3,0,1623.9,1649,12.588,12.783,180588,181592,113532936,2597.6
+pdfsharp,02/native-table-B1000-r1,"ordinary block (checked on the page, not the PDF)",layout-dom,35,1,0,220.2,220.2,6.291,6.291,56872,60288,13499592,345.3
+pdfsharp,02/paged-grid-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,10,1,0,174.8,174.8,17.48,17.48,49028,50700,3886944,284.5
+pdfsharp,02/paged-table-keep-B1000-on-r1,"ordinary block, rows kept whole",layout-dom,78,1,0,548.4,548.4,7.031,7.031,65760,68136,15314552,708.1
+pdfsharp,02/paged-table-keep-G200-on-r1,"giant rows, rows kept whole",layout-dom,22,1,0,208.1,208.1,9.459,9.459,51908,53432,6399608,350.4
+pdfsharp,03/partial-part-0001,"assembled part (also 06 fixtures/pdfsharp-part.pdf, byte-identical)",assembly,12,1,0,175.7,175.7,14.642,14.642,45868,48168,1691536,298.5
+pdfsharp,03/three-parts-numbered,"assembled and stamped",assembly,49,1,0,361.9,361.9,7.386,7.386,49704,52584,5418664,498.7
+pdfsharp,06/partial-part-0001,"assembled part",assembly,12,1,0,153,153,12.75,12.75,50952,51144,4361592,289.9
+pdfsharp,06/three-parts-numbered,"assembled and stamped",assembly,49,1,0,442.2,442.2,9.024,9.024,63152,64712,17553664,613.7
+pdfsharp,07/B1000-table-r1,"ordinary block",native,36,1,0,260.1,260.1,7.225,7.225,58260,60100,13371368,388.7
+pdfsharp,07/T300u-ab-grid-r1,"tall row split into parts",native,9,1,0,168.2,168.2,18.689,18.689,48300,49760,2968096,301.2
+pdfsharp,07/T300u-table-r1,"tall row split into parts",native,7,1,0,163.9,163.9,23.414,23.414,48088,49576,2895648,301.2
+pdfsharp,07/X64K-ab-grid-r1,"tall row split into parts",native,28,1,0,272.6,272.6,9.736,9.736,50652,53008,6277112,407
+pdfsharp,08/s2-G200-off-on-r1,"known-bad: lost rows (no split)",paged,10,1,0,164,164,16.4,16.4,51672,50904,3827104,273.4
+pdfsharp,08/s2-G200-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,18,1,0,203.5,203.5,11.306,11.306,53200,53380,6518464,329
+pdfsharp,08/s2-W2a-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,14,1,0,210.4,210.4,15.029,15.029,50672,52236,5602152,350.7
+pdfsharp,08/s2-X1M-split-t1.00-f0.90-on-r1,"tall row split into parts; largest Paged.js PDF",paged,224,1,0,1078.3,1078.3,4.814,4.814,73152,73320,23264880,1292.8
+pdfsharp,09/B100-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,4,1,0,372.1,372.1,93.025,93.025,47716,49520,2870176,496.2
+pdfsharp,09/B100-grid-s-r1.p2,"ordinary block",native-two-pass,4,1,0,170.5,170.5,42.625,42.625,46628,48472,2135280,293.3
+pdfsharp,09/T300u-ab-grid-c-r1.p1,"tall row split into parts",native-two-pass,9,1,0,439.7,439.7,48.856,48.856,45100,51796,4621320,567.7
+pdfsharp,09/T300u-grid-s-r1.p1,"first pass, no reference entry",native-two-pass,7,1,0,376.3,376.3,53.757,53.757,51220,50724,3798152,514.7
+pdfsharp,09/T300u-grid-s-r1.p2,"tall row split into parts",native-two-pass,7,1,0,199.6,199.6,28.514,28.514,48988,50112,3157824,352.3
+pdfsharp,09/T300u-table-c-r1.p1,"tall row split into parts",native-two-pass,7,1,0,447.2,447.2,63.886,63.886,52172,52200,4545928,579.1
+pdfsharp,10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1,"tall row split into parts",paged,8,1,0,200.1,200.1,25.013,25.013,50544,50232,3366328,316.5
+pdfsharp,10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,78,1,0,403.8,403.8,5.177,5.177,66740,67648,17396128,537.1
+pdfsharp,10/s2-table-s2-T150-split-t1.00-f0.90-on-r1,"known-bad: lost rows (table)",paged,12,1,0,176.9,176.9,14.742,14.742,47896,50820,3809136,290.1
+pdfsharp,10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1,"known-bad: lost or altered text (table)",paged,16,1,0,182.9,182.9,11.431,11.431,50788,52060,4888056,285.4
+pdfsharp,11/U066-table-c-r1.p1,"row-end link sweep",native-two-pass,17,1,0,425.4,425.4,25.024,25.024,53948,55120,7662352,547.4
+pdfsharp,11/X64K-table-c-r1.p1,"row-end link sweep",native-two-pass,17,1,0,496.8,496.8,29.224,29.224,53948,54732,7569368,632.5
+pdfsharp,12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,1,0,180.6,180.6,18.06,18.06,51300,51444,4413472,293.5
+pdfsharp,12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1,"groups across pages",paged,10,1,0,166.6,166.6,16.66,16.66,51840,51172,4445728,314.9
+pdfsharp,12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,1,0,181.2,181.2,12.943,12.943,53228,53048,5912352,322.8
+pdfsharp,12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1,"groups across pages",paged,14,1,0,292.6,292.6,20.9,20.9,51856,52852,5924912,466.9
+pdfsharp,R/07/F1M-a-table-r1,"long free text",native,129,1,0,945.4,945.4,7.329,7.329,72120,71496,17940216,1194.7
+pdfsharp,R/07/NC-F-F26K-a-table-r1,"known-bad: free-text word dropped",native,5,1,0,103.8,103.8,20.76,20.76,47932,48804,2278832,244.6
+pdfsharp,R/07/NC-L-B100-table-r1,"known-bad: line repeated",native,4,1,0,133.7,133.7,33.425,33.425,45880,48208,1943120,248.3
+pdfsharp,R/07/NC-R-B100-table-r1,"known-bad: row lost",native,4,1,0,195.5,195.5,48.875,48.875,46080,47780,1932528,359.5
+pdfsharp,R/07/NC-W-B100-table-r1,"known-bad: word dropped",native,4,1,0,122.2,122.2,30.55,30.55,46096,47664,1944632,231.9
+pdfsharp,R/07/X1M-table-r1,"largest native table",native,203,1,0,997.8,997.8,4.915,4.915,70276,72128,21105800,1231.7
+pdfsharp,R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1,"ordinary block",paged,36,1,0,440.1,440.1,12.225,12.225,63008,62412,15298128,562.1
+pdfsharp,R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1,"known-bad: row lost",paged,4,1,0,231.1,231.1,57.775,57.775,48536,48188,2151616,387.5
+pdfsharp,R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1,"known-bad: word dropped",paged,4,1,0,137.9,137.9,34.475,34.475,46500,48228,2163560,287.2
+pdfsharp,R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1,"long free text",paged,129,1,0,881.1,881.1,6.83,6.83,73300,73196,16936760,1078

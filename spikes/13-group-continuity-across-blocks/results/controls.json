@@ -1,0 +1,463 @@
+{
+  "trusted": true,
+  "items": [
+    {
+      "group": "text",
+      "id": "positive",
+      "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "positive",
+      "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+      "expected": "pass",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "NC-W",
+      "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped row 50",
+      "observed": [
+        "TI-3 text-dropped row 50 p2"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "NC-L",
+      "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "expected": "text-repeated row 50",
+      "observed": [
+        "TI-3 text-repeated row 50 p2"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "NC-R",
+      "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "expected": "row-lost row 51",
+      "observed": [
+        "TI-2 row-lost row 51 p2"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "NC-F",
+      "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "expected": "text-dropped free-after",
+      "observed": [
+        "TI-6 text-dropped free-after p1"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "text",
+      "id": "E1",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-dropped at row 50, page 4",
+      "observed": [
+        "TI-3 text-dropped row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "its own result: yes"
+    },
+    {
+      "group": "text",
+      "id": "E2",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-repeated at row 50",
+      "observed": [
+        "TI-3 text-repeated row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "its own result: yes"
+    },
+    {
+      "group": "text",
+      "id": "E3",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "row-lost at row 50",
+      "observed": [
+        "TI-2 row-lost row 50 page 2"
+      ],
+      "behaved": "yes",
+      "note": "its own result: yes"
+    },
+    {
+      "group": "text",
+      "id": "E4",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "text-altered at row 50",
+      "observed": [
+        "TI-3 text-altered row 50 field description page 4"
+      ],
+      "behaved": "yes",
+      "note": "its own result: yes"
+    },
+    {
+      "group": "text",
+      "id": "E5",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls add simulated marks and evaluate without the footer; its own result: no"
+    },
+    {
+      "group": "text",
+      "id": "E6",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "mark-wrong at row 50",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 5 (1 mark(s) on the page where the row ends)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls add simulated marks and evaluate without the footer; its own result: yes"
+    },
+    {
+      "group": "text",
+      "id": "E7",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "TI-7 pass (and TI-4 pass)",
+      "observed": [
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 13 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls add simulated marks and evaluate without the footer; its own result: no"
+    },
+    {
+      "group": "text",
+      "id": "E8",
+      "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "expected": "mark-wrong at row 50",
+      "observed": [
+        "TI-7 mark-wrong row 50 page 3 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 9 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 10 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 11 (0 marks on a page where the row continues)",
+        "TI-7 mark-wrong row 120 page 12 (0 marks on a page where the row continues)"
+      ],
+      "behaved": "not evaluable",
+      "note": "the text oracle\u0027s controls add simulated marks and evaluate without the footer; its own result: yes"
+    },
+    {
+      "group": "slice-transparency",
+      "id": "summary",
+      "run": "every slice",
+      "expected": "every slice equal to its part\u0027s own PDF",
+      "observed": [
+        "84 slices compared"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-positive",
+      "id": "one-part report",
+      "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "expected": "-",
+      "observed": [],
+      "behaved": "yes"
+    },
+    {
+      "group": "agreement",
+      "id": "summary",
+      "run": "opening 0.00 documents",
+      "expected": "XA equal to rules 1-5 of the strict check on every one",
+      "observed": [
+        "31 documents compared"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-1",
+      "run": "XB-W250-H1-r1",
+      "expected": "XA-2|p19; XA-3|p19",
+      "observed": [
+        "XA-2|p19",
+        "XA-3|p19"
+      ],
+      "behaved": "yes",
+      "note": "part page 1 footer value subtotal: 732472.50 -\u003E 732472.51"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-2",
+      "run": "XB-W250-H1-r1",
+      "expected": "XA-3|p19; PB-7|broken|before part 3",
+      "observed": [
+        "XA-3|p19",
+        "PB-7|broken|before part 3"
+      ],
+      "behaved": "yes",
+      "note": "part page 1 footer value forward: 12336387.14 -\u003E 12336387.15"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-4",
+      "run": "XB-W250-H1-r1",
+      "expected": "XA-1|p; XA-2|p19",
+      "observed": [
+        "XA-1|p",
+        "XA-2|p19"
+      ],
+      "behaved": "yes",
+      "note": "removed the 1 lines of row 1095 (part 3)"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-5",
+      "run": "XB-W250-H1-r1",
+      "expected": "XA-3|p19; PB-7|broken|before part 3; PB-7|broken|before part 4",
+      "observed": [
+        "XA-3|p19",
+        "PB-7|broken|before part 3",
+        "PB-7|broken|before part 4"
+      ],
+      "behaved": "yes",
+      "note": "every brought and carried forward of part 3 lowered by its opening 12336387.14"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-6",
+      "run": "XB-W250-H1-r1",
+      "expected": "XA-4|p19",
+      "observed": [
+        "XA-4|p19"
+      ],
+      "behaved": "yes",
+      "note": "row 1095 amount 43898.43 -\u003E 43898.44"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-1",
+      "run": "XB-W250-H1-r1",
+      "expected": "RG-1|header-missing|G0006",
+      "observed": [
+        "RG-1|header-missing|G0006"
+      ],
+      "behaved": "yes",
+      "note": "removed the plain header of G0006 (part 1)"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-2",
+      "run": "XB-W250-H1-r1",
+      "expected": "RG-2|total-wrong|G0006",
+      "observed": [
+        "RG-2|total-wrong|G0006"
+      ],
+      "behaved": "yes",
+      "note": "G0006 total 29481763.64 -\u003E 29481763.65"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-3",
+      "run": "XB-W250-H1-r1",
+      "expected": "RG-2|total-duplicated|G0006",
+      "observed": [
+        "RG-2|total-duplicated|G0006"
+      ],
+      "behaved": "yes",
+      "note": "duplicated the total line of G0006 on its page"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-5",
+      "run": "XB-W250-H1-r1",
+      "expected": "RG-4|part-total-wrong|part 3",
+      "observed": [
+        "RG-4|part-total-wrong|part 3"
+      ],
+      "behaved": "yes",
+      "note": "part 3 block total 5817957.97 -\u003E 5817957.98"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-6",
+      "run": "XB-W250-H1-r1",
+      "expected": "RG-1|continuation-wrong|G0005",
+      "observed": [
+        "RG-1|continuation-wrong|G0005"
+      ],
+      "behaved": "yes",
+      "note": "part 3\u0027s continuation header names G0005 instead of G0006"
+    },
+    {
+      "group": "report-faults",
+      "id": "XC-3",
+      "run": "XB-TL150-H1-r1",
+      "expected": "XA-5|p7",
+      "observed": [
+        "XA-5|p7"
+      ],
+      "behaved": "yes",
+      "note": "removed 1 \u0027(continues)\u0027 of row 150 on page 7 (part 1)"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-4",
+      "run": "XB-L180-H1-r1",
+      "expected": "RG-3|row-outside-group|G0001",
+      "observed": [
+        "RG-3|row-outside-group|G0001"
+      ],
+      "behaved": "yes",
+      "note": "moved the total line of G0001 above its last row 182 (part 2)"
+    },
+    {
+      "group": "report-faults",
+      "id": "GXR-7",
+      "run": "XB-L183-H1-r1",
+      "expected": "RG-1|header-duplicated|G0002",
+      "observed": [
+        "RG-1|header-duplicated|G0002"
+      ],
+      "behaved": "yes",
+      "note": "part 2\u0027s continuation header of G0002 printed plain"
+    },
+    {
+      "group": "numbering",
+      "id": "positive",
+      "run": "every assembled report",
+      "expected": "numbered and unnumbered pass",
+      "observed": [
+        "17 reports"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "numbering",
+      "id": "NX-1",
+      "run": "XB-W250-H1-r1",
+      "expected": "structure pass, boxes pass, order pass, numbering fail, pixels fail",
+      "observed": [
+        "structure pass, boxes box-source, order pass, numbering fail, pixels fail, first failing page 1"
+      ],
+      "behaved": "yes",
+      "note": "the unnumbered report verified as numbered"
+    },
+    {
+      "group": "numbering",
+      "id": "NX-2",
+      "run": "XB-W250-H1-r1",
+      "expected": "structure pass, boxes pass, order fail (first failing page 10), numbering pass, pixels fail",
+      "observed": [
+        "structure pass, boxes box-rounded, order fail, numbering pass, pixels fail, first failing page 10"
+      ],
+      "behaved": "yes",
+      "note": "parts 2 and 3 swapped in the manifest; outside the swapped range the output page and its reference are those of the passing positive verify of the same PDF, so the pixel failures lie inside the range"
+    },
+    {
+      "group": "probe",
+      "id": "hand-over probe",
+      "run": "XB-PROBE-r1",
+      "expected": "each part\u0027s first brought forward equals the previous part\u0027s last carried forward",
+      "observed": [
+        "before part 2: 4714762.77 / 4714762.77 continuous; before part 3: 9003118.49 / 9003118.49 continuous"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "hand-over probe",
+      "run": "XB-PROBE-r1",
+      "expected": "G0002 prints its plain header once (part 1) and its continuation header at the start of parts 2 and 3",
+      "observed": [
+        "before part 2: continuation; before part 3: continuation"
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "hand-over probe",
+      "run": "XB-PROBE-r1",
+      "expected": "every group total prints once with its whole group\u0027s source sum (G0001 in part 1, G0002 in part 3), every row in its group, every part total exact",
+      "observed": [
+        ""
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "hand-over probe",
+      "run": "XB-PROBE-r1",
+      "expected": "the accounting rules pass across the parts",
+      "observed": [
+        ""
+      ],
+      "behaved": "yes"
+    },
+    {
+      "group": "probe",
+      "id": "hand-over probe",
+      "run": "XB-PROBE-r1",
+      "expected": "folder 06\u0027s verify passes on the numbered and on the unnumbered report",
+      "observed": [
+        "numbered pass, unnumbered pass"
+      ],
+      "behaved": "yes"
+    }
+  ]
+}

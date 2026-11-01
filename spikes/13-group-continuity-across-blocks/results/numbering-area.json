@@ -1,0 +1,16 @@
+{
+  "instances": [
+    {
+      "instance": "XB-L180-H1-r1",
+      "numberingAreaEmptyOnEveryPage": true,
+      "unnumberedPass": true,
+      "numberedPass": true
+    },
+    {
+      "instance": "XB-TL150-H1-r1",
+      "numberingAreaEmptyOnEveryPage": true,
+      "unnumberedPass": true,
+      "numberedPass": true
+    }
+  ]
+}

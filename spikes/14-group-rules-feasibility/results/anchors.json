@@ -1,0 +1,2779 @@
+{
+  "runsCompared": 59,
+  "differences": 0,
+  "runs": [
+    {
+      "run": "s1-none-B100-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "4",
+        "reference": "4"
+      },
+      "htmlBytes": {
+        "here": "34567",
+        "reference": "34567"
+      },
+      "semInnerSha256": {
+        "here": "fca36176966454147a95efa50311cb14f3e850382fe93e28296731de15767988",
+        "reference": "fca36176966454147a95efa50311cb14f3e850382fe93e28296731de15767988"
+      },
+      "contentSha256": {
+        "here": "22e36d6d8ec9647bd420c7963bc196fb5cfba15926090ef89e5bd1dbf496a34d",
+        "reference": "22e36d6d8ec9647bd420c7963bc196fb5cfba15926090ef89e5bd1dbf496a34d"
+      },
+      "rowSetsSha256": {
+        "here": "deb509f49001693acf38d9d4ddeff0f5921c436998cd23ef40fba2835406ddfe",
+        "reference": "deb509f49001693acf38d9d4ddeff0f5921c436998cd23ef40fba2835406ddfe"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 286.3871,
+        "pagedFlowMs": 204.69999999552965,
+        "totalMs": 2088.6003,
+        "chromiumTreePeakRssKiB": 463256
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-K1-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "1",
+        "reference": "1"
+      },
+      "htmlBytes": {
+        "here": "8040",
+        "reference": "8040"
+      },
+      "semInnerSha256": {
+        "here": "b545992590c0ed468f9a2d1ebffcd6ef45298313e4ca4bf21de015d6b07d005d",
+        "reference": "b545992590c0ed468f9a2d1ebffcd6ef45298313e4ca4bf21de015d6b07d005d"
+      },
+      "contentSha256": {
+        "here": "3afb41d3ddc4eaf09244e2f8f0f0655fdc7e17e809b8112abe77ed5bfba7976c",
+        "reference": "3afb41d3ddc4eaf09244e2f8f0f0655fdc7e17e809b8112abe77ed5bfba7976c"
+      },
+      "rowSetsSha256": {
+        "here": "0c86a68aea31fce77dacba3d09391f3e5b83d28b242507f4bbeb8921e2934c8d",
+        "reference": "0c86a68aea31fce77dacba3d09391f3e5b83d28b242507f4bbeb8921e2934c8d"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 56.4587,
+        "pagedFlowMs": 28.900000005960464,
+        "totalMs": 1283.9218,
+        "chromiumTreePeakRssKiB": 432824
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "4",
+        "reference": "4"
+      },
+      "htmlBytes": {
+        "here": "34553",
+        "reference": "34553"
+      },
+      "semInnerSha256": {
+        "here": "d6f43942970601c828382103ebe88e71d053f2d5b434892548d0f85e96e505fd",
+        "reference": "d6f43942970601c828382103ebe88e71d053f2d5b434892548d0f85e96e505fd"
+      },
+      "contentSha256": {
+        "here": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e",
+        "reference": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e"
+      },
+      "rowSetsSha256": {
+        "here": "deb509f49001693acf38d9d4ddeff0f5921c436998cd23ef40fba2835406ddfe",
+        "reference": "deb509f49001693acf38d9d4ddeff0f5921c436998cd23ef40fba2835406ddfe"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "fail",
+        "reference": "fail"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 223.3232,
+        "pagedFlowMs": 136.89999999850988,
+        "totalMs": 1475.452,
+        "chromiumTreePeakRssKiB": 463500
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "4",
+        "reference": "4"
+      },
+      "htmlBytes": {
+        "here": "34652",
+        "reference": "34652"
+      },
+      "semInnerSha256": {
+        "here": "d4daf10a9907e694f0c36e305bdebc128e51b0876fc113793b27e7a3a21a75a3",
+        "reference": "d4daf10a9907e694f0c36e305bdebc128e51b0876fc113793b27e7a3a21a75a3"
+      },
+      "contentSha256": {
+        "here": "56a70253d7e8486f0f3f88b8c195d94addb50452976d7480984bbc0be3d97328",
+        "reference": "56a70253d7e8486f0f3f88b8c195d94addb50452976d7480984bbc0be3d97328"
+      },
+      "rowSetsSha256": {
+        "here": "2c703284e859b5b76025234e8c487a5172c0e08fd7add1351799b680d99cb0cf",
+        "reference": "2c703284e859b5b76025234e8c487a5172c0e08fd7add1351799b680d99cb0cf"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "fail",
+        "reference": "fail"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 261.8396,
+        "pagedFlowMs": 178.30000000447035,
+        "totalMs": 1433.8095,
+        "chromiumTreePeakRssKiB": 462108
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "4",
+        "reference": "4"
+      },
+      "htmlBytes": {
+        "here": "34360",
+        "reference": "34360"
+      },
+      "semInnerSha256": {
+        "here": "3a0f11a88ce2242f4aa6851f8aa1ba1d1a851155269149541763575a2e1c7c34",
+        "reference": "3a0f11a88ce2242f4aa6851f8aa1ba1d1a851155269149541763575a2e1c7c34"
+      },
+      "contentSha256": {
+        "here": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0",
+        "reference": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0"
+      },
+      "rowSetsSha256": {
+        "here": "353533de658e554d62ee22065e9ca94a3bb2cf7c100e2425c5005620ff9b12ac",
+        "reference": "353533de658e554d62ee22065e9ca94a3bb2cf7c100e2425c5005620ff9b12ac"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "fail",
+        "reference": "fail"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 252.8311,
+        "pagedFlowMs": 171.30000000447035,
+        "totalMs": 1464.5803,
+        "chromiumTreePeakRssKiB": 462816
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "5",
+        "reference": "5"
+      },
+      "htmlBytes": {
+        "here": "40346",
+        "reference": "40346"
+      },
+      "semInnerSha256": {
+        "here": "b9dfad4e9a1ecd02e2a65140da987e0cbb35197fac525bdf14e7b6a741225d2d",
+        "reference": "b9dfad4e9a1ecd02e2a65140da987e0cbb35197fac525bdf14e7b6a741225d2d"
+      },
+      "contentSha256": {
+        "here": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11",
+        "reference": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11"
+      },
+      "rowSetsSha256": {
+        "here": "6d885ef46b365935fb1dd37c6d549c6bc979e457be03e8d5d2aa4a6c325b967a",
+        "reference": "6d885ef46b365935fb1dd37c6d549c6bc979e457be03e8d5d2aa4a6c325b967a"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "fail",
+        "reference": "fail"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 202.3434,
+        "pagedFlowMs": 117.19999999552965,
+        "totalMs": 1321.7464,
+        "chromiumTreePeakRssKiB": 453264
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE30-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79277",
+        "reference": "79277"
+      },
+      "semInnerSha256": {
+        "here": "5cb659e45050a337b4992864cfcf50f0d980ea14d2e4612971bc559ee66d2190",
+        "reference": "5cb659e45050a337b4992864cfcf50f0d980ea14d2e4612971bc559ee66d2190"
+      },
+      "contentSha256": {
+        "here": "6c6befc191e9dcfde32cc22eb2e821e9c95487d06e569e7d49e48c400ef914dd",
+        "reference": "6c6befc191e9dcfde32cc22eb2e821e9c95487d06e569e7d49e48c400ef914dd"
+      },
+      "rowSetsSha256": {
+        "here": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53",
+        "reference": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 471.6427,
+        "pagedFlowMs": 341.20000000298023,
+        "totalMs": 1700.6489,
+        "chromiumTreePeakRssKiB": 508472
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE31-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79292",
+        "reference": "79292"
+      },
+      "semInnerSha256": {
+        "here": "449aaf49b3b1d223bb7e3aca5bfd7be2938af927fab65f0df326f2b38184e845",
+        "reference": "449aaf49b3b1d223bb7e3aca5bfd7be2938af927fab65f0df326f2b38184e845"
+      },
+      "contentSha256": {
+        "here": "a23678e354940358609ec13d50c60d9c4ecdb862548dc7768f03a67ad8411e06",
+        "reference": "a23678e354940358609ec13d50c60d9c4ecdb862548dc7768f03a67ad8411e06"
+      },
+      "rowSetsSha256": {
+        "here": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53",
+        "reference": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 455.293,
+        "pagedFlowMs": 337.20000000298023,
+        "totalMs": 1715.0466,
+        "chromiumTreePeakRssKiB": 508232
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE32-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79307",
+        "reference": "79307"
+      },
+      "semInnerSha256": {
+        "here": "8b7f1f57ec55544b40695961a87f71b66c307e9005621cd9a5121783bc697431",
+        "reference": "8b7f1f57ec55544b40695961a87f71b66c307e9005621cd9a5121783bc697431"
+      },
+      "contentSha256": {
+        "here": "7a814525cc6e1e1676c968eaa86d5e24a157f7eb345d5c0e4cebf85f8a6ce650",
+        "reference": "7a814525cc6e1e1676c968eaa86d5e24a157f7eb345d5c0e4cebf85f8a6ce650"
+      },
+      "rowSetsSha256": {
+        "here": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53",
+        "reference": "0dd293f00221457f01d6948178059a432eb1b497fea7b726afd1c3c986a61b53"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 464.129,
+        "pagedFlowMs": 346.5,
+        "totalMs": 1705.0015,
+        "chromiumTreePeakRssKiB": 509156
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE33-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79322",
+        "reference": "79322"
+      },
+      "semInnerSha256": {
+        "here": "88a91fa647284d1afe13906864ce2b53ebbf3d027af36734b99af3c5be146ba7",
+        "reference": "88a91fa647284d1afe13906864ce2b53ebbf3d027af36734b99af3c5be146ba7"
+      },
+      "contentSha256": {
+        "here": "8d625c8cb86a7f4d9fdfedc4fef522a5fc388adbf0edff9ea45335d1864e4e20",
+        "reference": "8d625c8cb86a7f4d9fdfedc4fef522a5fc388adbf0edff9ea45335d1864e4e20"
+      },
+      "rowSetsSha256": {
+        "here": "87244d6a335f6dcb1beac98d53550a9924387872bd9ff1ebc15e469c4c7896ed",
+        "reference": "87244d6a335f6dcb1beac98d53550a9924387872bd9ff1ebc15e469c4c7896ed"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 491.7907,
+        "pagedFlowMs": 362.8999999985099,
+        "totalMs": 1798.8882,
+        "chromiumTreePeakRssKiB": 511544
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE34-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79337",
+        "reference": "79337"
+      },
+      "semInnerSha256": {
+        "here": "8599a3111e59d9becc6862ae307e31a7bc25cb33d825f6171951ff8a23f143e2",
+        "reference": "8599a3111e59d9becc6862ae307e31a7bc25cb33d825f6171951ff8a23f143e2"
+      },
+      "contentSha256": {
+        "here": "45d7fc050e597c7792a33e2307dc303f585244f3d517ff3134249ecdd44b2236",
+        "reference": "45d7fc050e597c7792a33e2307dc303f585244f3d517ff3134249ecdd44b2236"
+      },
+      "rowSetsSha256": {
+        "here": "320b0af3559ca960b1d4c8a0d9f1cf4825e28bbb9dca99637be41a847836be4f",
+        "reference": "320b0af3559ca960b1d4c8a0d9f1cf4825e28bbb9dca99637be41a847836be4f"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 680.0901,
+        "pagedFlowMs": 625.1999999955297,
+        "totalMs": 2236.1395,
+        "chromiumTreePeakRssKiB": 512780
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE35-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79352",
+        "reference": "79352"
+      },
+      "semInnerSha256": {
+        "here": "84cc43e369449e12b44f39d1eda945d927926380536d01e5fbbf90e624caf581",
+        "reference": "84cc43e369449e12b44f39d1eda945d927926380536d01e5fbbf90e624caf581"
+      },
+      "contentSha256": {
+        "here": "2383c979559913f98580d592938fb45f0c287d5c467efb4aef7cc20d1470daef",
+        "reference": "2383c979559913f98580d592938fb45f0c287d5c467efb4aef7cc20d1470daef"
+      },
+      "rowSetsSha256": {
+        "here": "320b0af3559ca960b1d4c8a0d9f1cf4825e28bbb9dca99637be41a847836be4f",
+        "reference": "320b0af3559ca960b1d4c8a0d9f1cf4825e28bbb9dca99637be41a847836be4f"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 548.8501,
+        "pagedFlowMs": 418.20000000298023,
+        "totalMs": 2043.4729,
+        "chromiumTreePeakRssKiB": 512416
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE36-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79367",
+        "reference": "79367"
+      },
+      "semInnerSha256": {
+        "here": "a7dc502a79b41b7429b0778636bcf848a1db3858bf097dc3b6f99633b486aa6a",
+        "reference": "a7dc502a79b41b7429b0778636bcf848a1db3858bf097dc3b6f99633b486aa6a"
+      },
+      "contentSha256": {
+        "here": "f582ce3d6989a2525a6deb43760fde2ddaadc5722627493ad0bb87db3e436796",
+        "reference": "f582ce3d6989a2525a6deb43760fde2ddaadc5722627493ad0bb87db3e436796"
+      },
+      "rowSetsSha256": {
+        "here": "53dce456d5f0112ebbed46aff749c30d60a811c8924d4b743d93314e9b48c723",
+        "reference": "53dce456d5f0112ebbed46aff749c30d60a811c8924d4b743d93314e9b48c723"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 464.1466,
+        "pagedFlowMs": 425.59999999403954,
+        "totalMs": 1834.0361,
+        "chromiumTreePeakRssKiB": 512720
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE37-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79382",
+        "reference": "79382"
+      },
+      "semInnerSha256": {
+        "here": "ce64e943f9c0772bfece7dba79ed8252fd90c3d175edddf36f6848f0e02de95b",
+        "reference": "ce64e943f9c0772bfece7dba79ed8252fd90c3d175edddf36f6848f0e02de95b"
+      },
+      "contentSha256": {
+        "here": "ea34c50cf18711304d5abe08e98b1eebabbf7575ff7faabc44c497f367ff03f6",
+        "reference": "ea34c50cf18711304d5abe08e98b1eebabbf7575ff7faabc44c497f367ff03f6"
+      },
+      "rowSetsSha256": {
+        "here": "480a60eddbd496e957af388cc568440095be258071814f61afd38c25d3cbecf8",
+        "reference": "480a60eddbd496e957af388cc568440095be258071814f61afd38c25d3cbecf8"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 470.6028,
+        "pagedFlowMs": 379.29999999701977,
+        "totalMs": 1739.9884,
+        "chromiumTreePeakRssKiB": 512080
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE38-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79397",
+        "reference": "79397"
+      },
+      "semInnerSha256": {
+        "here": "a1f9780cc20121ded215b838b683a26292c2b4e0bb213a0d0a84d435ff1dc8a8",
+        "reference": "a1f9780cc20121ded215b838b683a26292c2b4e0bb213a0d0a84d435ff1dc8a8"
+      },
+      "contentSha256": {
+        "here": "24e46cdca948d4fd2c59b29d66602295a8d64e7ee3e5728613b443def296a70c",
+        "reference": "24e46cdca948d4fd2c59b29d66602295a8d64e7ee3e5728613b443def296a70c"
+      },
+      "rowSetsSha256": {
+        "here": "3f58a154908fe32cc59c500abff016483cd95aaa24ae261a0d8c41ef3fb7dda2",
+        "reference": "3f58a154908fe32cc59c500abff016483cd95aaa24ae261a0d8c41ef3fb7dda2"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 495.7545,
+        "pagedFlowMs": 371,
+        "totalMs": 1791.8166,
+        "chromiumTreePeakRssKiB": 513012
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE39-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79412",
+        "reference": "79412"
+      },
+      "semInnerSha256": {
+        "here": "fe7fb1745af6a201870020b70a931bd84f239372f4de6887c716b30a5216d05c",
+        "reference": "fe7fb1745af6a201870020b70a931bd84f239372f4de6887c716b30a5216d05c"
+      },
+      "contentSha256": {
+        "here": "8ce6a93c4ee3298db6a5358c2a4fab6aca38975c29467eeec812a71782d09b31",
+        "reference": "8ce6a93c4ee3298db6a5358c2a4fab6aca38975c29467eeec812a71782d09b31"
+      },
+      "rowSetsSha256": {
+        "here": "3f58a154908fe32cc59c500abff016483cd95aaa24ae261a0d8c41ef3fb7dda2",
+        "reference": "3f58a154908fe32cc59c500abff016483cd95aaa24ae261a0d8c41ef3fb7dda2"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 452.9733,
+        "pagedFlowMs": 365.3999999985099,
+        "totalMs": 1722.2481,
+        "chromiumTreePeakRssKiB": 513672
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE40-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79427",
+        "reference": "79427"
+      },
+      "semInnerSha256": {
+        "here": "462d09dddb1fd15e9022a81918fcdbd7eb5a9aeafa3813edd8009ea2b97f3c29",
+        "reference": "462d09dddb1fd15e9022a81918fcdbd7eb5a9aeafa3813edd8009ea2b97f3c29"
+      },
+      "contentSha256": {
+        "here": "e1abbdd19e907b3fff50cfa8763d31b730d6d5af307c927536c0e544f4e3a02a",
+        "reference": "e1abbdd19e907b3fff50cfa8763d31b730d6d5af307c927536c0e544f4e3a02a"
+      },
+      "rowSetsSha256": {
+        "here": "88b1caa774038cff17579382b519ac9f78328a857c4c3e8de63f2368af38148e",
+        "reference": "88b1caa774038cff17579382b519ac9f78328a857c4c3e8de63f2368af38148e"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 499.2742,
+        "pagedFlowMs": 376.5,
+        "totalMs": 1703.0924,
+        "chromiumTreePeakRssKiB": 513860
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE41-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79442",
+        "reference": "79442"
+      },
+      "semInnerSha256": {
+        "here": "0df120f4cf9941f3948f962727eab1b94550f28fa5085e26b6eafc4138ddfbf7",
+        "reference": "0df120f4cf9941f3948f962727eab1b94550f28fa5085e26b6eafc4138ddfbf7"
+      },
+      "contentSha256": {
+        "here": "65fee4ba9d7b6ecc6e768dc861a9c45427e8af733d7f4506bce236a15bfb1d1c",
+        "reference": "65fee4ba9d7b6ecc6e768dc861a9c45427e8af733d7f4506bce236a15bfb1d1c"
+      },
+      "rowSetsSha256": {
+        "here": "36cf6ffa4e252b070405fea872e9c536d11486209a5c6ca66e7d48fc292b74c1",
+        "reference": "36cf6ffa4e252b070405fea872e9c536d11486209a5c6ca66e7d48fc292b74c1"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 462.2578,
+        "pagedFlowMs": 375.70000000298023,
+        "totalMs": 1739.3716,
+        "chromiumTreePeakRssKiB": 512196
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE42-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79457",
+        "reference": "79457"
+      },
+      "semInnerSha256": {
+        "here": "3c60099bfcfc2f078b03f7e6b380e556dfd75fdfa7b669ea7b44c0ba363abd57",
+        "reference": "3c60099bfcfc2f078b03f7e6b380e556dfd75fdfa7b669ea7b44c0ba363abd57"
+      },
+      "contentSha256": {
+        "here": "5b9942a58a50f2fbbc1825ac1e37ec5fae987c4190e0af4878467642a9c82ef7",
+        "reference": "5b9942a58a50f2fbbc1825ac1e37ec5fae987c4190e0af4878467642a9c82ef7"
+      },
+      "rowSetsSha256": {
+        "here": "a95076e5e1837c028cad14c25d110cd8b707561ff397d45a7dfda8cdb63a42f6",
+        "reference": "a95076e5e1837c028cad14c25d110cd8b707561ff397d45a7dfda8cdb63a42f6"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 451.5988,
+        "pagedFlowMs": 367.90000000596046,
+        "totalMs": 1687.3041,
+        "chromiumTreePeakRssKiB": 511648
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE43-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79472",
+        "reference": "79472"
+      },
+      "semInnerSha256": {
+        "here": "9c54abc6110042a18c2690836d23dffdd4faecf3efdb3ae329104c2e35de75c6",
+        "reference": "9c54abc6110042a18c2690836d23dffdd4faecf3efdb3ae329104c2e35de75c6"
+      },
+      "contentSha256": {
+        "here": "26004d6a50a8bf1599fd2a83386fa02ca13f73245ef251ca01454b36e9f9dc65",
+        "reference": "26004d6a50a8bf1599fd2a83386fa02ca13f73245ef251ca01454b36e9f9dc65"
+      },
+      "rowSetsSha256": {
+        "here": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e",
+        "reference": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 499.5659,
+        "pagedFlowMs": 375.09999999403954,
+        "totalMs": 1727.4082,
+        "chromiumTreePeakRssKiB": 513240
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE44-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79487",
+        "reference": "79487"
+      },
+      "semInnerSha256": {
+        "here": "fbb815dc8f7428df9e51f68d68a3557aaa910b3d9f29e2c2d33b18565a2b7faa",
+        "reference": "fbb815dc8f7428df9e51f68d68a3557aaa910b3d9f29e2c2d33b18565a2b7faa"
+      },
+      "contentSha256": {
+        "here": "f0e06023e1cc3d72948fcaae4beffab59f51ef22378e763b2b0477c5f7a90d9c",
+        "reference": "f0e06023e1cc3d72948fcaae4beffab59f51ef22378e763b2b0477c5f7a90d9c"
+      },
+      "rowSetsSha256": {
+        "here": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e",
+        "reference": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 451.6989,
+        "pagedFlowMs": 330,
+        "totalMs": 1740.5201,
+        "chromiumTreePeakRssKiB": 512348
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE45-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79502",
+        "reference": "79502"
+      },
+      "semInnerSha256": {
+        "here": "44f29c8948cc92c179b9f09ebe30baa3201466113640e35dc8e006048ef5fb15",
+        "reference": "44f29c8948cc92c179b9f09ebe30baa3201466113640e35dc8e006048ef5fb15"
+      },
+      "contentSha256": {
+        "here": "b7d9fd0609eff0456e92fe955ed3d59f3060ce1bd7c409ca3c92d200b07739c2",
+        "reference": "b7d9fd0609eff0456e92fe955ed3d59f3060ce1bd7c409ca3c92d200b07739c2"
+      },
+      "rowSetsSha256": {
+        "here": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e",
+        "reference": "e59662ad286bd7804c58f3d8826ec7488413f134035e9aac81a9a0b29e2ba39e"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 499.8295,
+        "pagedFlowMs": 447.79999999701977,
+        "totalMs": 1783.6083,
+        "chromiumTreePeakRssKiB": 512668
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE46-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79517",
+        "reference": "79517"
+      },
+      "semInnerSha256": {
+        "here": "ca91a5c8672c0365f7a3f94ce06ae1ea0a839dc3b5ceb4f99c9d946131d01dc6",
+        "reference": "ca91a5c8672c0365f7a3f94ce06ae1ea0a839dc3b5ceb4f99c9d946131d01dc6"
+      },
+      "contentSha256": {
+        "here": "ff486183e0445fead811ed25f9c58cfc32a8c6c9d3df998ac3c237646e347908",
+        "reference": "ff486183e0445fead811ed25f9c58cfc32a8c6c9d3df998ac3c237646e347908"
+      },
+      "rowSetsSha256": {
+        "here": "9b82f67ac2bf040e33a3d5711dc1e7602a04a097e1a87b07fb6ce01bf257add4",
+        "reference": "9b82f67ac2bf040e33a3d5711dc1e7602a04a097e1a87b07fb6ce01bf257add4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 720.622,
+        "pagedFlowMs": 635.8999999985099,
+        "totalMs": 2244.2447,
+        "chromiumTreePeakRssKiB": 511844
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE47-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79532",
+        "reference": "79532"
+      },
+      "semInnerSha256": {
+        "here": "6e1e9db5242cae29a4dbbecf46cc74829ce247e7d679e73e0582418e40bed40a",
+        "reference": "6e1e9db5242cae29a4dbbecf46cc74829ce247e7d679e73e0582418e40bed40a"
+      },
+      "contentSha256": {
+        "here": "049cca9700da56317bad93c16b9f3197f6e019e7f7de4b77bb2094a3d70a83b1",
+        "reference": "049cca9700da56317bad93c16b9f3197f6e019e7f7de4b77bb2094a3d70a83b1"
+      },
+      "rowSetsSha256": {
+        "here": "fb051298533401bb3c06508e2310b31449dab307a754834d84e7e30c3430a785",
+        "reference": "fb051298533401bb3c06508e2310b31449dab307a754834d84e7e30c3430a785"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 502.171,
+        "pagedFlowMs": 431.19999999552965,
+        "totalMs": 1952.1855,
+        "chromiumTreePeakRssKiB": 515328
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE48-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79547",
+        "reference": "79547"
+      },
+      "semInnerSha256": {
+        "here": "e0a55aec470230195c95ca1af840c7b56d48e9001d061ffa1acdab05bbce341e",
+        "reference": "e0a55aec470230195c95ca1af840c7b56d48e9001d061ffa1acdab05bbce341e"
+      },
+      "contentSha256": {
+        "here": "54ed5baf330dc733dd2df716aae9a8a00ce900cc1a0a87cbb0bd9d3af448fceb",
+        "reference": "54ed5baf330dc733dd2df716aae9a8a00ce900cc1a0a87cbb0bd9d3af448fceb"
+      },
+      "rowSetsSha256": {
+        "here": "dc7bc25f0c568f4b4c2dad6c0e84bbadab63e783485eed7390828d5a6b593ff6",
+        "reference": "dc7bc25f0c568f4b4c2dad6c0e84bbadab63e783485eed7390828d5a6b593ff6"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 543.3544,
+        "pagedFlowMs": 423.29999999701977,
+        "totalMs": 1777.288,
+        "chromiumTreePeakRssKiB": 514380
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE49-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "9",
+        "reference": "9"
+      },
+      "htmlBytes": {
+        "here": "79562",
+        "reference": "79562"
+      },
+      "semInnerSha256": {
+        "here": "12af453251a2dd5b9ca0f26bc8a6a00423ceaffa1407d5c1ab7bebbb7714d317",
+        "reference": "12af453251a2dd5b9ca0f26bc8a6a00423ceaffa1407d5c1ab7bebbb7714d317"
+      },
+      "contentSha256": {
+        "here": "d01521a194a3dcc93954dc2d40f644de072d0fa7a75a85c60b7abdc7f01244e4",
+        "reference": "d01521a194a3dcc93954dc2d40f644de072d0fa7a75a85c60b7abdc7f01244e4"
+      },
+      "rowSetsSha256": {
+        "here": "dc7bc25f0c568f4b4c2dad6c0e84bbadab63e783485eed7390828d5a6b593ff6",
+        "reference": "dc7bc25f0c568f4b4c2dad6c0e84bbadab63e783485eed7390828d5a6b593ff6"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 513.793,
+        "pagedFlowMs": 394.70000000298023,
+        "totalMs": 1793.8146,
+        "chromiumTreePeakRssKiB": 513628
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE50-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79577",
+        "reference": "79577"
+      },
+      "semInnerSha256": {
+        "here": "dc3b2aa33ab27771ce88fabaa9f6169199e5b109146c015e716046f1be516e13",
+        "reference": "dc3b2aa33ab27771ce88fabaa9f6169199e5b109146c015e716046f1be516e13"
+      },
+      "contentSha256": {
+        "here": "c151e250ce5b8596cc60b2f1927821a0a62cfa402efa8539f0ccad7eb9c3c353",
+        "reference": "c151e250ce5b8596cc60b2f1927821a0a62cfa402efa8539f0ccad7eb9c3c353"
+      },
+      "rowSetsSha256": {
+        "here": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2",
+        "reference": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 493.6182,
+        "pagedFlowMs": 430.90000000596046,
+        "totalMs": 1763.8316,
+        "chromiumTreePeakRssKiB": 518212
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE51-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79592",
+        "reference": "79592"
+      },
+      "semInnerSha256": {
+        "here": "68bb1e0df0c3fb93ca28d70358eb05701ebe4631c9186703c1ea4928c8dbe663",
+        "reference": "68bb1e0df0c3fb93ca28d70358eb05701ebe4631c9186703c1ea4928c8dbe663"
+      },
+      "contentSha256": {
+        "here": "07c1cdc9d343928c328b4bcc8d4ccac61577c030a266d479da8c6064f8633691",
+        "reference": "07c1cdc9d343928c328b4bcc8d4ccac61577c030a266d479da8c6064f8633691"
+      },
+      "rowSetsSha256": {
+        "here": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2",
+        "reference": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 541.7052,
+        "pagedFlowMs": 432.80000000447035,
+        "totalMs": 1852.843,
+        "chromiumTreePeakRssKiB": 519572
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE52-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79607",
+        "reference": "79607"
+      },
+      "semInnerSha256": {
+        "here": "f032a5d1fe8557607635add68fc9f7d42e89238a8fe6e6d6bde1e0cd13e545c7",
+        "reference": "f032a5d1fe8557607635add68fc9f7d42e89238a8fe6e6d6bde1e0cd13e545c7"
+      },
+      "contentSha256": {
+        "here": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1",
+        "reference": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 623.7928,
+        "pagedFlowMs": 511.1000000014901,
+        "totalMs": 1825.0223,
+        "chromiumTreePeakRssKiB": 533896
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE53-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79622",
+        "reference": "79622"
+      },
+      "semInnerSha256": {
+        "here": "4904273f253852834e89daff5aa6f79d1de24e08e1b5ccb9b83a65e878228b9f",
+        "reference": "4904273f253852834e89daff5aa6f79d1de24e08e1b5ccb9b83a65e878228b9f"
+      },
+      "contentSha256": {
+        "here": "26b63c57e6e9c2bfd97f69a9ebaa82fcfdda4e691e4af1db755e366525ce430a",
+        "reference": "26b63c57e6e9c2bfd97f69a9ebaa82fcfdda4e691e4af1db755e366525ce430a"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 596.1726,
+        "pagedFlowMs": 505.20000000298023,
+        "totalMs": 1896.5423,
+        "chromiumTreePeakRssKiB": 535568
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE54-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79637",
+        "reference": "79637"
+      },
+      "semInnerSha256": {
+        "here": "9c432d8778c4b7dabf5f354737d73e6a3521870c21d13a98aeeb7351038f890b",
+        "reference": "9c432d8778c4b7dabf5f354737d73e6a3521870c21d13a98aeeb7351038f890b"
+      },
+      "contentSha256": {
+        "here": "c4880328c035f258751fbb936adae1af5a38230d4e882d751c68ead731405a6a",
+        "reference": "c4880328c035f258751fbb936adae1af5a38230d4e882d751c68ead731405a6a"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 659.0165,
+        "pagedFlowMs": 543,
+        "totalMs": 1920.0353,
+        "chromiumTreePeakRssKiB": 536144
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE55-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79652",
+        "reference": "79652"
+      },
+      "semInnerSha256": {
+        "here": "530fac7e51b405f8c1c71912bed3598eaa5dddc7f841264feb99db4e5a6f6fa1",
+        "reference": "530fac7e51b405f8c1c71912bed3598eaa5dddc7f841264feb99db4e5a6f6fa1"
+      },
+      "contentSha256": {
+        "here": "331b5f6e86cd48d3a670d48ce4b83d0cf85e08535e566924e8460fa78862c86b",
+        "reference": "331b5f6e86cd48d3a670d48ce4b83d0cf85e08535e566924e8460fa78862c86b"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 627.2984,
+        "pagedFlowMs": 507.1000000014901,
+        "totalMs": 1868.0503,
+        "chromiumTreePeakRssKiB": 534736
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE56-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79667",
+        "reference": "79667"
+      },
+      "semInnerSha256": {
+        "here": "396c687109ce7cea7810ba3df5875bc4f51a54667779fea7d7a6a2487032639b",
+        "reference": "396c687109ce7cea7810ba3df5875bc4f51a54667779fea7d7a6a2487032639b"
+      },
+      "contentSha256": {
+        "here": "afbb4403ecee87745934a1756350a5f72e6d6141eb7429b75964991ec6c8e9a9",
+        "reference": "afbb4403ecee87745934a1756350a5f72e6d6141eb7429b75964991ec6c8e9a9"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 625.6002,
+        "pagedFlowMs": 508.5,
+        "totalMs": 1905.702,
+        "chromiumTreePeakRssKiB": 536672
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE57-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79682",
+        "reference": "79682"
+      },
+      "semInnerSha256": {
+        "here": "d9a77b21e22dbaac45ce29cb4fd739028d6800371db14f5377633600a47d8c80",
+        "reference": "d9a77b21e22dbaac45ce29cb4fd739028d6800371db14f5377633600a47d8c80"
+      },
+      "contentSha256": {
+        "here": "9926c17347694cfff7e18ba3c8328db01fe2127c710eab22e6e05c4bbe1f8518",
+        "reference": "9926c17347694cfff7e18ba3c8328db01fe2127c710eab22e6e05c4bbe1f8518"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 622.1799,
+        "pagedFlowMs": 522.6999999955297,
+        "totalMs": 1946.3745,
+        "chromiumTreePeakRssKiB": 536432
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE58-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79697",
+        "reference": "79697"
+      },
+      "semInnerSha256": {
+        "here": "60490564aa9c4912b68c0b14da68e66049021ab702a714f47501d6e132d58482",
+        "reference": "60490564aa9c4912b68c0b14da68e66049021ab702a714f47501d6e132d58482"
+      },
+      "contentSha256": {
+        "here": "33c3007063ceb17846591ddecb9d0bed61d2c547d0ba73147ed11b4445864ea7",
+        "reference": "33c3007063ceb17846591ddecb9d0bed61d2c547d0ba73147ed11b4445864ea7"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 535.2773,
+        "pagedFlowMs": 490,
+        "totalMs": 1777.6733,
+        "chromiumTreePeakRssKiB": 537844
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE59-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79712",
+        "reference": "79712"
+      },
+      "semInnerSha256": {
+        "here": "4aabd9e9cac4a4ff9d23b77b0b032c4a260a56e8a6ed31a5d2a9a81dc8d3f5dd",
+        "reference": "4aabd9e9cac4a4ff9d23b77b0b032c4a260a56e8a6ed31a5d2a9a81dc8d3f5dd"
+      },
+      "contentSha256": {
+        "here": "dd17e47f0720a824e72c5e352df412fa66bfa3b13786c04e43e216ef654426f4",
+        "reference": "dd17e47f0720a824e72c5e352df412fa66bfa3b13786c04e43e216ef654426f4"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 558.9361,
+        "pagedFlowMs": 513.5,
+        "totalMs": 1813.253,
+        "chromiumTreePeakRssKiB": 534528
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE60-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79727",
+        "reference": "79727"
+      },
+      "semInnerSha256": {
+        "here": "efcc7c4660a6f1d1408376124025575a0ccddeaf1098d2a5c650efaf593fc043",
+        "reference": "efcc7c4660a6f1d1408376124025575a0ccddeaf1098d2a5c650efaf593fc043"
+      },
+      "contentSha256": {
+        "here": "0d213985f5221788e819c58d6c2d8a5c34dc808b229b07d06a7060fa8fa0c0cb",
+        "reference": "0d213985f5221788e819c58d6c2d8a5c34dc808b229b07d06a7060fa8fa0c0cb"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 611.0008,
+        "pagedFlowMs": 521.1999999955297,
+        "totalMs": 1896.8588,
+        "chromiumTreePeakRssKiB": 535008
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE61-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79742",
+        "reference": "79742"
+      },
+      "semInnerSha256": {
+        "here": "43b4abeb82f437a7bd83f3c970c3525061880f99a45039e7b62d8373dfc72e3f",
+        "reference": "43b4abeb82f437a7bd83f3c970c3525061880f99a45039e7b62d8373dfc72e3f"
+      },
+      "contentSha256": {
+        "here": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650",
+        "reference": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 624.4262,
+        "pagedFlowMs": 506.3999999985099,
+        "totalMs": 1777.6588,
+        "chromiumTreePeakRssKiB": 533072
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE62-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "11",
+        "reference": "11"
+      },
+      "htmlBytes": {
+        "here": "79757",
+        "reference": "79757"
+      },
+      "semInnerSha256": {
+        "here": "7d62b6e1b63923d7bb159399136c97faf3ba08a9987d28877de73e9d2129e4ce",
+        "reference": "7d62b6e1b63923d7bb159399136c97faf3ba08a9987d28877de73e9d2129e4ce"
+      },
+      "contentSha256": {
+        "here": "84409d4587f0b7c6f2713553e983c413f48438e00fcac72e4deda2c77f7b2e7a",
+        "reference": "84409d4587f0b7c6f2713553e983c413f48438e00fcac72e4deda2c77f7b2e7a"
+      },
+      "rowSetsSha256": {
+        "here": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4",
+        "reference": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 663.2304,
+        "pagedFlowMs": 561.5,
+        "totalMs": 1964.2257,
+        "chromiumTreePeakRssKiB": 532688
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE63-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "11",
+        "reference": "11"
+      },
+      "htmlBytes": {
+        "here": "79772",
+        "reference": "79772"
+      },
+      "semInnerSha256": {
+        "here": "19d05e8c3614313417cca7b3a52e77a22240b521a9edc88811f20eecd4577c40",
+        "reference": "19d05e8c3614313417cca7b3a52e77a22240b521a9edc88811f20eecd4577c40"
+      },
+      "contentSha256": {
+        "here": "7badc886355eaa00d42325da3fc4f28a58bce2c6969018118e71473970514af0",
+        "reference": "7badc886355eaa00d42325da3fc4f28a58bce2c6969018118e71473970514af0"
+      },
+      "rowSetsSha256": {
+        "here": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4",
+        "reference": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 652.6665,
+        "pagedFlowMs": 559.5999999940395,
+        "totalMs": 1864.7531,
+        "chromiumTreePeakRssKiB": 534188
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE64-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "11",
+        "reference": "11"
+      },
+      "htmlBytes": {
+        "here": "79787",
+        "reference": "79787"
+      },
+      "semInnerSha256": {
+        "here": "456432893521c43d6926ddf9a9a752c25f5364344a83e814091ceabd14cdd802",
+        "reference": "456432893521c43d6926ddf9a9a752c25f5364344a83e814091ceabd14cdd802"
+      },
+      "contentSha256": {
+        "here": "cf428cc97f46c9583814393a9c1f3ecffb5688e5a3a8f1928aa74b54c6f633bf",
+        "reference": "cf428cc97f46c9583814393a9c1f3ecffb5688e5a3a8f1928aa74b54c6f633bf"
+      },
+      "rowSetsSha256": {
+        "here": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4",
+        "reference": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 636.7195,
+        "pagedFlowMs": 547.8999999985099,
+        "totalMs": 1897.5383,
+        "chromiumTreePeakRssKiB": 533408
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE65-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "11",
+        "reference": "11"
+      },
+      "htmlBytes": {
+        "here": "79802",
+        "reference": "79802"
+      },
+      "semInnerSha256": {
+        "here": "c70157cbb20934bde85feecde683ed0d2a936aba4dec66f3b7edc2c4377122fc",
+        "reference": "c70157cbb20934bde85feecde683ed0d2a936aba4dec66f3b7edc2c4377122fc"
+      },
+      "contentSha256": {
+        "here": "bbb85d90747a96054da52aefebbb3aa0985120231085bda63721d4c3fae41245",
+        "reference": "bbb85d90747a96054da52aefebbb3aa0985120231085bda63721d4c3fae41245"
+      },
+      "rowSetsSha256": {
+        "here": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4",
+        "reference": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 661.3902,
+        "pagedFlowMs": 563.6000000014901,
+        "totalMs": 1877.9997,
+        "chromiumTreePeakRssKiB": 532832
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE66-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "11",
+        "reference": "11"
+      },
+      "htmlBytes": {
+        "here": "79817",
+        "reference": "79817"
+      },
+      "semInnerSha256": {
+        "here": "8e21ab2721264228d479f1e04501fd4793a9317a629490a7e4beca9445582aca",
+        "reference": "8e21ab2721264228d479f1e04501fd4793a9317a629490a7e4beca9445582aca"
+      },
+      "contentSha256": {
+        "here": "c59ba428b04f207c21d17cb46c8d915b31ab5ff84eda2ac6bc1b08bb0f5b7b67",
+        "reference": "c59ba428b04f207c21d17cb46c8d915b31ab5ff84eda2ac6bc1b08bb0f5b7b67"
+      },
+      "rowSetsSha256": {
+        "here": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4",
+        "reference": "b7506978c2af795f3bad43142150b48594d806caa27142720fa602edcd5d5ea4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 623.9967,
+        "pagedFlowMs": 504.3999999985099,
+        "totalMs": 1848.6441,
+        "chromiumTreePeakRssKiB": 530916
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GS1200-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "48",
+        "reference": "48"
+      },
+      "htmlBytes": {
+        "here": "423454",
+        "reference": "423454"
+      },
+      "semInnerSha256": {
+        "here": "f009b480a830fbb2762dadf601a0a380555a694d39a4630172e62b2672b8969c",
+        "reference": "f009b480a830fbb2762dadf601a0a380555a694d39a4630172e62b2672b8969c"
+      },
+      "contentSha256": {
+        "here": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4",
+        "reference": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4"
+      },
+      "rowSetsSha256": {
+        "here": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08",
+        "reference": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 1076.992,
+        "pagedFlowMs": 1030.3999999985099,
+        "totalMs": 3186.5305,
+        "chromiumTreePeakRssKiB": 565584
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GS2400-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "81",
+        "reference": "81"
+      },
+      "htmlBytes": {
+        "here": "722610",
+        "reference": "722610"
+      },
+      "semInnerSha256": {
+        "here": "055407b3edb260ed912af2338a1a8cad57117e9ee1ddd315532cad6ff50f585a",
+        "reference": "055407b3edb260ed912af2338a1a8cad57117e9ee1ddd315532cad6ff50f585a"
+      },
+      "contentSha256": {
+        "here": "62ac0032581b321635bf4e9a336ce11436787f078fae7ff06c9949b36fee06b8",
+        "reference": "62ac0032581b321635bf4e9a336ce11436787f078fae7ff06c9949b36fee06b8"
+      },
+      "rowSetsSha256": {
+        "here": "501f3ad436709b891db3d9061b181dbe0cde285192fb13ce1d53b385a3bd5f91",
+        "reference": "501f3ad436709b891db3d9061b181dbe0cde285192fb13ce1d53b385a3bd5f91"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 2099.164,
+        "pagedFlowMs": 2039.1000000014901,
+        "totalMs": 5184.6626,
+        "chromiumTreePeakRssKiB": 771356
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GTL300u-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "14",
+        "reference": "14"
+      },
+      "htmlBytes": {
+        "here": "105946",
+        "reference": "105946"
+      },
+      "semInnerSha256": {
+        "here": "e8d2c96a3872b46e3e749da2975a65946c33b48679bb2c298f314c62978e8349",
+        "reference": "e8d2c96a3872b46e3e749da2975a65946c33b48679bb2c298f314c62978e8349"
+      },
+      "contentSha256": {
+        "here": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284",
+        "reference": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284"
+      },
+      "rowSetsSha256": {
+        "here": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24",
+        "reference": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 471.3067,
+        "pagedFlowMs": 365.29999999701977,
+        "totalMs": 1779.9161,
+        "chromiumTreePeakRssKiB": 505548
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GTF300u-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "14",
+        "reference": "14"
+      },
+      "htmlBytes": {
+        "here": "105984",
+        "reference": "105984"
+      },
+      "semInnerSha256": {
+        "here": "15a24af969a237cb92649d82d7681e22bbf14112ca8878ae0320764ef531758e",
+        "reference": "15a24af969a237cb92649d82d7681e22bbf14112ca8878ae0320764ef531758e"
+      },
+      "contentSha256": {
+        "here": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66",
+        "reference": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66"
+      },
+      "rowSetsSha256": {
+        "here": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73",
+        "reference": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 462.0327,
+        "pagedFlowMs": 337.80000000447035,
+        "totalMs": 1811.1163,
+        "chromiumTreePeakRssKiB": 507496
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-T300u-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "8",
+        "reference": "8"
+      },
+      "htmlBytes": {
+        "here": "51922",
+        "reference": "51922"
+      },
+      "semInnerSha256": {
+        "here": "1e18a5aff46b182f2f010192316abc0a8e09a70015bfa01c4d94cba248f0f9cd",
+        "reference": "1e18a5aff46b182f2f010192316abc0a8e09a70015bfa01c4d94cba248f0f9cd"
+      },
+      "contentSha256": {
+        "here": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754",
+        "reference": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754"
+      },
+      "rowSetsSha256": {
+        "here": "eaac8a4a62af6efc91e7b81ebddf7e3672c7b19c74be24df7a3f2aa928cd932d",
+        "reference": "eaac8a4a62af6efc91e7b81ebddf7e3672c7b19c74be24df7a3f2aa928cd932d"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 227.4234,
+        "pagedFlowMs": 191.29999999701977,
+        "totalMs": 1416.9111,
+        "chromiumTreePeakRssKiB": 468760
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-X64K-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "18",
+        "reference": "18"
+      },
+      "htmlBytes": {
+        "here": "105533",
+        "reference": "105533"
+      },
+      "semInnerSha256": {
+        "here": "cee8e6739395b13cff84f2d01df36e6d798f28665534e478226a1124f7e47119",
+        "reference": "cee8e6739395b13cff84f2d01df36e6d798f28665534e478226a1124f7e47119"
+      },
+      "contentSha256": {
+        "here": "6f329b07ccbf59394c1dcb20e8742ad5823a68413ec7f4e7b1333818e004edb4",
+        "reference": "6f329b07ccbf59394c1dcb20e8742ad5823a68413ec7f4e7b1333818e004edb4"
+      },
+      "rowSetsSha256": {
+        "here": "638bccde0a47beee7d3f3def985b97021ec64fc5fdc4d78b615ac14995ac617a",
+        "reference": "638bccde0a47beee7d3f3def985b97021ec64fc5fdc4d78b615ac14995ac617a"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 423.8,
+        "pagedFlowMs": 395.29999999701977,
+        "totalMs": 1687.1267,
+        "chromiumTreePeakRssKiB": 491892
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-X1M-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "224",
+        "reference": "224"
+      },
+      "htmlBytes": {
+        "here": "1171918",
+        "reference": "1171918"
+      },
+      "semInnerSha256": {
+        "here": "9ed190e3339d3abbf26c48a800905172428b90d55ddd20d59b4855cb73fad52b",
+        "reference": "9ed190e3339d3abbf26c48a800905172428b90d55ddd20d59b4855cb73fad52b"
+      },
+      "contentSha256": {
+        "here": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f",
+        "reference": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f"
+      },
+      "rowSetsSha256": {
+        "here": "a95a1554a867b7124141d171388c2a568af0e9fb19a5b13e1b697d0764421a7a",
+        "reference": "a95a1554a867b7124141d171388c2a568af0e9fb19a5b13e1b697d0764421a7a"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 4333.7028,
+        "pagedFlowMs": 4215.10000000149,
+        "totalMs": 9216.2959,
+        "chromiumTreePeakRssKiB": 832412
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-G200-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "18",
+        "reference": "18"
+      },
+      "htmlBytes": {
+        "here": "126626",
+        "reference": "126626"
+      },
+      "semInnerSha256": {
+        "here": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f",
+        "reference": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f"
+      },
+      "contentSha256": {
+        "here": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b",
+        "reference": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b"
+      },
+      "rowSetsSha256": {
+        "here": "d1cae818c85ae412cbb2e7e002916014ff2b7b7d2b059aab98d3be576de60199",
+        "reference": "d1cae818c85ae412cbb2e7e002916014ff2b7b7d2b059aab98d3be576de60199"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 456.6396,
+        "pagedFlowMs": 407.1000000014901,
+        "totalMs": 2051.8973,
+        "chromiumTreePeakRssKiB": 502436
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-B1000-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "36",
+        "reference": "36"
+      },
+      "htmlBytes": {
+        "here": "311376",
+        "reference": "311376"
+      },
+      "semInnerSha256": {
+        "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+        "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+      },
+      "contentSha256": {
+        "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+        "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+      },
+      "rowSetsSha256": {
+        "here": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767",
+        "reference": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 832.4987,
+        "pagedFlowMs": 793.5,
+        "totalMs": 2652.9523,
+        "chromiumTreePeakRssKiB": 553104
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-B4000-split-t1.00-f0.90-on-r1",
+      "reference": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "143",
+        "reference": "143"
+      },
+      "htmlBytes": {
+        "here": "1239043",
+        "reference": "1239043"
+      },
+      "semInnerSha256": {
+        "here": "9e2256dba224a039ef68d3aa59e75cf984ab815635bace81bfb8ded9518aa077",
+        "reference": "9e2256dba224a039ef68d3aa59e75cf984ab815635bace81bfb8ded9518aa077"
+      },
+      "contentSha256": {
+        "here": "d89e8025728037edf6562abe22f5a57190a9a3dec586c4715dc6df7a67931c70",
+        "reference": "d89e8025728037edf6562abe22f5a57190a9a3dec586c4715dc6df7a67931c70"
+      },
+      "rowSetsSha256": {
+        "here": "87ee64cae4e2bb4dde5f439b164aea62e2509fe70f7b8a5e017e77ef75a88bb4",
+        "reference": "87ee64cae4e2bb4dde5f439b164aea62e2509fe70f7b8a5e017e77ef75a88bb4"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 3812.0059,
+        "pagedFlowMs": 3706.1999999955297,
+        "totalMs": 8468.2486,
+        "chromiumTreePeakRssKiB": 840576
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE50-split-t1.00-f0.90-off-r1",
+      "reference": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79578",
+        "reference": "79578"
+      },
+      "semInnerSha256": {
+        "here": "dc3b2aa33ab27771ce88fabaa9f6169199e5b109146c015e716046f1be516e13",
+        "reference": "dc3b2aa33ab27771ce88fabaa9f6169199e5b109146c015e716046f1be516e13"
+      },
+      "contentSha256": {
+        "here": "c151e250ce5b8596cc60b2f1927821a0a62cfa402efa8539f0ccad7eb9c3c353",
+        "reference": "c151e250ce5b8596cc60b2f1927821a0a62cfa402efa8539f0ccad7eb9c3c353"
+      },
+      "rowSetsSha256": {
+        "here": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2",
+        "reference": "3f61a9d48ce89deb0f342076d74297fc4ea1ea0700749bbff4c4acf926d72dd2"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 538.4062,
+        "pagedFlowMs": 428.1000000014901,
+        "totalMs": 1748.7886,
+        "chromiumTreePeakRssKiB": 519280
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GE60-split-t1.00-f0.90-off-r1",
+      "reference": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "reference": "10"
+      },
+      "htmlBytes": {
+        "here": "79728",
+        "reference": "79728"
+      },
+      "semInnerSha256": {
+        "here": "efcc7c4660a6f1d1408376124025575a0ccddeaf1098d2a5c650efaf593fc043",
+        "reference": "efcc7c4660a6f1d1408376124025575a0ccddeaf1098d2a5c650efaf593fc043"
+      },
+      "contentSha256": {
+        "here": "0d213985f5221788e819c58d6c2d8a5c34dc808b229b07d06a7060fa8fa0c0cb",
+        "reference": "0d213985f5221788e819c58d6c2d8a5c34dc808b229b07d06a7060fa8fa0c0cb"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "reference": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 604.537,
+        "pagedFlowMs": 512.5,
+        "totalMs": 1880.9383,
+        "chromiumTreePeakRssKiB": 534532
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-GS1200-split-t1.00-f0.90-off-r1",
+      "reference": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "48",
+        "reference": "48"
+      },
+      "htmlBytes": {
+        "here": "423455",
+        "reference": "423455"
+      },
+      "semInnerSha256": {
+        "here": "f009b480a830fbb2762dadf601a0a380555a694d39a4630172e62b2672b8969c",
+        "reference": "f009b480a830fbb2762dadf601a0a380555a694d39a4630172e62b2672b8969c"
+      },
+      "contentSha256": {
+        "here": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4",
+        "reference": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4"
+      },
+      "rowSetsSha256": {
+        "here": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08",
+        "reference": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 1051.7604,
+        "pagedFlowMs": 975.6000000014901,
+        "totalMs": 3041.3949,
+        "chromiumTreePeakRssKiB": 560436
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-G200-split-t1.00-f0.90-off-r1",
+      "reference": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "18",
+        "reference": "18"
+      },
+      "htmlBytes": {
+        "here": "126627",
+        "reference": "126627"
+      },
+      "semInnerSha256": {
+        "here": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f",
+        "reference": "94c9cb9abaa38207ba3807d1420867dca4cd305eb423a87e7ea91bb84946c49f"
+      },
+      "contentSha256": {
+        "here": "919aee9ec9f219cca50da23f94e463d58ee194765e5c0e0ef004b31eaeeb911b",
+        "reference": "919aee9ec9f219cca50da23f94e463d58ee194765e5c0e0ef004b31eaeeb911b"
+      },
+      "rowSetsSha256": {
+        "here": "d1cae818c85ae412cbb2e7e002916014ff2b7b7d2b059aab98d3be576de60199",
+        "reference": "d1cae818c85ae412cbb2e7e002916014ff2b7b7d2b059aab98d3be576de60199"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 442.6479,
+        "pagedFlowMs": 368.6000000014901,
+        "totalMs": 1826.8843,
+        "chromiumTreePeakRssKiB": 500948
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-B1000-split-t1.00-f0.90-on-r2",
+      "reference": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "36",
+        "reference": "36"
+      },
+      "htmlBytes": {
+        "here": "311376",
+        "reference": "311376"
+      },
+      "semInnerSha256": {
+        "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+        "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+      },
+      "contentSha256": {
+        "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+        "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+      },
+      "rowSetsSha256": {
+        "here": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767",
+        "reference": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 870.9936,
+        "pagedFlowMs": 779.1000000014901,
+        "totalMs": 2696.9466,
+        "chromiumTreePeakRssKiB": 551440
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-none-B1000-split-t1.00-f0.90-on-r3",
+      "reference": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3",
+      "class": {
+        "here": "ok",
+        "reference": "ok"
+      },
+      "pages": {
+        "here": "36",
+        "reference": "36"
+      },
+      "htmlBytes": {
+        "here": "311376",
+        "reference": "311376"
+      },
+      "semInnerSha256": {
+        "here": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7",
+        "reference": "f9caee32ebbc8b9bac5a5d4aa29985a52c0b15568941a337395fab7e0fd4d2d7"
+      },
+      "contentSha256": {
+        "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+        "reference": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+      },
+      "rowSetsSha256": {
+        "here": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767",
+        "reference": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767"
+      },
+      "libraryRules": {
+        "here": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P",
+        "reference": "rows-not-lost-or-duplicated:P end-page-subtotals:P brought-carried-chain:P visible-amounts:P continues-marks:P geometry:P escaping-and-isolation:P column-alignment-observation:P split-row-text-observation:P rows-spanning-pages-observation:P"
+      },
+      "layoutRepeated": {
+        "here": "False",
+        "reference": "False"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "reference": "pass"
+      },
+      "referenceMeasurements": {
+        "layoutMs": 837.6137,
+        "pagedFlowMs": 787.3000000044703,
+        "totalMs": 2737.8256,
+        "chromiumTreePeakRssKiB": 552776
+      },
+      "differences": []
+    }
+  ]
+}

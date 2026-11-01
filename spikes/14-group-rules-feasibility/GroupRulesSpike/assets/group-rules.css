@@ -1,0 +1,19 @@
+/*
+  Group-container stylesheet of the group-rules experiment, added to the PDF
+  page only when the repeated group header is attempted. Each group's rows sit
+  in a container (wrapped by group-rules.js before the layout starts). A later
+  fragment of a container — one the pagination library starts on a new page —
+  that does not hold the group's own header prints the header text followed by
+  " (cont.)" at its top, with the header's own weight and padding (layout.css).
+*/
+
+.rows-grid .group {
+    display: block;
+}
+
+.rows-grid .group[data-split-from]:not(:has(.group-start))::before {
+    content: attr(data-cont);
+    display: block;
+    font-weight: bold;
+    padding: 1.5mm 1mm 0.6mm 1mm;
+}

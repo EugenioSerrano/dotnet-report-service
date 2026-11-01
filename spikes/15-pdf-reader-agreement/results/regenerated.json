@@ -1,0 +1,85 @@
+{
+  "writtenAt": "2026-10-31T21:26:21-03:00",
+  "pdfs": [
+    {
+      "id": "R/07/NC-W-B100-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/NC-W-B100-table-r1.pdf",
+      "sha256": "68e8e7ffb9adc23cf87c96821a5c88517ad163b21c4a0dc6e7ae6aa810a4fb36",
+      "bytes": 33975,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/07/NC-L-B100-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/NC-L-B100-table-r1.pdf",
+      "sha256": "61a6f73168e0d97ad6c2bd683bb66159099fb8578a04640b01673d66228a8944",
+      "bytes": 34003,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/07/NC-R-B100-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/NC-R-B100-table-r1.pdf",
+      "sha256": "dfe28da95008f9e85fafbdbc1f7c988f1b21b136048b2a7e8b17490b51374a76",
+      "bytes": 33908,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/07/NC-F-F26K-a-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/NC-F-F26K-a-table-r1.pdf",
+      "sha256": "4062e04991790fd9bbaba100a68afe04c0316cb5c76067b3ac6efca5967be71b",
+      "bytes": 41558,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/07/F1M-a-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/F1M-a-table-r1.pdf",
+      "sha256": "5035e04bf42bd96069e5f7fd40e422ad39e4b6bdc5fe4feabdb1e8e1d0bede55",
+      "bytes": 641718,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/07/X1M-table-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/07-native-tall-rows/pdf/X1M-table-r1.pdf",
+      "sha256": "c7c766d7527d7fa5d2ce51af4c715360b6370bbe16b231ab1b1941aa1948221c",
+      "bytes": 666600,
+      "harness": "07-native-tall-rows",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/10-pagedjs-table-strict-accounting/pdf/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "aa06a6a86637a1e18a2d6a0b81fcb364211f3432ed8a7411edf5033037873257",
+      "bytes": 145334,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/10-pagedjs-table-strict-accounting/pdf/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "41b131192e545137b91bab9d6be5f15ab35fd9f6f9ec2f4430f71003db329804",
+      "bytes": 34523,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/10-pagedjs-table-strict-accounting/pdf/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "6138577a44a783f31cca8e59b9465938dc2c4d1b384d51635f73c568ce263c63",
+      "bytes": 34571,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    },
+    {
+      "id": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "path": "spikes/15-pdf-reader-agreement/work/regenerated/10-pagedjs-table-strict-accounting/pdf/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "07e46f750e6a8ef8ca42376143a75154cd1fbfab23905f21ad28d4d135b8ace3",
+      "bytes": 664159,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "harnessImage": "native-tall-rows-spike:local sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371; pagedjs-markup-spike:local sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c"
+    }
+  ]
+}

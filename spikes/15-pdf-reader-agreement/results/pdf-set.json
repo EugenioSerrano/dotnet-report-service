@@ -1,0 +1,941 @@
+{
+  "pdfs": 42,
+  "judged": 30,
+  "agreementOnly": 12,
+  "regenerated": 10,
+  "set": [
+    {
+      "id": "07/B1000-table-r1",
+      "source": "spikes/07-native-tall-rows/results/pdf/B1000-table-r1.pdf",
+      "folder": "07-native-tall-rows",
+      "class": "ordinary block",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "B1000",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "B1000-table-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "1cc3abe61a5e1a3fdaeb535facb8552591f86b3241842f044df02497c35b6b4a",
+      "bytes": 142184,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 36,
+        "failureClasses": [],
+        "contentSha256": "d288d5c014ff93c8bbd76913f0ad96a6844637de2f9e2895659e61b4bd3e8d8c"
+      }
+    },
+    {
+      "id": "07/T300u-table-r1",
+      "source": "spikes/07-native-tall-rows/results/pdf/T300u-table-r1.pdf",
+      "folder": "07-native-tall-rows",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "T300u",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "T300u-table-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "852ceb4b7d7c91e5412f08f94fe569fee22425dd8ea58341407e5a92b051fd62",
+      "bytes": 46058,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 7,
+        "failureClasses": [],
+        "contentSha256": "fe7803fbb887d5eba128c6e4c2d9a500355c2cd8a7b96a53b40c36c208f747d9"
+      }
+    },
+    {
+      "id": "07/T300u-ab-grid-r1",
+      "source": "spikes/07-native-tall-rows/results/pdf/T300u-ab-grid-r1.pdf",
+      "folder": "07-native-tall-rows",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "T300u-ab",
+      "markup": "grid",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "T300u-ab-grid-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "37070dcb487d16305e40c90cb24de8d2bb5820b9f74caf5517498dd83bc16e17",
+      "bytes": 47236,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 9,
+        "failureClasses": [],
+        "contentSha256": "e637a28c5551e589a336fbf8bb06b20c642b557ae4a8cf77f9c74d01f67b6ec9"
+      }
+    },
+    {
+      "id": "07/X64K-ab-grid-r1",
+      "source": "spikes/07-native-tall-rows/results/pdf/X64K-ab-grid-r1.pdf",
+      "folder": "07-native-tall-rows",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "X64K-ab",
+      "markup": "grid",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "X64K-ab-grid-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "11d25d73a9f89b8a92c98e21da382355fa33f362cd98691fefa34f11b28628a3",
+      "bytes": 86629,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 28,
+        "failureClasses": [],
+        "contentSha256": "32e9ea6354ac3e6c7d6e91a9606b72f78de6814c7a497323bfd47ec66e7bd75d"
+      }
+    },
+    {
+      "id": "08/s2-G200-off-on-r1",
+      "source": "spikes/08-pagedjs-pre-split/results/pdf/G200-off-on-r1.pdf",
+      "folder": "08-pagedjs-pre-split",
+      "class": "known-bad: lost rows (no split)",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "08-pagedjs-pre-split",
+      "recordRunId": "s2-G200-off-on-r1",
+      "strictRecordFolder": "10-pagedjs-table-strict-accounting",
+      "strictRecordRunId": "s1-grid-s2-G200-off-on-r1",
+      "knownBad": [
+        "TI-2",
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "regenerated": false,
+      "sha256": "c9c380ed3b6863b785d23811713d986093ceec40748c6a72e26f47454d5d74eb",
+      "bytes": 45119,
+      "recorded": {
+        "verdict": "fail",
+        "pages": 10,
+        "failureClasses": [
+          "header-wrong",
+          "row-lost",
+          "structure-lost",
+          "text-altered",
+          "text-dropped"
+        ],
+        "contentSha256": "4dbfcb63be37f4cb7da81def1a36b445b93aad70c7b600b1b4503030e8db2eb2"
+      }
+    },
+    {
+      "id": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "source": "spikes/08-pagedjs-pre-split/results/pdf/G200-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "08-pagedjs-pre-split",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "08-pagedjs-pre-split",
+      "recordRunId": "s2-G200-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "478c5731477483747a783a581a01b423a7908fb3c4235b74f408e588860401de",
+      "bytes": 68446,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 18,
+        "failureClasses": [],
+        "contentSha256": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b"
+      }
+    },
+    {
+      "id": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "source": "spikes/08-pagedjs-pre-split/results/pdf/W2a-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "08-pagedjs-pre-split",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "W2a",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "08-pagedjs-pre-split",
+      "recordRunId": "s2-W2a-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "0f1c66317cb1699a3f25d015abc7345cc5562c6c1bf753e88b25a60fb07f844a",
+      "bytes": 71314,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 14,
+        "failureClasses": [],
+        "contentSha256": "8da9224d54372886b87e6b828b8caf4045217fd5ed0da84c87c7c289ad6a6aaf"
+      }
+    },
+    {
+      "id": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "source": "spikes/08-pagedjs-pre-split/results/pdf/X1M-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "08-pagedjs-pre-split",
+      "class": "tall row split into parts; largest Paged.js PDF",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "08-pagedjs-pre-split",
+      "recordRunId": "s2-X1M-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "9501a777025f29491d585ffacdaa8ce2fedd40b2a0fd6a1fd47a2de5e474e909",
+      "bytes": 809703,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 224,
+        "failureClasses": [],
+        "contentSha256": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f"
+      }
+    },
+    {
+      "id": "09/B100-grid-s-r1.p2",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/B100-grid-s-r1.p2.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "ordinary block",
+      "use": "judged",
+      "layout": "native-two-pass",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "09-two-pass-page-subtotals",
+      "recordRunId": "B100-grid-s-r1.p2",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "e622ca5cf124e34c3f030342295976859659a022dae164b2201adc5dd7c8a7cd",
+      "bytes": 51233,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 4,
+        "failureClasses": [],
+        "contentSha256": "536d582999578f5ff4c22748e4925bef39380ab64057907278325bb646805525"
+      }
+    },
+    {
+      "id": "09/T300u-grid-s-r1.p2",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-grid-s-r1.p2.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native-two-pass",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "09-two-pass-page-subtotals",
+      "recordRunId": "T300u-grid-s-r1.p2",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "a6d75f3d0269a167ca520d95f0bbdf8fc1de7b6c1c869bba3730fa50677fa9f4",
+      "bytes": 64189,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 7,
+        "failureClasses": [],
+        "contentSha256": "817733eb660105c206c7ebdc7da0db4910857c8094c3b74df2031b03ced8bc9b"
+      }
+    },
+    {
+      "id": "09/T300u-ab-grid-c-r1.p1",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-ab-grid-c-r1.p1.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native-two-pass",
+      "fixtureId": "T300u-ab",
+      "markup": "grid",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "09-two-pass-page-subtotals",
+      "recordRunId": "T300u-ab-grid-c-r1.p1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "026c4631a6c009dead09d31d1ab94b63a26b00309e7b432b76ef1974fcfa0f83",
+      "bytes": 107477,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 9,
+        "failureClasses": [],
+        "contentSha256": "e637a28c5551e589a336fbf8bb06b20c642b557ae4a8cf77f9c74d01f67b6ec9"
+      }
+    },
+    {
+      "id": "09/T300u-table-c-r1.p1",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-table-c-r1.p1.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "native-two-pass",
+      "fixtureId": "T300u",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "09-two-pass-page-subtotals",
+      "recordRunId": "T300u-table-c-r1.p1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "b7f6c8ff303df32bef7c7672f85913b3493878f06441d911f200bb7c3bffc3b7",
+      "bytes": 106516,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 7,
+        "failureClasses": [],
+        "contentSha256": "fe7803fbb887d5eba128c6e4c2d9a500355c2cd8a7b96a53b40c36c208f747d9"
+      }
+    },
+    {
+      "id": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "source": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "tall row split into parts",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "e6ded794cf9e7861cdd4b5ce8807723070d6b957968c644ba897c9f7fe1b1dd6",
+      "bytes": 54031,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 8,
+        "failureClasses": [],
+        "contentSha256": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754"
+      }
+    },
+    {
+      "id": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "source": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s1-B1000-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "known-bad: lost or altered text (table)",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "B1000",
+      "markup": "table",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "knownBad": [
+        "TI-3",
+        "TI-4"
+      ],
+      "regenerated": false,
+      "sha256": "e4713d6c34f0f9211fd85a899cf3a92f0a9b84dfea519b67b7cae8ac38e5cfbe",
+      "bytes": 209730,
+      "recorded": {
+        "verdict": "fail",
+        "pages": 78,
+        "failureClasses": [
+          "mark-wrong",
+          "text-altered",
+          "text-dropped"
+        ],
+        "contentSha256": "09d0ddbb90671d1ee3da46ff2a470f8a1e42e3764c2699389a932534553a0f7f"
+      }
+    },
+    {
+      "id": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "source": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s2-T150-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "known-bad: lost rows (table)",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "T150",
+      "markup": "table",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "knownBad": [
+        "TI-2",
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "regenerated": false,
+      "sha256": "c9eaffede49ccd8baf88ebb2b59717fdd9573b1d4a2d44916e68ecd27b9f6eed",
+      "bytes": 46823,
+      "recorded": {
+        "verdict": "fail",
+        "pages": 12,
+        "failureClasses": [
+          "header-wrong",
+          "mark-wrong",
+          "row-lost",
+          "structure-lost",
+          "text-altered",
+          "text-dropped"
+        ],
+        "contentSha256": "87bfc67e4f73442a89663af301f3319ad65c77f9176e8cd64b091645518efe2c"
+      }
+    },
+    {
+      "id": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "source": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s2-T300u-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "known-bad: lost or altered text (table)",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "T300u",
+      "markup": "table",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "knownBad": [
+        "TI-3",
+        "TI-4"
+      ],
+      "regenerated": false,
+      "sha256": "97c9f8491d3fc2bb9efd32aaace1bc3c686f2be9d58cf39edc013526f5627dcc",
+      "bytes": 63735,
+      "recorded": {
+        "verdict": "fail",
+        "pages": 16,
+        "failureClasses": [
+          "mark-wrong",
+          "text-altered",
+          "text-dropped"
+        ],
+        "contentSha256": "b839b3f4626b00614ef898bbb766360ee39659456ed7d3367ae6aed30b343003"
+      }
+    },
+    {
+      "id": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "source": "spikes/12-group-continuity/results/pdf/s1-grid-new-GE52-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "12-group-continuity",
+      "class": "groups across pages",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "12-group-continuity",
+      "recordRunId": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "48bc0b61019bb2d731b57fa2cf37cb9db4e4cfd1d0c5e0350026211dafe6c072",
+      "bytes": 54118,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 10,
+        "failureClasses": [],
+        "contentSha256": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1"
+      }
+    },
+    {
+      "id": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "source": "spikes/12-group-continuity/results/pdf/s1-grid-new-GE61-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "12-group-continuity",
+      "class": "groups across pages",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "12-group-continuity",
+      "recordRunId": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "9b076ddf2424c92c726bc01cc2897cdf9edd45f2faadb3e4a32bc0e83e209287",
+      "bytes": 54205,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 10,
+        "failureClasses": [],
+        "contentSha256": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650"
+      }
+    },
+    {
+      "id": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "source": "spikes/12-group-continuity/results/pdf/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "12-group-continuity",
+      "class": "groups across pages",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "12-group-continuity",
+      "recordRunId": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "ad98fc1610f24ba15fbdbf6c3ba5b83d65bff54eb0d1722cfdc3ab1e7b30e05e",
+      "bytes": 76446,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 14,
+        "failureClasses": [],
+        "contentSha256": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66"
+      }
+    },
+    {
+      "id": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "source": "spikes/12-group-continuity/results/pdf/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1.pdf",
+      "folder": "12-group-continuity",
+      "class": "groups across pages",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "12-group-continuity",
+      "recordRunId": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "fb098bd1f4ea315dfa6c43c71d5efa401f61e073094e0833b609df35d9ff9265",
+      "bytes": 76478,
+      "recorded": {
+        "verdict": "pass",
+        "pages": 14,
+        "failureClasses": [],
+        "contentSha256": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284"
+      }
+    },
+    {
+      "id": "R/07/NC-W-B100-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "known-bad: word dropped",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "B100",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "NC-W-B100-table-r1",
+      "knownBad": [
+        "TI-3"
+      ],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 4,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "contentSha256": "a7b623d4e7f1ee966da1d368d62b69862f3d5a962342cb2881f878d537366f58"
+      }
+    },
+    {
+      "id": "R/07/NC-L-B100-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "known-bad: line repeated",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "B100",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "NC-L-B100-table-r1",
+      "knownBad": [
+        "TI-3"
+      ],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 4,
+        "failureClasses": [
+          "text-repeated"
+        ],
+        "contentSha256": "9bd86b812b97d65015cd9df4d4526c457016796bc6373ad82cf42589b8b00b83"
+      }
+    },
+    {
+      "id": "R/07/NC-R-B100-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "known-bad: row lost",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "B100",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "NC-R-B100-table-r1",
+      "knownBad": [
+        "TI-2"
+      ],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 4,
+        "failureClasses": [
+          "row-lost"
+        ],
+        "contentSha256": "f069a05710872244329c1e3f74b9c4c6035d938354daf74b54d82d814d7b2e5c"
+      }
+    },
+    {
+      "id": "R/07/NC-F-F26K-a-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "known-bad: free-text word dropped",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "F26K-a",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "NC-F-F26K-a-table-r1",
+      "knownBad": [
+        "TI-6"
+      ],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 5,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "contentSha256": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11"
+      }
+    },
+    {
+      "id": "R/07/F1M-a-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "long free text",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "F1M-a",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "F1M-a-table-r1",
+      "knownBad": [],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "pass",
+        "pages": 129,
+        "failureClasses": [],
+        "contentSha256": "af25f178668fc3e0cf5fe99b429d41637f32260f32a363f4bade15e67ba6ae27"
+      }
+    },
+    {
+      "id": "R/07/X1M-table-r1",
+      "folder": "07-native-tall-rows",
+      "class": "largest native table",
+      "use": "judged",
+      "layout": "native",
+      "fixtureId": "X1M",
+      "markup": "table",
+      "marks": "none",
+      "footer": "none",
+      "recordFolder": "07-native-tall-rows",
+      "recordRunId": "X1M-table-r1",
+      "knownBad": [],
+      "regenerated": true,
+      "harness": "07-native-tall-rows",
+      "recorded": {
+        "verdict": "pass",
+        "pages": 203,
+        "failureClasses": [],
+        "contentSha256": "6ea6e1f337d6255028fc9c3979288a3b64be54fab9a0c8651da71a843e0f1cb1"
+      }
+    },
+    {
+      "id": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "ordinary block",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": true,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "recorded": {
+        "verdict": "pass",
+        "pages": 36,
+        "failureClasses": [],
+        "contentSha256": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+      }
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "known-bad: row lost",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "knownBad": [
+        "TI-2",
+        "S1",
+        "S3"
+      ],
+      "regenerated": true,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 4,
+        "failureClasses": [
+          "row-lost"
+        ],
+        "contentSha256": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0"
+      }
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "known-bad: word dropped",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "knownBad": [
+        "TI-3"
+      ],
+      "regenerated": true,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "recorded": {
+        "verdict": "fail",
+        "pages": 4,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "contentSha256": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e"
+      }
+    },
+    {
+      "id": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "folder": "10-pagedjs-table-strict-accounting",
+      "class": "long free text",
+      "use": "judged",
+      "layout": "paged",
+      "fixtureId": "F1M-a",
+      "markup": "grid",
+      "marks": "expected",
+      "footer": "accounting",
+      "recordFolder": "10-pagedjs-table-strict-accounting",
+      "recordRunId": "s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "knownBad": [],
+      "regenerated": true,
+      "harness": "10-pagedjs-table-strict-accounting",
+      "recorded": {
+        "verdict": "pass",
+        "pages": 129,
+        "failureClasses": [],
+        "contentSha256": "af25f178668fc3e0cf5fe99b429d41637f32260f32a363f4bade15e67ba6ae27"
+      }
+    },
+    {
+      "id": "02/native-table-B1000-r1",
+      "source": "spikes/02-pdf-layout/results/pdf/native-table-B1000-r1.pdf",
+      "folder": "02-pdf-layout",
+      "class": "ordinary block (checked on the page, not the PDF)",
+      "use": "agreement",
+      "layout": "layout-dom",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "1b7b9bc11a04b94229cc84eec2efc3949f78afe19eb968fdd57cee638dfba773",
+      "bytes": 142239
+    },
+    {
+      "id": "02/paged-grid-keep-G200-on-r1",
+      "source": "spikes/02-pdf-layout/results/pdf/paged-grid-keep-G200-on-r1.pdf",
+      "folder": "02-pdf-layout",
+      "class": "giant rows, rows kept whole",
+      "use": "agreement",
+      "layout": "layout-dom",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "f53c83f7208d860c7d4eecbba97d3aaa3a79cae78cbb7f0169bffaecf4c05c28",
+      "bytes": 45479
+    },
+    {
+      "id": "02/paged-table-keep-B1000-on-r1",
+      "source": "spikes/02-pdf-layout/results/pdf/paged-table-keep-B1000-on-r1.pdf",
+      "folder": "02-pdf-layout",
+      "class": "ordinary block, rows kept whole",
+      "use": "agreement",
+      "layout": "layout-dom",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "a203ad8225beff1dc71b86851a2c82a717e95a4f4d9e733b327e62c7be353a3c",
+      "bytes": 211068
+    },
+    {
+      "id": "02/paged-table-keep-G200-on-r1",
+      "source": "spikes/02-pdf-layout/results/pdf/paged-table-keep-G200-on-r1.pdf",
+      "folder": "02-pdf-layout",
+      "class": "giant rows, rows kept whole",
+      "use": "agreement",
+      "layout": "layout-dom",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "aa419336f3d26dc0122fd0af95292892e43377911dd72abae69d77fb752f27dc",
+      "bytes": 60811
+    },
+    {
+      "id": "03/partial-part-0001",
+      "source": "spikes/03-pdf-assembly/results/samples/partial-part-0001.pdf",
+      "folder": "03-pdf-assembly",
+      "class": "assembled part (also 06 fixtures/pdfsharp-part.pdf, byte-identical)",
+      "use": "agreement",
+      "layout": "assembly",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "f4680102566ae9b8da5c5ed1db054f05e8472da2efb5a4914d0431404012f1cc",
+      "bytes": 65265
+    },
+    {
+      "id": "03/three-parts-numbered",
+      "source": "spikes/03-pdf-assembly/results/samples/three-parts-numbered.pdf",
+      "folder": "03-pdf-assembly",
+      "class": "assembled and stamped",
+      "use": "agreement",
+      "layout": "assembly",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "f31d338dba308a9eb668e835fbed22401da58fb1f6e82e24db481df514201e09",
+      "bytes": 242078
+    },
+    {
+      "id": "06/partial-part-0001",
+      "source": "spikes/06-pdf-assembly-chromium-parts/results/samples/partial-part-0001.pdf",
+      "folder": "06-pdf-assembly-chromium-parts",
+      "class": "assembled part",
+      "use": "agreement",
+      "layout": "assembly",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "3e348865087f84eeb61c261460a0c274d72cacd90b4233d7c78242a610dcbdfa",
+      "bytes": 50443
+    },
+    {
+      "id": "06/three-parts-numbered",
+      "source": "spikes/06-pdf-assembly-chromium-parts/results/samples/three-parts-numbered.pdf",
+      "folder": "06-pdf-assembly-chromium-parts",
+      "class": "assembled and stamped",
+      "use": "agreement",
+      "layout": "assembly",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "aeed6046cf8f61ddf73c423ead1995cc447fa46bf05ef880e5899547a47f7fd9",
+      "bytes": 223224
+    },
+    {
+      "id": "09/B100-grid-s-r1.p1",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/B100-grid-s-r1.p1.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "first pass, no reference entry",
+      "use": "agreement",
+      "layout": "native-two-pass",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "5befc393c15355dd02e566f22396690d16a4be4a5be805537b07043a96f25b3a",
+      "bytes": 72630
+    },
+    {
+      "id": "09/T300u-grid-s-r1.p1",
+      "source": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-grid-s-r1.p1.pdf",
+      "folder": "09-two-pass-page-subtotals",
+      "class": "first pass, no reference entry",
+      "use": "agreement",
+      "layout": "native-two-pass",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "ce7c3951e40fab7a38942e8914a55fdaf217e1d77f15f6be571a8e80a8fca176",
+      "bytes": 84414
+    },
+    {
+      "id": "11/U066-table-c-r1.p1",
+      "source": "spikes/11-row-end-link-threshold/results/pdf/U066-table-c-r1.p1.pdf",
+      "folder": "11-row-end-link-threshold",
+      "class": "row-end link sweep",
+      "use": "agreement",
+      "layout": "native-two-pass",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "0aa8327eb0ffcda89a148a415a6d3a742dd3a9a00c898344266bbfcef0bdf02c",
+      "bytes": 142408
+    },
+    {
+      "id": "11/X64K-table-c-r1.p1",
+      "source": "spikes/11-row-end-link-threshold/results/pdf/X64K-table-c-r1.p1.pdf",
+      "folder": "11-row-end-link-threshold",
+      "class": "row-end link sweep",
+      "use": "agreement",
+      "layout": "native-two-pass",
+      "marks": "none",
+      "footer": "none",
+      "knownBad": [],
+      "regenerated": false,
+      "sha256": "d139358dddee7ea9c123a7de0d8d5544a3ff3f34601a9462954014ca9f50abd7",
+      "bytes": 141966
+    }
+  ]
+}

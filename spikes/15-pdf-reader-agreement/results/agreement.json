@@ -1,0 +1,3821 @@
+{
+  "decidedAt": "2026-10-31T21:36:57-03:00",
+  "tolerance": {
+    "horizontalTolerancePt": 1,
+    "verticalCentreTolerancePt": 3
+  },
+  "agreements": [
+    {
+      "pdf": "07/B1000-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 36,
+      "candidatePages": 36,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18298,
+      "candidateWords": 18298,
+      "matched": 18298,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18298,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18298,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18298,
+        "max": 1.749,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/T300u-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3978,
+      "candidateWords": 3978,
+      "matched": 3978,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3978,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3978,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3978,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/T300u-ab-grid-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 9,
+      "candidatePages": 9,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3956,
+      "candidateWords": 3956,
+      "matched": 3956,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3956,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3956,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3956,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/X64K-ab-grid-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 28,
+      "candidatePages": 28,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10823,
+      "candidateWords": 10823,
+      "matched": 10823,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10823,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10823,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10823,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-G200-off-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6062,
+      "candidateWords": 6062,
+      "matched": 6062,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6062,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6062,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6062,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 18,
+      "candidatePages": 18,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10107,
+      "candidateWords": 10107,
+      "matched": 10107,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10107,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10107,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10107,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6354,
+      "candidateWords": 6354,
+      "matched": 6354,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6354,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6354,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6354,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 224,
+      "candidatePages": 224,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 148091,
+      "candidateWords": 148091,
+      "matched": 148091,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 148091,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 148091,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 148091,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/B100-grid-s-r1.p2",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1773,
+      "candidateWords": 1773,
+      "matched": 1773,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1773,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1773,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1773,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "configuration": "pdfpig-a",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4020,
+      "candidateWords": 4020,
+      "matched": 4020,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4020,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4020,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4020,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 9,
+      "candidatePages": 9,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3956,
+      "candidateWords": 3956,
+      "matched": 3956,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3956,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3956,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3956,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-table-c-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3978,
+      "candidateWords": 3978,
+      "matched": 3978,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3978,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3978,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3978,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 8,
+      "candidatePages": 8,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4036,
+      "candidateWords": 4036,
+      "matched": 4036,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4036,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4036,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4036,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 78,
+      "candidatePages": 78,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 19162,
+      "candidateWords": 19162,
+      "matched": 19162,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 19162,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 19162,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 19162,
+        "max": 1.749,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3058,
+      "candidateWords": 3058,
+      "matched": 3058,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3058,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3058,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3058,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 16,
+      "candidatePages": 16,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3857,
+      "candidateWords": 3857,
+      "matched": 3857,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 38,
+      "placementSamples": [
+        "page 5 '(continues)': reference Place { Band = Content, Line = 0, Column = description }, candidate Place { Band = Content, Line = 1, Column = description }",
+        "page 5 'energy': reference Place { Band = Content, Line = 1, Column = description }, candidate Place { Band = Content, Line = 2, Column = description }",
+        "page 5 'office': reference Place { Band = Content, Line = 1, Column = description }, candidate Place { Band = Content, Line = 2, Column = description }",
+        "page 5 'switch': reference Place { Band = Content, Line = 1, Column = description }, candidate Place { Band = Content, Line = 2, Column = description }",
+        "page 5 'acción': reference Place { Band = Content, Line = 1, Column = description }, candidate Place { Band = Content, Line = 2, Column = description }"
+      ],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3857,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3857,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3857,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": false
+    },
+    {
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4367,
+      "candidateWords": 4367,
+      "matched": 4367,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4367,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4367,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4367,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4376,
+      "candidateWords": 4376,
+      "matched": 4376,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4376,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4376,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4376,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 7593,
+      "candidateWords": 7593,
+      "matched": 7593,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 7593,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 7593,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 7593,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 7587,
+      "candidateWords": 7587,
+      "matched": 7587,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 7587,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 7587,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 7587,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1748,
+      "candidateWords": 1748,
+      "matched": 1748,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1748,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1748,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1748,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1759,
+      "candidateWords": 1759,
+      "matched": 1759,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1759,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1759,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1759,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1742,
+      "candidateWords": 1742,
+      "matched": 1742,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1742,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1742,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1742,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 5,
+      "candidatePages": 5,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4064,
+      "candidateWords": 4064,
+      "matched": 4064,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4064,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4064,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4064,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/F1M-a-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 129,
+      "candidatePages": 129,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 143960,
+      "candidateWords": 143960,
+      "matched": 143960,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 143960,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 143960,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 143960,
+        "max": 1.6897,
+        "p99": 0.8305,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/X1M-table-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 203,
+      "candidatePages": 203,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 146517,
+      "candidateWords": 146517,
+      "matched": 146517,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 146517,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 146517,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 146517,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 36,
+      "candidatePages": 36,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18482,
+      "candidateWords": 18482,
+      "matched": 18482,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18482,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18482,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18482,
+        "max": 1.749,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1766,
+      "candidateWords": 1766,
+      "matched": 1766,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1766,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1766,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1766,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1772,
+      "candidateWords": 1772,
+      "matched": 1772,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1772,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1772,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1772,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 129,
+      "candidatePages": 129,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 145121,
+      "candidateWords": 145121,
+      "matched": 145121,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 145121,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 145121,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 145121,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/native-table-B1000-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 35,
+      "candidatePages": 35,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18326,
+      "candidateWords": 18326,
+      "matched": 18326,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18326,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18326,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18326,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-grid-keep-G200-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6078,
+      "candidateWords": 6078,
+      "matched": 6078,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6078,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6078,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6078,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-table-keep-B1000-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 78,
+      "candidatePages": 78,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 19244,
+      "candidateWords": 19244,
+      "matched": 19244,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 19244,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 19244,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 19244,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-table-keep-G200-on-r1",
+      "configuration": "pdfpig-a",
+      "referencePages": 22,
+      "candidatePages": 22,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 5443,
+      "candidateWords": 5443,
+      "matched": 5443,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 5443,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 5443,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 5443,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "03/partial-part-0001",
+      "configuration": "pdfpig-a",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 2247,
+      "candidateWords": 2247,
+      "matched": 2247,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 2247,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 2247,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 2247,
+        "max": 0.6597,
+        "p99": 0.6597,
+        "median": 0.3388
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "03/three-parts-numbered",
+      "configuration": "pdfpig-a",
+      "referencePages": 49,
+      "candidatePages": 49,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 9510,
+      "candidateWords": 9510,
+      "matched": 9510,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 9510,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 9510,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 9510,
+        "max": 0.6597,
+        "p99": 0.6597,
+        "median": 0.3388
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "06/partial-part-0001",
+      "configuration": "pdfpig-a",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3185,
+      "candidateWords": 3185,
+      "matched": 3185,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3185,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3185,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3185,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "06/three-parts-numbered",
+      "configuration": "pdfpig-a",
+      "referencePages": 49,
+      "candidatePages": 49,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 13468,
+      "candidateWords": 13468,
+      "matched": 13468,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 13468,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 13468,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 13468,
+        "max": 1.8281,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/B100-grid-s-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1637,
+      "candidateWords": 1637,
+      "matched": 1637,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1637,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1637,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1637,
+        "max": 1.6897,
+        "p99": 0.6987,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-grid-s-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3854,
+      "candidateWords": 3854,
+      "matched": 3854,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3854,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3854,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3854,
+        "max": 1.6897,
+        "p99": 0.7822,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "11/U066-table-c-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 17,
+      "candidatePages": 17,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 11052,
+      "candidateWords": 11052,
+      "matched": 11052,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 11052,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 11052,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 11052,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "11/X64K-table-c-r1.p1",
+      "configuration": "pdfpig-a",
+      "referencePages": 17,
+      "candidatePages": 17,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10769,
+      "candidateWords": 10769,
+      "matched": 10769,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10769,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10769,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10769,
+        "max": 1.6897,
+        "p99": 0.8306,
+        "median": 0.1406
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/B1000-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 36,
+      "candidatePages": 36,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18298,
+      "candidateWords": 18298,
+      "matched": 18298,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18298,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18298,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18298,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/T300u-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3978,
+      "candidateWords": 3978,
+      "matched": 3978,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3978,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3978,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3978,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/T300u-ab-grid-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 9,
+      "candidatePages": 9,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3956,
+      "candidateWords": 3956,
+      "matched": 3956,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3956,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3956,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3956,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "07/X64K-ab-grid-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 28,
+      "candidatePages": 28,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10823,
+      "candidateWords": 10823,
+      "matched": 10823,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10823,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10823,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10823,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-G200-off-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6062,
+      "candidateWords": 6062,
+      "matched": 6062,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6062,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6062,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6062,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 18,
+      "candidatePages": 18,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10107,
+      "candidateWords": 10107,
+      "matched": 10107,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10107,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10107,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10107,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6354,
+      "candidateWords": 6354,
+      "matched": 6354,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6354,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6354,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6354,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 224,
+      "candidatePages": 224,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 148091,
+      "candidateWords": 148091,
+      "matched": 148091,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 148091,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 148091,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 148091,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/B100-grid-s-r1.p2",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1773,
+      "candidateWords": 1773,
+      "matched": 1773,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1773,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1773,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1773,
+        "max": 1.994,
+        "p99": 1.3815,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "configuration": "pdfpig-b",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4020,
+      "candidateWords": 4020,
+      "matched": 4020,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4020,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4020,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4020,
+        "max": 1.994,
+        "p99": 1.3815,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 9,
+      "candidatePages": 9,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3956,
+      "candidateWords": 3956,
+      "matched": 3956,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3956,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3956,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3956,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-table-c-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3978,
+      "candidateWords": 3978,
+      "matched": 3978,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3978,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3978,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3978,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 8,
+      "candidatePages": 8,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4036,
+      "candidateWords": 4036,
+      "matched": 4036,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4036,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4036,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4036,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 78,
+      "candidatePages": 78,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 19162,
+      "candidateWords": 19162,
+      "matched": 19162,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 19162,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 19162,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 19162,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3058,
+      "candidateWords": 3058,
+      "matched": 3058,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3058,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3058,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3058,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 16,
+      "candidatePages": 16,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3857,
+      "candidateWords": 3857,
+      "matched": 3857,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3857,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3857,
+        "max": 0.3384,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3857,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4367,
+      "candidateWords": 4367,
+      "matched": 4367,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4367,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4367,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4367,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4376,
+      "candidateWords": 4376,
+      "matched": 4376,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4376,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4376,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4376,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 7593,
+      "candidateWords": 7593,
+      "matched": 7593,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 7593,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 7593,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 7593,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 14,
+      "candidatePages": 14,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 7587,
+      "candidateWords": 7587,
+      "matched": 7587,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 7587,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 7587,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 7587,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1748,
+      "candidateWords": 1748,
+      "matched": 1748,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1748,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1748,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1748,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1759,
+      "candidateWords": 1759,
+      "matched": 1759,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1759,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1759,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1759,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1742,
+      "candidateWords": 1742,
+      "matched": 1742,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1742,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1742,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1742,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 5,
+      "candidatePages": 5,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 4064,
+      "candidateWords": 4064,
+      "matched": 4064,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 4064,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 4064,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 4064,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/F1M-a-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 129,
+      "candidatePages": 129,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 143960,
+      "candidateWords": 143960,
+      "matched": 143960,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 143960,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 143960,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 143960,
+        "max": 1.9941,
+        "p99": 1.38,
+        "median": 1.38
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/07/X1M-table-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 203,
+      "candidatePages": 203,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 146517,
+      "candidateWords": 146517,
+      "matched": 146517,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 146517,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 146517,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 146517,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 36,
+      "candidatePages": 36,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18482,
+      "candidateWords": 18482,
+      "matched": 18482,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18482,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18482,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18482,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1766,
+      "candidateWords": 1766,
+      "matched": 1766,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1766,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1766,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1766,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1772,
+      "candidateWords": 1772,
+      "matched": 1772,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1772,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1772,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1772,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 129,
+      "candidatePages": 129,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 145121,
+      "candidateWords": 145121,
+      "matched": 145121,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": true,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 145121,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 145121,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 145121,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/native-table-B1000-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 35,
+      "candidatePages": 35,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 18326,
+      "candidateWords": 18326,
+      "matched": 18326,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 18326,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 18326,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 18326,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-grid-keep-G200-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 10,
+      "candidatePages": 10,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 6078,
+      "candidateWords": 6078,
+      "matched": 6078,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 6078,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 6078,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 6078,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-table-keep-B1000-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 78,
+      "candidatePages": 78,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 19244,
+      "candidateWords": 19244,
+      "matched": 19244,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 19244,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 19244,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 19244,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "02/paged-table-keep-G200-on-r1",
+      "configuration": "pdfpig-b",
+      "referencePages": 22,
+      "candidatePages": 22,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 5443,
+      "candidateWords": 5443,
+      "matched": 5443,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 5443,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 5443,
+        "max": 0.3384,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 5443,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "03/partial-part-0001",
+      "configuration": "pdfpig-b",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 24,
+      "bandMismatchSamples": [
+        "page 1 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')",
+        "page 1 Content: first difference at 0 (reference 'Syntheticreportpart0001[[P0001' / candidate '[[P0001.001]]totalsupplierdeta')",
+        "page 2 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')",
+        "page 2 Content: first difference at 0 (reference 'Syntheticreportpart0001[[P0001' / candidate '[[P0001.002]]valuebalancetotal')",
+        "page 3 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')"
+      ],
+      "referenceWords": 2247,
+      "candidateWords": 2247,
+      "matched": 2247,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 2247,
+      "placementSamples": [
+        "page 1 'Synthetic': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 'report': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 'part': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 '0001': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 '[[P0001.001]]': reference Place { Band = Content, Line = 1, Column = - }, candidate Place { Band = Content, Line = 0, Column = - }"
+      ],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 2247,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 2247,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 2247,
+        "max": 2.156,
+        "p99": 2.156,
+        "median": 1.54
+      },
+      "agrees": false
+    },
+    {
+      "pdf": "03/three-parts-numbered",
+      "configuration": "pdfpig-b",
+      "referencePages": 49,
+      "candidatePages": 49,
+      "pagesEqual": true,
+      "bandMismatches": 98,
+      "bandMismatchSamples": [
+        "page 1 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')",
+        "page 1 Content: first difference at 0 (reference 'Syntheticreportpart0001[[P0001' / candidate '[[P0001.001]]totalsupplierdeta')",
+        "page 2 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')",
+        "page 2 Content: first difference at 0 (reference 'Syntheticreportpart0001[[P0001' / candidate '[[P0001.002]]valuebalancetotal')",
+        "page 3 Header: first difference at 0 (reference '' / candidate 'Syntheticreportpart0001')"
+      ],
+      "referenceWords": 9510,
+      "candidateWords": 9510,
+      "matched": 9510,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 9314,
+      "placementSamples": [
+        "page 1 'Synthetic': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 'report': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 'part': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 '0001': reference Place { Band = Content, Line = 0, Column = - }, candidate Place { Band = Header, Line = 0, Column = - }",
+        "page 1 '[[P0001.001]]': reference Place { Band = Content, Line = 1, Column = - }, candidate Place { Band = Content, Line = 0, Column = - }"
+      ],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 9510,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 9510,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 9510,
+        "max": 2.156,
+        "p99": 2.156,
+        "median": 1.54
+      },
+      "agrees": false
+    },
+    {
+      "pdf": "06/partial-part-0001",
+      "configuration": "pdfpig-b",
+      "referencePages": 12,
+      "candidatePages": 12,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3185,
+      "candidateWords": 3185,
+      "matched": 3185,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3185,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3185,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3185,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "06/three-parts-numbered",
+      "configuration": "pdfpig-b",
+      "referencePages": 49,
+      "candidatePages": 49,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 13468,
+      "candidateWords": 13468,
+      "matched": 13468,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 13468,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 13468,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 13468,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/B100-grid-s-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 4,
+      "candidatePages": 4,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 1637,
+      "candidateWords": 1637,
+      "matched": 1637,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 1637,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 1637,
+        "max": 0.0352,
+        "p99": 0,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 1637,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "09/T300u-grid-s-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 7,
+      "candidatePages": 7,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 3854,
+      "candidateWords": 3854,
+      "matched": 3854,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 3854,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 3854,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 3854,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "11/U066-table-c-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 17,
+      "candidatePages": 17,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 11052,
+      "candidateWords": 11052,
+      "matched": 11052,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 11052,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 11052,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 11052,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    },
+    {
+      "pdf": "11/X64K-table-c-r1.p1",
+      "configuration": "pdfpig-b",
+      "referencePages": 17,
+      "candidatePages": 17,
+      "pagesEqual": true,
+      "bandMismatches": 0,
+      "bandMismatchSamples": [],
+      "referenceWords": 10769,
+      "candidateWords": 10769,
+      "matched": 10769,
+      "unpairedReference": 0,
+      "unpairedCandidate": 0,
+      "segmentationOnly": false,
+      "columnsCompared": false,
+      "placementMismatches": 0,
+      "placementSamples": [],
+      "horizontalOutside": 0,
+      "verticalOutside": 0,
+      "dxMin": {
+        "count": 10769,
+        "max": 0,
+        "p99": 0,
+        "median": 0
+      },
+      "dxMax": {
+        "count": 10769,
+        "max": 0.0352,
+        "p99": 0.0352,
+        "median": 0
+      },
+      "dyCentre": {
+        "count": 10769,
+        "max": 1.994,
+        "p99": 1.3799,
+        "median": 1.3799
+      },
+      "agrees": true
+    }
+  ],
+  "determinism": [
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/B1000-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/T300u-ab-grid-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "07/X64K-ab-grid-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-off-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/F1M-a-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/07/X1M-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "02/native-table-B1000-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "02/paged-grid-keep-G200-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "02/paged-table-keep-B1000-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "02/paged-table-keep-G200-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "03/partial-part-0001",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "03/three-parts-numbered",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "06/partial-part-0001",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "06/three-parts-numbered",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/B100-grid-s-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "09/T300u-grid-s-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "11/U066-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-a",
+      "pdf": "11/X64K-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/B1000-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/T300u-ab-grid-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "07/X64K-ab-grid-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-off-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p2",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p2",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-ab-grid-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-W-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-L-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-R-B100-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/NC-F-F26K-a-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/F1M-a-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/07/X1M-table-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "02/native-table-B1000-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "02/paged-grid-keep-G200-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "02/paged-table-keep-B1000-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "02/paged-table-keep-G200-on-r1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "03/partial-part-0001",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "03/three-parts-numbered",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "06/partial-part-0001",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "06/three-parts-numbered",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/B100-grid-s-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "09/T300u-grid-s-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "11/U066-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    },
+    {
+      "configuration": "pdfpig-b",
+      "pdf": "11/X64K-table-c-r1.p1",
+      "identical": true,
+      "files": 3
+    }
+  ]
+}

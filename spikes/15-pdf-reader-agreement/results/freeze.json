@@ -1,0 +1,50 @@
+{
+  "frozenAt": "2026-10-31T21:15:31-03:00",
+  "settings": {
+    "horizontalTolerancePt": 1,
+    "verticalCentreTolerancePt": 3,
+    "stampAreaMarginPt": 2,
+    "runCapSeconds": 300,
+    "killAfterSeconds": 330,
+    "containerMemory": "4g",
+    "containerMemorySwap": "4g",
+    "nearCeilingSeconds": 240,
+    "nearCeilingTreeKiB": 3355443,
+    "workFolderCeilingBytes": 4294967296,
+    "stageBudgetSeconds": 3600,
+    "repetitions": {
+      "oracle": 3,
+      "pdfpig": 3,
+      "pdfsharp": 1
+    },
+    "configurations": {
+      "oracle": [
+        "oracle"
+      ],
+      "pdfpig": [
+        "pdfpig-a",
+        "pdfpig-b"
+      ],
+      "pdfsharp": []
+    },
+    "judgedTextRules": [
+      "TI-2",
+      "TI-3",
+      "TI-4",
+      "TI-6"
+    ],
+    "judgedStrictRules": [
+      1,
+      2,
+      3
+    ]
+  },
+  "settingsSha256": "f8559e7a621d2ffcad7251afb17dab0a4daaca10694c2ec7f82c5f194a02d3cb",
+  "pdfSetSha256": "3075cac119a967fda8a516cdd699bc07b5039fa875d63d0fa5604d89c4f9a665",
+  "files": {
+    "identity.sha256": "fd61160f37fa15d9e0e65f2fa2792ffd66dcfbd5d070ff03fae8f95d904ee474",
+    "inventory.json": "37bd35baf4dd1768aca4d81e6aa05997ed2d3e2f613e46399e066176ef79f5b0",
+    "licences.json": "4c15d7c04af9d5dec4f7ce92198d3350ca1e99140cbde57766370c89077bef23",
+    "pdf-set.json": "0d90bd6f250217404de53b793b0217a7ce86d984394373fce644dd95da6c3765"
+  }
+}

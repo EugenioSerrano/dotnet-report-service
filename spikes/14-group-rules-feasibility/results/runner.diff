@@ -1,0 +1,49 @@
+--- 10-pagedjs-table-strict-accounting/PagedMarkupSpike/PreSplitRunner.cs	2026-10-25 22:54:12.635610300 -0300
++++ 14-group-rules-feasibility/GroupRulesSpike/PreSplitRunner.cs	2026-10-31 21:10:15.051411800 -0300
+@@ -24,6 +24,10 @@
+ /// page builder of the run's markup, to name the markup in the verifier's
+ /// configuration, and to class a run as "crashed" only on the browser's own
+ /// crash or disconnection signals (every other exception is "error").
++/// Copied unchanged into spikes/14-group-rules-feasibility except that the PDF
++/// page's script count is passed in: a page with the group-behaviour script holds
++/// five scripts, so the escaping counter compares against the count the page
++/// builder declares instead of the fixed four.
+ /// </summary>
+ internal static partial class PreSplitRunner
+ {
+@@ -36,7 +40,7 @@
+             ?? typeof(IPlaywright).Assembly.GetName().Version?.ToString(3)
+             ?? "unknown";
+ 
+-    public static async Task<RunRecord> ExecuteAsync(RunRecord run, Fixture fixture, Func<Fixture, bool, (string Semantic, string Pdf)> build, string outDirectory, TimeSpan cap, CancellationToken cancellation)
++    public static async Task<RunRecord> ExecuteAsync(RunRecord run, Fixture fixture, Func<Fixture, bool, (string Semantic, string Pdf)> build, string outDirectory, TimeSpan cap, CancellationToken cancellation, int pdfScripts)
+     {
+         var watch = Stopwatch.StartNew();
+         TimeSpan Remaining() => cap - watch.Elapsed;
+@@ -52,7 +56,7 @@
+         run.Sem = sem;
+         run.HtmlBytes = new FileInfo(pdfPagePath).Length;
+         run.PlaywrightVersion = PlaywrightVersion;
+-        run.ScriptsExpected = PageBuilder.PdfScripts;
++        run.ScriptsExpected = pdfScripts;
+         var assetsRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "assets"));
+         byte[]? servedPdfPage = null;
+         var sampler = new ProcessTreeSampler();
+@@ -256,7 +260,7 @@
+             run.TotalMs = watch.Elapsed.TotalMilliseconds;
+             run.HarnessVmHwmKiB = ProcessTreeSampler.HarnessHighWaterMarkKiB();
+             run.CgroupMemoryPeakBytes = ProcessTreeSampler.CgroupMemoryPeakBytes();
+-            run.Scripts = run.ScriptsFound is { } found ? Math.Max(0, found - PageBuilder.PdfScripts) : null;
++            run.Scripts = run.ScriptsFound is { } found ? Math.Max(0, found - pdfScripts) : null;
+             lock (run.Console)
+             {
+                 run.LayoutRepeatedAnyLevel = run.LayoutRepeatedOccurrences.Count > 0;
+@@ -292,7 +296,7 @@
+                 Dialogs = run.Dialogs ?? 0,
+                 AbortedRequests = run.AbortedRequests ?? 0,
+                 NotFoundRequests = run.NotFoundRequests ?? 0,
+-                ScriptsExpected = PageBuilder.PdfScripts,
++                ScriptsExpected = pdfScripts,
+                 ScriptsFound = run.ScriptsFound,
+                 Layout = layout,
+             };

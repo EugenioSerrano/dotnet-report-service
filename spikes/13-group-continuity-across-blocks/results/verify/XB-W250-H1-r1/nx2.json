@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-W250-H1-r1//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 201,
+    "exemptWarningLines": 201,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 50,
+  "expectedPages": 50,
+  "structurePass": true,
+  "textPagesChecked": 50,
+  "orderPass": false,
+  "numberingPass": true,
+  "pixelPagesChecked": 50,
+  "pixelPass": false,
+  "maxChangedOutside": 136380,
+  "minChangedInside": 192,
+  "maxChangedInside": 234,
+  "firstFailingPage": 10,
+  "firstFailure": "page 10: content words differ from part 2 page 1 (457 words, source 440): word 3: \u0027Pagination fixture XB-W250-H1-P2 Page 1\u0027 vs source \u0027Pagination fixture XB-W250-H1-P3 Page 1\u0027",
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 50,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 50
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 50
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 50,
+    "minOutside": 7443,
+    "maxOutside": 137240,
+    "sumOutside": 2615967,
+    "minInside": 192,
+    "maxInside": 234
+  },
+  "pass": false
+}

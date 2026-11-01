@@ -1,0 +1,2175 @@
+{
+  "verdict": {
+    "exitCode": 0,
+    "reasons": []
+  },
+  "trusted": true,
+  "planned": 97,
+  "classes": {
+    "ok": 97
+  },
+  "outcomes": [
+    {
+      "instance": "XB-L180-H1-r1",
+      "report": "XB-L180-H1",
+      "case": "4 near a group\u0027s end",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L181-H1-r1",
+      "report": "XB-L181-H1",
+      "case": "4 near a group\u0027s end",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L182-H1-r1",
+      "report": "XB-L182-H1",
+      "case": "4 between groups",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L183-H1-r1",
+      "report": "XB-L183-H1",
+      "case": "4 near a group\u0027s start",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L184-H1-r1",
+      "report": "XB-L184-H1",
+      "case": "4 near a group\u0027s start",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L185-H1-r1",
+      "report": "XB-L185-H1",
+      "case": "4 near a group\u0027s start",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L201-H1-r1",
+      "report": "XB-L201-H1",
+      "case": "5 one-record group at a part end",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-TL150-H1-r1",
+      "report": "XB-TL150-H1",
+      "case": "6 over-tall rows at the boundary",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-TF150-H1-r1",
+      "report": "XB-TF150-H1",
+      "case": "6 over-tall rows at the boundary",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-W250-H1-r1",
+      "report": "XB-W250-H1",
+      "case": "7 groups spanning whole blocks",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-W250-H1-r2",
+      "report": "XB-W250-H1",
+      "case": "7 groups spanning whole blocks",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-W250-H1-r3",
+      "report": "XB-W250-H1",
+      "case": "7 groups spanning whole blocks",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-G500-H1-r1",
+      "report": "XB-G500-H1",
+      "case": "7 groups spanning whole blocks",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-PB-H1-r1",
+      "report": "XB-PB-H1",
+      "case": "8 boundary on a page boundary",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-ALL-H1-r1",
+      "report": "XB-ALL-H1",
+      "case": "11 top of the bracket",
+      "variant": "H1",
+      "outcome": "confirmed",
+      "causes": []
+    },
+    {
+      "instance": "XB-L185-H0-r1",
+      "report": "XB-L185-H0",
+      "case": "9 baseline: independent parts",
+      "variant": "H0",
+      "outcome": "baseline (independent parts): refuted",
+      "causes": [
+        "XA-3|p9",
+        "RG-1|header-duplicated|G0002",
+        "RG-1|header-duplicated|G0004",
+        "RG-2|total-wrong|G0002",
+        "RG-2|total-wrong|G0004"
+      ]
+    },
+    {
+      "instance": "XB-W250-H0-r1",
+      "report": "XB-W250-H0",
+      "case": "9 baseline: independent parts",
+      "variant": "H0",
+      "outcome": "baseline (independent parts): refuted",
+      "causes": [
+        "XA-3|p10",
+        "RG-1|header-duplicated|G0006",
+        "RG-2|total-wrong|G0006"
+      ]
+    }
+  ],
+  "statements": {
+    "11 top of the bracket": {
+      "instances": [
+        "XB-ALL-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 9,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 9,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 9,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 341
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 0,
+          "notProduced": 0
+        },
+        "headersAlone": 3,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "4 between groups": {
+      "instances": [
+        "XB-L182-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 3,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 3,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 2,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 19
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 1,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "4 near a group\u0027s end": {
+      "instances": [
+        "XB-L180-H1-r1",
+        "XB-L181-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed",
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 6,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 6,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 6,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 38
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 2,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "4 near a group\u0027s start": {
+      "instances": [
+        "XB-L183-H1-r1",
+        "XB-L184-H1-r1",
+        "XB-L185-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed",
+        "confirmed",
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 9,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 9,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 9,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 59
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 2,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "5 one-record group at a part end": {
+      "instances": [
+        "XB-L201-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 2,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 2,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 1,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 20
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 2,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "6 over-tall rows at the boundary": {
+      "instances": [
+        "XB-TL150-H1-r1",
+        "XB-TF150-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed",
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 6,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 6,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 6,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 46
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 0,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "7 groups spanning whole blocks": {
+      "instances": [
+        "XB-W250-H1-r1",
+        "XB-W250-H1-r2",
+        "XB-W250-H1-r3",
+        "XB-G500-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed",
+        "confirmed",
+        "confirmed",
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 19,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 19,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 19,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 210
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 0,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "8 boundary on a page boundary": {
+      "instances": [
+        "XB-PB-H1-r1"
+      ],
+      "outcomes": [
+        "confirmed"
+      ],
+      "g1Headers": "confirmed",
+      "g2GroupTotals": "confirmed",
+      "g3MembershipAndPartTotals": "confirmed",
+      "g4AccountingAcrossTheBoundary": "confirmed",
+      "g4BoundaryChain": {
+        "continuous": 5,
+        "broken": 0
+      },
+      "g5GlobalNumbering": "confirmed",
+      "g6Observations": {
+        "behaviour1HeaderNotAloneAtBoundary": {
+          "produced": 5,
+          "notProduced": 0
+        },
+        "behaviour2ContinuationHeaderAtBoundary": {
+          "produced": 5,
+          "notProduced": 0
+        },
+        "behaviour2OnInPartContinuationPages": {
+          "produced": 0,
+          "notProduced": 45
+        },
+        "behaviour3TotalWithLastRowAtBoundary": {
+          "produced": 0,
+          "notProduced": 0
+        },
+        "headersAlone": 0,
+        "headersAloneOnAPartLastPage": 0,
+        "totalsSeparated": 0
+      }
+    },
+    "baseline": {
+      "XB-L185-H0-r1": {
+        "outcome": "baseline (independent parts): refuted",
+        "failureClasses": [
+          "XA-3|p9",
+          "RG-1|header-duplicated",
+          "RG-2|total-wrong"
+        ],
+        "boundaryChain": [
+          {
+            "beforePart": 2,
+            "page": 9,
+            "carriedBefore": "4775581.89",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 3,
+            "page": 16,
+            "carriedBefore": "4327121.55",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 4,
+            "page": 23,
+            "carriedBefore": "4355031.25",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          }
+        ]
+      },
+      "XB-W250-H0-r1": {
+        "outcome": "baseline (independent parts): refuted",
+        "failureClasses": [
+          "XA-3|p10",
+          "RG-1|header-duplicated",
+          "RG-2|total-wrong"
+        ],
+        "boundaryChain": [
+          {
+            "beforePart": 2,
+            "page": 10,
+            "carriedBefore": "5896229.08",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 3,
+            "page": 19,
+            "carriedBefore": "6440158.06",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 4,
+            "page": 29,
+            "carriedBefore": "5817957.97",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 5,
+            "page": 37,
+            "carriedBefore": "5967483.28",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          },
+          {
+            "beforePart": 6,
+            "page": 47,
+            "carriedBefore": "6463271.94",
+            "broughtAfter": "0.00",
+            "state": "broken"
+          }
+        ]
+      }
+    }
+  },
+  "parity": {
+    "compared": 6,
+    "differences": 0,
+    "runs": [
+      {
+        "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "36",
+          "folder12": "36"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+          "folder12": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767",
+          "folder12": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "1",
+          "folder12": "1"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "35",
+          "folder12": "35"
+        },
+        "totalsSeparated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "differences": []
+      },
+      {
+        "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "10",
+          "folder12": "10"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1",
+          "folder12": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+          "folder12": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "1",
+          "folder12": "1"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "9",
+          "folder12": "9"
+        },
+        "totalsSeparated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "differences": []
+      },
+      {
+        "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "10",
+          "folder12": "10"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650",
+          "folder12": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+          "folder12": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "8",
+          "folder12": "8"
+        },
+        "totalsSeparated": {
+          "here": "1",
+          "folder12": "1"
+        },
+        "differences": []
+      },
+      {
+        "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "48",
+          "folder12": "48"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4",
+          "folder12": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08",
+          "folder12": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "47",
+          "folder12": "47"
+        },
+        "totalsSeparated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "differences": []
+      },
+      {
+        "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "14",
+          "folder12": "14"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66",
+          "folder12": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73",
+          "folder12": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "1",
+          "folder12": "1"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "13",
+          "folder12": "13"
+        },
+        "totalsSeparated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "differences": []
+      },
+      {
+        "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+        "class": {
+          "here": "ok",
+          "folder12": "ok"
+        },
+        "pages": {
+          "here": "14",
+          "folder12": "14"
+        },
+        "textVerdict": {
+          "here": "pass",
+          "folder12": "pass"
+        },
+        "textContentSha256": {
+          "here": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284",
+          "folder12": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284"
+        },
+        "accountingVerdict": {
+          "here": "exact",
+          "folder12": "exact"
+        },
+        "rowSetsSha256": {
+          "here": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24",
+          "folder12": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24"
+        },
+        "groupFailures": {
+          "here": "",
+          "folder12": ""
+        },
+        "headersAlone": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "headersRepeated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "continuationPagesWithoutHeader": {
+          "here": "13",
+          "folder12": "13"
+        },
+        "totalsSeparated": {
+          "here": "0",
+          "folder12": "0"
+        },
+        "differences": []
+      }
+    ]
+  },
+  "reproducibility": {
+    "report": "XB-W250-H1",
+    "repetitions": 3,
+    "agree": true,
+    "differences": []
+  },
+  "costs": {
+    "note": "per run: the run\u0027s total time and both memory figures (the Chromium process-tree peak, and the container running peak); per report: the sum and the maximum of its parts\u0027 total times, and the assembly\u0027s wall time (informational)",
+    "runs": [
+      {
+        "run": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 220.8241,
+        "totalMs": 1598.3464,
+        "wallMs": 1867.585,
+        "chromiumTreePeakRssKiB": 461800,
+        "containerRunningPeakBytes": 320548864
+      },
+      {
+        "run": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 1,
+        "layoutMs": 58.1896,
+        "totalMs": 1121.9129,
+        "wallMs": 1365.8036,
+        "chromiumTreePeakRssKiB": 430184,
+        "containerRunningPeakBytes": 320548864
+      },
+      {
+        "run": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 251.3669,
+        "totalMs": 1389.0236,
+        "wallMs": 1700.9552,
+        "chromiumTreePeakRssKiB": 462244,
+        "containerRunningPeakBytes": 324845568
+      },
+      {
+        "run": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 265.2187,
+        "totalMs": 1642.7412,
+        "wallMs": 1935.7509,
+        "chromiumTreePeakRssKiB": 461848,
+        "containerRunningPeakBytes": 324845568
+      },
+      {
+        "run": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 234.896,
+        "totalMs": 1443.6462,
+        "wallMs": 1743.1685,
+        "chromiumTreePeakRssKiB": 461168,
+        "containerRunningPeakBytes": 324845568
+      },
+      {
+        "run": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 5,
+        "layoutMs": 187.6954,
+        "totalMs": 1365.6139,
+        "wallMs": 1627.9905,
+        "chromiumTreePeakRssKiB": 451160,
+        "containerRunningPeakBytes": 324845568
+      },
+      {
+        "run": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1",
+        "class": "ok",
+        "pages": 18,
+        "layoutMs": 393.3151,
+        "totalMs": 1724.5307,
+        "wallMs": 1973.5188,
+        "chromiumTreePeakRssKiB": 499064,
+        "containerRunningPeakBytes": 375951360
+      },
+      {
+        "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 809.2939,
+        "totalMs": 2540.9062,
+        "wallMs": 2836.5342,
+        "chromiumTreePeakRssKiB": 550656,
+        "containerRunningPeakBytes": 468881408
+      },
+      {
+        "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 586.0405,
+        "totalMs": 1770.5036,
+        "wallMs": 2039.4562,
+        "chromiumTreePeakRssKiB": 537268,
+        "containerRunningPeakBytes": 468881408
+      },
+      {
+        "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 467.0497,
+        "totalMs": 1633.6104,
+        "wallMs": 1895.3766,
+        "chromiumTreePeakRssKiB": 532824,
+        "containerRunningPeakBytes": 468881408
+      },
+      {
+        "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 48,
+        "layoutMs": 1022.9105,
+        "totalMs": 2903.7586,
+        "wallMs": 3230.3865,
+        "chromiumTreePeakRssKiB": 565152,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 14,
+        "layoutMs": 433.0464,
+        "totalMs": 1669.2377,
+        "wallMs": 1957.1013,
+        "chromiumTreePeakRssKiB": 505404,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 14,
+        "layoutMs": 420.2108,
+        "totalMs": 1708.3709,
+        "wallMs": 2020.4401,
+        "chromiumTreePeakRssKiB": 504428,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L180-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 347.7672,
+        "totalMs": 1822.8415,
+        "wallMs": 2273.0437,
+        "chromiumTreePeakRssKiB": 480036,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L180-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 219.6434,
+        "totalMs": 1636.7636,
+        "wallMs": 1973.2399,
+        "chromiumTreePeakRssKiB": 474112,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L180-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 188.1269,
+        "totalMs": 1277.934,
+        "wallMs": 1524.6453,
+        "chromiumTreePeakRssKiB": 476196,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L180-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 188.7041,
+        "totalMs": 1138.52,
+        "wallMs": 1387.331,
+        "chromiumTreePeakRssKiB": 451968,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L181-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 184.5681,
+        "totalMs": 1385.4365,
+        "wallMs": 1627.3301,
+        "chromiumTreePeakRssKiB": 481048,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L181-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 169.7129,
+        "totalMs": 1345.6239,
+        "wallMs": 1595.2005,
+        "chromiumTreePeakRssKiB": 474292,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L181-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 224.4615,
+        "totalMs": 1385.8718,
+        "wallMs": 1667.1967,
+        "chromiumTreePeakRssKiB": 476316,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L181-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 175.8272,
+        "totalMs": 1225.934,
+        "wallMs": 1497.2238,
+        "chromiumTreePeakRssKiB": 450168,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L182-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 213.5354,
+        "totalMs": 1341.5414,
+        "wallMs": 1589.6292,
+        "chromiumTreePeakRssKiB": 480764,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L182-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 207.7018,
+        "totalMs": 1381.7826,
+        "wallMs": 1668.2664,
+        "chromiumTreePeakRssKiB": 477320,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L182-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 165.5113,
+        "totalMs": 1202.8413,
+        "wallMs": 1467.546,
+        "chromiumTreePeakRssKiB": 477364,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L182-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 174.6124,
+        "totalMs": 1238.4518,
+        "wallMs": 1499.2654,
+        "chromiumTreePeakRssKiB": 448872,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L183-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 215.251,
+        "totalMs": 1549.4437,
+        "wallMs": 1899.3466,
+        "chromiumTreePeakRssKiB": 481548,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L183-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 241.0786,
+        "totalMs": 1471.9078,
+        "wallMs": 1744.8715,
+        "chromiumTreePeakRssKiB": 478740,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L183-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 341.4853,
+        "totalMs": 1554.8347,
+        "wallMs": 1824.7019,
+        "chromiumTreePeakRssKiB": 476288,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L183-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 221.1989,
+        "totalMs": 1239.3512,
+        "wallMs": 1562.9389,
+        "chromiumTreePeakRssKiB": 448988,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L184-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 259.7868,
+        "totalMs": 1552.2104,
+        "wallMs": 1850.6971,
+        "chromiumTreePeakRssKiB": 482016,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L184-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 216.1548,
+        "totalMs": 1478.5593,
+        "wallMs": 1778.3468,
+        "chromiumTreePeakRssKiB": 480568,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L184-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 358.6404,
+        "totalMs": 1746.6822,
+        "wallMs": 2095.5383,
+        "chromiumTreePeakRssKiB": 479456,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L184-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 263.3557,
+        "totalMs": 1716.554,
+        "wallMs": 2021.2594,
+        "chromiumTreePeakRssKiB": 449316,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 365.8272,
+        "totalMs": 1852.0858,
+        "wallMs": 2142.111,
+        "chromiumTreePeakRssKiB": 481588,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 354.0079,
+        "totalMs": 1724.192,
+        "wallMs": 2034.0214,
+        "chromiumTreePeakRssKiB": 480616,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 207.3766,
+        "totalMs": 1458.387,
+        "wallMs": 1766.9009,
+        "chromiumTreePeakRssKiB": 479368,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 184.8416,
+        "totalMs": 1361.2805,
+        "wallMs": 1646.5803,
+        "chromiumTreePeakRssKiB": 447392,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L201-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 321.2539,
+        "totalMs": 1775.5962,
+        "wallMs": 2059.9042,
+        "chromiumTreePeakRssKiB": 484904,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L201-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 333.6359,
+        "totalMs": 1737.9594,
+        "wallMs": 2047.5659,
+        "chromiumTreePeakRssKiB": 493412,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L201-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 244.414,
+        "totalMs": 1367.024,
+        "wallMs": 1666.8425,
+        "chromiumTreePeakRssKiB": 480064,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TL150-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 313.16,
+        "totalMs": 1706.2912,
+        "wallMs": 1991.8605,
+        "chromiumTreePeakRssKiB": 480212,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TL150-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 6,
+        "layoutMs": 198.6814,
+        "totalMs": 1354.5805,
+        "wallMs": 1566.2508,
+        "chromiumTreePeakRssKiB": 469664,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TL150-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 6,
+        "layoutMs": 229.8908,
+        "totalMs": 1324.2645,
+        "wallMs": 1623.7624,
+        "chromiumTreePeakRssKiB": 468668,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TL150-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 5,
+        "layoutMs": 236.3695,
+        "totalMs": 1374.6654,
+        "wallMs": 1623.3838,
+        "chromiumTreePeakRssKiB": 476168,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TF150-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 6,
+        "layoutMs": 172.2187,
+        "totalMs": 1440.9613,
+        "wallMs": 1811.8007,
+        "chromiumTreePeakRssKiB": 474588,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TF150-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 294.2425,
+        "totalMs": 1522.5754,
+        "wallMs": 1787.3012,
+        "chromiumTreePeakRssKiB": 472972,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TF150-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 6,
+        "layoutMs": 202.5814,
+        "totalMs": 1458.0722,
+        "wallMs": 1749.7676,
+        "chromiumTreePeakRssKiB": 470256,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-TF150-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 5,
+        "layoutMs": 207.5037,
+        "totalMs": 1292.4722,
+        "wallMs": 1547.2529,
+        "chromiumTreePeakRssKiB": 476004,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 274.4174,
+        "totalMs": 1491.8215,
+        "wallMs": 1772.8221,
+        "chromiumTreePeakRssKiB": 489324,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 312.1507,
+        "totalMs": 1511.0321,
+        "wallMs": 1778.7019,
+        "chromiumTreePeakRssKiB": 493536,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 380.5855,
+        "totalMs": 1676.3179,
+        "wallMs": 1943.2436,
+        "chromiumTreePeakRssKiB": 496332,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 241.5695,
+        "totalMs": 1565.5989,
+        "wallMs": 1828.1765,
+        "chromiumTreePeakRssKiB": 484420,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P5-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 353.7903,
+        "totalMs": 1678.1327,
+        "wallMs": 1944.8154,
+        "chromiumTreePeakRssKiB": 490676,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P6-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 202.3058,
+        "totalMs": 1245.2516,
+        "wallMs": 1526.8513,
+        "chromiumTreePeakRssKiB": 460944,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-G500-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 19,
+        "layoutMs": 474.2293,
+        "totalMs": 1945.9012,
+        "wallMs": 2225.2702,
+        "chromiumTreePeakRssKiB": 534192,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-G500-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 16,
+        "layoutMs": 711.0653,
+        "totalMs": 2074.3382,
+        "wallMs": 2372.8987,
+        "chromiumTreePeakRssKiB": 545472,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-G500-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 16,
+        "layoutMs": 546.6862,
+        "totalMs": 2475.8187,
+        "wallMs": 2746.1083,
+        "chromiumTreePeakRssKiB": 527060,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-G500-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 16,
+        "layoutMs": 538.3929,
+        "totalMs": 2317.9937,
+        "wallMs": 2630.1771,
+        "chromiumTreePeakRssKiB": 545932,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-G500-H1-P5-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 16,
+        "layoutMs": 390.5279,
+        "totalMs": 1785.7938,
+        "wallMs": 2034.6827,
+        "chromiumTreePeakRssKiB": 516588,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 226.4766,
+        "totalMs": 1450.0831,
+        "wallMs": 1691.365,
+        "chromiumTreePeakRssKiB": 486408,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 273.1756,
+        "totalMs": 1474.1571,
+        "wallMs": 1755.8188,
+        "chromiumTreePeakRssKiB": 481988,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 311.907,
+        "totalMs": 1624.6642,
+        "wallMs": 1894.3999,
+        "chromiumTreePeakRssKiB": 485560,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 303.3728,
+        "totalMs": 1490.025,
+        "wallMs": 1777.509,
+        "chromiumTreePeakRssKiB": 482060,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P5-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 367.9777,
+        "totalMs": 1603.0964,
+        "wallMs": 1908.6321,
+        "chromiumTreePeakRssKiB": 488324,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-PB-H1-P6-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 6,
+        "layoutMs": 368.9722,
+        "totalMs": 1519.0154,
+        "wallMs": 1828.4329,
+        "chromiumTreePeakRssKiB": 477692,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H0-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 347.0935,
+        "totalMs": 1732.1238,
+        "wallMs": 2063.9349,
+        "chromiumTreePeakRssKiB": 482432,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H0-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 263.6053,
+        "totalMs": 1639.6035,
+        "wallMs": 1973.292,
+        "chromiumTreePeakRssKiB": 480088,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H0-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 7,
+        "layoutMs": 196.056,
+        "totalMs": 1364.6618,
+        "wallMs": 1698.1602,
+        "chromiumTreePeakRssKiB": 477728,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-L185-H0-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 2,
+        "layoutMs": 201.642,
+        "totalMs": 1368.0422,
+        "wallMs": 1654.4315,
+        "chromiumTreePeakRssKiB": 445560,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 313.3847,
+        "totalMs": 1453.8617,
+        "wallMs": 1763.4645,
+        "chromiumTreePeakRssKiB": 488772,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 312.5021,
+        "totalMs": 1382.7082,
+        "wallMs": 1618.6011,
+        "chromiumTreePeakRssKiB": 494572,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 325.367,
+        "totalMs": 1479.0529,
+        "wallMs": 1736.5629,
+        "chromiumTreePeakRssKiB": 495444,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 340.7112,
+        "totalMs": 1573.1713,
+        "wallMs": 1854.468,
+        "chromiumTreePeakRssKiB": 483744,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P5-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 359.8303,
+        "totalMs": 1987.1511,
+        "wallMs": 2289.8151,
+        "chromiumTreePeakRssKiB": 491088,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H0-P6-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 215.9951,
+        "totalMs": 1607.3753,
+        "wallMs": 1947.877,
+        "chromiumTreePeakRssKiB": 457832,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P1-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 325.8302,
+        "totalMs": 1576.2204,
+        "wallMs": 1845.798,
+        "chromiumTreePeakRssKiB": 487792,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P2-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 326.3086,
+        "totalMs": 1559.7965,
+        "wallMs": 1859.545,
+        "chromiumTreePeakRssKiB": 492964,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P3-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 340.619,
+        "totalMs": 1624.9813,
+        "wallMs": 1914.0398,
+        "chromiumTreePeakRssKiB": 496176,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P4-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 214.9694,
+        "totalMs": 1304.7072,
+        "wallMs": 1547.9772,
+        "chromiumTreePeakRssKiB": 484972,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P5-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 358.7139,
+        "totalMs": 1533.8004,
+        "wallMs": 1832.9216,
+        "chromiumTreePeakRssKiB": 490812,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P6-split-t1.00-f0.90-on-r2",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 183.5928,
+        "totalMs": 1401.8936,
+        "wallMs": 1649.1729,
+        "chromiumTreePeakRssKiB": 460168,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P1-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 339.3684,
+        "totalMs": 1395.5044,
+        "wallMs": 1644.4228,
+        "chromiumTreePeakRssKiB": 489720,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P2-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 9,
+        "layoutMs": 355.6291,
+        "totalMs": 1576.8079,
+        "wallMs": 1854.7917,
+        "chromiumTreePeakRssKiB": 492904,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P3-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 346.42,
+        "totalMs": 1414.6494,
+        "wallMs": 1670.7006,
+        "chromiumTreePeakRssKiB": 495780,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P4-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 8,
+        "layoutMs": 325.9175,
+        "totalMs": 1560.7316,
+        "wallMs": 1794.9535,
+        "chromiumTreePeakRssKiB": 483340,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P5-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 10,
+        "layoutMs": 328.9583,
+        "totalMs": 1478.9581,
+        "wallMs": 1729.6687,
+        "chromiumTreePeakRssKiB": 490440,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-W250-H1-P6-split-t1.00-f0.90-on-r3",
+        "class": "ok",
+        "pages": 4,
+        "layoutMs": 172.7637,
+        "totalMs": 1248.948,
+        "wallMs": 1566.0936,
+        "chromiumTreePeakRssKiB": 460396,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P1-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 897.1869,
+        "totalMs": 2681.7503,
+        "wallMs": 2989.2594,
+        "chromiumTreePeakRssKiB": 549944,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P2-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 835.2242,
+        "totalMs": 2717.5474,
+        "wallMs": 3063.0928,
+        "chromiumTreePeakRssKiB": 550072,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P3-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 38,
+        "layoutMs": 974.3859,
+        "totalMs": 2903.5315,
+        "wallMs": 3276.8647,
+        "chromiumTreePeakRssKiB": 553172,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P4-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 35,
+        "layoutMs": 762.1641,
+        "totalMs": 2495.3228,
+        "wallMs": 2819.3591,
+        "chromiumTreePeakRssKiB": 549856,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P5-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 31,
+        "layoutMs": 690.6344,
+        "totalMs": 2423.2385,
+        "wallMs": 2719.1867,
+        "chromiumTreePeakRssKiB": 549704,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P6-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 732.6244,
+        "totalMs": 2613.4941,
+        "wallMs": 3078.8717,
+        "chromiumTreePeakRssKiB": 549960,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P7-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 35,
+        "layoutMs": 835.0266,
+        "totalMs": 2831.8358,
+        "wallMs": 3164.2529,
+        "chromiumTreePeakRssKiB": 550568,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P8-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 767.9362,
+        "totalMs": 2474.5248,
+        "wallMs": 2820.0348,
+        "chromiumTreePeakRssKiB": 550152,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P9-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 36,
+        "layoutMs": 797.7267,
+        "totalMs": 2413.5085,
+        "wallMs": 2680.7319,
+        "chromiumTreePeakRssKiB": 550160,
+        "containerRunningPeakBytes": 508907520
+      },
+      {
+        "run": "s1-grid-new-XB-ALL-H1-P10-split-t1.00-f0.90-on-r1",
+        "class": "ok",
+        "pages": 35,
+        "layoutMs": 764.3386,
+        "totalMs": 2472.6756,
+        "wallMs": 2782.2776,
+        "chromiumTreePeakRssKiB": 549836,
+        "containerRunningPeakBytes": 508907520
+      }
+    ],
+    "reports": [
+      {
+        "instance": "XB-L180-H1-r1",
+        "parts": 4,
+        "pages": 23,
+        "partTimeSumMs": 5876.1,
+        "partTimeMaxMs": 1822.8,
+        "chromiumTreePeakMaxKiB": 480036,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "499",
+          "unnumberedExit": "0",
+          "unnumberedMs": "241",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "7250"
+        }
+      },
+      {
+        "instance": "XB-L181-H1-r1",
+        "parts": 4,
+        "pages": 23,
+        "partTimeSumMs": 5342.9,
+        "partTimeMaxMs": 1385.9,
+        "chromiumTreePeakMaxKiB": 481048,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "609",
+          "unnumberedExit": "0",
+          "unnumberedMs": "248",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "6470"
+        }
+      },
+      {
+        "instance": "XB-L182-H1-r1",
+        "parts": 4,
+        "pages": 23,
+        "partTimeSumMs": 5164.6,
+        "partTimeMaxMs": 1381.8,
+        "chromiumTreePeakMaxKiB": 480764,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "530",
+          "unnumberedExit": "0",
+          "unnumberedMs": "247",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "7818"
+        }
+      },
+      {
+        "instance": "XB-L183-H1-r1",
+        "parts": 4,
+        "pages": 23,
+        "partTimeSumMs": 5815.5,
+        "partTimeMaxMs": 1554.8,
+        "chromiumTreePeakMaxKiB": 481548,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "579",
+          "unnumberedExit": "0",
+          "unnumberedMs": "326",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "6233"
+        }
+      },
+      {
+        "instance": "XB-L184-H1-r1",
+        "parts": 4,
+        "pages": 24,
+        "partTimeSumMs": 6494,
+        "partTimeMaxMs": 1746.7,
+        "chromiumTreePeakMaxKiB": 482016,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "463",
+          "unnumberedExit": "0",
+          "unnumberedMs": "196",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "8046"
+        }
+      },
+      {
+        "instance": "XB-L185-H1-r1",
+        "parts": 4,
+        "pages": 24,
+        "partTimeSumMs": 6395.9,
+        "partTimeMaxMs": 1852.1,
+        "chromiumTreePeakMaxKiB": 481588,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "523",
+          "unnumberedExit": "0",
+          "unnumberedMs": "288",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "7310"
+        }
+      },
+      {
+        "instance": "XB-L201-H1-r1",
+        "parts": 3,
+        "pages": 23,
+        "partTimeSumMs": 4880.6,
+        "partTimeMaxMs": 1775.6,
+        "chromiumTreePeakMaxKiB": 493412,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "486",
+          "unnumberedExit": "0",
+          "unnumberedMs": "294",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "6700"
+        }
+      },
+      {
+        "instance": "XB-TL150-H1-r1",
+        "parts": 4,
+        "pages": 27,
+        "partTimeSumMs": 5759.8,
+        "partTimeMaxMs": 1706.3,
+        "chromiumTreePeakMaxKiB": 480212,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "513",
+          "unnumberedExit": "0",
+          "unnumberedMs": "322",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "7180"
+        }
+      },
+      {
+        "instance": "XB-TF150-H1-r1",
+        "parts": 4,
+        "pages": 27,
+        "partTimeSumMs": 5714.1,
+        "partTimeMaxMs": 1522.6,
+        "chromiumTreePeakMaxKiB": 476004,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "515",
+          "unnumberedExit": "0",
+          "unnumberedMs": "304",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "8133"
+        }
+      },
+      {
+        "instance": "XB-W250-H1-r1",
+        "parts": 6,
+        "pages": 50,
+        "partTimeSumMs": 9168.2,
+        "partTimeMaxMs": 1678.1,
+        "chromiumTreePeakMaxKiB": 496332,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "694",
+          "unnumberedExit": "0",
+          "unnumberedMs": "341",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "12254"
+        }
+      },
+      {
+        "instance": "XB-W250-H1-r2",
+        "parts": 6,
+        "pages": 50,
+        "partTimeSumMs": 9001.4,
+        "partTimeMaxMs": 1625,
+        "chromiumTreePeakMaxKiB": 496176,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "735",
+          "unnumberedExit": "0",
+          "unnumberedMs": "304",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "11966"
+        }
+      },
+      {
+        "instance": "XB-W250-H1-r3",
+        "parts": 6,
+        "pages": 50,
+        "partTimeSumMs": 8675.6,
+        "partTimeMaxMs": 1576.8,
+        "chromiumTreePeakMaxKiB": 495780,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "626",
+          "unnumberedExit": "0",
+          "unnumberedMs": "332",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "11964"
+        }
+      },
+      {
+        "instance": "XB-G500-H1-r1",
+        "parts": 5,
+        "pages": 83,
+        "partTimeSumMs": 10599.8,
+        "partTimeMaxMs": 2475.8,
+        "chromiumTreePeakMaxKiB": 545932,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "847",
+          "unnumberedExit": "0",
+          "unnumberedMs": "410",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "20626"
+        }
+      },
+      {
+        "instance": "XB-PB-H1-r1",
+        "parts": 6,
+        "pages": 51,
+        "partTimeSumMs": 9161,
+        "partTimeMaxMs": 1624.7,
+        "chromiumTreePeakMaxKiB": 488324,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "723",
+          "unnumberedExit": "0",
+          "unnumberedMs": "353",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "12492"
+        }
+      },
+      {
+        "instance": "XB-ALL-H1-r1",
+        "parts": 10,
+        "pages": 354,
+        "partTimeSumMs": 26027.4,
+        "partTimeMaxMs": 2903.5,
+        "chromiumTreePeakMaxKiB": 553172,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "2783",
+          "unnumberedExit": "0",
+          "unnumberedMs": "1069",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "85013"
+        }
+      },
+      {
+        "instance": "XB-L185-H0-r1",
+        "parts": 4,
+        "pages": 24,
+        "partTimeSumMs": 6104.4,
+        "partTimeMaxMs": 1732.1,
+        "chromiumTreePeakMaxKiB": 482432,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "473",
+          "unnumberedExit": "0",
+          "unnumberedMs": "243",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "7293"
+        }
+      },
+      {
+        "instance": "XB-W250-H0-r1",
+        "parts": 6,
+        "pages": 50,
+        "partTimeSumMs": 9483.3,
+        "partTimeMaxMs": 1987.2,
+        "chromiumTreePeakMaxKiB": 495444,
+        "containerRunningPeakMaxBytes": 508907520,
+        "assembly": {
+          "numberedExit": "0",
+          "numberedMs": "699",
+          "unnumberedExit": "0",
+          "unnumberedMs": "423",
+          "verifyNumberedExit": "0",
+          "verifyUnnumberedExit": "0",
+          "verifyMs": "12171"
+        }
+      }
+    ]
+  },
+  "calibration": {
+    "rule": "the smallest L in the range with pages(L \u002B 1) = pages(L) \u002B 1: record L \u002B 1 would start a new page, so part 1 ends exactly at a page end",
+    "range": [
+      240,
+      260
+    ],
+    "records": "594 \u2026 594 \u002B L \u2212 1 (part 1 of the page-coinciding report)",
+    "pages": {
+      "240": 8,
+      "241": 8,
+      "242": 8,
+      "243": 9,
+      "244": 9,
+      "245": 9,
+      "246": 9,
+      "247": 9,
+      "248": 9,
+      "249": 9,
+      "250": 9,
+      "251": 9,
+      "252": 9,
+      "253": 9,
+      "254": 9,
+      "255": 9,
+      "256": 9,
+      "257": 9,
+      "258": 9,
+      "259": 9,
+      "260": 9,
+      "261": 9
+    },
+    "blockLimit": 242,
+    "note": "a documented exception: this block limit is chosen from layout results (page counts), before the measured stage"
+  },
+  "handoverComputeMs": 11.09
+}

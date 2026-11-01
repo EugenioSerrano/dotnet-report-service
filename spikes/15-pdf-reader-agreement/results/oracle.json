@@ -1,0 +1,3775 @@
+{
+  "reader": "poppler-utils (pdftotext -bbox, pdfinfo) in the earlier checker image — test-only reference, never a candidate",
+  "decidedAt": "2026-10-31T21:28:36-03:00",
+  "trusted": true,
+  "problems": [],
+  "excluded": [],
+  "pdfs": [
+    {
+      "id": "07/B1000-table-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 36,
+      "words": 18298,
+      "verdicts": {
+        "pdf": "07/B1000-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 36,
+        "textVerdict": "pass",
+        "contentSha256": "d288d5c014ff93c8bbd76913f0ad96a6844637de2f9e2895659e61b4bd3e8d8c",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "07/T300u-table-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 7,
+      "words": 3978,
+      "verdicts": {
+        "pdf": "07/T300u-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 7,
+        "textVerdict": "pass",
+        "contentSha256": "fe7803fbb887d5eba128c6e4c2d9a500355c2cd8a7b96a53b40c36c208f747d9",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "07/T300u-ab-grid-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 9,
+      "words": 3956,
+      "verdicts": {
+        "pdf": "07/T300u-ab-grid-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 9,
+        "textVerdict": "pass",
+        "contentSha256": "e637a28c5551e589a336fbf8bb06b20c642b557ae4a8cf77f9c74d01f67b6ec9",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "07/X64K-ab-grid-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 28,
+      "words": 10823,
+      "verdicts": {
+        "pdf": "07/X64K-ab-grid-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 28,
+        "textVerdict": "pass",
+        "contentSha256": "32e9ea6354ac3e6c7d6e91a9606b72f78de6814c7a497323bfd47ec66e7bd75d",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "08/s2-G200-off-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 10,
+      "words": 6062,
+      "verdicts": {
+        "pdf": "08/s2-G200-off-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 10,
+        "textVerdict": "fail",
+        "contentSha256": "4dbfcb63be37f4cb7da81def1a36b445b93aad70c7b600b1b4503030e8db2eb2",
+        "failureCount": 155,
+        "failureClasses": [
+          "header-wrong",
+          "row-lost",
+          "structure-lost",
+          "text-altered",
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "fail",
+          "TI-2": "fail",
+          "TI-3": "fail",
+          "TI-4": "fail",
+          "TI-5": "fail",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "fail"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "FAIL",
+            "detail": "150 sequences missing, first 51"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "unreadable footer ''"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "unreadable footer"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "FAIL",
+            "page": 10,
+            "detail": "sequence 50 fragment 8/8 shows '', expected '46323.27'"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "7 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "FAIL",
+            "detail": "bottom margin boxes not found"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/8 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 35317 of 12171 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 12171 characters; largest span 8 pages"
+          }
+        ],
+        "accountingVerdict": "rows-not-lost-or-duplicated p: 150 sequences missing, first 51",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "fail",
+            "classes": [
+              "row-lost"
+            ],
+            "page": 10
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-altered"
+            ],
+            "page": 5
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ]
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "fail",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "fail",
+            "classes": [],
+            "page": 10
+          },
+          {
+            "rule": "S3",
+            "outcome": "fail",
+            "classes": [],
+            "page": 10
+          }
+        ]
+      },
+      "parity": {
+        "S1 (record of 10-pagedjs-table-strict-accounting s1-grid-s2-G200-off-on-r1)": "equal",
+        "S2 (record of 10-pagedjs-table-strict-accounting s1-grid-s2-G200-off-on-r1)": "equal",
+        "S3 (record of 10-pagedjs-table-strict-accounting s1-grid-s2-G200-off-on-r1)": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 18,
+      "words": 10107,
+      "verdicts": {
+        "pdf": "08/s2-G200-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 18,
+        "textVerdict": "pass",
+        "contentSha256": "c6df64f6f13fe80bebf76db0ee7cc1d6cafb85872c491ef0c396211455dc343b",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "200 rows on 18 pages, 2 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "18 pages, 8 with no row ending (0.00); block total 5155412.18"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 5155412.18 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "8 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/10 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "2 split rows differ — sequence 50: 10608 of 12171 characters shown; sequence 120: 25666 of 30047 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "2 rows span two or more pages; longest description among them 30047 characters; largest span 7 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "not recorded",
+        "S2": "not recorded",
+        "S3": "not recorded",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 14,
+      "words": 6354,
+      "verdicts": {
+        "pdf": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 14,
+        "textVerdict": "pass",
+        "contentSha256": "8da9224d54372886b87e6b828b8caf4045217fd5ed0da84c87c7c289ad6a6aaf",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 14 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "14 pages, 7 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "7 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/8 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 13719 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 8 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "not recorded",
+        "S2": "not recorded",
+        "S3": "not recorded",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 224,
+      "words": 148091,
+      "verdicts": {
+        "pdf": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 224,
+        "textVerdict": "pass",
+        "contentSha256": "f68b47b5d443ab9fdcc68debff6c94a952ec7f9ff5925cb84aeb411c79142b6f",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 224 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "224 pages, 219 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "219 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/220 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 883586 of 1026187 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 1026187 characters; largest span 220 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "not recorded",
+        "S2": "not recorded",
+        "S3": "not recorded",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "09/B100-grid-s-r1.p2",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1773,
+      "verdicts": {
+        "pdf": "09/B100-grid-s-r1.p2",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "pass",
+        "contentSha256": "536d582999578f5ff4c22748e4925bef39380ab64057907278325bb646805525",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 4 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "4 pages, 0 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "not recorded",
+        "S2": "not recorded",
+        "S3": "not recorded",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "09/T300u-grid-s-r1.p2",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 7,
+      "words": 4020,
+      "verdicts": {
+        "pdf": "09/T300u-grid-s-r1.p2",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 7,
+        "textVerdict": "pass",
+        "contentSha256": "817733eb660105c206c7ebdc7da0db4910857c8094c3b74df2031b03ced8bc9b",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 7 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "7 pages, 3 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "3 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/4 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 13712 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 4 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "not recorded",
+        "S2": "not recorded",
+        "S3": "not recorded",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "09/T300u-ab-grid-c-r1.p1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 9,
+      "words": 3956,
+      "verdicts": {
+        "pdf": "09/T300u-ab-grid-c-r1.p1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 9,
+        "textVerdict": "pass",
+        "contentSha256": "e637a28c5551e589a336fbf8bb06b20c642b557ae4a8cf77f9c74d01f67b6ec9",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "09/T300u-table-c-r1.p1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 7,
+      "words": 3978,
+      "verdicts": {
+        "pdf": "09/T300u-table-c-r1.p1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 7,
+        "textVerdict": "pass",
+        "contentSha256": "fe7803fbb887d5eba128c6e4c2d9a500355c2cd8a7b96a53b40c36c208f747d9",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 8,
+      "words": 4036,
+      "verdicts": {
+        "pdf": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 8,
+        "textVerdict": "pass",
+        "contentSha256": "f977cfaaff77d1a6165cef5eb1a1615c1d1837bb8d88b9af3634c6109364d754",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 8 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "8 pages, 3 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "3 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/4 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 13712 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 4 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 78,
+      "words": 19162,
+      "verdicts": {
+        "pdf": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 78,
+        "textVerdict": "fail",
+        "contentSha256": "09d0ddbb90671d1ee3da46ff2a470f8a1e42e3764c2699389a932534553a0f7f",
+        "failureCount": 2918,
+        "failureClasses": [
+          "mark-wrong",
+          "text-altered",
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "fail",
+          "TI-4": "fail",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "fail",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "1000 rows on 78 pages, 8 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "78 pages, 8 with no row ending (0.00); block total 24182111.23"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 24182111.23 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "FAIL",
+            "page": 2,
+            "detail": "sequence 31 fragment 1/1 shows '', expected '5509.41'"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "FAIL",
+            "page": 8,
+            "detail": "sequence 114 fragment 1/2 mark=False"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/16 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "8 split rows differ — sequence 114: 1861 of 2120 characters shown; sequence 220: 1764 of 2001 characters shown; sequence 267: 1971 of 2248 characters shown; sequence 478: 1934 of 2198 characters shown; sequence 832: 1830 of 2076 characters shown; sequence 834: 1882 of 2138 characters shown; sequence 837: 2084 of 2378 characters shown; sequence 953: 2100 of 2395 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "8 rows span two or more pages; longest description among them 2395 characters; largest span 2 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-altered"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ]
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 12,
+      "words": 3058,
+      "verdicts": {
+        "pdf": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 12,
+        "textVerdict": "fail",
+        "contentSha256": "87bfc67e4f73442a89663af301f3319ad65c77f9176e8cd64b091645518efe2c",
+        "failureCount": 121,
+        "failureClasses": [
+          "header-wrong",
+          "mark-wrong",
+          "row-lost",
+          "structure-lost",
+          "text-altered",
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "fail",
+          "TI-2": "fail",
+          "TI-3": "fail",
+          "TI-4": "fail",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "fail",
+          "TI-8": "fail"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "FAIL",
+            "detail": "50 sequences missing, first 51"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "FAIL",
+            "page": 12,
+            "detail": "unreadable footer ''"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "FAIL",
+            "page": 12,
+            "detail": "unreadable footer"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "FAIL",
+            "page": 2,
+            "detail": "sequence 31 fragment 1/1 shows '', expected '5509.41'"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "FAIL",
+            "page": 3,
+            "detail": "sequence 50 fragment 1/10 mark=False"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "FAIL",
+            "detail": "bottom margin boxes not found"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/10 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 14822 of 8054 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 8054 characters; largest span 10 pages"
+          }
+        ],
+        "accountingVerdict": "rows-not-lost-or-duplicated p: 50 sequences missing, first 51",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "fail",
+            "classes": [
+              "row-lost"
+            ],
+            "page": 12
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-altered"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ]
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "fail",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "fail",
+            "classes": [],
+            "page": 12
+          },
+          {
+            "rule": "S3",
+            "outcome": "fail",
+            "classes": [],
+            "page": 12
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 16,
+      "words": 3857,
+      "verdicts": {
+        "pdf": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 16,
+        "textVerdict": "fail",
+        "contentSha256": "b839b3f4626b00614ef898bbb766360ee39659456ed7d3367ae6aed30b343003",
+        "failureCount": 219,
+        "failureClasses": [
+          "mark-wrong",
+          "text-altered",
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "fail",
+          "TI-4": "fail",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "fail",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 16 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "16 pages, 9 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "FAIL",
+            "page": 2,
+            "detail": "sequence 31 fragment 1/1 shows '', expected '5509.41'"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "FAIL",
+            "page": 3,
+            "detail": "sequence 50 fragment 1/10 mark=False"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/10 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 50: 11922 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 10 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-altered"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ]
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 10,
+      "words": 4367,
+      "verdicts": {
+        "pdf": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 10,
+        "textVerdict": "pass",
+        "contentSha256": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "250 rows on 10 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "10 pages, 0 with no row ending (0.00); block total 5614651.86"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 5614651.86 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 10,
+      "words": 4376,
+      "verdicts": {
+        "pdf": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 10,
+        "textVerdict": "pass",
+        "contentSha256": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "250 rows on 10 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "10 pages, 0 with no row ending (0.00); block total 5614651.86"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 5614651.86 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 14,
+      "words": 7593,
+      "verdicts": {
+        "pdf": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 14,
+        "textVerdict": "pass",
+        "contentSha256": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "260 rows on 14 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "14 pages, 3 with no row ending (0.00); block total 6711390.69"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 6711390.69 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "3 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/4 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 183: 13712 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 4 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 14,
+      "words": 7587,
+      "verdicts": {
+        "pdf": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 14,
+        "textVerdict": "pass",
+        "contentSha256": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "260 rows on 14 pages, 1 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "14 pages, 3 with no row ending (0.00); block total 6711390.69"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 6711390.69 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "3 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/4 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "1 split rows differ — sequence 182: 13712 of 15930 characters shown"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "1 rows span two or more pages; longest description among them 15930 characters; largest span 4 pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "matches the record"
+    },
+    {
+      "id": "R/07/NC-W-B100-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1748,
+      "verdicts": {
+        "pdf": "R/07/NC-W-B100-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "fail",
+        "contentSha256": "a7b623d4e7f1ee966da1d368d62b69862f3d5a962342cb2881f878d537366f58",
+        "failureCount": 1,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "fail",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/07/NC-L-B100-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1759,
+      "verdicts": {
+        "pdf": "R/07/NC-L-B100-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "fail",
+        "contentSha256": "9bd86b812b97d65015cd9df4d4526c457016796bc6373ad82cf42589b8b00b83",
+        "failureCount": 1,
+        "failureClasses": [
+          "text-repeated"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "fail",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-repeated"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/07/NC-R-B100-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1742,
+      "verdicts": {
+        "pdf": "R/07/NC-R-B100-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "fail",
+        "contentSha256": "f069a05710872244329c1e3f74b9c4c6035d938354daf74b54d82d814d7b2e5c",
+        "failureCount": 1,
+        "failureClasses": [
+          "row-lost"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "fail",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "fail",
+            "classes": [
+              "row-lost"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/07/NC-F-F26K-a-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 5,
+      "words": 4064,
+      "verdicts": {
+        "pdf": "R/07/NC-F-F26K-a-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 5,
+        "textVerdict": "fail",
+        "contentSha256": "869e2dd6af27592669d49bbb6a9f40d47929d9e11e4b389e40aaa1dcd986ea11",
+        "failureCount": 1,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "fail",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ],
+            "page": 1
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/07/F1M-a-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 129,
+      "words": 143960,
+      "verdicts": {
+        "pdf": "R/07/F1M-a-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 129,
+        "textVerdict": "pass",
+        "contentSha256": "af25f178668fc3e0cf5fe99b429d41637f32260f32a363f4bade15e67ba6ae27",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/07/X1M-table-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 203,
+      "words": 146517,
+      "verdicts": {
+        "pdf": "R/07/X1M-table-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 203,
+        "textVerdict": "pass",
+        "contentSha256": "6ea6e1f337d6255028fc9c3979288a3b64be54fab9a0c8651da71a843e0f1cb1",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [],
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 36,
+      "words": 18482,
+      "verdicts": {
+        "pdf": "R/10/s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 36,
+        "textVerdict": "pass",
+        "contentSha256": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "1000 rows on 36 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "36 pages, 0 with no row ending (0.00); block total 24182111.23"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 24182111.23 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1766,
+      "verdicts": {
+        "pdf": "R/10/s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "fail",
+        "contentSha256": "fcf354eff3eedbdf7181381486e43b522506ea14c7e198a8263bc762b9ffa9e0",
+        "failureCount": 1,
+        "failureClasses": [
+          "row-lost"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "fail",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "FAIL",
+            "detail": "1 sequences missing, first 51"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "4 pages, 0 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "FAIL",
+            "page": 4,
+            "detail": "ends at 2658211.34 but block total is 2708053.13"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "rows-not-lost-or-duplicated p: 1 sequences missing, first 51",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "fail",
+            "classes": [
+              "row-lost"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "fail",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "fail",
+            "classes": [],
+            "page": 4
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1772,
+      "verdicts": {
+        "pdf": "R/10/s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 4,
+        "textVerdict": "fail",
+        "contentSha256": "9a655a52b176d1ec81fbbc4967370f9f1f58c45ab01c9297657af8f4e3e89d1e",
+        "failureCount": 1,
+        "failureClasses": [
+          "text-dropped"
+        ],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "fail",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "100 rows on 4 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "4 pages, 0 with no row ending (0.00); block total 2708053.13"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 2708053.13 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "fail",
+            "classes": [
+              "text-dropped"
+            ],
+            "page": 2
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+      "use": "judged",
+      "regenerated": true,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 129,
+      "words": 145121,
+      "verdicts": {
+        "pdf": "R/10/s1-grid-s2-F1M-a-split-t1.00-f0.90-on-r1",
+        "configuration": "oracle",
+        "status": "checked",
+        "pages": 129,
+        "textVerdict": "pass",
+        "contentSha256": "af25f178668fc3e0cf5fe99b429d41637f32260f32a363f4bade15e67ba6ae27",
+        "failureCount": 0,
+        "failureClasses": [],
+        "textRules": {
+          "TI-1": "pass",
+          "TI-2": "pass",
+          "TI-3": "pass",
+          "TI-4": "pass",
+          "TI-5": "pass",
+          "TI-6": "pass",
+          "TI-7": "pass",
+          "TI-8": "pass"
+        },
+        "strictRules": [
+          {
+            "rule": 1,
+            "name": "rows-not-lost-or-duplicated",
+            "outcome": "PASS",
+            "detail": "20 rows on 129 pages, 0 split"
+          },
+          {
+            "rule": 2,
+            "name": "end-page-subtotals",
+            "outcome": "PASS",
+            "detail": "129 pages, 128 with no row ending (0.00); block total 594585.98"
+          },
+          {
+            "rule": 3,
+            "name": "brought-carried-chain",
+            "outcome": "PASS",
+            "detail": "starts at 0.00, ends at 594585.98 = block total"
+          },
+          {
+            "rule": 4,
+            "name": "visible-amounts",
+            "outcome": "PASS",
+            "detail": "each amount printed only on the fragment where its row ends"
+          },
+          {
+            "rule": 5,
+            "name": "continues-marks",
+            "outcome": "PASS",
+            "detail": "0 marks, all on non-final fragments"
+          },
+          {
+            "rule": 6,
+            "name": "geometry",
+            "outcome": "PASS",
+            "detail": "no fragment below the content area, no footer overflow"
+          },
+          {
+            "rule": 8,
+            "name": "escaping-and-isolation",
+            "outcome": "PASS",
+            "detail": "dialogs 0, aborted requests 0, not found 0, scripts 0/0"
+          },
+          {
+            "rule": 9,
+            "name": "column-alignment-observation",
+            "outcome": "PASS",
+            "detail": "0/0 fragments of split rows keep their cells in their columns"
+          },
+          {
+            "rule": 9,
+            "name": "split-row-text-observation",
+            "outcome": "PASS",
+            "detail": "no split rows"
+          },
+          {
+            "rule": 9,
+            "name": "rows-spanning-pages-observation",
+            "outcome": "PASS",
+            "detail": "0 rows span two or more pages"
+          }
+        ],
+        "accountingVerdict": "exact",
+        "judged": [
+          {
+            "rule": "TI-2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-3",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-4",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "TI-6",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S1",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S2",
+            "outcome": "pass",
+            "classes": []
+          },
+          {
+            "rule": "S3",
+            "outcome": "pass",
+            "classes": []
+          }
+        ]
+      },
+      "parity": {
+        "S1": "equal",
+        "S2": "equal",
+        "S3": "equal",
+        "TI-1": "equal",
+        "TI-2": "equal",
+        "TI-3": "equal",
+        "TI-4": "equal",
+        "TI-5": "equal",
+        "TI-6": "equal",
+        "TI-7": "equal",
+        "TI-8": "equal",
+        "contentSha256": "equal",
+        "failureClasses": "equal",
+        "failureCount": "equal",
+        "pages": "equal",
+        "verdict": "equal"
+      },
+      "parityHolds": true,
+      "status": "regenerated, identical to the record"
+    },
+    {
+      "id": "02/native-table-B1000-r1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 35,
+      "words": 18326,
+      "status": "agreement only"
+    },
+    {
+      "id": "02/paged-grid-keep-G200-on-r1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 10,
+      "words": 6078,
+      "status": "agreement only"
+    },
+    {
+      "id": "02/paged-table-keep-B1000-on-r1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 78,
+      "words": 19244,
+      "status": "agreement only"
+    },
+    {
+      "id": "02/paged-table-keep-G200-on-r1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 22,
+      "words": 5443,
+      "status": "agreement only"
+    },
+    {
+      "id": "03/partial-part-0001",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 12,
+      "words": 2247,
+      "status": "agreement only"
+    },
+    {
+      "id": "03/three-parts-numbered",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 49,
+      "words": 9510,
+      "status": "agreement only"
+    },
+    {
+      "id": "06/partial-part-0001",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 12,
+      "words": 3185,
+      "status": "agreement only"
+    },
+    {
+      "id": "06/three-parts-numbered",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 49,
+      "words": 13468,
+      "status": "agreement only"
+    },
+    {
+      "id": "09/B100-grid-s-r1.p1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 4,
+      "words": 1637,
+      "status": "agreement only"
+    },
+    {
+      "id": "09/T300u-grid-s-r1.p1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 7,
+      "words": 3854,
+      "status": "agreement only"
+    },
+    {
+      "id": "11/U066-table-c-r1.p1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 17,
+      "words": 11052,
+      "status": "agreement only"
+    },
+    {
+      "id": "11/X64K-table-c-r1.p1",
+      "use": "agreement",
+      "regenerated": false,
+      "runClasses": "ok,ok,ok",
+      "repetitionsIdentical": true,
+      "repetitionFiles": 3,
+      "pages": 17,
+      "words": 10769,
+      "status": "agreement only"
+    }
+  ]
+}

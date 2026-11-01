@@ -1,0 +1,238 @@
+{
+  "writtenAt": "2026-10-31T21:13:57-03:00",
+  "committedPdfs": 33,
+  "distinct": 32,
+  "pdfs": [
+    {
+      "path": "spikes/02-pdf-layout/results/pdf/native-table-B1000-r1.pdf",
+      "sha256": "1b7b9bc11a04b94229cc84eec2efc3949f78afe19eb968fdd57cee638dfba773",
+      "bytes": 142239,
+      "measuredAs": "02/native-table-B1000-r1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/02-pdf-layout/results/pdf/paged-grid-keep-G200-on-r1.pdf",
+      "sha256": "f53c83f7208d860c7d4eecbba97d3aaa3a79cae78cbb7f0169bffaecf4c05c28",
+      "bytes": 45479,
+      "measuredAs": "02/paged-grid-keep-G200-on-r1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/02-pdf-layout/results/pdf/paged-table-keep-B1000-on-r1.pdf",
+      "sha256": "a203ad8225beff1dc71b86851a2c82a717e95a4f4d9e733b327e62c7be353a3c",
+      "bytes": 211068,
+      "measuredAs": "02/paged-table-keep-B1000-on-r1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/02-pdf-layout/results/pdf/paged-table-keep-G200-on-r1.pdf",
+      "sha256": "aa419336f3d26dc0122fd0af95292892e43377911dd72abae69d77fb752f27dc",
+      "bytes": 60811,
+      "measuredAs": "02/paged-table-keep-G200-on-r1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/03-pdf-assembly/results/samples/partial-part-0001.pdf",
+      "sha256": "f4680102566ae9b8da5c5ed1db054f05e8472da2efb5a4914d0431404012f1cc",
+      "bytes": 65265,
+      "measuredAs": "03/partial-part-0001",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/03-pdf-assembly/results/samples/three-parts-numbered.pdf",
+      "sha256": "f31d338dba308a9eb668e835fbed22401da58fb1f6e82e24db481df514201e09",
+      "bytes": 242078,
+      "measuredAs": "03/three-parts-numbered",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/06-pdf-assembly-chromium-parts/fixtures/pdfsharp-part.pdf",
+      "sha256": "f4680102566ae9b8da5c5ed1db054f05e8472da2efb5a4914d0431404012f1cc",
+      "bytes": 65265,
+      "duplicateOf": "spikes/03-pdf-assembly/results/samples/partial-part-0001.pdf",
+      "use": "duplicate (measured once)"
+    },
+    {
+      "path": "spikes/06-pdf-assembly-chromium-parts/results/samples/partial-part-0001.pdf",
+      "sha256": "3e348865087f84eeb61c261460a0c274d72cacd90b4233d7c78242a610dcbdfa",
+      "bytes": 50443,
+      "measuredAs": "06/partial-part-0001",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/06-pdf-assembly-chromium-parts/results/samples/three-parts-numbered.pdf",
+      "sha256": "aeed6046cf8f61ddf73c423ead1995cc447fa46bf05ef880e5899547a47f7fd9",
+      "bytes": 223224,
+      "measuredAs": "06/three-parts-numbered",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/07-native-tall-rows/results/pdf/B1000-table-r1.pdf",
+      "sha256": "1cc3abe61a5e1a3fdaeb535facb8552591f86b3241842f044df02497c35b6b4a",
+      "bytes": 142184,
+      "measuredAs": "07/B1000-table-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/07-native-tall-rows/results/pdf/T300u-ab-grid-r1.pdf",
+      "sha256": "37070dcb487d16305e40c90cb24de8d2bb5820b9f74caf5517498dd83bc16e17",
+      "bytes": 47236,
+      "measuredAs": "07/T300u-ab-grid-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/07-native-tall-rows/results/pdf/T300u-table-r1.pdf",
+      "sha256": "852ceb4b7d7c91e5412f08f94fe569fee22425dd8ea58341407e5a92b051fd62",
+      "bytes": 46058,
+      "measuredAs": "07/T300u-table-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/07-native-tall-rows/results/pdf/X64K-ab-grid-r1.pdf",
+      "sha256": "11d25d73a9f89b8a92c98e21da382355fa33f362cd98691fefa34f11b28628a3",
+      "bytes": 86629,
+      "measuredAs": "07/X64K-ab-grid-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/08-pagedjs-pre-split/results/pdf/G200-off-on-r1.pdf",
+      "sha256": "c9c380ed3b6863b785d23811713d986093ceec40748c6a72e26f47454d5d74eb",
+      "bytes": 45119,
+      "measuredAs": "08/s2-G200-off-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/08-pagedjs-pre-split/results/pdf/G200-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "478c5731477483747a783a581a01b423a7908fb3c4235b74f408e588860401de",
+      "bytes": 68446,
+      "measuredAs": "08/s2-G200-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/08-pagedjs-pre-split/results/pdf/W2a-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "0f1c66317cb1699a3f25d015abc7345cc5562c6c1bf753e88b25a60fb07f844a",
+      "bytes": 71314,
+      "measuredAs": "08/s2-W2a-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/08-pagedjs-pre-split/results/pdf/X1M-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "9501a777025f29491d585ffacdaa8ce2fedd40b2a0fd6a1fd47a2de5e474e909",
+      "bytes": 809703,
+      "measuredAs": "08/s2-X1M-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/B100-grid-s-r1.p1.pdf",
+      "sha256": "5befc393c15355dd02e566f22396690d16a4be4a5be805537b07043a96f25b3a",
+      "bytes": 72630,
+      "measuredAs": "09/B100-grid-s-r1.p1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/B100-grid-s-r1.p2.pdf",
+      "sha256": "e622ca5cf124e34c3f030342295976859659a022dae164b2201adc5dd7c8a7cd",
+      "bytes": 51233,
+      "measuredAs": "09/B100-grid-s-r1.p2",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-ab-grid-c-r1.p1.pdf",
+      "sha256": "026c4631a6c009dead09d31d1ab94b63a26b00309e7b432b76ef1974fcfa0f83",
+      "bytes": 107477,
+      "measuredAs": "09/T300u-ab-grid-c-r1.p1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-grid-s-r1.p1.pdf",
+      "sha256": "ce7c3951e40fab7a38942e8914a55fdaf217e1d77f15f6be571a8e80a8fca176",
+      "bytes": 84414,
+      "measuredAs": "09/T300u-grid-s-r1.p1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-grid-s-r1.p2.pdf",
+      "sha256": "a6d75f3d0269a167ca520d95f0bbdf8fc1de7b6c1c869bba3730fa50677fa9f4",
+      "bytes": 64189,
+      "measuredAs": "09/T300u-grid-s-r1.p2",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/09-two-pass-page-subtotals/results/pdf/T300u-table-c-r1.p1.pdf",
+      "sha256": "b7f6c8ff303df32bef7c7672f85913b3493878f06441d911f200bb7c3bffc3b7",
+      "bytes": 106516,
+      "measuredAs": "09/T300u-table-c-r1.p1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "e6ded794cf9e7861cdd4b5ce8807723070d6b957968c644ba897c9f7fe1b1dd6",
+      "bytes": 54031,
+      "measuredAs": "10/s1-grid-s2-T300u-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s1-B1000-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "e4713d6c34f0f9211fd85a899cf3a92f0a9b84dfea519b67b7cae8ac38e5cfbe",
+      "bytes": 209730,
+      "measuredAs": "10/s2-table-s1-B1000-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s2-T150-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "c9eaffede49ccd8baf88ebb2b59717fdd9573b1d4a2d44916e68ecd27b9f6eed",
+      "bytes": 46823,
+      "measuredAs": "10/s2-table-s2-T150-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/10-pagedjs-table-strict-accounting/results/pdf/s2-table-s2-T300u-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "97c9f8491d3fc2bb9efd32aaace1bc3c686f2be9d58cf39edc013526f5627dcc",
+      "bytes": 63735,
+      "measuredAs": "10/s2-table-s2-T300u-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/11-row-end-link-threshold/results/pdf/U066-table-c-r1.p1.pdf",
+      "sha256": "0aa8327eb0ffcda89a148a415a6d3a742dd3a9a00c898344266bbfcef0bdf02c",
+      "bytes": 142408,
+      "measuredAs": "11/U066-table-c-r1.p1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/11-row-end-link-threshold/results/pdf/X64K-table-c-r1.p1.pdf",
+      "sha256": "d139358dddee7ea9c123a7de0d8d5544a3ff3f34601a9462954014ca9f50abd7",
+      "bytes": 141966,
+      "measuredAs": "11/X64K-table-c-r1.p1",
+      "use": "agreement"
+    },
+    {
+      "path": "spikes/12-group-continuity/results/pdf/s1-grid-new-GE52-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "48bc0b61019bb2d731b57fa2cf37cb9db4e4cfd1d0c5e0350026211dafe6c072",
+      "bytes": 54118,
+      "measuredAs": "12/s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/12-group-continuity/results/pdf/s1-grid-new-GE61-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "9b076ddf2424c92c726bc01cc2897cdf9edd45f2faadb3e4a32bc0e83e209287",
+      "bytes": 54205,
+      "measuredAs": "12/s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/12-group-continuity/results/pdf/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "ad98fc1610f24ba15fbdbf6c3ba5b83d65bff54eb0d1722cfdc3ab1e7b30e05e",
+      "bytes": 76446,
+      "measuredAs": "12/s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    },
+    {
+      "path": "spikes/12-group-continuity/results/pdf/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1.pdf",
+      "sha256": "fb098bd1f4ea315dfa6c43c71d5efa401f61e073094e0833b609df35d9ff9265",
+      "bytes": 76478,
+      "measuredAs": "12/s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "use": "judged"
+    }
+  ]
+}

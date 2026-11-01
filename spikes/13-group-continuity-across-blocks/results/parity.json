@@ -1,0 +1,294 @@
+{
+  "compared": 6,
+  "differences": 0,
+  "runs": [
+    {
+      "run": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "36",
+        "folder12": "36"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a",
+        "folder12": "58a8ce1a18dc528ce6411a97611f152e634bdd36d68c0b2254f5308cbe30ee1a"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767",
+        "folder12": "f6e9e84e59aadb21ff86a6cafb3f096b51d8b2581826abd09ddd6cf590c76767"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "1",
+        "folder12": "1"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "35",
+        "folder12": "35"
+      },
+      "totalsSeparated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "folder12": "10"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1",
+        "folder12": "7debdcd543c2e460e6115f0c192cc53be96f2e74fcb8aecc07922e9f845762e1"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "folder12": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "1",
+        "folder12": "1"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "9",
+        "folder12": "9"
+      },
+      "totalsSeparated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "10",
+        "folder12": "10"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650",
+        "folder12": "c84e1fa9e03a31b975ced27ede5d77a9a7e317484b7727bf74405911e8a4d650"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657",
+        "folder12": "1adc51bf60b283be52613b6844e8f6d9ec28528f7a249adc34a683de757c2657"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "8",
+        "folder12": "8"
+      },
+      "totalsSeparated": {
+        "here": "1",
+        "folder12": "1"
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "48",
+        "folder12": "48"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4",
+        "folder12": "eac8b03ded71e141a226352cb9581841ebec279056433e764742ea46a96f45b4"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08",
+        "folder12": "2ce3659d14021f9aa92b91326312b5596569fc480b0e03aed200e2a7a75ffd08"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "47",
+        "folder12": "47"
+      },
+      "totalsSeparated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "14",
+        "folder12": "14"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66",
+        "folder12": "fa77947037d65569adcc4c4ee1d0624dcd0914fb2bbaad21b74f67259098ef66"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73",
+        "folder12": "1c9cab2df0ec2491d925e96e5f9650f048060136c254f8a5b4fc2a109c0f2a73"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "1",
+        "folder12": "1"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "13",
+        "folder12": "13"
+      },
+      "totalsSeparated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "differences": []
+    },
+    {
+      "run": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1",
+      "class": {
+        "here": "ok",
+        "folder12": "ok"
+      },
+      "pages": {
+        "here": "14",
+        "folder12": "14"
+      },
+      "textVerdict": {
+        "here": "pass",
+        "folder12": "pass"
+      },
+      "textContentSha256": {
+        "here": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284",
+        "folder12": "a45524e670b4a3beb8c4899f804398694d968a10f305c83e95ffb80fa649a284"
+      },
+      "accountingVerdict": {
+        "here": "exact",
+        "folder12": "exact"
+      },
+      "rowSetsSha256": {
+        "here": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24",
+        "folder12": "7704f1e025c88ca96506244027fad2eb00c3a90f4afe9fe5cba317b69adcdf24"
+      },
+      "groupFailures": {
+        "here": "",
+        "folder12": ""
+      },
+      "headersAlone": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "headersRepeated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "continuationPagesWithoutHeader": {
+        "here": "13",
+        "folder12": "13"
+      },
+      "totalsSeparated": {
+        "here": "0",
+        "folder12": "0"
+      },
+      "differences": []
+    }
+  ]
+}

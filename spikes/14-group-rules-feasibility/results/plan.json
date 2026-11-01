@@ -1,0 +1,5278 @@
+{
+  "matrix": "stage1-grid",
+  "runs": [
+    {
+      "runId": "s1-none-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-B100-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-K1-split-t1.00-f0.90-on-r1",
+      "fixtureId": "K1",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-K1-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-NC-W-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "mutation": "NC-W",
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-NC-W-B100-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-NC-L-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "mutation": "NC-L",
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-NC-L-B100-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-NC-R-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "mutation": "NC-R",
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-NC-R-B100-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-NC-F-F26K-a-split-t1.00-f0.90-on-r1",
+      "fixtureId": "F26K-a",
+      "markup": "grid",
+      "repetition": 1,
+      "mutation": "NC-F",
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 1,
+      "matrixRows": [
+        1
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-NC-F-F26K-a-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-none-GE30-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE30",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE30-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE30-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE30",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE30-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE30",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE30-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE30",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE30-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE30",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE31-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE31",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE31-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE31-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE31",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE31-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE31",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE31-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE31",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE31-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE31",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE32-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE32",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE32-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE32-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE32",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE32-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE32",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE32-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE32",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE32-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE32",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE33-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE33",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE33-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE33-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE33",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE33-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE33",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE33-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE33",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE33-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE33",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE34-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE34",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE34-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE34-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE34",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE34-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE34",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE34-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE34",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE34-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE34",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE35-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE35",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE35-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE35-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE35",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE35-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE35",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE35-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE35",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE35-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE35",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE36-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE36",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE36-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE36-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE36",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE36-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE36",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE36-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE36",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE36-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE36",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE37-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE37",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE37-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE37-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE37",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE37-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE37",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE37-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE37",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE37-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE37",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE38-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE38",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE38-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE38-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE38",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE38-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE38",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE38-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE38",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE38-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE38",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE39-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE39",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE39-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE39-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE39",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE39-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE39",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE39-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE39",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE39-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE39",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE40-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE40",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE40-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE40-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE40",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE40-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE40",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE40-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE40",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE40-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE40",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE41-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE41",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE41-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE41-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE41",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE41-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE41",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE41-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE41",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE41-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE41",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE42-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE42",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE42-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE42-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE42",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE42-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE42",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE42-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE42",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE42-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE42",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE43-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE43",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE43-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE43-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE43",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE43-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE43",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE43-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE43",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE43-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE43",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE44-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE44",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE44-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE44-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE44",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE44-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE44",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE44-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE44",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE44-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE44",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE45-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE45",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE45-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE45-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE45",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE45-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE45",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE45-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE45",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE45-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE45",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE46-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE46",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE46-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE46-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE46",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE46-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE46",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE46-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE46",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE46-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE46",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE47-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE47",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE47-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE47-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE47",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE47-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE47",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE47-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE47",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE47-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE47",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE48-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE48",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE48-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE48-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE48",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE48-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE48",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE48-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE48",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE48-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE48",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE49-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE49",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE49-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE49-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE49",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE49-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE49",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE49-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE49",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE49-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE49",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE50-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE50-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE50-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE50-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE50-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE50-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE51-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE51",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE51-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE51-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE51",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE51-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE51",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE51-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE51",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE51-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE51",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE52-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE52-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE52-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE52-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE52-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE52-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE52",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE53-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE53",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE53-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE53-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE53",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE53-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE53",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE53-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE53",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE53-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE53",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE54-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE54",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE54-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE54-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE54",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE54-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE54",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE54-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE54",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE54-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE54",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE55-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE55",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE55-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE55-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE55",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE55-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE55",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE55-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE55",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE55-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE55",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE56-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE56",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE56-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE56-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE56",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE56-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE56",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE56-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE56",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE56-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE56",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE57-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE57",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE57-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE57-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE57",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE57-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE57",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE57-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE57",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE57-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE57",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE58-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE58",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE58-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE58-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE58",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE58-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE58",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE58-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE58",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE58-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE58",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE59-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE59",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE59-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE59-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE59",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE59-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE59",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE59-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE59",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE59-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE59",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE60-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE60-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE60-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE60-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE60-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE60-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE61-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE61-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE61-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE61-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE61-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE61-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE61",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE62-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE62",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE62-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE62-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE62",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE62-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE62",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE62-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE62",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE62-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE62",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE63-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE63",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE63-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE63-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE63",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE63-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE63",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE63-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE63",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE63-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE63",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE64-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE64",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE64-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE64-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE64",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE64-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE64",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE64-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE64",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE64-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE64",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE65-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE65",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE65-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE65-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE65",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE65-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE65",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE65-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE65",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE65-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE65",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE66-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE66",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE66-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE66-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE66",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE66-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE66",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE66-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE66",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE66-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GE66",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GS1200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GS1200-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GS1200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GS1200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GS1200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GS1200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GS2400-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GS2400-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GS2400-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GS2400-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GS2400-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GS2400-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GTL300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GTL300u-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GTL300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GTL300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GTL300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GTL300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTL300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GTF300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GTF300u-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-GTF300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GTF300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GTF300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GTF300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "GTF300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-T300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-none",
+      "seriesIndex": 1,
+      "configuration": "none",
+      "anchor": "s1-grid-s2-T300u-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-T300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-header",
+      "seriesIndex": 1,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-T300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-repeat-header",
+      "seriesIndex": 1,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-T300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-total",
+      "seriesIndex": 1,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-T300u-split-t1.00-f0.90-on-r1",
+      "fixtureId": "T300u",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-all-three",
+      "seriesIndex": 1,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-X64K-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X64K",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-none",
+      "seriesIndex": 2,
+      "configuration": "none",
+      "anchor": "s1-grid-s2-X64K-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-X64K-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X64K",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-header",
+      "seriesIndex": 2,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-X64K-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X64K",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-repeat-header",
+      "seriesIndex": 2,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-X64K-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X64K",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-total",
+      "seriesIndex": 2,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-X64K-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X64K",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-all-three",
+      "seriesIndex": 2,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-X1M-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-none",
+      "seriesIndex": 3,
+      "configuration": "none",
+      "anchor": "s1-grid-s2-X1M-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-X1M-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-header",
+      "seriesIndex": 3,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-X1M-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-repeat-header",
+      "seriesIndex": 3,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-X1M-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-keep-total",
+      "seriesIndex": 3,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-X1M-split-t1.00-f0.90-on-r1",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "series": "x-all-three",
+      "seriesIndex": 3,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-G200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s2-G200-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-G200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-G200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-G200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-G200-split-t1.00-f0.90-on-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-keep-header-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-B100-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B100",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-B1000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-B1000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-B1000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-B1000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-B1000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-B4000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-B4000-split-t1.00-f0.90-on-r1"
+    },
+    {
+      "runId": "s1-keep-header-B4000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-B4000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-B4000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-B4000-split-t1.00-f0.90-on-r1",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 2,
+      "matrixRows": [
+        2
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE50-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE50-split-t1.00-f0.90-off-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE50-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE50-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE50-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE50-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE50",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GE60-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GE60-split-t1.00-f0.90-off-r1"
+    },
+    {
+      "runId": "s1-keep-header-GE60-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GE60-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GE60-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GE60-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GE60",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GS1200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-new-GS1200-split-t1.00-f0.90-off-r1"
+    },
+    {
+      "runId": "s1-keep-header-GS1200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GS1200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GS1200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GS1200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "GS1200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-G200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s2-G200-split-t1.00-f0.90-off-r1"
+    },
+    {
+      "runId": "s1-keep-header-G200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-G200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-G200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-G200-split-t1.00-f0.90-off-r1",
+      "fixtureId": "G200",
+      "markup": "grid",
+      "repetition": 1,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": false,
+      "stage": 1,
+      "matrixRow": 3,
+      "matrixRows": [
+        3
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-B1000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r2"
+    },
+    {
+      "runId": "s1-none-B1000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none",
+      "anchor": "s1-grid-s1-B1000-split-t1.00-f0.90-on-r3"
+    },
+    {
+      "runId": "s1-keep-header-B1000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-keep-header-B1000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-B1000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-repeat-header-B1000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-B1000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-keep-total-B1000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-B1000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-all-three-B1000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B1000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-GS2400-split-t1.00-f0.90-on-r2",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-none-GS2400-split-t1.00-f0.90-on-r3",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-keep-header-GS2400-split-t1.00-f0.90-on-r2",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-keep-header-GS2400-split-t1.00-f0.90-on-r3",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-GS2400-split-t1.00-f0.90-on-r2",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-repeat-header-GS2400-split-t1.00-f0.90-on-r3",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-GS2400-split-t1.00-f0.90-on-r2",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-keep-total-GS2400-split-t1.00-f0.90-on-r3",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-GS2400-split-t1.00-f0.90-on-r2",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-all-three-GS2400-split-t1.00-f0.90-on-r3",
+      "fixtureId": "GS2400",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-X1M-split-t1.00-f0.90-on-r2",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-none",
+      "seriesIndex": 3,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-none-X1M-split-t1.00-f0.90-on-r3",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-none",
+      "seriesIndex": 3,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-keep-header-X1M-split-t1.00-f0.90-on-r2",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-keep-header",
+      "seriesIndex": 3,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-keep-header-X1M-split-t1.00-f0.90-on-r3",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-keep-header",
+      "seriesIndex": 3,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-X1M-split-t1.00-f0.90-on-r2",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-repeat-header",
+      "seriesIndex": 3,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-repeat-header-X1M-split-t1.00-f0.90-on-r3",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-repeat-header",
+      "seriesIndex": 3,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-X1M-split-t1.00-f0.90-on-r2",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-keep-total",
+      "seriesIndex": 3,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-keep-total-X1M-split-t1.00-f0.90-on-r3",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-keep-total",
+      "seriesIndex": 3,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-X1M-split-t1.00-f0.90-on-r2",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-all-three",
+      "seriesIndex": 3,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-all-three-X1M-split-t1.00-f0.90-on-r3",
+      "fixtureId": "X1M",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "series": "x-all-three",
+      "seriesIndex": 3,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-none-B4000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-none-B4000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "none"
+    },
+    {
+      "runId": "s1-keep-header-B4000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-keep-header-B4000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-header"
+    },
+    {
+      "runId": "s1-repeat-header-B4000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-repeat-header-B4000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "repeat-header"
+    },
+    {
+      "runId": "s1-keep-total-B4000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-keep-total-B4000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "keep-total"
+    },
+    {
+      "runId": "s1-all-three-B4000-split-t1.00-f0.90-on-r2",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 2,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    },
+    {
+      "runId": "s1-all-three-B4000-split-t1.00-f0.90-on-r3",
+      "fixtureId": "B4000",
+      "markup": "grid",
+      "repetition": 3,
+      "split": "split",
+      "trigger": 1,
+      "partLimit": 0.9,
+      "footerOn": true,
+      "stage": 1,
+      "matrixRow": 4,
+      "matrixRows": [
+        4
+      ],
+      "seriesIndex": 0,
+      "configuration": "all-three"
+    }
+  ]
+}

@@ -1,0 +1,1938 @@
+{
+  "instances": [
+    {
+      "instance": "XB-L180-H1-r1",
+      "report": "XB-L180-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "499",
+        "unnumberedExit": "0",
+        "unnumberedMs": "241",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "7250"
+      },
+      "verdict": "checked",
+      "pages": 23,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 23 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "23 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4619329.56",
+          "broughtAfter": "4619329.56",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8812503.27",
+          "broughtAfter": "8812503.27",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13094761.78",
+          "broughtAfter": "13094761.78",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "695b7148b0a7d3f7260fa8122706bd24ffa950400effbeb67ff5687c3b05283a"
+    },
+    {
+      "instance": "XB-L181-H1-r1",
+      "report": "XB-L181-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "609",
+        "unnumberedExit": "0",
+        "unnumberedMs": "248",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "6470"
+      },
+      "verdict": "checked",
+      "pages": 23,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 23 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "23 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4636402.54",
+          "broughtAfter": "4636402.54",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8842607.15",
+          "broughtAfter": "8842607.15",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13148827.53",
+          "broughtAfter": "13148827.53",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "c00183d2c1de3a9ae41ab2c3ab8b7ffb29e298e27b4ea094f32873f3d6e065e3"
+    },
+    {
+      "instance": "XB-L182-H1-r1",
+      "report": "XB-L182-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "530",
+        "unnumberedExit": "0",
+        "unnumberedMs": "247",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "7818"
+      },
+      "verdict": "checked",
+      "pages": 23,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 23 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "23 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4681665.40",
+          "broughtAfter": "4681665.40",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "8920567.49",
+          "broughtAfter": "8920567.49",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13199876.90",
+          "broughtAfter": "13199876.90",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "7ce00b95b420106f076ecaa0cce258dceec05a552e6a1dd98e41303853604096"
+    },
+    {
+      "instance": "XB-L183-H1-r1",
+      "report": "XB-L183-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "579",
+        "unnumberedExit": "0",
+        "unnumberedMs": "326",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "6233"
+      },
+      "verdict": "checked",
+      "pages": 23,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 23 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "23 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 8,
+          "carriedBefore": "4714762.77",
+          "broughtAfter": "4714762.77",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 15,
+          "carriedBefore": "9003118.49",
+          "broughtAfter": "9003118.49",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 22,
+          "carriedBefore": "13323022.28",
+          "broughtAfter": "13323022.28",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "4e9016490f2976b45b66bd573330f52e3cd6e67e5ce4a759a5c8401a16084c6a"
+    },
+    {
+      "instance": "XB-L184-H1-r1",
+      "report": "XB-L184-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "463",
+        "unnumberedExit": "0",
+        "unnumberedMs": "196",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "8046"
+      },
+      "verdict": "checked",
+      "pages": 24,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 24 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "24 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4754164.54",
+          "broughtAfter": "4754164.54",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "9082133.31",
+          "broughtAfter": "9082133.31",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "13395013.97",
+          "broughtAfter": "13395013.97",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "be324fdb0d90b15430c3dc939fd8b45a285746c697817926053c2a0141e922a6"
+    },
+    {
+      "instance": "XB-L185-H1-r1",
+      "report": "XB-L185-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "523",
+        "unnumberedExit": "0",
+        "unnumberedMs": "288",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "7310"
+      },
+      "verdict": "checked",
+      "pages": 24,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 24 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "24 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4775581.89",
+          "broughtAfter": "4775581.89",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "9102703.44",
+          "broughtAfter": "9102703.44",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "13457734.69",
+          "broughtAfter": "13457734.69",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "0d1fece1506b3b693e4c7ca305bd7200c69a180da8a25406dc7d01028a371ab7"
+    },
+    {
+      "instance": "XB-L201-H1-r1",
+      "report": "XB-L201-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 23
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "486",
+        "unnumberedExit": "0",
+        "unnumberedMs": "294",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "6700"
+      },
+      "verdict": "checked",
+      "pages": 23,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 23 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "23 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "5202605.15",
+          "broughtAfter": "5202605.15",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "9905848.18",
+          "broughtAfter": "9905848.18",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "fdb73a0b192e360e37643c4019ff8ede60f7843318ce64e03c4a1d6d70e72b1e"
+    },
+    {
+      "instance": "XB-TL150-H1-r1",
+      "report": "XB-TL150-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 27
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 27
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "513",
+        "unnumberedExit": "0",
+        "unnumberedMs": "322",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "7180"
+      },
+      "verdict": "checked",
+      "pages": 27,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 27 pages, 1 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "27 pages, 3 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "3 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 11,
+          "carriedBefore": "3931963.75",
+          "broughtAfter": "3931963.75",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "7555219.84",
+          "broughtAfter": "7555219.84",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "11011196.98",
+          "broughtAfter": "11011196.98",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "d7d954f4d85e4c86d1af347ea20e930d2154bf8b4c2472228cce57464e3fd071"
+    },
+    {
+      "instance": "XB-TF150-H1-r1",
+      "report": "XB-TF150-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 27
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 27
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "515",
+        "unnumberedExit": "0",
+        "unnumberedMs": "304",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "8133"
+      },
+      "verdict": "checked",
+      "pages": 27,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 27 pages, 1 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "27 pages, 3 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 14180203.11 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "3 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 7,
+          "carriedBefore": "3931963.75",
+          "broughtAfter": "3931963.75",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 17,
+          "carriedBefore": "7555219.84",
+          "broughtAfter": "7555219.84",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "11011196.98",
+          "broughtAfter": "11011196.98",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "2e30bd7fbaedbb1995acac5b0af3cd495364c4e3f0d9fbf846fcc11a33dde422"
+    },
+    {
+      "instance": "XB-W250-H1-r1",
+      "report": "XB-W250-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "694",
+        "unnumberedExit": "0",
+        "unnumberedMs": "341",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "12254"
+      },
+      "verdict": "checked",
+      "pages": 50,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "1360 rows on 50 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "50 pages, 0 with no row ending (0.00); block total 33209967.80"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 33209967.80 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "dac4d6ff37682527439ca725ad88c3103f2e9811a23e5722c9f810308c354f5b"
+    },
+    {
+      "instance": "XB-W250-H1-r2",
+      "report": "XB-W250-H1",
+      "repetition": 2,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "735",
+        "unnumberedExit": "0",
+        "unnumberedMs": "304",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "11966"
+      },
+      "verdict": "checked",
+      "pages": 50,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "1360 rows on 50 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "50 pages, 0 with no row ending (0.00); block total 33209967.80"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 33209967.80 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "dac4d6ff37682527439ca725ad88c3103f2e9811a23e5722c9f810308c354f5b"
+    },
+    {
+      "instance": "XB-W250-H1-r3",
+      "report": "XB-W250-H1",
+      "repetition": 3,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "626",
+        "unnumberedExit": "0",
+        "unnumberedMs": "332",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "11964"
+      },
+      "verdict": "checked",
+      "pages": 50,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "1360 rows on 50 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "50 pages, 0 with no row ending (0.00); block total 33209967.80"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 33209967.80 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "5896229.08",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "12336387.14",
+          "broughtAfter": "12336387.14",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "18154345.11",
+          "broughtAfter": "18154345.11",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "24121828.39",
+          "broughtAfter": "24121828.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "30585100.33",
+          "broughtAfter": "30585100.33",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "dac4d6ff37682527439ca725ad88c3103f2e9811a23e5722c9f810308c354f5b"
+    },
+    {
+      "instance": "XB-G500-H1-r1",
+      "report": "XB-G500-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 83
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 83
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "847",
+        "unnumberedExit": "0",
+        "unnumberedMs": "410",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "20626"
+      },
+      "verdict": "checked",
+      "pages": 83,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "2400 rows on 83 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "83 pages, 0 with no row ending (0.00); block total 59284965.89"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 59284965.89 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 20,
+          "carriedBefore": "12243137.59",
+          "broughtAfter": "12243137.59",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 36,
+          "carriedBefore": "24309966.00",
+          "broughtAfter": "24309966.00",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 52,
+          "carriedBefore": "36460593.39",
+          "broughtAfter": "36460593.39",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 68,
+          "carriedBefore": "49463933.44",
+          "broughtAfter": "49463933.44",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "c6104b1b6db4ad2fdb24206a57ee03281a21d15a1474a7df456f8abbdc8514bc"
+    },
+    {
+      "instance": "XB-PB-H1-r1",
+      "report": "XB-PB-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 51
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 51
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "723",
+        "unnumberedExit": "0",
+        "unnumberedMs": "353",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "12492"
+      },
+      "verdict": "checked",
+      "pages": 51,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "1360 rows on 51 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "51 pages, 0 with no row ending (0.00); block total 33209967.80"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 33209967.80 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "5663759.97",
+          "broughtAfter": "5663759.97",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 18,
+          "carriedBefore": "11952657.12",
+          "broughtAfter": "11952657.12",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 28,
+          "carriedBefore": "17560601.07",
+          "broughtAfter": "17560601.07",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "23300224.98",
+          "broughtAfter": "23300224.98",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 46,
+          "carriedBefore": "29481487.61",
+          "broughtAfter": "29481487.61",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "59b7cc2d80fd687a268b4e8bda67ca53aa6d01f80f28f78a7bc9d7c1ab36abad"
+    },
+    {
+      "instance": "XB-ALL-H1-r1",
+      "report": "XB-ALL-H1",
+      "repetition": 1,
+      "variant": "H1",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 354
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 354
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "2783",
+        "unnumberedExit": "0",
+        "unnumberedMs": "1069",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "85013"
+      },
+      "verdict": "checked",
+      "pages": 354,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "10000 rows on 354 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "354 pages, 0 with no row ending (0.00); block total 242650431.67"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "starts at 0.00, ends at 242650431.67 = block total"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [],
+      "groupFailures": [],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 37,
+          "carriedBefore": "24182111.23",
+          "broughtAfter": "24182111.23",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 3,
+          "page": 73,
+          "carriedBefore": "48587548.23",
+          "broughtAfter": "48587548.23",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 4,
+          "page": 111,
+          "carriedBefore": "71999496.91",
+          "broughtAfter": "71999496.91",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 5,
+          "page": 146,
+          "carriedBefore": "96298319.91",
+          "broughtAfter": "96298319.91",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 6,
+          "page": 177,
+          "carriedBefore": "121506486.42",
+          "broughtAfter": "121506486.42",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 7,
+          "page": 213,
+          "carriedBefore": "146020516.01",
+          "broughtAfter": "146020516.01",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 8,
+          "page": 248,
+          "carriedBefore": "170217174.27",
+          "broughtAfter": "170217174.27",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 9,
+          "page": 284,
+          "carriedBefore": "193550558.01",
+          "broughtAfter": "193550558.01",
+          "state": "continuous"
+        },
+        {
+          "beforePart": 10,
+          "page": 320,
+          "carriedBefore": "218069877.77",
+          "broughtAfter": "218069877.77",
+          "state": "continuous"
+        }
+      ],
+      "numberedWordsSha256": "ea2b0dd84a289e36c1c622380f7af411d0ab3d0a03be155ded777ba215acaf80"
+    },
+    {
+      "instance": "XB-L185-H0-r1",
+      "report": "XB-L185-H0",
+      "repetition": 1,
+      "variant": "H0",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 24
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "473",
+        "unnumberedExit": "0",
+        "unnumberedMs": "243",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "7293"
+      },
+      "verdict": "checked",
+      "pages": 24,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "594 rows on 24 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "24 pages, 0 with no row ending (0.00); block total 14180203.11"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "FAIL",
+          "page": 9,
+          "detail": "brought forward 0.00 expected 4775581.89"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [
+        "XA-3|p9"
+      ],
+      "groupFailures": [
+        {
+          "rule": "RG-1",
+          "class": "header-duplicated",
+          "group": "G0002",
+          "row": null,
+          "page": 9,
+          "detail": "3 plain header lines"
+        },
+        {
+          "rule": "RG-1",
+          "class": "header-duplicated",
+          "group": "G0004",
+          "row": null,
+          "page": 23,
+          "detail": "2 plain header lines"
+        },
+        {
+          "rule": "RG-2",
+          "class": "total-wrong",
+          "group": "G0002",
+          "row": null,
+          "page": 17,
+          "detail": "printed 798387.06, expected 5219425.10"
+        },
+        {
+          "rule": "RG-2",
+          "class": "total-wrong",
+          "group": "G0004",
+          "row": null,
+          "page": 24,
+          "detail": "printed 722468.42, expected 4274354.93"
+        }
+      ],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 9,
+          "carriedBefore": "4775581.89",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 3,
+          "page": 16,
+          "carriedBefore": "4327121.55",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 4,
+          "page": 23,
+          "carriedBefore": "4355031.25",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        }
+      ],
+      "numberedWordsSha256": "d27dcc6155100235f0b2f67214d6d0b94996677e5250bbbaec8815d13e7d9af7"
+    },
+    {
+      "instance": "XB-W250-H0-r1",
+      "report": "XB-W250-H0",
+      "repetition": 1,
+      "variant": "H0",
+      "verifyNumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-rounded",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "verifyUnnumbered": {
+        "exists": true,
+        "structure": true,
+        "boxes": "box-source",
+        "order": true,
+        "numbering": true,
+        "pixels": true,
+        "pass": true,
+        "firstFailingPage": null,
+        "firstFailure": null,
+        "pages": 50
+      },
+      "assembly": {
+        "numberedExit": "0",
+        "numberedMs": "699",
+        "unnumberedExit": "0",
+        "unnumberedMs": "423",
+        "verifyNumberedExit": "0",
+        "verifyUnnumberedExit": "0",
+        "verifyMs": "12171"
+      },
+      "verdict": "checked",
+      "pages": 50,
+      "accountingRules": [
+        {
+          "rule": "XA-1",
+          "name": "rows-not-lost-or-duplicated",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "1360 rows on 50 pages, 0 split"
+        },
+        {
+          "rule": "XA-2",
+          "name": "end-page-subtotals",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "50 pages, 0 with no row ending (0.00); block total 33209967.80"
+        },
+        {
+          "rule": "XA-3",
+          "name": "brought-carried-chain",
+          "outcome": "FAIL",
+          "page": 10,
+          "detail": "brought forward 0.00 expected 5896229.08"
+        },
+        {
+          "rule": "XA-4",
+          "name": "visible-amounts",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "each amount printed only on the fragment where its row ends"
+        },
+        {
+          "rule": "XA-5",
+          "name": "continues-marks",
+          "outcome": "PASS",
+          "page": null,
+          "detail": "0 marks, all on non-final fragments"
+        }
+      ],
+      "accountingFailures": [
+        "XA-3|p10"
+      ],
+      "groupFailures": [
+        {
+          "rule": "RG-1",
+          "class": "header-duplicated",
+          "group": "G0006",
+          "row": null,
+          "page": 10,
+          "detail": "6 plain header lines"
+        },
+        {
+          "rule": "RG-2",
+          "class": "total-wrong",
+          "group": "G0006",
+          "row": null,
+          "page": 50,
+          "detail": "printed 2624867.47, expected 29481763.64"
+        }
+      ],
+      "boundaryChain": [
+        {
+          "beforePart": 2,
+          "page": 10,
+          "carriedBefore": "5896229.08",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 3,
+          "page": 19,
+          "carriedBefore": "6440158.06",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 4,
+          "page": 29,
+          "carriedBefore": "5817957.97",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 5,
+          "page": 37,
+          "carriedBefore": "5967483.28",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        },
+        {
+          "beforePart": 6,
+          "page": 47,
+          "carriedBefore": "6463271.94",
+          "broughtAfter": "0.00",
+          "state": "broken"
+        }
+      ],
+      "numberedWordsSha256": "9f853f96bdf604c9446daa34d71281b76cf7931f768e09d311f335c22076b8c9"
+    }
+  ]
+}

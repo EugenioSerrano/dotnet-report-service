@@ -1,0 +1,121 @@
+{
+  "recordedAt": "2026-10-31T21:15:12-03:00",
+  "gate": "the platform version policy's licence gate: checked at the exact version, compatible with the product's MIT licence, no copyleft or source-available licence in anything shipped, transitive dependencies included",
+  "restore": {
+    "framework": "net10.0",
+    "source": "https://api.nuget.org/v3/index.json (package source mapping: every package to nuget.org only)",
+    "vulnerable": "none (dotnet list package --vulnerable --include-transitive)"
+  },
+  "candidates": [
+    {
+      "package": "PdfPig",
+      "version": "0.1.16",
+      "licence": "Apache-2.0",
+      "licenceSource": "nuspec <license type=\"expression\">",
+      "contentHash": "qQcbsNMYVY+K5ELptax2S8thNMk0+rSQq3H/KdYj3LLcko8yTCz8y5KIvsKxIyAuTN0ZYNnfsZkM+0EvxTwHVA==",
+      "signature": "dotnet nuget verify --all: exit 0; repository signature, NuGet.org Repository by Microsoft, certificate SHA-256 1F4B311D9ACC115C8DC8018B5A49E00FCE6DA8E2855F9F014CA6F34570BC482D",
+      "dependencies": "none for net6.0, net8.0, net9.0, netstandard2.1 (net10.0 resolves the net9.0 group): no transitive package",
+      "assemblies": [
+        "UglyToad.PdfPig",
+        "UglyToad.PdfPig.Core",
+        "UglyToad.PdfPig.DocumentLayoutAnalysis",
+        "UglyToad.PdfPig.Fonts",
+        "UglyToad.PdfPig.Package",
+        "UglyToad.PdfPig.Tokenization",
+        "UglyToad.PdfPig.Tokens"
+      ],
+      "packageFiles": [
+        "PdfPig.nuspec",
+        "README.md",
+        "pdfpig.png",
+        "lib/<7 frameworks>/*.dll|pdb|xml (49 assemblies)"
+      ],
+      "bundledThirdParty": [
+        {
+          "what": "Adobe Core 14 AFM font metrics (14 files) with Adobe's MustRead.html, embedded in UglyToad.PdfPig.Fonts.dll",
+          "terms": "may be used, copied and distributed for any purpose and without charge, with or without modification, provided all copyright notices are retained, the AFM files are not distributed without this file, and modifications are noted (MustRead.html)",
+          "copyleft": false
+        },
+        {
+          "what": "Adobe Glyph List (glyphlist, zapfdingbats, additional), embedded in UglyToad.PdfPig.Fonts.dll",
+          "terms": "BSD-3-Clause text (Copyright Adobe Systems Incorporated), in the file header",
+          "copyleft": false
+        },
+        {
+          "what": "Adobe CMap resources (92 CMaps), embedded in UglyToad.PdfPig.dll",
+          "terms": "BSD-3-Clause text (Copyright 1990-2009 Adobe Systems Incorporated), in each CMap header",
+          "copyleft": false
+        },
+        {
+          "what": "ICC profile sRGB2014.icc, embedded in UglyToad.PdfPig.dll",
+          "terms": "the profile's copyright tag reads 'Copyright International Color Consortium, 2015'; no licence terms are stated in the package — to be confirmed by the reader decision",
+          "copyleft": false
+        }
+      ],
+      "notices": "Apache-2.0 and the Adobe terms above require their notices in a shipped product's third-party notice file",
+      "latestStableOnNuget": {
+        "checkedAt": "2026-10-31T21:15:12-03:00",
+        "latestStable": "0.1.16",
+        "later": "only 0.1.17 alpha prereleases (latest listed 0.1.17-alpha-202610280031-86fd0)"
+      },
+      "gate": "pass"
+    },
+    {
+      "package": "PDFsharp",
+      "version": "6.2.4",
+      "licence": "MIT",
+      "licenceSource": "nuspec <license type=\"expression\">",
+      "contentHash": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
+      "dependencies": "Microsoft.Extensions.Logging.Abstractions 8.0.3 (MIT) -> Microsoft.Extensions.DependencyInjection.Abstractions 8.0.2 (MIT); System.Security.Cryptography.Pkcs requested 8.0.1, pinned 8.0.2 (MIT)",
+      "gate": "pass"
+    }
+  ],
+  "resolvedGraph": [
+    {
+      "package": "PdfPig",
+      "version": "0.1.16",
+      "licence": "Apache-2.0",
+      "contentHash": "qQcbsNMYVY+K5ELptax2S8thNMk0+rSQq3H/KdYj3LLcko8yTCz8y5KIvsKxIyAuTN0ZYNnfsZkM+0EvxTwHVA==",
+      "gate": "pass"
+    },
+    {
+      "package": "PDFsharp",
+      "version": "6.2.4",
+      "licence": "MIT",
+      "contentHash": "GhTr9F1uOYXHCIEOB5PXIgqn5a8WLsJL2m0eewTA0IvY1j6N4HGXHKKmEyB90/N6vrjmYamf41V9zbmdW2HY3g==",
+      "gate": "pass"
+    },
+    {
+      "package": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "8.0.3",
+      "licence": "MIT",
+      "contentHashPrefix": "dL0QGToTxggRLMYY4ZYX5AMw",
+      "gate": "pass"
+    },
+    {
+      "package": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "8.0.2",
+      "licence": "MIT",
+      "contentHashPrefix": "3iE7UF7MQkCv1cxzCahz+Y/g",
+      "gate": "pass"
+    },
+    {
+      "package": "System.Security.Cryptography.Pkcs",
+      "version": "8.0.2",
+      "licence": "MIT",
+      "contentHashPrefix": "VWACYq0JGxi9sw3TonSSV4B2",
+      "gate": "pass"
+    }
+  ],
+  "notACandidate": [
+    {
+      "what": "poppler-utils 24.02.0-1ubuntu9.11",
+      "role": "the reference reader only, inside the earlier checker image; GPL-2 or GPL-3 — never shipped, never measured as a candidate"
+    },
+    {
+      "what": "iText 8.0.1 (itext7 / itext in the package cache)",
+      "licence": "nuspec licenseUrl https://www.gnu.org/licenses/agpl.html (AGPL)",
+      "gate": "fail — not measured"
+    }
+  ]
+}

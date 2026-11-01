@@ -1,0 +1,34 @@
+{
+  "rule": "the smallest L in the range with pages(L \u002B 1) = pages(L) \u002B 1: record L \u002B 1 would start a new page, so part 1 ends exactly at a page end",
+  "range": [
+    240,
+    260
+  ],
+  "records": "594 \u2026 594 \u002B L \u2212 1 (part 1 of the page-coinciding report)",
+  "pages": {
+    "240": 8,
+    "241": 8,
+    "242": 8,
+    "243": 9,
+    "244": 9,
+    "245": 9,
+    "246": 9,
+    "247": 9,
+    "248": 9,
+    "249": 9,
+    "250": 9,
+    "251": 9,
+    "252": 9,
+    "253": 9,
+    "254": 9,
+    "255": 9,
+    "256": 9,
+    "257": 9,
+    "258": 9,
+    "259": 9,
+    "260": 9,
+    "261": 9
+  },
+  "blockLimit": 242,
+  "note": "a documented exception: this block limit is chosen from layout results (page counts), before the measured stage"
+}

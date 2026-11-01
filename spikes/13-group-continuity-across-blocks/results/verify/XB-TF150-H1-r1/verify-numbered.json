@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-TF150-H1-r1//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 109,
+    "exemptWarningLines": 109,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 27,
+  "expectedPages": 27,
+  "structurePass": true,
+  "textPagesChecked": 27,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 27,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 181,
+  "maxChangedInside": 216,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 27,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 27
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 27
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 27,
+    "minOutside": 3979,
+    "maxOutside": 17501,
+    "sumOutside": 344035,
+    "minInside": 181,
+    "maxInside": 216
+  },
+  "pass": true
+}

@@ -1,0 +1,33 @@
+{
+ "matrix": "stage1-grid",
+ "startedAt": "2026-11-01T01:33:19+00:00",
+ "endedAt": "2026-11-01T01:47:53+00:00",
+ "elapsedSeconds": 874,
+ "budgetSeconds": 7200,
+ "fixtureSumsSha256": "10267bf9cbb61eae20883470c08cb01b20dbbac08e6bf2921cd4f76ca2ba93ae",
+ "environment": {
+  "pdfBaseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d",
+  "chromium": "153.0.8010.12",
+  "playwright": "1.63.0",
+  "dotnet": "10.0.13",
+  "processors": 16,
+  "memoryMax": "4294967296",
+  "memorySwapMax": "0",
+  "memoryTotalKiB": 12244632
+ },
+ "counts": {
+  "ok": 305
+ },
+ "registry": {
+  "image": "registry:3.1.2@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8",
+  "address": "127.0.0.1:5055",
+  "baseTag": "report-service-pdf-base:1.63.0-10.0.13-noble",
+  "baseDigest": "sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d"
+ },
+ "images": {
+  "group-rules-spike:local": "sha256:9ffa212492eac4acc30fafe4edf2b5b31938ffb3da26aef6cd7b2b7b78e2384f",
+  "group-rules-check:local": "sha256:efd25bb7f8fe0060119d4c91a9290fafafc5911603bf6f0edc2d967f2437b2ed",
+  "text-integrity-check:local": "sha256:9e013c3b2f5148592698e3be7213c364fa1c2c40e3f148f8126521424168c3a6"
+ },
+ "memoryNote": "cgroupMemoryPeakBytes is the container running peak (the stage container up to that run), not a per-run figure; the near-ceiling rule reads the Chromium process-tree peak; oom_kill is the out-of-memory evidence"
+}

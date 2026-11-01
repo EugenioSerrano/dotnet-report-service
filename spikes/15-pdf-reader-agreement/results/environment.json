@@ -1,0 +1,75 @@
+{
+  "referenceEnvironment": "docs/reference-environment.md, page revision 2 (Intel Core i9-14900, 24 GiB, Rancher Desktop on WSL 2)",
+  "window": {
+    "grantedAt": "2026-10-31T21:18:40-03:00",
+    "firstContainer": "2026-10-31T21:19:03-03:00",
+    "lastMeasuredContainerExited": "2026-10-31T21:31:47-03:00",
+    "engineAtStart": "only report-service-dev-registry (registry:3.1.2) running",
+    "hostAtStart": "17 idle dotnet.exe build-server processes seen by the window's grantor at 21:18:24 (CPU delta 0.00 over 5 s); 'dotnet build-server shutdown' at 21:18:57 left 1 dotnet.exe"
+  },
+  "images": {
+    "text-integrity-check:local": "sha256:9e013c3b2f5148592698e3be7213c364fa1c2c40e3f148f8126521424168c3a6 (the earlier checker image, used as it is; poppler-utils 24.02.0-1ubuntu9.11)",
+    "mcr.microsoft.com/dotnet/aspnet:10.0.13-noble": "sha256:8af87eba5e7cdafb1514d7388be287365da97c132509e84dfe252ffd552398ca (candidate stage; no poppler)",
+    "native-tall-rows-spike:local": "sha256:b03a90f1df3ebc8351da55fff1256a24f988d1716c035d123c5eb00b34d35371 (native harness, created 2026-10-22T23:51:17-03:00; regeneration)",
+    "pagedjs-markup-spike:local": "sha256:138266c7539906ebfc0d7c0466c28dbc4d142f0ca3fdb58d293c85aae45b096c (Paged.js harness, the id that experiment recorded; regeneration)",
+    "pdfBase": "localhost:5055/report-service-pdf-base:1.63.0-10.0.13-noble sha256:20a7c39a219fe9ad039a8cda5d31cbc0c3e1d1166b729cc1c719b4ccd09de60d (inside both harness images)",
+    "registry": "registry:3.1.2@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8 on 127.0.0.1:5055"
+  },
+  "tool": {
+    "sdk": "10.0.403 (host; global.json 10.0.402 latestPatch)",
+    "runtimeInContainers": "10.0.13",
+    "publishOutputSha256": "12004ff91178d16e289e56f3d71d6fe473d0a325c9b663576b86caba33c7a1ad (sha256 of the sorted per-file sha256 list)",
+    "mountedReadOnly": true
+  },
+  "stages": [
+    {
+      "stage": "regeneration, native harness",
+      "command": "run --matrix full",
+      "runs": 90,
+      "classes": {
+        "ok": 90
+      },
+      "from": "21:19:03",
+      "to": "21:20:57"
+    },
+    {
+      "stage": "regeneration, Paged.js harness",
+      "command": "run --stage 1 --budget-seconds 3600",
+      "runs": 95,
+      "classes": {
+        "ok": 95
+      },
+      "from": "21:21:03",
+      "to": "21:26:11"
+    },
+    {
+      "stage": "reference",
+      "records": 126,
+      "classes": {
+        "ok": 126
+      },
+      "from": "21:26:27",
+      "to": "21:28:27",
+      "driverSeconds": 117
+    },
+    {
+      "stage": "candidates, attempt 1",
+      "records": 0,
+      "from": "21:28:51",
+      "to": "21:28:52",
+      "note": "the driver could not create /out as uid 1654 in the plain runtime image; no reader started"
+    },
+    {
+      "stage": "candidates",
+      "records": 168,
+      "classes": {
+        "ok": 168
+      },
+      "from": "21:29:09",
+      "to": "21:31:47",
+      "driverSeconds": 151
+    }
+  ],
+  "containerFlags": "--init --network none --memory 4g --memory-swap 4g (harnesses: --shm-size=1g, network default as in their own commands); user 1654",
+  "memoryNote": "treePeakRssKiB sums VmRSS of the run process and all its descendants every 50 ms (poppler's processes included for the reference reader); containerRunningPeakBytes is the stage container's peak up to that run, not a per-run figure; oom_kill is the out-of-memory evidence"
+}

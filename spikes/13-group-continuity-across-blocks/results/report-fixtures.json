@@ -1,0 +1,2734 @@
+{
+  "dataset": "header-items-v1.grouped.10k.json",
+  "reports": [
+    {
+      "report": "XB-PROBE",
+      "case": "hand-over probe",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 400,
+        "count": 401
+      },
+      "blockLimit": 183,
+      "parts": [
+        {
+          "fixture": "XB-PROBE-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 182,
+            "count": 183
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 1,
+              "firstSequence": 183,
+              "lastSequence": 183,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PROBE-P2",
+          "part": 2,
+          "records": {
+            "first": 183,
+            "last": 365,
+            "count": 183
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 183,
+              "firstSequence": 184,
+              "lastSequence": 366,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PROBE-P3",
+          "part": 3,
+          "records": {
+            "first": 366,
+            "last": 400,
+            "count": 35
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 35,
+              "firstSequence": 367,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 183,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 1,
+          "recordsAfter": 218,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 366,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 184,
+          "recordsAfter": 35,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L180-H1",
+      "case": "split near a group\u0027s end",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 180,
+      "parts": [
+        {
+          "fixture": "XB-L180-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 179,
+            "count": 180
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 180,
+              "firstSequence": 1,
+              "lastSequence": 180,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L180-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 180,
+            "last": 359,
+            "count": 180
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 2,
+              "firstSequence": 181,
+              "lastSequence": 182,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 178,
+              "firstSequence": 183,
+              "lastSequence": 360,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L180-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 360,
+            "last": 539,
+            "count": 180
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 41,
+              "firstSequence": 361,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 138,
+              "firstSequence": 403,
+              "lastSequence": 540,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L180-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 540,
+            "last": 593,
+            "count": 54
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 54,
+              "firstSequence": 541,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 180,
+          "class": "near-end",
+          "openGroup": "G0001",
+          "recordsBefore": 180,
+          "recordsAfter": 2,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 360,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 178,
+          "recordsAfter": 41,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 540,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 138,
+          "recordsAfter": 54,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L181-H1",
+      "case": "split near a group\u0027s end",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 181,
+      "parts": [
+        {
+          "fixture": "XB-L181-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 180,
+            "count": 181
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 181,
+              "firstSequence": 1,
+              "lastSequence": 181,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L181-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 181,
+            "last": 361,
+            "count": 181
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 1,
+              "firstSequence": 182,
+              "lastSequence": 182,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 180,
+              "firstSequence": 183,
+              "lastSequence": 362,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L181-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 362,
+            "last": 542,
+            "count": 181
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 39,
+              "firstSequence": 363,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 141,
+              "firstSequence": 403,
+              "lastSequence": 543,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L181-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 543,
+            "last": 593,
+            "count": 51
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 51,
+              "firstSequence": 544,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 181,
+          "class": "near-end",
+          "openGroup": "G0001",
+          "recordsBefore": 181,
+          "recordsAfter": 1,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 362,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 180,
+          "recordsAfter": 39,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 543,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 141,
+          "recordsAfter": 51,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L182-H1",
+      "case": "boundary between groups",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 182,
+      "parts": [
+        {
+          "fixture": "XB-L182-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 181,
+            "count": 182
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L182-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 182,
+            "last": 363,
+            "count": 182
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 182,
+              "firstSequence": 183,
+              "lastSequence": 364,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L182-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 364,
+            "last": 545,
+            "count": 182
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 37,
+              "firstSequence": 365,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 144,
+              "firstSequence": 403,
+              "lastSequence": 546,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L182-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 546,
+            "last": 593,
+            "count": 48
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 48,
+              "firstSequence": 547,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 182,
+          "class": "between",
+          "openGroup": null,
+          "closingGroup": "G0001"
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 364,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 182,
+          "recordsAfter": 37,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 546,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 144,
+          "recordsAfter": 48,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L183-H1",
+      "case": "split near a group\u0027s start",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 183,
+      "parts": [
+        {
+          "fixture": "XB-L183-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 182,
+            "count": 183
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 1,
+              "firstSequence": 183,
+              "lastSequence": 183,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L183-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 183,
+            "last": 365,
+            "count": 183
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 183,
+              "firstSequence": 184,
+              "lastSequence": 366,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L183-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 366,
+            "last": 548,
+            "count": 183
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 35,
+              "firstSequence": 367,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 147,
+              "firstSequence": 403,
+              "lastSequence": 549,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L183-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 549,
+            "last": 593,
+            "count": 45
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 45,
+              "firstSequence": 550,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 183,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 1,
+          "recordsAfter": 218,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 366,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 184,
+          "recordsAfter": 35,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 549,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 147,
+          "recordsAfter": 45,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L184-H1",
+      "case": "split near a group\u0027s start",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 184,
+      "parts": [
+        {
+          "fixture": "XB-L184-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 183,
+            "count": 184
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 2,
+              "firstSequence": 183,
+              "lastSequence": 184,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L184-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 184,
+            "last": 367,
+            "count": 184
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 184,
+              "firstSequence": 185,
+              "lastSequence": 368,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L184-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 368,
+            "last": 551,
+            "count": 184
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 33,
+              "firstSequence": 369,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 150,
+              "firstSequence": 403,
+              "lastSequence": 552,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L184-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 552,
+            "last": 593,
+            "count": 42
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 42,
+              "firstSequence": 553,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 184,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 2,
+          "recordsAfter": 217,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 368,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 186,
+          "recordsAfter": 33,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 552,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 150,
+          "recordsAfter": 42,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L185-H1",
+      "case": "split near a group\u0027s start",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 185,
+      "parts": [
+        {
+          "fixture": "XB-L185-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 184,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 3,
+              "firstSequence": 183,
+              "lastSequence": 185,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 185,
+            "last": 369,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 185,
+              "firstSequence": 186,
+              "lastSequence": 370,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 370,
+            "last": 554,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 31,
+              "firstSequence": 371,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 153,
+              "firstSequence": 403,
+              "lastSequence": 555,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 555,
+            "last": 593,
+            "count": 39
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 39,
+              "firstSequence": 556,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 185,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 3,
+          "recordsAfter": 216,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 370,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 188,
+          "recordsAfter": 31,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 555,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 153,
+          "recordsAfter": 39,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L201-H1",
+      "case": "one-record group at a part end",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 201,
+      "parts": [
+        {
+          "fixture": "XB-L201-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 200,
+            "count": 201
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 19,
+              "firstSequence": 183,
+              "lastSequence": 201,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L201-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 201,
+            "last": 401,
+            "count": 201
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 200,
+              "firstSequence": 202,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L201-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 402,
+            "last": 593,
+            "count": 192
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 192,
+              "firstSequence": 403,
+              "lastSequence": 594,
+              "openAtStart": false,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 201,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 19,
+          "recordsAfter": 200,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 402,
+          "class": "between",
+          "openGroup": null,
+          "closingGroup": "G0003"
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-TL150-H1",
+      "case": "over-tall row as a part\u0027s last row",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 150,
+      "parts": [
+        {
+          "fixture": "XB-TL150-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 149,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 150,
+              "firstSequence": 1,
+              "lastSequence": 150,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TL150-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 150,
+            "last": 299,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 32,
+              "firstSequence": 151,
+              "lastSequence": 182,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 118,
+              "firstSequence": 183,
+              "lastSequence": 300,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TL150-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 300,
+            "last": 449,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 101,
+              "firstSequence": 301,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 48,
+              "firstSequence": 403,
+              "lastSequence": 450,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TL150-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 450,
+            "last": 593,
+            "count": 144
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 144,
+              "firstSequence": 451,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 150,
+          "class": "middle",
+          "openGroup": "G0001",
+          "recordsBefore": 150,
+          "recordsAfter": 32,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 300,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 118,
+          "recordsAfter": 101,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 450,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 48,
+          "recordsAfter": 144,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": [
+        {
+          "sequence": 150,
+          "characters": 15930
+        }
+      ]
+    },
+    {
+      "report": "XB-TF150-H1",
+      "case": "over-tall row as a part\u0027s first row",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 150,
+      "parts": [
+        {
+          "fixture": "XB-TF150-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 149,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 150,
+              "firstSequence": 1,
+              "lastSequence": 150,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TF150-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 150,
+            "last": 299,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 32,
+              "firstSequence": 151,
+              "lastSequence": 182,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 118,
+              "firstSequence": 183,
+              "lastSequence": 300,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TF150-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 300,
+            "last": 449,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 101,
+              "firstSequence": 301,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 48,
+              "firstSequence": 403,
+              "lastSequence": 450,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-TF150-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 450,
+            "last": 593,
+            "count": 144
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 144,
+              "firstSequence": 451,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 150,
+          "class": "middle",
+          "openGroup": "G0001",
+          "recordsBefore": 150,
+          "recordsAfter": 32,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 300,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 118,
+          "recordsAfter": 101,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 450,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 48,
+          "recordsAfter": 144,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": [
+        {
+          "sequence": 151,
+          "characters": 15930
+        }
+      ]
+    },
+    {
+      "report": "XB-W250-H1",
+      "case": "group spanning more than one whole block",
+      "variant": "H1",
+      "records": {
+        "first": 594,
+        "last": 1953,
+        "count": 1360
+      },
+      "blockLimit": 250,
+      "parts": [
+        {
+          "fixture": "XB-W250-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 594,
+            "last": 843,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0005",
+              "items": 160,
+              "firstSequence": 595,
+              "lastSequence": 754,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0006",
+              "items": 90,
+              "firstSequence": 755,
+              "lastSequence": 844,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 844,
+            "last": 1093,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 845,
+              "lastSequence": 1094,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 1094,
+            "last": 1343,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1095,
+              "lastSequence": 1344,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 1344,
+            "last": 1593,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1345,
+              "lastSequence": 1594,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H1-P5",
+          "part": 5,
+          "records": {
+            "first": 1594,
+            "last": 1843,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1595,
+              "lastSequence": 1844,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H1-P6",
+          "part": 6,
+          "records": {
+            "first": 1844,
+            "last": 1953,
+            "count": 110
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 110,
+              "firstSequence": 1845,
+              "lastSequence": 1954,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-G500-H1",
+      "case": "group spanning whole blocks, larger",
+      "variant": "H1",
+      "records": {
+        "first": 3152,
+        "last": 5551,
+        "count": 2400
+      },
+      "blockLimit": 500,
+      "parts": [
+        {
+          "fixture": "XB-G500-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 3152,
+            "last": 3651,
+            "count": 500
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 500,
+              "firstSequence": 3153,
+              "lastSequence": 3652,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-G500-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 3652,
+            "last": 4151,
+            "count": 500
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 500,
+              "firstSequence": 3653,
+              "lastSequence": 4152,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-G500-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 4152,
+            "last": 4651,
+            "count": 500
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 500,
+              "firstSequence": 4153,
+              "lastSequence": 4652,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-G500-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 4652,
+            "last": 5151,
+            "count": 500
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 500,
+              "firstSequence": 4653,
+              "lastSequence": 5152,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-G500-H1-P5",
+          "part": 5,
+          "records": {
+            "first": 5152,
+            "last": 5551,
+            "count": 400
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 400,
+              "firstSequence": 5153,
+              "lastSequence": 5552,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 3652,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 500,
+          "recordsAfter": 1900,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 4152,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1000,
+          "recordsAfter": 1400,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 4652,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1500,
+          "recordsAfter": 900,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 5152,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 2000,
+          "recordsAfter": 400,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-PB-H1",
+      "case": "block boundary on a page boundary",
+      "variant": "H1",
+      "records": {
+        "first": 594,
+        "last": 1953,
+        "count": 1360
+      },
+      "blockLimit": 242,
+      "parts": [
+        {
+          "fixture": "XB-PB-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 594,
+            "last": 835,
+            "count": 242
+          },
+          "groups": [
+            {
+              "id": "G0005",
+              "items": 160,
+              "firstSequence": 595,
+              "lastSequence": 754,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0006",
+              "items": 82,
+              "firstSequence": 755,
+              "lastSequence": 836,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PB-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 836,
+            "last": 1077,
+            "count": 242
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 242,
+              "firstSequence": 837,
+              "lastSequence": 1078,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PB-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 1078,
+            "last": 1319,
+            "count": 242
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 242,
+              "firstSequence": 1079,
+              "lastSequence": 1320,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PB-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 1320,
+            "last": 1561,
+            "count": 242
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 242,
+              "firstSequence": 1321,
+              "lastSequence": 1562,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PB-H1-P5",
+          "part": 5,
+          "records": {
+            "first": 1562,
+            "last": 1803,
+            "count": 242
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 242,
+              "firstSequence": 1563,
+              "lastSequence": 1804,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-PB-H1-P6",
+          "part": 6,
+          "records": {
+            "first": 1804,
+            "last": 1953,
+            "count": 150
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 150,
+              "firstSequence": 1805,
+              "lastSequence": 1954,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 836,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 82,
+          "recordsAfter": 1118,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1078,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 324,
+          "recordsAfter": 876,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1320,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 566,
+          "recordsAfter": 634,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1562,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 808,
+          "recordsAfter": 392,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1804,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1050,
+          "recordsAfter": 150,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-ALL-H1",
+      "case": "the whole dataset (top of the bracket)",
+      "variant": "H1",
+      "records": {
+        "first": 0,
+        "last": 9999,
+        "count": 10000
+      },
+      "blockLimit": 1000,
+      "parts": [
+        {
+          "fixture": "XB-ALL-H1-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 219,
+              "firstSequence": 183,
+              "lastSequence": 401,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 192,
+              "firstSequence": 403,
+              "lastSequence": 594,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0005",
+              "items": 160,
+              "firstSequence": 595,
+              "lastSequence": 754,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0006",
+              "items": 246,
+              "firstSequence": 755,
+              "lastSequence": 1000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P2",
+          "part": 2,
+          "records": {
+            "first": 1000,
+            "last": 1999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 954,
+              "firstSequence": 1001,
+              "lastSequence": 1954,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0007",
+              "items": 46,
+              "firstSequence": 1955,
+              "lastSequence": 2000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P3",
+          "part": 3,
+          "records": {
+            "first": 2000,
+            "last": 2999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0007",
+              "items": 243,
+              "firstSequence": 2001,
+              "lastSequence": 2243,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0008",
+              "items": 173,
+              "firstSequence": 2244,
+              "lastSequence": 2416,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0009",
+              "items": 112,
+              "firstSequence": 2417,
+              "lastSequence": 2528,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0010",
+              "items": 301,
+              "firstSequence": 2529,
+              "lastSequence": 2829,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0011",
+              "items": 171,
+              "firstSequence": 2830,
+              "lastSequence": 3000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P4",
+          "part": 4,
+          "records": {
+            "first": 3000,
+            "last": 3999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0011",
+              "items": 152,
+              "firstSequence": 3001,
+              "lastSequence": 3152,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0012",
+              "items": 848,
+              "firstSequence": 3153,
+              "lastSequence": 4000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P5",
+          "part": 5,
+          "records": {
+            "first": 4000,
+            "last": 4999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 1000,
+              "firstSequence": 4001,
+              "lastSequence": 5000,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P6",
+          "part": 6,
+          "records": {
+            "first": 5000,
+            "last": 5999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0012",
+              "items": 552,
+              "firstSequence": 5001,
+              "lastSequence": 5552,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0013",
+              "items": 354,
+              "firstSequence": 5553,
+              "lastSequence": 5906,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0014",
+              "items": 37,
+              "firstSequence": 5907,
+              "lastSequence": 5943,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0015",
+              "items": 57,
+              "firstSequence": 5944,
+              "lastSequence": 6000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P7",
+          "part": 7,
+          "records": {
+            "first": 6000,
+            "last": 6999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0015",
+              "items": 220,
+              "firstSequence": 6001,
+              "lastSequence": 6220,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0016",
+              "items": 279,
+              "firstSequence": 6221,
+              "lastSequence": 6499,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0017",
+              "items": 227,
+              "firstSequence": 6500,
+              "lastSequence": 6726,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0018",
+              "items": 200,
+              "firstSequence": 6727,
+              "lastSequence": 6926,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0019",
+              "items": 74,
+              "firstSequence": 6927,
+              "lastSequence": 7000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P8",
+          "part": 8,
+          "records": {
+            "first": 7000,
+            "last": 7999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0019",
+              "items": 184,
+              "firstSequence": 7001,
+              "lastSequence": 7184,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0020",
+              "items": 271,
+              "firstSequence": 7185,
+              "lastSequence": 7455,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0021",
+              "items": 79,
+              "firstSequence": 7456,
+              "lastSequence": 7534,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0022",
+              "items": 289,
+              "firstSequence": 7535,
+              "lastSequence": 7823,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0023",
+              "items": 68,
+              "firstSequence": 7824,
+              "lastSequence": 7891,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0024",
+              "items": 109,
+              "firstSequence": 7892,
+              "lastSequence": 8000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P9",
+          "part": 9,
+          "records": {
+            "first": 8000,
+            "last": 8999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0024",
+              "items": 86,
+              "firstSequence": 8001,
+              "lastSequence": 8086,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0025",
+              "items": 235,
+              "firstSequence": 8087,
+              "lastSequence": 8321,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0026",
+              "items": 366,
+              "firstSequence": 8322,
+              "lastSequence": 8687,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0027",
+              "items": 118,
+              "firstSequence": 8688,
+              "lastSequence": 8805,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0028",
+              "items": 195,
+              "firstSequence": 8806,
+              "lastSequence": 9000,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-ALL-H1-P10",
+          "part": 10,
+          "records": {
+            "first": 9000,
+            "last": 9999,
+            "count": 1000
+          },
+          "groups": [
+            {
+              "id": "G0028",
+              "items": 197,
+              "firstSequence": 9001,
+              "lastSequence": 9197,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0029",
+              "items": 150,
+              "firstSequence": 9198,
+              "lastSequence": 9347,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0030",
+              "items": 369,
+              "firstSequence": 9348,
+              "lastSequence": 9716,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0031",
+              "items": 284,
+              "firstSequence": 9717,
+              "lastSequence": 10000,
+              "openAtStart": false,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 1000,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 246,
+          "recordsAfter": 954,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 2000,
+          "class": "middle",
+          "openGroup": "G0007",
+          "recordsBefore": 46,
+          "recordsAfter": 243,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 3000,
+          "class": "middle",
+          "openGroup": "G0011",
+          "recordsBefore": 171,
+          "recordsAfter": 152,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 4000,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 848,
+          "recordsAfter": 1552,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 5000,
+          "class": "middle",
+          "openGroup": "G0012",
+          "recordsBefore": 1848,
+          "recordsAfter": 552,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 7,
+          "firstRecord": 6000,
+          "class": "middle",
+          "openGroup": "G0015",
+          "recordsBefore": 57,
+          "recordsAfter": 220,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 8,
+          "firstRecord": 7000,
+          "class": "middle",
+          "openGroup": "G0019",
+          "recordsBefore": 74,
+          "recordsAfter": 184,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 9,
+          "firstRecord": 8000,
+          "class": "middle",
+          "openGroup": "G0024",
+          "recordsBefore": 109,
+          "recordsAfter": 86,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 10,
+          "firstRecord": 9000,
+          "class": "middle",
+          "openGroup": "G0028",
+          "recordsBefore": 195,
+          "recordsAfter": 197,
+          "spansWholePart": false
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-L185-H0",
+      "case": "independent parts (baseline)",
+      "variant": "H0",
+      "records": {
+        "first": 0,
+        "last": 593,
+        "count": 594
+      },
+      "blockLimit": 185,
+      "parts": [
+        {
+          "fixture": "XB-L185-H0-P1",
+          "part": 1,
+          "records": {
+            "first": 0,
+            "last": 184,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0001",
+              "items": 182,
+              "firstSequence": 1,
+              "lastSequence": 182,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0002",
+              "items": 3,
+              "firstSequence": 183,
+              "lastSequence": 185,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H0-P2",
+          "part": 2,
+          "records": {
+            "first": 185,
+            "last": 369,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 185,
+              "firstSequence": 186,
+              "lastSequence": 370,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H0-P3",
+          "part": 3,
+          "records": {
+            "first": 370,
+            "last": 554,
+            "count": 185
+          },
+          "groups": [
+            {
+              "id": "G0002",
+              "items": 31,
+              "firstSequence": 371,
+              "lastSequence": 401,
+              "openAtStart": true,
+              "closedInPart": true
+            },
+            {
+              "id": "G0003",
+              "items": 1,
+              "firstSequence": 402,
+              "lastSequence": 402,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0004",
+              "items": 153,
+              "firstSequence": 403,
+              "lastSequence": 555,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-L185-H0-P4",
+          "part": 4,
+          "records": {
+            "first": 555,
+            "last": 593,
+            "count": 39
+          },
+          "groups": [
+            {
+              "id": "G0004",
+              "items": 39,
+              "firstSequence": 556,
+              "lastSequence": 594,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 185,
+          "class": "near-start",
+          "openGroup": "G0002",
+          "recordsBefore": 3,
+          "recordsAfter": 216,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 370,
+          "class": "middle",
+          "openGroup": "G0002",
+          "recordsBefore": 188,
+          "recordsAfter": 31,
+          "spansWholePart": false
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 555,
+          "class": "middle",
+          "openGroup": "G0004",
+          "recordsBefore": 153,
+          "recordsAfter": 39,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    },
+    {
+      "report": "XB-W250-H0",
+      "case": "independent parts (baseline)",
+      "variant": "H0",
+      "records": {
+        "first": 594,
+        "last": 1953,
+        "count": 1360
+      },
+      "blockLimit": 250,
+      "parts": [
+        {
+          "fixture": "XB-W250-H0-P1",
+          "part": 1,
+          "records": {
+            "first": 594,
+            "last": 843,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0005",
+              "items": 160,
+              "firstSequence": 595,
+              "lastSequence": 754,
+              "openAtStart": false,
+              "closedInPart": true
+            },
+            {
+              "id": "G0006",
+              "items": 90,
+              "firstSequence": 755,
+              "lastSequence": 844,
+              "openAtStart": false,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H0-P2",
+          "part": 2,
+          "records": {
+            "first": 844,
+            "last": 1093,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 845,
+              "lastSequence": 1094,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H0-P3",
+          "part": 3,
+          "records": {
+            "first": 1094,
+            "last": 1343,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1095,
+              "lastSequence": 1344,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H0-P4",
+          "part": 4,
+          "records": {
+            "first": 1344,
+            "last": 1593,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1345,
+              "lastSequence": 1594,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H0-P5",
+          "part": 5,
+          "records": {
+            "first": 1594,
+            "last": 1843,
+            "count": 250
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 250,
+              "firstSequence": 1595,
+              "lastSequence": 1844,
+              "openAtStart": true,
+              "closedInPart": false
+            }
+          ]
+        },
+        {
+          "fixture": "XB-W250-H0-P6",
+          "part": 6,
+          "records": {
+            "first": 1844,
+            "last": 1953,
+            "count": 110
+          },
+          "groups": [
+            {
+              "id": "G0006",
+              "items": 110,
+              "firstSequence": 1845,
+              "lastSequence": 1954,
+              "openAtStart": true,
+              "closedInPart": true
+            }
+          ]
+        }
+      ],
+      "boundaries": [
+        {
+          "beforePart": 2,
+          "firstRecord": 844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 90,
+          "recordsAfter": 1110,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 3,
+          "firstRecord": 1094,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 340,
+          "recordsAfter": 860,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 4,
+          "firstRecord": 1344,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 590,
+          "recordsAfter": 610,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 5,
+          "firstRecord": 1594,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 840,
+          "recordsAfter": 360,
+          "spansWholePart": true
+        },
+        {
+          "beforePart": 6,
+          "firstRecord": 1844,
+          "class": "middle",
+          "openGroup": "G0006",
+          "recordsBefore": 1090,
+          "recordsAfter": 110,
+          "spansWholePart": true
+        }
+      ],
+      "changedDescriptions": []
+    }
+  ],
+  "sha256": "d1969e96b5413f21c2f04f1ec789b01fe9ea30e3d6ad78691521350ec580c753",
+  "records": 10000,
+  "selfChecks": [
+    "the linked builder rebuilt the fixture set of spikes/12-group-continuity with its committed SHA256SUMS",
+    "every report\u0027s parts hold exactly its dataset records, in order, each once",
+    "every independent (H0) part is byte-identical to the shared block construction of its slice",
+    "two builds identical"
+  ],
+  "fixtureSumsSha256": "c89ef6dfe95e6bf2e80800a6f73e158399f4e734b837d2910012713b20c9f640",
+  "calibration": {
+    "file": "calibration.json",
+    "blockLimit": 242
+  },
+  "handoverComputeMs": 11.09,
+  "handoverComputeNote": "time to compute every report\u0027s openings, continuation headers and whole-group totals from the source data (both builds\u0027 second pass)"
+}

@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Measures PDF readers against the earlier experiments' reference reading.
+    The text-integrity rules, the strict accounting check and the files they
+    need are linked unchanged, exactly as spikes/12-group-continuity links
+    them, so every reader's words go through the same rule code. The fixture
+    builders of folders 09 and 12 are linked unchanged to rebuild their fixtures.
+    New here: the extraction file, the readers' adapters, the agreement
+    measure, the evaluator, the stage driver, the controls and the verdict.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ReaderAgreement</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AccountingCheck>$(MSBuildThisFileDirectory)../../09-two-pass-page-subtotals/PageAccountingCheck/</AccountingCheck>
+    <StrictCheck>$(MSBuildThisFileDirectory)../../10-pagedjs-table-strict-accounting/StrictAccountingCheck/</StrictCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../07-native-tall-rows/PaginationFixtures/PaginationFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="PDFsharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/Poppler.cs" Link="Linked/Poppler.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/PrintedDocument.cs" Link="Linked/PrintedDocument.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/TextNormalisation.cs" Link="Linked/TextNormalisation.cs" />
+    <Compile Include="../../07-native-tall-rows/TextIntegrityCheck/IntegrityRules.cs" Link="Linked/IntegrityRules.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/AccountingVerifier.cs" Link="Linked/AccountingVerifier.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/BlockSource.cs" Link="Linked/BlockSource.cs" />
+    <Compile Include="../../02-pdf-layout/PdfLayoutSpike/ProcessTreeSampler.cs" Link="Linked/ProcessTreeSampler.cs" />
+    <Compile Include="../../03-pdf-assembly/PdfAssemblySpike/PgmImage.cs" Link="Linked/PgmImage.cs" />
+    <Compile Include="$(AccountingCheck)Evaluation.cs" Link="Linked/Evaluation.cs" />
+    <Compile Include="$(AccountingCheck)PdfReading.cs" Link="Linked/PdfReading.cs" />
+    <Compile Include="$(AccountingCheck)Records.cs" Link="Linked/Records.cs" />
+    <Compile Include="$(AccountingCheck)ReadBackJudge.cs" Link="Linked/ReadBackJudge.cs" />
+    <Compile Include="$(AccountingCheck)UnchangedOutside.cs" Link="Linked/UnchangedOutside.cs" />
+    <Compile Include="$(AccountingCheck)StampingSideEffects.cs" Link="Linked/StampingSideEffects.cs" />
+    <Compile Include="$(AccountingCheck)Qpdf.cs" Link="Linked/Qpdf.cs" />
+    <Compile Include="$(AccountingCheck)Tool.cs" Link="Linked/Tool.cs" />
+    <Compile Include="$(AccountingCheck)Reused/LayoutTypes.cs" Link="Linked/LayoutTypes.cs" />
+    <Compile Include="$(StrictCheck)Account.cs" Link="Linked/Account.cs" />
+    <Compile Include="$(StrictCheck)CharacterCheck.cs" Link="Linked/CharacterCheck.cs" />
+    <Compile Include="$(StrictCheck)HarnessRecords.cs" Link="Linked/HarnessRecords.cs" />
+    <Compile Include="$(AccountingCheck)OrdinaryFixtures.cs" Link="Linked/OrdinaryFixtures.cs" />
+    <Compile Include="../../12-group-continuity/GroupContinuityCheck/GroupFixtures.cs" Link="Linked/GroupFixtures.cs" />
+  </ItemGroup>
+</Project>

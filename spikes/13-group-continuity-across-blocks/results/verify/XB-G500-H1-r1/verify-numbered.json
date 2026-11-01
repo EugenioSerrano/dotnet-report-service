@@ -1,0 +1,54 @@
+{
+  "pdf": "/raw/reports/XB-G500-H1-r1//numbered.pdf",
+  "mode": "all",
+  "numbered": true,
+  "qpdfCheck": {
+    "exitCode": 3,
+    "verdict": "pass-exempt",
+    "warningLines": 333,
+    "exemptWarningLines": 333,
+    "failReason": "",
+    "firstOffendingLine": "",
+    "pass": true
+  },
+  "pageCount": 83,
+  "expectedPages": 83,
+  "structurePass": true,
+  "textPagesChecked": 83,
+  "orderPass": true,
+  "numberingPass": true,
+  "pixelPagesChecked": 83,
+  "pixelPass": true,
+  "maxChangedOutside": 0,
+  "minChangedInside": 196,
+  "maxChangedInside": 241,
+  "firstFailingPage": null,
+  "firstFailure": null,
+  "pixelPages": [],
+  "boxes": {
+    "rule": "source-or-rounded",
+    "pages": 83,
+    "values": [
+      {
+        "box": "[0 0 594.96 841.92]",
+        "pages": 83
+      }
+    ],
+    "cropBoxValues": [],
+    "classes": {
+      "rounded": 83
+    },
+    "verdict": "box-rounded",
+    "firstBoxDiffersPage": null,
+    "pass": true
+  },
+  "strict": {
+    "pages": 83,
+    "minOutside": 2062,
+    "maxOutside": 17708,
+    "sumOutside": 1013402,
+    "minInside": 196,
+    "maxInside": 241
+  },
+  "pass": true
+}

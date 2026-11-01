@@ -1,0 +1,31 @@
+{
+  "instance": "XB-PROBE-r1",
+  "holds": true,
+  "answers": [
+    {
+      "knownAnswer": "each part\u0027s first brought forward equals the previous part\u0027s last carried forward",
+      "holds": true,
+      "observed": "before part 2: 4714762.77 / 4714762.77 continuous; before part 3: 9003118.49 / 9003118.49 continuous"
+    },
+    {
+      "knownAnswer": "G0002 prints its plain header once (part 1) and its continuation header at the start of parts 2 and 3",
+      "holds": true,
+      "observed": "before part 2: continuation; before part 3: continuation"
+    },
+    {
+      "knownAnswer": "every group total prints once with its whole group\u0027s source sum (G0001 in part 1, G0002 in part 3), every row in its group, every part total exact",
+      "holds": true,
+      "observed": ""
+    },
+    {
+      "knownAnswer": "the accounting rules pass across the parts",
+      "holds": true,
+      "observed": ""
+    },
+    {
+      "knownAnswer": "folder 06\u0027s verify passes on the numbered and on the unnumbered report",
+      "holds": true,
+      "observed": "numbered pass, unnumbered pass"
+    }
+  ]
+}
