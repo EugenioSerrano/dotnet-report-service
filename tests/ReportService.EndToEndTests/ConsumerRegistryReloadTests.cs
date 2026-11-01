@@ -100,6 +100,11 @@ public sealed class ConsumerRegistryReloadTests : IDisposable
         var refusal = logs.First(l => l.Contains("Consumer registry change refused", StringComparison.Ordinal));
         Assert.Contains("consumers[1]: consumer 'dev-consumer' duplicates consumers[0]", refusal, StringComparison.Ordinal);
         Assert.Contains("consumers[2]: consumer 'fourth-consumer': active is required", refusal, StringComparison.Ordinal);
+
+        // The absence of the planted value means something only over the lines the API wrote
+        // while reading the invalid file: the warnings about the very entries that carry it.
+        Assert.Contains(logs, l => l.Contains("consumers[1] (consumer 'dev-consumer'): unknown property 'token' is ignored", StringComparison.Ordinal));
+        Assert.Contains(logs, l => l.Contains("consumers[2] (consumer 'fourth-consumer'): unknown property 'password' is ignored", StringComparison.Ordinal));
         Assert.DoesNotContain(logs, l => l.Contains(PlantedSecret, StringComparison.Ordinal));
 
         await watching.CancelAsync();
@@ -126,12 +131,16 @@ public sealed class ConsumerRegistryReloadTests : IDisposable
         return Convert.ToString(resource.Snapshot.Properties.Single(p => p.Name == ProcessIdProperty).Value, CultureInfo.InvariantCulture)!;
     }
 
+    // The composition writes a project's output under the name of the instance it started
+    // (the resource name plus a unique suffix), not under the bare resource name; watching
+    // the resource itself follows every instance it has.
     private static async Task WatchLogsAsync(DistributedApplication app, ConcurrentQueue<string> logs, CancellationToken cancellationToken)
     {
         var service = app.Services.GetRequiredService<ResourceLoggerService>();
+        var resource = app.Services.GetRequiredService<DistributedApplicationModel>().Resources.Single(r => r.Name == "api");
         try
         {
-            await foreach (var batch in service.WatchAsync("api").WithCancellation(cancellationToken))
+            await foreach (var batch in service.WatchAsync(resource).WithCancellation(cancellationToken))
             {
                 foreach (var line in batch)
                 {

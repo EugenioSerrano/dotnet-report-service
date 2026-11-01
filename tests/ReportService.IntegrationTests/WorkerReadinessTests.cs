@@ -31,6 +31,11 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
     private static readonly TimeSpan NotReadyDeadline = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan LostLineDeadline = TimeSpan.FromSeconds(30);
 
+    // Readiness follows the engine's answer on the current connection, which may come back
+    // before the host has replaced that connection; the host logs the recovery when its own
+    // reconnection succeeds, at most one 60 s backoff step plus a connection later.
+    private static readonly TimeSpan RecoveredLineDeadline = TimeSpan.FromSeconds(90);
+
     private readonly PinnedImage _image = CompositionPins.Load().WorkflowEngine;
     private readonly int _hostPort = FreePort();
     private readonly LogCapture _logs = new();
@@ -67,6 +72,7 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
 
         await StartEngineAsync(cancellationToken);
         await WaitForStatusAsync(client, HttpStatusCode.OK, ReadyDeadline, cancellationToken);
+        await WaitForLineAsync("engine connection recovered", RecoveredLineDeadline, cancellationToken);
 
         Assert.Same(host, worker.Services.GetRequiredService<TemporalWorkerHost>());
         Assert.Single(Lines("engine connection lost"));
