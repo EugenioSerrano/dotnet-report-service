@@ -31,4 +31,9 @@
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The recorded verification histories the replay case replays, beside the suite that consumes them. -->
+    <Content Include="Histories\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

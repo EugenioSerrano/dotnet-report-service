@@ -10,8 +10,9 @@ namespace ReportService.Workers.Orchestration.Tests;
 /// would make a running execution non-deterministic fails here instead of in
 /// production. A history file is a fixture: it is generated once, against an engine,
 /// by the capture case of the integration suite, and committed with the change that
-/// captured it. With no history committed there is nothing to replay, and the case
-/// says so instead of pretending to have checked something.
+/// captured it. The fixture is part of what this work delivers, so a directory with
+/// no history in it fails the case: nothing was replayed, and a case that had
+/// nothing to check is not a result.
 /// </summary>
 public sealed class UploadVerificationReplayTests
 {
@@ -26,20 +27,21 @@ public sealed class UploadVerificationReplayTests
             ? Directory.GetFiles(directory, "*.json", SearchOption.TopDirectoryOnly).Order(StringComparer.Ordinal).ToList()
             : [];
 
-        if (histories.Count == 0)
-        {
-            Assert.Skip("no workflow history has been captured yet; the fixture is generated once against a real engine.");
-        }
+        Assert.True(
+            histories.Count > 0,
+            $"no recorded verification history exists under {directory}: the fixture is the outcome of a run against a real engine and it is part of this work, so there is nothing to replay.");
 
         var options = new WorkflowReplayerOptions();
         options.Workflows.Add(WorkflowDefinition.Create(typeof(UploadVerificationWorkflow)));
         var replayer = new WorkflowReplayer(options);
         foreach (var history in histories)
         {
+            // The identifier passed beside the history only labels the replay result: what
+            // the case proves is that the recorded execution replays without a divergence.
             await replayer.ReplayWorkflowAsync(
                 WorkflowHistory.FromJson(
-                    await File.ReadAllTextAsync(history, TestContext.Current.CancellationToken),
-                    "a captured verification history"),
+                    Path.GetFileNameWithoutExtension(history),
+                    await File.ReadAllTextAsync(history, TestContext.Current.CancellationToken)),
                 cancellationToken: TestContext.Current.CancellationToken);
         }
     }
