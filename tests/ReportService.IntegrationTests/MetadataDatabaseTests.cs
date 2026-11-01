@@ -87,7 +87,12 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         Assert.True(second.Succeeded, string.Join("; ", second.Lines()));
         Assert.Empty(second.Applied);
         Assert.Contains("no change; schema is current at " + Baseline, second.Lines().Single(), StringComparison.Ordinal);
-        Assert.Equal(before, after);
+
+        // The snapshots are compared by value: two journal rows are the same entry
+        // when their script, checksum and timestamp agree, never when the objects do.
+        Assert.Equal(
+            before.Select(row => (row.ScriptName, row.Checksum, row.AppliedAt)),
+            after.Select(row => (row.ScriptName, row.Checksum, row.AppliedAt)));
     }
 
     [Fact]

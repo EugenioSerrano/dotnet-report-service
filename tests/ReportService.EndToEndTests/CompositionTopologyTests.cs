@@ -111,11 +111,20 @@ public sealed class CompositionTopologyTests
 
         Assert.False(await BoolAsync(connection, "SELECT rolsuper FROM pg_roles WHERE rolname = @role", cancellationToken));
         Assert.Equal(ApplicationRole, await TextAsync(connection, "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = @role", cancellationToken));
-        Assert.Equal(
-            [Baseline],
-            await connection.QueryAsync<string>(new CommandDefinition(
-                "SELECT script_name FROM public.schema_migrations ORDER BY script_name",
-                cancellationToken: cancellationToken)));
+
+        // The journal belongs to the application's own database, not to the server's
+        // default one, so it is read through the database resource's connection string.
+        var metadata = await app.GetConnectionStringAsync(ApplicationRole, cancellationToken)
+            ?? throw new InvalidOperationException("The composition published no metadata connection string.");
+        await using (var journalConnection = new NpgsqlConnection(metadata))
+        {
+            await journalConnection.OpenAsync(cancellationToken);
+            Assert.Equal(
+                [Baseline],
+                await journalConnection.QueryAsync<string>(new CommandDefinition(
+                    "SELECT script_name FROM public.schema_migrations ORDER BY script_name",
+                    cancellationToken: cancellationToken)));
+        }
 
         // Every session on the database uses the application role, except the AppHost's
         // own health check: the composition registers a PostgreSQL check on the database
