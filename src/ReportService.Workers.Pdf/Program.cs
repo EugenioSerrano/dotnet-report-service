@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using ReportService.ServiceDefaults;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Pdf;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults(ServiceNames.RenderWorker);
 builder.AddServiceConfiguration();
 
 // The PDF rendering task queue; render work is registered on it as the product gains it.
@@ -16,4 +18,5 @@ builder.AddObjectStorage("pdf-worker");
 var app = builder.Build();
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
 app.MapStorageDiagnostics();
+app.MapTelemetryDiagnostics();
 await app.RunAsync();

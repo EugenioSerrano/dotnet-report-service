@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using ReportService.ServiceDefaults;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults(ServiceNames.OrchestrationWorker);
 builder.AddServiceConfiguration();
 builder.AddMetadataDatabase();
 
@@ -15,4 +17,5 @@ builder.AddObjectStorage("orchestration-worker");
 var app = builder.Build();
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
 app.MapStorageDiagnostics();
+app.MapTelemetryDiagnostics();
 app.Run();

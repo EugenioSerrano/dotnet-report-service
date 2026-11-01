@@ -35,7 +35,6 @@ var metadataConnection = ReferenceExpression.Create(
 var migrations = builder.AddProject<Projects.ReportService_Migrations>("migrations")
     .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
     .WaitFor(metadataDb);
-
 // Distributed cache (Valkey 9.1, Redis protocol).
 var cache = builder.AddValkey("cache")
     .WithImage(pins.Cache.Image, pins.Cache.Tag);
@@ -70,10 +69,18 @@ if (builder.ExecutionContext.IsRunMode)
     Directory.CreateDirectory(storage.HostPath);
 }
 
+// Where the PDF worker sends its telemetry: the dashboard this composition starts
+// secures its OTLP receiver on the address the launch profile names, and a container
+// reaches the host — not its loopback — through the host-reachable name below. A
+// deployment that knows its own OTLP address sets Telemetry:OtlpEndpoint instead and
+// the variable below takes that value. Without either, the worker exports nowhere.
+var renderWorkerOtlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"]
+    ?? TelemetryAddress.ContainerReachable(builder.Configuration["ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL"]);
+
 // PDF worker: connects to the engine on the PDF rendering queue; ready once Chromium
 // launched and the engine answers. It uses no metadata record yet, so it has no
 // database setting and no database check.
-builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
+var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
     .WithImagePullPolicy(ImagePullPolicy.Never)
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
@@ -82,19 +89,27 @@ builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorker
     .WithEnvironment("Storage__Filesystem__Root", SharedStorageRoot.ContainerPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "false")
     .WithEnvironment("Storage__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
     .WithHttpEndpoint(targetPort: 8080, name: "http")
     .WithHttpHealthCheck("/health", endpointName: "http")
     .WaitFor(temporal);
+if (renderWorkerOtlpEndpoint is { Length: > 0 })
+{
+    renderWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
+}
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.
-builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
+var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
     .WithEnvironment("Storage__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
     .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
     .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
     .WithHttpHealthCheck("/health")
@@ -103,7 +118,8 @@ builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-
 
 // API: holds no workflow-engine client and does not wait for the engine or the workers,
 // so it starts and is ready while the engine is down. It waits for its own dependencies,
-// among them the migrator's successful exit.
+// among them the migrator's successful exit. It is given the orchestration worker's
+// address so its development-only propagation check can call it.
 var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
     .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
@@ -112,9 +128,12 @@ var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
     .WithEnvironment("Storage__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
     .WaitFor(cache)
     .WaitForCompletion(migrations)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithReference(orchestrationWorker);
 
 // A consumer registry file other than the API's own (for example, one a test writes).
 if (builder.Configuration["Consumers:File"] is { Length: > 0 } registryFile)

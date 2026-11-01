@@ -16,7 +16,7 @@ namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The three processes of the composition share one storage root: an object
-/// written by the PDF worker — inside its container, as its non-root user —
+/// written by the PDF worker â€” inside its container, as its non-root user â€”
 /// is read and verified by the API and by the orchestration worker, and a
 /// corrupted copy is detected as an integrity failure by both. The run's
 /// evidence (paths, the worker's user, the object operations) is attached to
@@ -43,7 +43,7 @@ public sealed class SharedStorageRootTests
         var second = ObjectKey.FromSegments("staging", "probe", "e2e", runId + "-b");
         evidence.AppendLine(CultureInfo.InvariantCulture, $"host root: {hostRoot}; container root: {ContainerRoot}; keys: {first}, {second}");
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(cancellationToken);
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
         await using var app = await appHost.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))

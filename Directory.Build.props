@@ -41,4 +41,23 @@
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <!--
+    The commit every build reports in its informational version
+    (X.Y.Z-dev+<commit>): the SDK reads <see cref="SourceRevisionId"/> when it is
+    already set, and its own source-control integration fills it from the git
+    directory. A source tree without git leaves it empty, so this target asks git
+    directly and falls back to "unknown" — a build never fails for it and a
+    commit is never invented.
+  -->
+  <Target Name="AddSourceRevisionId" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo">
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true"
+          StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_GitCommit" />
+    </Exec>
+    <PropertyGroup>
+      <SourceRevisionId Condition="'$(SourceRevisionId)' == '' AND '$(_GitCommit)' != ''">$([System.String]::Copy('$(_GitCommit)').Trim())</SourceRevisionId>
+      <SourceRevisionId Condition="'$(SourceRevisionId)' == ''">unknown</SourceRevisionId>
+    </PropertyGroup>
+  </Target>
 </Project>

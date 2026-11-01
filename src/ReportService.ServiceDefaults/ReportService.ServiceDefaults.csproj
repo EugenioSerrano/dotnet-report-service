@@ -3,10 +3,10 @@
   <!--
     Conventions shared by every process of the service: validated settings,
     the configuration error that never carries a value, the JSON writer of the
-    health endpoints, the readiness check of the metadata database, and the
-    object store with its health check and its development-only diagnostics. It
-    references no workflow-engine package, so the API can use it without
-    carrying one.
+    health endpoints, the readiness check of the metadata database, the object
+    store with its health check and its development-only diagnostics, and the
+    telemetry baseline every process reports. It references no workflow-engine
+    package, so the API can use it without carrying one.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -21,6 +21,17 @@
     <ProjectReference Include="..\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+  </ItemGroup>
+
+  <!-- The telemetry tests read the capture and its processors directly; nothing else sees them. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.Api.Tests" />
   </ItemGroup>
 
 </Project>

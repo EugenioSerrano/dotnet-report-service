@@ -13,7 +13,7 @@ namespace ReportService.EndToEndTests;
 /// The local composition runs the three processes and the one-shot migrator: the
 /// API and the orchestration worker are ready only with the metadata database at
 /// the version the code expects, the PDF worker carries no database check, and
-/// every process reaches the database as the application role — the AppHost's own
+/// every process reaches the database as the application role â€” the AppHost's own
 /// health checks on the server's bootstrap user excepted.
 /// </summary>
 public sealed class CompositionTopologyTests
@@ -31,7 +31,7 @@ public sealed class CompositionTopologyTests
     public async Task ThreeProcessesRunAndEachWorkerIsReadyAgainstTheEngineAndTheDatabase()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(cancellationToken);
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
         await using var app = await appHost.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
 

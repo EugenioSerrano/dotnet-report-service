@@ -24,7 +24,7 @@ public sealed class CompositionSmokeTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var pins = CompositionPins.Load();
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(cancellationToken);
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
 
         AssertImage(appHost.Resources, "postgres", pins.Database);
         AssertImage(appHost.Resources, "cache", pins.Cache);

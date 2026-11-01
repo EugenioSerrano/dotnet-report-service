@@ -40,8 +40,7 @@ public sealed class ConsumerRegistryReloadTests : IDisposable
                 { "consumerId": "dev-consumer-disabled", "active": false } ] }
             """, cancellationToken);
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
-            [$"--Consumers:File={registry}"], cancellationToken);
+        var appHost = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
         await using var app = await appHost.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))

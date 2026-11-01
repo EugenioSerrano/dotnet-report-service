@@ -12,7 +12,7 @@ dotnet-report-service/
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
-│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check and the object store, shared by every process
+│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
 │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
@@ -26,7 +26,7 @@ dotnet-report-service/
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level
@@ -96,7 +96,9 @@ What each test level may reach, the evidence a run leaves under
   (`VersionPrefix`) and sets the package metadata (MIT licence, repository
   URL). A project may override the target framework or analyzer level
   explicitly when it has a reason to; the language version is the framework's
-  default.
+  default. It also sets `SourceRevisionId` from the commit the build came from,
+  which is what appends `+<commit>` to every assembly's informational version
+  and reports `+unknown` for a tree without git.
 - **`spikes/Directory.Build.props`** imports the root file and relaxes it for
   experiments: warnings do not fail the build and nothing is packable.
 - **`Directory.Packages.props`** enables central package management: package
@@ -131,10 +133,12 @@ What each test level may reach, the evidence a run leaves under
 
 Package versions appear in `Directory.Packages.props` as the first change
 that needs each package adds it. The product packages are Aspire hosting 13.6.2,
-Microsoft.Playwright 1.63.0, Temporalio 1.21.0, Npgsql 10.0.3 and Dapper 2.1.89;
-the packages of the tests are xUnit v3 4.0.2, coverlet.MTP 10.1.0,
-Microsoft.AspNetCore.Mvc.Testing 10.0.13, Testcontainers 4.16.0 and
-Aspire.Hosting.Testing 13.6.2. The one-shot migrator and the processes that use
+Microsoft.Playwright 1.63.0, Temporalio 1.21.0, Npgsql 10.0.3, Dapper 2.1.89 and
+the OpenTelemetry set 1.20.1 (core, hosting, OTLP exporter and the ASP.NET Core,
+HTTP client and runtime instrumentation); the packages of the tests are xUnit v3
+4.0.2, coverlet.MTP 10.1.0, Microsoft.AspNetCore.Mvc.Testing 10.0.13,
+Testcontainers 4.16.0, Aspire.Hosting.Testing 13.6.2 and the in-memory exporter
+of OpenTelemetry 1.20.1. The one-shot migrator and the processes that use
 the metadata database connect with Npgsql and run explicit SQL with Dapper.
 
 ### Container images
