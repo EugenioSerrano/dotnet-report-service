@@ -10,6 +10,7 @@ public sealed class PostgreSqlReachabilityTests : IAsyncLifetime
 {
     private const int Port = 5432;
     private static readonly TimeSpan Deadline = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan AttemptBound = TimeSpan.FromSeconds(5);
 
     private readonly PinnedImage _image = CompositionPins.Load().Database;
     private readonly string _password = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
@@ -43,9 +44,15 @@ public sealed class PostgreSqlReachabilityTests : IAsyncLifetime
             Username = "postgres",
             Password = _password,
             Database = "postgres",
+            // The container is given no certificate and no GSS credential, and this
+            // connection only proves reachability: it asks for neither transport.
+            SslMode = SslMode.Disable,
+            GssEncryptionMode = GssEncryptionMode.Disable,
         }.ConnectionString;
 
-        // The server restarts once after initialising; wait until it accepts connections.
+        // The server initialises and restarts once; the wait ends when it accepts
+        // connections, and each attempt is bounded so one stalled connection attempt
+        // cannot outlast the deadline.
         await Wait.UntilAsync(
             $"PostgreSQL ({_image.Reference})",
             async token =>
@@ -56,6 +63,7 @@ public sealed class PostgreSqlReachabilityTests : IAsyncLifetime
             },
             Deadline,
             TimeSpan.FromSeconds(1),
+            AttemptBound,
             cancellationToken);
 
         await using var connection = new NpgsqlConnection(connectionString);
