@@ -33,6 +33,7 @@
   <ItemGroup>
     <!-- The store contract is written against the product's own store interface. -->
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The taken template version: a version read from the configured template
+  repository and branch at one commit, kept as one write-once object under
+  `templates/<owner>/<templateId>/<version>/<sha256>` and made usable by an
+  insert-once record whose primary key is the template and the version, so a
+  taken version is never overwritten and never taken twice. The record holds the
+  commit, the package hash and size, the engine and its version, the schema path
+  and the whole manifest as JSON, so nothing that reads a taken version ever
+  needs the source format again.
+- The `report_service.template_versions` table and its migration, and the
+  record store behind it (Dapper over Npgsql, an insert that lets the primary
+  key decide a race, constant SQL with parameters only).
+- `ReportService.TemplatePackages`: the content-addressed key of a package, the
+  semantic version syntax, the deterministic package archive (one uncompressed
+  ustar archive whose bytes depend on the files alone) and the reader that
+  extracts a taken copy only after the whole object verified.
+- `ReportService.TemplateSource`: the settings of the configured source and
+  their bounds, a client that reads a branch at one commit, walks to
+  `templates/<templateId>/<version>/`, lists its files and streams each blob
+  verified against its git hash, and classifies every failure as unreachable,
+  misconfigured, too large or unsupported — never as "the version does not
+  exist". A tree the source reports as truncated is refused rather than read as
+  an absent version.
+- The warning a taken version logs when it reads differently from its copy
+  (`TEMPLATE_VERSION_CONFLICT`), which keeps the copy and refuses nothing, and
+  the seam the take-time checks plug into (no check is registered yet).
+- The template-source test double: a request handler that answers the source's
+  documented shapes with real git object names, and an in-memory source whose
+  versions can be seeded and replaced.
+
 - Upload sessions: a consumer opens one for its report data with
   `POST /api/v1/uploads` (`header-items-v1`, `API_STREAM`) and receives its
   `uploadId`, the state `created` and the time it expires, then reads the same

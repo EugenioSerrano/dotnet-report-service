@@ -16,12 +16,16 @@ dotnet-report-service/
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
 │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
+│   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
+│   ├── ReportService.TemplateSource/              The configured template source: its settings, the client that reads one commit, and the checks a version passes before it is taken
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
+│   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax, the package archive and its reader, the manifest (hermetic)
+│   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the changed-version warning (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects

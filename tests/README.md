@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Migrations.Tests`, `ReportService.Storage.Tests` (one `ReportService.<Area>.Tests` per product project) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Migrations.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests` (one `ReportService.<Area>.Tests` per product project) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
@@ -71,6 +71,10 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   run. An assembly with no coverable line yet is reported `n/a`.
 - The two assemblies with a floor are `ReportService.Api` and
   `ReportService.Migrations`, both at **80 % line / 70 % branch**.
+- The assemblies at **80 % line / 70 % branch** are `ReportService.Api`,
+  `ReportService.Migrations`, `ReportService.Storage`,
+  `ReportService.Storage.Filesystem`, `ReportService.TemplatePackages` and
+  `ReportService.TemplateSource`.
 - An assembly without a floor is still reported: `ReportService.ServiceDefaults`
   and `ReportService.ServiceDefaults.Temporal` appear with their figures and no
   floor, because they have no unit/component project of their own yet.
