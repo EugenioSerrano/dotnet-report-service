@@ -5,11 +5,7 @@ temporary disk, rendering time) states the machine and the software it ran
 on. This page describes that **reference environment** and the convention
 every measurement follows when it is reported.
 
-**Page revision:** 2 (2026-10-21; revision 1 the same day, before the PDF
-base image and the local development registry existed). A change to anything below — hardware,
-operating system, container runtime, toolchain or a pinned component —
-creates a new revision of this page; a measurement always cites the revision
-it ran on.
+**Page revision:** 3 (2026-11-01; revision 2 on 2026-10-21, revision 1 the same day before the PDF base image and the local development registry existed). Revision 3 changes only the container runtime: Rancher Desktop was replaced by Docker Desktop 4.97.0 on 2026-11-01. A change to anything below — hardware, operating system, container runtime, toolchain or a pinned component — creates a new revision of this page; a measurement always cites the revision it ran on.
 
 ## Machine
 
@@ -30,13 +26,14 @@ it ran on.
 
 | Item | Value |
 |------|-------|
-| Product | Rancher Desktop (Docker CLI 29.6.1) |
-| Engine | Docker Engine 29.4.0-ce, Linux containers, `linux/amd64` |
-| Virtual machine | WSL 2, openSUSE Leap 16.0, kernel 6.18.33.2 |
+| Product | Docker Desktop 4.97.0 (Docker CLI 29.9.2) |
+| Engine | Docker Engine 29.9.2, Linux containers, `linux/amd64` |
+| Virtual machine | WSL 2, Docker Desktop's `docker-desktop` distribution, kernel 6.18.33.2-microsoft-standard-WSL2 |
 | CPUs given to the virtual machine | 16 |
-| Memory given to the virtual machine | 11.7 GiB |
+| Memory given to the virtual machine | 11.7 GiB (12 538 507 264 bytes, as the engine reports it) |
 | Storage driver | overlayfs (cgroup v2) |
-| Image builder (Dockerfile images) | BuildKit v0.29.0 through the buildx plugin v0.35.0 (default builder, `docker` driver) — builds the PDF base image |
+| VM disk location | the system drive (`C:`); the previous runtime kept a 31.9 GB disk on `D:` |
+| Image builder (Dockerfile images) | BuildKit through the buildx plugin v0.38.1 (default builder, `docker` driver) — builds the PDF base image |
 | Product images | Built by the .NET SDK container publishing (`-t:PublishContainer`), no builder plugin — the render worker image |
 
 ## Toolchain
@@ -63,6 +60,8 @@ it ran on.
 | Chromium (render worker) | 153.0.8010.12, headless shell (Playwright 1.63.0, browser revision 1243), installed in the PDF base image; version confirmed from the render worker's own start-up log: `Chromium 153.0.8010.12 ready (Playwright 1.63.0.0, .NET 10.0.13)` | — |
 | .NET runtime in the render worker | 10.0.13, as the render worker logs it (framework-dependent, from the PDF base) | — |
 
+The pinned-component digests above were recorded under revision 2 and are re-read on the first run under revision 3; the images themselves carried over unchanged from the previous runtime on 2026-11-01.
+
 The PDF base image and the render worker image are not published to any
 registry: the base lives in the local development registry and its digest
 is what the render worker image is built on. Two builds of the base on
@@ -72,10 +71,7 @@ cites the base digest it ran on.
 
 ## Image sizes and build times
 
-First measurement on this machine (2026-10-21). Sizes as `docker image ls`
-reports them ("content" = compressed layers, "disk usage" = unpacked image
-plus its share of the store) and the unpacked root file system (`du -sx /`
-inside the image).
+First measurement on this machine (2026-10-21), taken under revision 2 (Rancher Desktop) and carried over here; the first run under revision 3 re-measures and replaces these figures. Sizes as `docker image ls` reports them ("content" = compressed layers, "disk usage" = unpacked image plus its share of the store) and the unpacked root file system (`du -sx /` inside the image).
 
 | Image | Content (compressed) | Unpacked root file system | Disk usage |
 |-------|----------------------|---------------------------|------------|
