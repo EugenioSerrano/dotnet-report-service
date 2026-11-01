@@ -16,7 +16,7 @@ namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The three processes of the composition share one storage root: an object
-/// written by the PDF worker â€” inside its container, as its non-root user â€”
+/// written by the PDF worker — inside its container, as its non-root user —
 /// is read and verified by the API and by the orchestration worker, and a
 /// corrupted copy is detected as an integrity failure by both. The run's
 /// evidence (paths, the worker's user, the object operations) is attached to
