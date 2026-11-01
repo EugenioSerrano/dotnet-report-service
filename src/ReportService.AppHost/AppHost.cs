@@ -2,17 +2,20 @@ using ReportService.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// The dependency images are pinned in one file, shared with the integration tests.
+var pins = CompositionPins.Read(builder.AppHostDirectory);
+
 // Metadata database (PostgreSQL 18). Ephemeral: no data volume.
 var postgres = builder.AddPostgres("postgres")
-    .WithImageTag("18.6");
+    .WithImage(pins.Database.Image, pins.Database.Tag);
 var metadataDb = postgres.AddDatabase("reportservice");
 
 // Distributed cache (Valkey 9.1, Redis protocol).
 var cache = builder.AddValkey("cache")
-    .WithImageTag("9.1.2");
+    .WithImage(pins.Cache.Image, pins.Cache.Tag);
 
 // Temporal development server (official CLI image).
-var temporal = builder.AddContainer("temporal", "temporalio/temporal", "1.9.1")
+var temporal = builder.AddContainer("temporal", pins.WorkflowEngine.Image, pins.WorkflowEngine.Tag)
     .WithArgs("server", "start-dev", "--ip", "0.0.0.0")
     .WithEndpoint(targetPort: 7233, name: "grpc")
     .WithHttpEndpoint(targetPort: 8233, name: "ui")

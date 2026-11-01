@@ -10,11 +10,17 @@ has its own `README.md`.
 dotnet-report-service/
 ├── src/                       Product source — one folder per project
 ├── tests/                     Automated tests, mirroring src/
+│   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
+│   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
+│   ├── ReportService.EndToEndTests/      Tests over the whole local composition
+│   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page)
 ├── eng/                       Build and engineering assets
-│   └── pdf-base/              The PDF base image (Chromium headless shell)
+│   ├── pdf-base/              The PDF base image (Chromium headless shell)
+│   └── test/                  The test runner: one command per test level
 ├── spikes/                    Stage 0 experiments (not part of the product)
+├── artifacts/                 Local build and test output (git-ignored, never committed)
 ├── dotnet-report-service.slnx Product solution
 ├── global.json                .NET SDK pin (10.0.4xx band)
 ├── Directory.Build.props      Build settings shared by every project, product version
@@ -35,11 +41,13 @@ dotnet-report-service/
 | Product project | `src/ReportService.<Area>/ReportService.<Area>.csproj` | `src/ReportService.Workers.Pdf/` |
 | Root namespace | Same as the project name | `ReportService.Workers.Pdf` |
 | Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project | `tests/ReportService.Workers.Pdf.Tests/` |
-| Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/` |
+| Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/`, `tests/ReportService.EndToEndTests/` |
+| Shared test support (library, referenced by test projects only) | `tests/ReportService.Testing/` | `tests/ReportService.Testing/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |
 | Sample tool | `samples/<area>/ReportService.Samples.<Tool>/` | `samples/datasets/ReportService.Samples.DatasetGenerator/` |
 | Image built from a Dockerfile | `eng/<image>/Dockerfile` — only for images that need operating-system steps; product images are built by the .NET SDK from their project file | `eng/pdf-base/Dockerfile` |
-| Engineering tool | `eng/<area>/ReportService.Eng.<Tool>/` | `eng/pdf-base/ReportService.Eng.PlaywrightInstaller/` |
+| Engineering tool | `eng/<area>/ReportService.Eng.<Tool>/` | `eng/pdf-base/ReportService.Eng.PlaywrightInstaller/`, `eng/test/ReportService.Eng.TestRunner/` |
+| Test run output | `artifacts/test-results/<yyMMdd-HHmm>/` (git-ignored) | `artifacts/test-results/261101-1430/run.json` |
 | Spike | `spikes/NN-<topic>/` | `spikes/01-streaming-parser/` |
 | Documentation page | kebab-case `.md` in `docs/` | `docs/template-authoring.md` |
 
@@ -48,11 +56,27 @@ Product and test projects are added to `dotnet-report-service.slnx` under the
 sample tools go under the `samples` solution folder and engineering tools
 under the `eng` solution folder, so they build with the same rules. Spikes are never added.
 
+## Commands
+
+Every command runs from the repository root.
+
+| What | Command |
+|------|---------|
+| Start the local composition | `dotnet run --project src/ReportService.AppHost` (see the [README](../README.md)) |
+| Hermetic tests (unit/component, coverage floors) — no container runtime | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| Integration tests — real dependencies in containers | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
+| End-to-end tests — the whole composition | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
+
+What each test level may reach, the evidence a run leaves under
+`artifacts/test-results/` and the coverage rules are described in
+[`tests/README.md`](../tests/README.md).
+
 ## Shared configuration
 
 - **`global.json`** pins the .NET SDK to the 10.0.4xx band (10.0.402 or a
   later patch, no previews); any `dotnet` command run in the repository uses
-  it or fails with an explanation of what to install.
+  it or fails with an explanation of what to install. It also selects
+  Microsoft.Testing.Platform as the runner of `dotnet test`.
 - **`Directory.Build.props`** is imported automatically by every project below
   the root. It sets the shared defaults `net10.0` and analyzer level 10.0,
   enables nullable reference types and implicit usings, treats warnings as
@@ -95,22 +119,27 @@ under the `eng` solution folder, so they build with the same rules. Spikes are n
 
 Package versions appear in `Directory.Packages.props` as the first change
 that needs each package adds it; the packages present so far (Aspire hosting
-13.6.2, Microsoft.Playwright 1.63.0) are listed there.
+13.6.2, Microsoft.Playwright 1.63.0, and for the tests only: xUnit v3 4.0.2,
+coverlet.MTP 10.1.0, Microsoft.AspNetCore.Mvc.Testing 10.0.13, Testcontainers
+4.16.0, Npgsql 10.0.3, Aspire.Hosting.Testing 13.6.2) are listed there.
 
 ### Container images
 
 | Image | Tag | Used by |
 |-------|-----|---------|
-| PostgreSQL | `postgres:18.6` | Local composition (metadata database) |
-| Valkey | `valkey/valkey:9.1.2` | Local composition (distributed cache) |
-| Temporal development server | `temporalio/temporal:1.9.1` | Local composition (`server start-dev`) |
+| PostgreSQL | `postgres:18.6` | Local composition (metadata database); integration tests |
+| Valkey | `valkey/valkey:9.1.2` | Local composition (distributed cache); integration tests |
+| Temporal development server | `temporalio/temporal:1.9.1` | Local composition (`server start-dev`); integration tests |
 | .NET SDK | `mcr.microsoft.com/dotnet/sdk:10.0.402-noble` | Build stage of the PDF base image |
 | ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:10.0.13-noble` | Base of the PDF base image (and of every .NET image) |
 | Local development registry | `registry:3.1.2` (pinned by digest) | Local composition only, on `127.0.0.1:5055`; holds the PDF base image; never shipped |
 | PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-noble` (now `1.63.0-10.0.13-noble`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
 | Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.2.0-dev`) | Local composition (`render-worker`) |
 
-The digests of these images as last run are recorded in
+The three dependency images are pinned in one file,
+`src/ReportService.AppHost/composition-pins.json`, read by the composition and
+by the integration tests, so both always start the same versions. The digests
+of these images as last run are recorded in
 [`reference-environment.md`](reference-environment.md).
 
 ### Dependency rules

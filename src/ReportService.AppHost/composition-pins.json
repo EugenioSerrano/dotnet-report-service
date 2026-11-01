@@ -1,0 +1,5 @@
+{
+  "database": { "image": "postgres", "tag": "18.6" },
+  "cache": { "image": "valkey/valkey", "tag": "9.1.2" },
+  "workflowEngine": { "image": "temporalio/temporal", "tag": "1.9.1" }
+}

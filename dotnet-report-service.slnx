@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/eng/">
     <Project Path="eng/pdf-base/ReportService.Eng.PlaywrightInstaller/ReportService.Eng.PlaywrightInstaller.csproj" />
+    <Project Path="eng/test/ReportService.Eng.TestRunner/ReportService.Eng.TestRunner.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/datasets/ReportService.Samples.DatasetGenerator/ReportService.Samples.DatasetGenerator.csproj" />
@@ -9,5 +10,11 @@
     <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
     <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
+    <Project Path="tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />
+    <Project Path="tests/ReportService.IntegrationTests/ReportService.IntegrationTests.csproj" />
+    <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
   </Folder>
 </Solution>
