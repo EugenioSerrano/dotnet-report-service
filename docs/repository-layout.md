@@ -223,3 +223,10 @@ choices of taste:
   [NuGet package source mapping](https://learn.microsoft.com/nuget/consume-packages/package-source-mapping).
 - **Code style in `.editorconfig`** —
   [code-style rule options](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options).
+
+## Where upload verification lives
+
+- `src/ReportService.Uploads/` - the upload record and its store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
+- `src/ReportService.Workers.Orchestration/Uploads/` - the verification step: the read that is teed, the checksum, the decision that a compressed object is one complete unit of content, and the outcome it commits. The instruments are in `Telemetry/OrchestrationMetrics.cs`.
+- `docs/operations/upload-verification.md` - what the step enforces, its settings and its instruments.
+- `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suite of that step.

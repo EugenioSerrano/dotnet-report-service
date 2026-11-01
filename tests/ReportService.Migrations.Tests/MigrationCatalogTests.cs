@@ -15,12 +15,14 @@ public sealed class MigrationCatalogTests
 
     private const string Uploads = "0002_uploads.sql";
 
+    private const string Content = "0003_upload-content-snapshots-and-intents.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(Uploads, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Content, MigrationCatalog.ExpectedVersion);
     }
 
     [Fact]

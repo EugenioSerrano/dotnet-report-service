@@ -7,6 +7,7 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 
 namespace ReportService.EndToEndTests;
 

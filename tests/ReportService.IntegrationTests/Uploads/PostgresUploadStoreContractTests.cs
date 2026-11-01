@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 using ReportService.Migrations;
 using ReportService.Testing;
 

@@ -10,6 +10,7 @@ using Npgsql;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 using ReportService.Migrations;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;

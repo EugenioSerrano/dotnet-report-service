@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 
 namespace ReportService.Api.Http;
 

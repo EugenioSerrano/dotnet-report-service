@@ -1,12 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <!--
-    The orchestration worker: hosts the orchestration and data task queues.
-    It connects to the workflow engine at start; work is registered on its
-    queues as the product gains it.
+    The orchestration worker: hosts the orchestration and data task queues,
+    verifies uploads and fixes their snapshots, and dispatches the durable
+    requests the API records.
   -->
   <ItemGroup>
     <ProjectReference Include="..\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
+  </ItemGroup>
+
+  <!-- The worker writes the durable requests it claims; the versions are declared centrally. -->
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@
   <!-- The API references the shared service conventions only: no workflow-engine package. -->
   <ItemGroup>
     <ProjectReference Include="..\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
   </ItemGroup>
 
   <!-- The API keeps its own metadata records: explicit SQL over a pooled data source. -->

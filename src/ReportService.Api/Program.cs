@@ -4,6 +4,7 @@ using Npgsql;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 

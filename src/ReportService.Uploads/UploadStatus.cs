@@ -1,4 +1,4 @@
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The state of an upload session. This operation creates an upload in

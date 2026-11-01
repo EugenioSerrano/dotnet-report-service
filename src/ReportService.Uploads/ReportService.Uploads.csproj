@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The upload records, shared by the API and the orchestration worker: one
+    implementation of the upload session and of its snapshot, so the process
+    that receives a body and the process that verifies it read and write the
+    same rules. No HTTP and no workflow-engine type enters this library.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Storage\ReportService.Storage.csproj" />
+  </ItemGroup>
+
+  <!-- Explicit SQL over a pooled data source; the versions are declared centrally. -->
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+</Project>

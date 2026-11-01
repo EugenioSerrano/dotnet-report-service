@@ -23,6 +23,7 @@ internal static class Program
         "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
+        "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
     ];
 
     /// <summary>The integration suite: real dependencies in containers.</summary>

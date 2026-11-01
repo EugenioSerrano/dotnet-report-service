@@ -1,4 +1,5 @@
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 using ReportService.Storage;
 
 namespace ReportService.Api.Tests.Uploads;

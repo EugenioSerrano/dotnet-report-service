@@ -70,6 +70,7 @@ internal static partial class CoverageFloors
         new("ReportService.Migrations", Project: "ReportService.Migrations.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
     /// <summary>

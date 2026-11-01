@@ -1,3 +1,5 @@
+using ReportService.Uploads;
+
 using System.Text.Json;
 using Microsoft.Net.Http.Headers;
 using ReportService.Api.Http;

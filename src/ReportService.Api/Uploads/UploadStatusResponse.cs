@@ -1,3 +1,5 @@
+using ReportService.Uploads;
+
 namespace ReportService.Api.Uploads;
 
 /// <summary>

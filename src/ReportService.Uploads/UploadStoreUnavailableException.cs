@@ -1,4 +1,4 @@
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The record store could not be reached or did not answer in time. The message

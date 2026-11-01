@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 
 namespace ReportService.Api.Tests.Uploads;
 

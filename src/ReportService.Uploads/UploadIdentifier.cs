@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The identifier of an upload session: the prefix <c>upload-</c> followed by 32

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The text forms of an upload's values. The record store keeps each enumeration
@@ -115,6 +115,92 @@ public static class UploadWireValues
     {
         HeaderItemsV1Stored => DataProfile.HeaderItemsV1,
         _ => throw new InvalidOperationException("the stored data profile is not a known value"),
+    };
+
+    /// <summary>The text the record store keeps for <paramref name="encoding"/>.</summary>
+    /// <param name="encoding">The encoding to translate.</param>
+    public static string ToStoredText(UploadContentEncoding encoding) => encoding switch
+    {
+        UploadContentEncoding.None => "none",
+        UploadContentEncoding.Gzip => "gzip",
+        UploadContentEncoding.Other => "other",
+        _ => throw new ArgumentOutOfRangeException(nameof(encoding), "the content encoding has no stored text"),
+    };
+
+    /// <summary>The text the record store keeps for <paramref name="outcome"/>.</summary>
+    /// <param name="outcome">The transfer outcome to translate.</param>
+    public static string ToStoredText(UploadContentOutcome outcome) => outcome switch
+    {
+        UploadContentOutcome.Complete => "complete",
+        UploadContentOutcome.Interrupted => "interrupted",
+        _ => throw new ArgumentOutOfRangeException(nameof(outcome), "the transfer outcome has no stored text"),
+    };
+
+    /// <summary>The text the record store keeps for <paramref name="code"/>.</summary>
+    /// <param name="code">The rejection code to translate.</param>
+    public static string ToStoredText(UploadRejectionCode code) => code switch
+    {
+        UploadRejectionCode.DataInvalid => "DATA_INVALID",
+        UploadRejectionCode.QuotaExceeded => "QUOTA_EXCEEDED",
+        UploadRejectionCode.UnsupportedCapability => "UNSUPPORTED_CAPABILITY",
+        _ => throw new ArgumentOutOfRangeException(nameof(code), "the rejection code has no stored text"),
+    };
+
+    /// <summary>The text the record store keeps for <paramref name="reason"/>.</summary>
+    /// <param name="reason">The rejection reason to translate.</param>
+    public static string ToStoredText(UploadRejectionReason reason) => reason switch
+    {
+        UploadRejectionReason.Sha256Mismatch => "sha256-mismatch",
+        UploadRejectionReason.Truncated => "truncated",
+        UploadRejectionReason.Malformed => "malformed",
+        UploadRejectionReason.Modified => "modified",
+        UploadRejectionReason.Encoding => "encoding",
+        UploadRejectionReason.StoredBytes => "stored-bytes",
+        UploadRejectionReason.InputBytes => "input-bytes",
+        _ => throw new ArgumentOutOfRangeException(nameof(reason), "the rejection reason has no stored text"),
+    };
+
+    /// <summary>Reads the stored text of an encoding; an unknown text is refused, never defaulted.</summary>
+    /// <param name="value">The text the store returned.</param>
+    public static UploadContentEncoding ParseStoredEncoding(string value) => value switch
+    {
+        "none" => UploadContentEncoding.None,
+        "gzip" => UploadContentEncoding.Gzip,
+        "other" => UploadContentEncoding.Other,
+        _ => throw new InvalidOperationException("the stored content encoding is not a known value"),
+    };
+
+    /// <summary>Reads the stored text of a transfer outcome; an unknown text is refused, never defaulted.</summary>
+    /// <param name="value">The text the store returned.</param>
+    public static UploadContentOutcome ParseStoredOutcome(string value) => value switch
+    {
+        "complete" => UploadContentOutcome.Complete,
+        "interrupted" => UploadContentOutcome.Interrupted,
+        _ => throw new InvalidOperationException("the stored transfer outcome is not a known value"),
+    };
+
+    /// <summary>Reads the stored text of a rejection code; an unknown text is refused, never defaulted.</summary>
+    /// <param name="value">The text the store returned.</param>
+    public static UploadRejectionCode ParseStoredCode(string value) => value switch
+    {
+        "DATA_INVALID" => UploadRejectionCode.DataInvalid,
+        "QUOTA_EXCEEDED" => UploadRejectionCode.QuotaExceeded,
+        "UNSUPPORTED_CAPABILITY" => UploadRejectionCode.UnsupportedCapability,
+        _ => throw new InvalidOperationException("the stored rejection code is not a known value"),
+    };
+
+    /// <summary>Reads the stored text of a rejection reason; an unknown text is refused, never defaulted.</summary>
+    /// <param name="value">The text the store returned.</param>
+    public static UploadRejectionReason ParseStoredReason(string value) => value switch
+    {
+        "sha256-mismatch" => UploadRejectionReason.Sha256Mismatch,
+        "truncated" => UploadRejectionReason.Truncated,
+        "malformed" => UploadRejectionReason.Malformed,
+        "modified" => UploadRejectionReason.Modified,
+        "encoding" => UploadRejectionReason.Encoding,
+        "stored-bytes" => UploadRejectionReason.StoredBytes,
+        "input-bytes" => UploadRejectionReason.InputBytes,
+        _ => throw new InvalidOperationException("the stored rejection reason is not a known value"),
     };
 
     /// <summary>Truncates <paramref name="value"/> to whole milliseconds in UTC, the precision every response and row carries.</summary>

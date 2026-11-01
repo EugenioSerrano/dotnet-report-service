@@ -1,4 +1,4 @@
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The way a consumer's data reaches the service: streamed through the API, or

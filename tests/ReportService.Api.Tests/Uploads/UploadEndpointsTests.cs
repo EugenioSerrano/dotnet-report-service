@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;
 
@@ -616,5 +617,46 @@ public sealed class UploadEndpointsTests : IDisposable
 
         public Task<UploadRecord?> FindAsync(string uploadId, string consumerId, CancellationToken cancellationToken) =>
             Task.FromException<UploadRecord?>(failure);
+
+        public Task<bool> TryStartTransferAsync(
+            string uploadId,
+            string consumerId,
+            UploadContentEncoding encoding,
+            CancellationToken cancellationToken) => Task.FromException<bool>(failure);
+
+        public Task<bool> RecordTransferAsync(
+            string uploadId,
+            UploadContentOutcome outcome,
+            long receivedBytes,
+            long? stagingSize,
+            string? stagingSha256,
+            CancellationToken cancellationToken) => Task.FromException<bool>(failure);
+
+        public Task<bool> RejectTransferAsync(
+            string uploadId,
+            UploadRejectionCode code,
+            UploadRejectionReason reason,
+            long receivedBytes,
+            CancellationToken cancellationToken) => Task.FromException<bool>(failure);
+
+        public Task<bool> ConfirmAsync(
+            string uploadId,
+            string consumerId,
+            string? declaredSha256,
+            DateTimeOffset completedAt,
+            CancellationToken cancellationToken) => Task.FromException<bool>(failure);
+
+        public Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken) =>
+            Task.FromException<UploadRecord?>(failure);
+
+        public Task<SnapshotCommitResult> CommitReadyAsync(
+            SnapshotRecord snapshot,
+            CancellationToken cancellationToken) => Task.FromException<SnapshotCommitResult>(failure);
+
+        public Task<bool> CommitRejectedAsync(
+            string uploadId,
+            UploadRejectionCode code,
+            UploadRejectionReason reason,
+            CancellationToken cancellationToken) => Task.FromException<bool>(failure);
     }
 }

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Upload verification: a stored upload is read once, a copy of exactly those
+  bytes is written to a snapshot object, and the content is measured as it is
+  read — the bytes stored, the content they decompress to, and whether a
+  compressed object is one complete unit of content whose own trailer agrees
+  with what was read. A verified upload ends with an immutable snapshot record
+  carrying the hash and size of the content; anything else ends rejected with a
+  code and a reason, and no snapshot exists for it. The upload record and its
+  store now live in one library shared by the API and the orchestration worker.
+  See `docs/operations/upload-verification.md`.
+
 - Upload sessions: a consumer opens one for its report data with
   `POST /api/v1/uploads` (`header-items-v1`, `API_STREAM`) and receives its
   `uploadId`, the state `created` and the time it expires, then reads the same

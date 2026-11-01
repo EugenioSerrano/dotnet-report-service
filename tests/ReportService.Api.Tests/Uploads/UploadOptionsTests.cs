@@ -1,4 +1,5 @@
 using ReportService.Api.Uploads;
+using ReportService.Uploads;
 
 namespace ReportService.Api.Tests.Uploads;
 

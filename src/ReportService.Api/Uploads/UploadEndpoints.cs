@@ -1,3 +1,5 @@
+using ReportService.Uploads;
+
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
 using ReportService.Api.Http;

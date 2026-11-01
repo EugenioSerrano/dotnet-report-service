@@ -1,4 +1,4 @@
-namespace ReportService.Api.Uploads;
+namespace ReportService.Uploads;
 
 /// <summary>
 /// The shape the uploaded data declares. Only the first profile is admitted;
