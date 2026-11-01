@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Conventions shared by every process of the service: validated settings,
+    the configuration error that never carries a value, and the JSON writer
+    of the health endpoints. It references no workflow-engine package, so the
+    API can use it without carrying one.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

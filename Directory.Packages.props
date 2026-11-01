@@ -14,6 +14,7 @@
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.2" />
     <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.6.2" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.63.0" />
+    <PackageVersion Include="Temporalio" Version="1.21.0" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

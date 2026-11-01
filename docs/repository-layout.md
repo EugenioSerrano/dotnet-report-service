@@ -9,13 +9,19 @@ has its own `README.md`.
 ```text
 dotnet-report-service/
 ├── src/                       Product source — one folder per project
+│   ├── ReportService.Api/                         The API (no workflow-engine client)
+│   ├── ReportService.AppHost/                     The local composition
+│   ├── ReportService.ServiceDefaults/             Validated settings and health bodies, shared by every process
+│   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
+│   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
+│   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level

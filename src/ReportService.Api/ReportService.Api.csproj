@@ -1,3 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!-- The API references the shared service conventions only: no workflow-engine package. -->
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <!-- The development consumer registry; the running service watches it for changes. -->
+  <ItemGroup>
+    <Content Update="consumers.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -31,21 +31,41 @@ if (builder.ExecutionContext.IsRunMode)
         RenderWorkerImage.PrepareAsync(renderWorkerImage, @event.Services, cancellationToken));
 }
 
-var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
-    .WithImagePullPolicy(ImagePullPolicy.Never)
-    .WithHttpEndpoint(targetPort: 8080, name: "http")
-    .WithHttpHealthCheck("/health", endpointName: "http");
+// The engine address as each consumer reaches it: a container resolves it on the
+// composition's container network (temporal:7233), a host process on the host.
+var temporalAddress = ReferenceExpression.Create($"{temporalGrpc.Property(EndpointProperty.HostAndPort)}");
 
-// API stub: starts only when every dependency is healthy.
-builder.AddProject<Projects.ReportService_Api>("api")
+// PDF worker: connects to the engine on the PDF rendering queue; ready once Chromium
+// launched and the engine answers.
+builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
+    .WithImagePullPolicy(ImagePullPolicy.Never)
+    .WithEnvironment("Temporal__Address", temporalAddress)
+    .WithEnvironment("Temporal__Namespace", "default")
+    .WithHttpEndpoint(targetPort: 8080, name: "http")
+    .WithHttpHealthCheck("/health", endpointName: "http")
+    .WaitFor(temporal);
+
+// Orchestration worker: a host process on the orchestration and data queues; ready once
+// the engine answers.
+builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
+    .WithEnvironment("Temporal__Address", temporalAddress)
+    .WithEnvironment("Temporal__Namespace", "default")
+    .WithHttpHealthCheck("/health")
+    .WaitFor(temporal);
+
+// API: holds no workflow-engine client and does not wait for the engine or the workers,
+// so it starts and is ready while the engine is down. It waits for its own dependencies.
+var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithReference(metadataDb)
     .WithReference(cache)
-    .WithEnvironment("Temporal__Address",
-        ReferenceExpression.Create($"{temporalGrpc.Property(EndpointProperty.HostAndPort)}"))
     .WaitFor(metadataDb)
     .WaitFor(cache)
-    .WaitFor(temporal)
-    .WaitFor(renderWorker)
     .WithHttpHealthCheck("/health");
+
+// A consumer registry file other than the API's own (for example, one a test writes).
+if (builder.Configuration["Consumers:File"] is { Length: > 0 } registryFile)
+{
+    api.WithEnvironment("Consumers__File", registryFile);
+}
 
 builder.Build().Run();

@@ -16,8 +16,10 @@ that stays bounded no matter how large the report is.
 > streaming data and template engines, PDF layout, PDF assembly, XLSX
 > writing and Markdown conversion. The spikes record measurements, not
 > decisions: the remaining library choices are made from them next. No
-> report is rendered yet — the API answers health checks only and the render
-> worker only checks that Chromium starts; the rest of this README
+> report is rendered yet — the API answers health checks and holds the
+> consumer registry, the two workers connect to the workflow engine with no
+> work registered, and the render worker checks that Chromium starts; the
+> rest of this README
 > describes what is being built and why. The design and analysis documents
 > live in the companion repository
 > [dotnet-report-service-sdlc](https://github.com/EugenioSerrano/dotnet-report-service-sdlc).
@@ -533,19 +535,29 @@ Before any resource starts, the command prepares the render worker image:
 If one of these steps fails, the command stops with the failing step's
 output before any resource starts. It then starts, on the local machine only:
 
-- `api` — the API (for now a stub with `/health`, on `http://localhost:5080`);
+- `api` — the API (`/health` and the consumer registry's diagnostic
+  `/health/registry`, on `http://localhost:5080`);
+- `orchestration-worker` — the orchestration worker, a host process connected
+  to the workflow engine on the `report-orchestration` and `report-data`
+  queues (`/health` on `http://localhost:5081`);
 - `postgres` — PostgreSQL 18 with the `reportservice` database;
 - `cache` — Valkey 9.1;
 - `temporal` — the Temporal development server (gRPC on 7233, web UI on 8233
   inside the container);
 - `render-worker` — the PDF render worker container, built by the .NET SDK on
-  a base image with the Chromium headless shell.
+  a base image with the Chromium headless shell, connected to the workflow
+  engine on the `report-pdf-rendering` queue.
 
 The console prints the dashboard URL (with its login link); the dashboard
-shows every resource, its health and its logs. The API starts only when the
-other resources are healthy, so `http://localhost:5080/health` answering
-`Healthy` means the whole composition is up. To see every resource state
-change in the console as well, run:
+shows every resource, its health and its logs. The composition is up when
+every resource is healthy there. The API waits only for PostgreSQL and
+Valkey: it never depends on the workflow engine, so its `/health` answering
+`Healthy` does not say anything about the workers. Each worker is ready only
+while the workflow engine answers it. What each process owns, what its
+readiness means, and how the consumer registry is declared and changed while
+the service runs are described in
+[`docs/process-topology.md`](docs/process-topology.md). To see every resource
+state change in the console as well, run:
 
 ```bash
 dotnet run --project src/ReportService.AppHost -- --Logging:LogLevel:Aspire.Hosting=Debug

@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />
@@ -22,6 +23,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+    <!-- Hosted in memory by the readiness tests. Both have a top-level Program class, so the worker's is reached through its alias. -->
+    <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" Aliases="orchestration" />
   </ItemGroup>
 
 </Project>

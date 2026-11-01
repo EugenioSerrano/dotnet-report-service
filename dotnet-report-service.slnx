@@ -9,6 +9,9 @@
   <Folder Name="/src/">
     <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
+    <Project Path="src/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
+    <Project Path="src/ReportService.ServiceDefaults.Temporal/ReportService.ServiceDefaults.Temporal.csproj" />
+    <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
     <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -1,0 +1,6 @@
+{
+  "consumers": [
+    { "consumerId": "dev-consumer", "displayName": "Development consumer", "active": true },
+    { "consumerId": "dev-consumer-disabled", "displayName": "Disabled development consumer", "active": false }
+  ]
+}

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    The orchestration worker: hosts the orchestration and data task queues.
+    It connects to the workflow engine at start; work is registered on its
+    queues as the product gains it.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+  </ItemGroup>
+
+</Project>

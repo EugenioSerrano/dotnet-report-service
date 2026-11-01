@@ -4,6 +4,10 @@
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+  </ItemGroup>
+
   <!--
     Container image of the PDF render worker, built by the .NET SDK:
       dotnet publish -c Release -t:PublishContainer -p:PdfBaseImageDigest=sha256:<digest>

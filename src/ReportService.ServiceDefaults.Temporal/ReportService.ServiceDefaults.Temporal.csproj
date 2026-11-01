@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The workflow-engine connection shared by the two workers: the client, its
+    readiness check, and one engine worker per task queue that has registered
+    work. Referenced by the workers only; the API never references it.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Temporalio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

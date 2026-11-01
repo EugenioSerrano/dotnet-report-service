@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
+    <!-- The engine connection shared by the workers is tested here too; the API itself never references it. -->
+    <ProjectReference Include="..\..\src\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 
