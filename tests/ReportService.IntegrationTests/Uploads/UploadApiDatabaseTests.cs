@@ -114,9 +114,11 @@ public sealed class UploadApiDatabaseTests : IClassFixture<PostgresFixture>, IDi
         await using var api = Api(connectionString);
         using var client = api.CreateClient();
 
+        string firstUploadId;
         using (var first = await client.SendAsync(CreateRequest(Json(ValidBody)), cancellationToken))
         {
             Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+            firstUploadId = await UploadIdAsync(first, cancellationToken);
         }
 
         try
@@ -137,9 +139,29 @@ public sealed class UploadApiDatabaseTests : IClassFixture<PostgresFixture>, IDi
         // The store holds no broken state: the next request of the same process creates its session.
         using var after = await client.SendAsync(CreateRequest(Json(ValidBody)), cancellationToken);
         Assert.Equal(HttpStatusCode.Created, after.StatusCode);
-        Assert.Equal(2, (await RowsAsync(database, cancellationToken)).Count);
+        var afterUploadId = await UploadIdAsync(after, cancellationToken);
+
+        // The refused request's statement had already reached the server, and a statement that
+        // lost its client while the server was stopped is still executed once it answers again.
+        // This case therefore counts the sessions it was given back, never every row the table
+        // holds: one per creation the consumer saw, and none of them twice.
+        var rows = await RowsAsync(database, cancellationToken);
+        Assert.NotEqual(firstUploadId, afterUploadId);
+        Assert.Single(rows, row => row.UploadId == firstUploadId);
+        var recovered = Assert.Single(rows, row => row.UploadId == afterUploadId);
+        Assert.Equal(Consumer, recovered.ConsumerId);
+        Assert.Equal("CREATED", recovered.Status);
+        Assert.Equal($"staging/{afterUploadId}/content", recovered.StagingKey);
     }
 
+    private static async Task<string> UploadIdAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        return body.RootElement.GetProperty("uploadId").GetString()!;
+    }
+
+    // A database of its own for every case, brought to the version the code expects, so no case
+    // sees a row another case wrote and a table's contents are only this case's own.
     private async Task<(string Database, string ConnectionString)> MigratedDatabaseAsync(CancellationToken cancellationToken)
     {
         var database = await _fixture.CreateDatabaseAsync(cancellationToken);
