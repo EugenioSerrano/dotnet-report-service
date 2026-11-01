@@ -294,3 +294,4 @@ changes; a service-side cause is answered `503 SERVICE_UNAVAILABLE`.
 | Setting | Meaning |
 |---------|---------|
 | `Uploads__MaxStoredBytes` | The most stored bytes one upload may hold. Required, greater than zero; the shipped value is `4294967296` (4 GiB). The limit is configuration, not a promise about the deployment's disk, and the same value is given to the API and to the orchestration worker. |
+| `Uploads__MaxUncompressedBytes` | The most the stored data may decompress to. Required, greater than zero; the shipped value is `4294967296` (4 GiB). It is enforced by the orchestration worker as the data leaves the decompressor, so a small compressed body that expands past it is refused with `QUOTA_EXCEEDED` and the reason `input-bytes`; the same value is given to the API and to the worker. |

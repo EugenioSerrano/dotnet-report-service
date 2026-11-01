@@ -170,3 +170,24 @@ upload, a compressed body cut at every offset, every accepted header form, and
 the cases that prove the content is read once and measured before anything is
 committed. `Crc32Tests` holds the checksum against a bit-serial reference and
 `GzipMemberAttestationTests` the trailer decision.
+
+Three further classes of the same project:
+
+- **`UploadVerificationMemoryTests`** verifies a generated body of one gibibyte,
+  plain and compressed while it is written, and requires its working-set growth to
+  stay within the growth of a sixty-four mebibyte body plus thirty-two mebibytes.
+  Each case writes and removes its own storage root and reports its elapsed time
+  and the most temporary storage it held.
+- **`VerifyUploadActivityTests`** drives one attempt inside the workflow engine's
+  own host for an activity: two attempts of one verification write under two
+  different keys and one attempt always under the same one, a verification that
+  takes time keeps telling the engine it is alive, and a cancelled attempt stops
+  and commits nothing.
+- **`UploadVerificationReplayTests`** replays every history committed under
+  `Histories/` with the engine's replayer, so a change that would make a running
+  verification non-deterministic fails without a server. The histories are
+  fixtures: they are recorded once, against a real engine, by the opt-in capture
+  case of the integration suite (`REPORTSERVICE_CAPTURE_WORKFLOW_HISTORY` names the
+  file to write), and committed with the change that recorded them. The case
+  **fails** when no history exists — a case with nothing to check is not a result.
+

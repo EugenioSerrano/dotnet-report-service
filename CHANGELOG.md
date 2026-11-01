@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Report data can be **streamed** to an upload — plain, or compressed with
+  `Content-Encoding: gzip` — and then **confirmed**: the body is written to the
+  upload's staging object as it arrives, counted against the size limit and never
+  held in memory, and the confirmation answers `202 Accepted` with the upload
+  `verifying`. The service then verifies the stored bytes in the background and
+  keeps an immutable snapshot with the SHA-256 and size of the content, or ends the
+  upload rejected with a stable code and reason that the status read shows back.
+  Content sent to an upload that is already ready is refused and its snapshot stays
+  as it was. See `docs/api/uploads.md` and
+  `docs/operations/upload-verification.md`.
 - Upload verification: a stored upload is read once, a copy of exactly those
   bytes is written to a snapshot object, and the content is measured as it is
   read — the bytes stored, the content they decompress to, and whether a
