@@ -143,15 +143,20 @@ public sealed class UploadApiDatabaseTests : IClassFixture<PostgresFixture>, IDi
 
         // The refused request's statement had already reached the server, and a statement that
         // lost its client while the server was stopped is still executed once it answers again.
-        // This case therefore counts the sessions it was given back, never every row the table
-        // holds: one per creation the consumer saw, and none of them twice.
+        // Whether the table therefore holds two rows or three is not something this case decides,
+        // so it asserts what either outcome must show: every stored row belongs to this consumer,
+        // is in the state a fresh session has and carries the key its identifier promises, and
+        // each session the consumer was given back is one of those rows, exactly once.
         var rows = await RowsAsync(database, cancellationToken);
         Assert.NotEqual(firstUploadId, afterUploadId);
+        Assert.All(rows, row =>
+        {
+            Assert.Equal(Consumer, row.ConsumerId);
+            Assert.Equal("CREATED", row.Status);
+            Assert.Equal($"staging/{row.UploadId}/content", row.StagingKey);
+        });
         Assert.Single(rows, row => row.UploadId == firstUploadId);
-        var recovered = Assert.Single(rows, row => row.UploadId == afterUploadId);
-        Assert.Equal(Consumer, recovered.ConsumerId);
-        Assert.Equal("CREATED", recovered.Status);
-        Assert.Equal($"staging/{afterUploadId}/content", recovered.StagingKey);
+        Assert.Single(rows, row => row.UploadId == afterUploadId);
     }
 
     private static async Task<string> UploadIdAsync(HttpResponseMessage response, CancellationToken cancellationToken)
