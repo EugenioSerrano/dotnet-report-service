@@ -35,12 +35,26 @@ if (builder.ExecutionContext.IsRunMode)
 // composition's container network (temporal:7233), a host process on the host.
 var temporalAddress = ReferenceExpression.Create($"{temporalGrpc.Property(EndpointProperty.HostAndPort)}");
 
+// Object storage: one directory shared by the three processes (see SharedStorageRoot).
+// The host processes use the host path; the PDF worker sees the same directory mounted
+// at /data/storage. The development diagnostics that prove the sharing are switched on here.
+var storage = await SharedStorageRoot.DescribeAsync(renderWorkerImage.RepositoryRoot);
+if (builder.ExecutionContext.IsRunMode)
+{
+    Directory.CreateDirectory(storage.HostPath);
+}
+
 // PDF worker: connects to the engine on the PDF rendering queue; ready once Chromium
 // launched and the engine answers.
 builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
     .WithImagePullPolicy(ImagePullPolicy.Never)
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
+    .WithBindMount(storage.MountSource, SharedStorageRoot.ContainerPath, isReadOnly: false)
+    .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
+    .WithEnvironment("Storage__Filesystem__Root", SharedStorageRoot.ContainerPath)
+    .WithEnvironment("Storage__Filesystem__CreateIfMissing", "false")
+    .WithEnvironment("Storage__Diagnostics__Enabled", "true")
     .WithHttpEndpoint(targetPort: 8080, name: "http")
     .WithHttpHealthCheck("/health", endpointName: "http")
     .WaitFor(temporal);
@@ -50,6 +64,10 @@ builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorker
 builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
+    .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
+    .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
+    .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
+    .WithEnvironment("Storage__Diagnostics__Enabled", "true")
     .WithHttpHealthCheck("/health")
     .WaitFor(temporal);
 
@@ -58,6 +76,10 @@ builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-
 var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithReference(metadataDb)
     .WithReference(cache)
+    .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
+    .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
+    .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
+    .WithEnvironment("Storage__Diagnostics__Enabled", "true")
     .WaitFor(metadataDb)
     .WaitFor(cache)
     .WithHttpHealthCheck("/health");

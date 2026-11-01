@@ -11,22 +11,26 @@ dotnet-report-service/
 ├── src/                       Product source — one folder per project
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
-│   ├── ReportService.ServiceDefaults/             Validated settings and health bodies, shared by every process
+│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies and the object store, shared by every process
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
+│   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
+│   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
+│   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; object storage: object-storage.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level
 ├── spikes/                    Stage 0 experiments (not part of the product)
 ├── artifacts/                 Local build and test output (git-ignored, never committed)
+├── .storage/                  Object storage root of the local composition (git-ignored, never committed)
 ├── dotnet-report-service.slnx Product solution
 ├── global.json                .NET SDK pin (10.0.4xx band)
 ├── Directory.Build.props      Build settings shared by every project, product version
@@ -46,7 +50,7 @@ dotnet-report-service/
 |------|------|---------|
 | Product project | `src/ReportService.<Area>/ReportService.<Area>.csproj` | `src/ReportService.Workers.Pdf/` |
 | Root namespace | Same as the project name | `ReportService.Workers.Pdf` |
-| Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project | `tests/ReportService.Workers.Pdf.Tests/` |
+| Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project; a provider project is tested in its port's project | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Storage.Tests/` (the port and its Filesystem provider) |
 | Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/`, `tests/ReportService.EndToEndTests/` |
 | Shared test support (library, referenced by test projects only) | `tests/ReportService.Testing/` | `tests/ReportService.Testing/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |

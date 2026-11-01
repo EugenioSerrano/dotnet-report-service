@@ -9,7 +9,9 @@ builder.AddServiceConfiguration();
 // The orchestration and data task queues; work is registered on them as the product gains it.
 builder.AddWorkflowEngine("orchestration-worker", ["report-orchestration", "report-data"]);
 builder.Services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy());
+builder.AddObjectStorage("orchestration-worker");
 
 var app = builder.Build();
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
+app.MapStorageDiagnostics();
 app.Run();

@@ -11,7 +11,9 @@ builder.AddWorkflowEngine("pdf-worker", ["report-pdf-rendering"]);
 builder.Services.AddSingleton<BrowserProbe>();
 builder.Services.AddHostedService(static services => services.GetRequiredService<BrowserProbe>());
 builder.Services.AddHealthChecks().AddCheck<BrowserHealthCheck>("chromium");
+builder.AddObjectStorage("pdf-worker");
 
 var app = builder.Build();
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
+app.MapStorageDiagnostics();
 await app.RunAsync();

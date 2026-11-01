@@ -18,8 +18,8 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests` (one `ReportService.<Area>.Tests` per product project) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
-| **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Storage.Tests` (one `ReportService.<Area>.Tests` per product project) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
@@ -106,8 +106,26 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
     measurements.
 - **`ReportService.Testing`** — a support library shared by the test
   projects (repository paths, the composition's pinned images, a bounded wait,
-  in-memory log capture, the container helper). It is not a test project, and
-  only test projects reference it.
+  in-memory log capture, the container helper, a directory made unwritable for
+  a test). It is not a test project, and only test projects reference it.
+
+## The storage provider-conformance suite
+
+`ReportService.Storage.Tests` holds `ObjectStoreConformanceTests`, the
+behaviour every object storage provider must show (see
+[`../docs/object-storage.md`](../docs/object-storage.md)). It runs here
+against the Filesystem provider, over a temporary directory per test. **A new
+provider adds one test project that references `ReportService.Storage.Tests`
+and derives `ObjectStoreConformanceTests`**, supplying its store, its declared
+capabilities and a way to change stored bytes behind the store's back; a
+provider whose emulator needs a container runs that project in the
+integration level. A provider that fails any case is not shipped.
+
+The suite's large-source case writes a generated 1 GiB source that cannot be
+rewound and compares the process's peak working-set growth with a 64 MiB
+write; it measures the whole process, so its class runs alone, after the
+other tests. Its figures are attached to the run's results as
+`memory-figure.txt`.
 - Test fixtures and data owned by a single test project, inside that project.
 
 ## What does not go here

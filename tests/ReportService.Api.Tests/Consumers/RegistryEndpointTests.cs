@@ -93,10 +93,11 @@ public sealed class RegistryEndpointTests : IDisposable
         Assert.Equal("consumers", error.Setting);
     }
 
-    private static WebApplicationFactory<Program> Factory(string registryPath, params (string Key, string Value)[] settings) =>
+    private WebApplicationFactory<Program> Factory(string registryPath, params (string Key, string Value)[] settings) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Consumers:File", registryPath);
+            builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory.Path, "storage"));
             foreach (var (key, value) in settings)
             {
                 builder.UseSetting(key, value);

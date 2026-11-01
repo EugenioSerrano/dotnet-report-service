@@ -4,8 +4,13 @@ using System.Xml.Linq;
 
 namespace ReportService.Eng.TestRunner;
 
-/// <summary>The coverage floor of one product assembly that has a unit/component test project.</summary>
-internal sealed record CoverageFloor(string Assembly, int LinePercent, int BranchPercent, string Tier);
+/// <summary>
+/// The coverage floor of one product assembly that has a unit/component test
+/// project. The floor names both the assembly and the test project that
+/// measures it: one row is one pair, so an assembly reported by a second
+/// project never has two competing figures.
+/// </summary>
+internal sealed record CoverageFloor(string Assembly, string Project, int LinePercent, int BranchPercent, string Tier);
 
 /// <summary>What one Cobertura report says about one assembly, counted from its lines.</summary>
 internal sealed record AssemblyFigures(
@@ -19,9 +24,10 @@ internal sealed record AssemblyFigures(
     string? LineRateAttribute,
     string? BranchRateAttribute);
 
-/// <summary>The floor result of one assembly.</summary>
+/// <summary>The floor result of one assembly, or the record of a figure the floors do not take.</summary>
 internal sealed record CoverageResult(
     string Assembly,
+    string Project,
     string Result,
     string Reason,
     int? LinePercentFloor,
@@ -42,20 +48,27 @@ internal sealed record CoverageResult(
 /// <summary>
 /// The coverage floors of the hermetic level and their evaluation from the
 /// Cobertura reports of a run. The table decides which assemblies must be
-/// measured: a unit/component test project adds its product assembly here in
-/// the same change, so an assembly cannot drop out of the check unnoticed.
+/// measured and by which project: a unit/component test project adds its
+/// product assembly here in the same change, so an assembly cannot drop out of
+/// the check unnoticed. A floored assembly is measured from its own test
+/// project's report only; the same assembly found in another project's report
+/// is recorded and excluded, never combined with the owning figure and never
+/// taken as the better one.
 /// </summary>
 internal static partial class CoverageFloors
 {
     public const string Pass = "pass";
     public const string Fail = "fail";
     public const string NotApplicable = "n/a";
+    public const string Excluded = "excluded";
     public const string NoFloor = "no floor";
 
-    /// <summary>One row per product assembly with a unit/component test project.</summary>
+    /// <summary>One row per product assembly with a unit/component test project, naming that project.</summary>
     public static readonly IReadOnlyList<CoverageFloor> Floors =
     [
-        new("ReportService.Api", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Api", Project: "ReportService.Api.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
     /// <summary>
@@ -115,33 +128,42 @@ internal static partial class CoverageFloors
     }
 
     /// <summary>
-    /// Evaluates the floors. Figures are compared as exact integer ratios
-    /// (covered × 100 ≥ floor × total), so a rate is never rounded up to meet
-    /// a floor; the rates the report states are kept beside them.
+    /// Evaluates the floors. A floor reads the figure of its own test project
+    /// only; the same assembly reported by another project is recorded as
+    /// excluded and never compared with it. Figures are compared as exact
+    /// integer ratios (covered × 100 ≥ floor × total), so a rate is never
+    /// rounded up to meet a floor; the rates the report states are kept beside
+    /// them.
     /// </summary>
     public static IReadOnlyList<CoverageResult> Evaluate(IReadOnlyList<AssemblyFigures> figures, IReadOnlyList<CoverageFloor> floors)
     {
         var results = new List<CoverageResult>();
         foreach (var floor in floors)
         {
-            var found = figures.Where(f => f.Assembly == floor.Assembly).ToList();
-            if (found.Count == 0)
+            var measured = figures
+                .Where(f => f.Assembly == floor.Assembly && f.Project == floor.Project)
+                .ToList();
+            if (measured.Count == 0)
             {
-                results.Add(Result(floor.Assembly, Fail, "absent from the coverage report", floor, null));
+                var elsewhere = figures
+                    .Where(f => f.Assembly == floor.Assembly)
+                    .Select(f => f.Project)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+                var reason = $"absent from the reporting project's report ({floor.Project})";
+                if (elsewhere.Count > 0)
+                {
+                    reason += $"; reported by {string.Join(", ", elsewhere)}, which is not its measuring project";
+                }
+
+                results.Add(FloorRow(floor, Fail, reason, null));
                 continue;
             }
 
-            if (found.Select(f => f.Project).Distinct(StringComparer.Ordinal).Count() > 1)
-            {
-                var projects = string.Join(", ", found.Select(f => f.Project).Distinct(StringComparer.Ordinal));
-                results.Add(Result(floor.Assembly, Fail, $"reported by several projects ({projects}); their combination is not defined", floor, found[0]));
-                continue;
-            }
-
-            var figure = found[0];
+            var figure = measured[0];
             if (figure.Lines == 0)
             {
-                results.Add(Result(floor.Assembly, NotApplicable, "no coverable line after the listed exclusions", floor, figure));
+                results.Add(FloorRow(floor, NotApplicable, "no coverable line after the listed exclusions", figure));
                 continue;
             }
 
@@ -162,13 +184,21 @@ internal static partial class CoverageFloors
             }
 
             results.Add(reasons.Count > 0
-                ? Result(floor.Assembly, Fail, string.Join("; ", reasons), floor, figure)
-                : Result(floor.Assembly, Pass, branchNote.Length > 0 ? branchNote : "floors met", floor, figure));
+                ? FloorRow(floor, Fail, string.Join("; ", reasons), figure)
+                : FloorRow(floor, Pass, branchNote.Length > 0 ? branchNote : "floors met", figure));
         }
 
-        foreach (var figure in figures.Where(f => floors.All(floor => floor.Assembly != f.Assembly)))
+        foreach (var figure in figures)
         {
-            results.Add(Result(figure.Assembly, NoFloor, "reported, no floor (no test project)", null, figure));
+            var floor = floors.FirstOrDefault(f => f.Assembly == figure.Assembly);
+            if (floor is null)
+            {
+                results.Add(OtherRow(figure, NoFloor, "reported, no floor (no test project)"));
+            }
+            else if (figure.Project != floor.Project)
+            {
+                results.Add(OtherRow(figure, Excluded, $"measured by {floor.Project}"));
+            }
         }
 
         return results;
@@ -179,13 +209,14 @@ internal static partial class CoverageFloors
         ? "—"
         : (Math.Floor(covered * 10000m / total) / 100m).ToString("0.00", CultureInfo.InvariantCulture) + "%";
 
-    private static CoverageResult Result(string assembly, string result, string reason, CoverageFloor? floor, AssemblyFigures? figure) =>
+    private static CoverageResult FloorRow(CoverageFloor floor, string result, string reason, AssemblyFigures? figure) =>
         new(
-            assembly,
+            floor.Assembly,
+            floor.Project,
             result,
             reason,
-            floor?.LinePercent,
-            floor?.BranchPercent,
+            floor.LinePercent,
+            floor.BranchPercent,
             figure?.Lines ?? 0,
             figure?.LinesCovered ?? 0,
             figure?.BranchPoints ?? 0,
@@ -195,6 +226,24 @@ internal static partial class CoverageFloors
             figure?.LineRateAttribute,
             figure?.BranchRateAttribute,
             figure?.Report);
+
+    private static CoverageResult OtherRow(AssemblyFigures figure, string result, string reason) =>
+        new(
+            figure.Assembly,
+            figure.Project,
+            result,
+            reason,
+            null,
+            null,
+            figure.Lines,
+            figure.LinesCovered,
+            figure.BranchPoints,
+            figure.BranchesCovered,
+            Percent(figure.LinesCovered, figure.Lines),
+            Percent(figure.BranchesCovered, figure.BranchPoints),
+            figure.LineRateAttribute,
+            figure.BranchRateAttribute,
+            figure.Report);
 
     [GeneratedRegex(@"\((?<covered>\d+)/(?<total>\d+)\)", RegexOptions.CultureInvariant)]
     private static partial Regex ConditionCoverage();

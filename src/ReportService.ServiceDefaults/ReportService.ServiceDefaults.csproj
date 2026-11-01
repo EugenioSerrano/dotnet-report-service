@@ -2,9 +2,10 @@
 
   <!--
     Conventions shared by every process of the service: validated settings,
-    the configuration error that never carries a value, and the JSON writer
-    of the health endpoints. It references no workflow-engine package, so the
-    API can use it without carrying one.
+    the configuration error that never carries a value, the JSON writer of the
+    health endpoints, and the object store with its health check and its
+    development-only diagnostics. It references no workflow-engine package,
+    so the API can use it without carrying one.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -12,6 +13,11 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Storage\ReportService.Storage.csproj" />
+    <ProjectReference Include="..\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The object storage port: the one way product code reaches durable bytes.
+    Write-once writes that return the SHA-256 and size of what was written,
+    reads verified against an expected size and SHA-256, outcomes instead of
+    provider exceptions, the capability model and the key grammar.
+    Base class library only; a provider lives in its own project.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

@@ -21,6 +21,7 @@ internal static class Program
     private static readonly string[] HermeticProjects =
     [
         "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
+        "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
     ];
 
     /// <summary>The integration suite: real dependencies in containers.</summary>
@@ -196,21 +197,24 @@ internal static class Program
         var lines = new List<string>
         {
             "Coverage floors (hermetic level; rates truncated to two decimals, compared as exact ratios)",
+            "Each assembly is measured only from its own test project's report; a figure of it in another project's report is excluded, never combined.",
             string.Empty,
         };
         foreach (var result in coverage)
         {
+            var measured = result.LinePercentFloor is not null;
             var floors = result.LinePercentFloor is null
                 ? "no floor"
                 : $"floors {result.LinePercentFloor}% line / {result.BranchPercentFloor}% branch";
             lines.Add(
-                $"{result.Assembly}: {result.Result} — {result.Reason}; lines {result.LinesCovered}/{result.Lines} ({result.LineRate}), " +
+                $"{result.Assembly} — {(measured ? "measured by" : "reported by")} {result.Project}: {result.Result} — {result.Reason}; " +
+                $"lines {result.LinesCovered}/{result.Lines} ({result.LineRate}), " +
                 $"branches {result.BranchesCovered}/{result.BranchPoints} ({result.BranchRate}); report rates line-rate={result.LineRateAttribute ?? "—"} " +
                 $"branch-rate={result.BranchRateAttribute ?? "—"}; {floors}");
             if (result.Failed)
             {
                 var source = result.Report ?? "no report";
-                Console.WriteLine($"coverage floor not met: {result.Assembly} {result.Reason} (from {source})");
+                Console.WriteLine($"coverage floor not met: {result.Assembly} measured by {result.Project}: {result.Reason} (from {source})");
             }
         }
 

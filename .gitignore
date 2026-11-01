@@ -58,3 +58,6 @@ nunit-*.xml
 
 # Generated pilot datasets (regenerate with the dataset generator)
 samples/datasets/header-items-v1.*.json
+
+# Object storage root of the local composition (shared by the API and the workers)
+.storage/

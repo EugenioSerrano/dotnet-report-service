@@ -15,7 +15,7 @@ public static class HealthResponseWriter
 {
     /// <summary>The only data keys a health body may carry.</summary>
     public static readonly IReadOnlySet<string> AllowedDataKeys =
-        new HashSet<string>(["entries", "fingerprint", "address", "namespace", "queues"], StringComparer.Ordinal);
+        new HashSet<string>(["entries", "fingerprint", "address", "namespace", "queues", "provider", "writable", "readable", "error"], StringComparer.Ordinal);
 
     /// <summary>Writes the report as JSON; use as a health endpoint's response writer.</summary>
     public static Task Json(HttpContext context, HealthReport report)
