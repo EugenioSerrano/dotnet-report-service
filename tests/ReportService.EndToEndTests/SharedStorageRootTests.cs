@@ -27,6 +27,9 @@ public sealed class SharedStorageRootTests
     private const string ContainerRoot = "/data/storage";
     private const int ObjectSize = 1024 * 1024;
 
+    // The property the composition reports for a running container's identity.
+    private const string ContainerIdProperty = "container.id";
+
     // The first run may build the PDF base image and publish the render worker image.
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
 
@@ -68,8 +71,9 @@ public sealed class SharedStorageRootTests
             Assert.Equal(expectedSha256, written.Sha256);
             evidence.AppendLine(CultureInfo.InvariantCulture, $"write by the PDF worker: {first} size {written.Size} sha256 {written.Sha256}");
 
-            var owner = await ContainerOwnerAsync(first, cancellationToken);
-            evidence.AppendLine(CultureInfo.InvariantCulture, $"owner of the object inside the PDF worker's container (uid:gid): {owner}");
+            var container = await ContainerAsync(app, cancellationToken);
+            var owner = await ContainerOwnerAsync(container, first, cancellationToken);
+            evidence.AppendLine(CultureInfo.InvariantCulture, $"PDF worker container {Short(container)}; owner of the object inside it (uid:gid): {owner}");
             Assert.StartsWith("1654:", owner, StringComparison.Ordinal);
 
             // 2. The API and 3. the orchestration worker read it, verified.
@@ -160,13 +164,27 @@ public sealed class SharedStorageRootTests
         }
     }
 
-    // The owner of the object as the PDF worker's container sees it (only inspects; removes nothing).
-    private static async Task<string> ContainerOwnerAsync(ObjectKey key, CancellationToken cancellationToken)
+    // The PDF worker's container of this composition. Another class of the run starts
+    // a composition of its own, so the run has more than one container of that name;
+    // the container is the one the model started for this composition, never merely
+    // the one name that happens to match.
+    private static async Task<string> ContainerAsync(DistributedApplication app, CancellationToken cancellationToken)
     {
-        var names = await DockerAsync(["ps", "--filter", "name=render-worker-", "--format", "{{.Names}}"], cancellationToken);
-        var container = Assert.Single(names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-        return (await DockerAsync(["exec", container, "stat", "-c", "%u:%g", $"{ContainerRoot}/{key}"], cancellationToken)).Trim();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(HealthyDeadline);
+        var worker = await app.ResourceNotifications.WaitForResourceAsync(
+            TestComposition.RenderWorkerName,
+            resource => resource.Snapshot.Properties.Any(property => property.Name == ContainerIdProperty && property.Value is not null),
+            deadline.Token);
+        return Convert.ToString(worker.Snapshot.Properties.Single(property => property.Name == ContainerIdProperty).Value, CultureInfo.InvariantCulture)!;
     }
+
+    private static string Short(string containerId) =>
+        containerId[..Math.Min(12, containerId.Length)];
+
+    // The owner of the object as that container sees it (only inspects; removes nothing).
+    private static async Task<string> ContainerOwnerAsync(string container, ObjectKey key, CancellationToken cancellationToken) =>
+        (await DockerAsync(["exec", container, "stat", "-c", "%u:%g", $"{ContainerRoot}/{key}"], cancellationToken)).Trim();
 
     private static async Task<string> DockerAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
