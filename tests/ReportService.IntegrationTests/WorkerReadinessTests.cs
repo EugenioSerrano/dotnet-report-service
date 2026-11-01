@@ -15,7 +15,7 @@ using Temporalio.Api.Enums.V1;
 using Temporalio.Api.TaskQueue.V1;
 using Temporalio.Api.WorkflowService.V1;
 using Temporalio.Client;
-using OrchestrationWorker = orchestration::Program;
+using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 
 namespace ReportService.IntegrationTests;
 

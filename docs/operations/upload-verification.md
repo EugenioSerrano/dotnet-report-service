@@ -88,3 +88,52 @@ The stored side may run at most one megabyte ahead of the decompressor, and
 resumes when it has caught up to half a megabyte, so verification of a body
 larger than the process's memory is bounded by that window and by the copy
 buffer — never by the body's size.
+
+## Dispatching the verification
+
+The API never talks to the workflow engine. A confirmation records a durable
+request in the metadata database in the same transaction that moves the upload to
+`verifying`; the orchestration worker's dispatcher turns it into one execution of
+the verification workflow.
+
+- Each poll claims a bounded batch of the requests that are due, skipping rows
+  another process holds, and keeps them in one transaction while it works.
+- For each request it asks the engine whether the execution already exists before
+  starting one, so a process that stopped between a start and its record — or a
+  second worker polling beside the first — still produces exactly one execution
+  per upload.
+- A request is never failed. A failed attempt is recorded with its wait and tried
+  again, with the wait doubling from two seconds up to one minute. The claim
+  transaction is bounded in time, so a slow engine can never hold a row beyond
+  the deployment's own limit; whatever was not worked through is left for the
+  next poll.
+- A request pending longer than `Dispatcher__AlertAfter` is reported once, with
+  its identifier and its kind.
+
+## Settings
+
+| Setting | Meaning |
+|---------|---------|
+| `Uploads__MaxStoredBytes` | The most stored bytes one upload may hold; the same value the API enforces. |
+| `Uploads__MaxUncompressedBytes` | The most data bytes one upload may decompress to. |
+| `Uploads__Verification__StartToClose` | How long one verification attempt may run. `01:00:00` by default, at most one day. |
+| `Dispatcher__PollInterval` | How long the dispatcher waits between two polls. `00:00:01` by default, between 100 ms and one minute. |
+| `Dispatcher__BatchSize` | The most requests one poll claims. `50` by default, 1 to 500. |
+| `Dispatcher__AlertAfter` | How long a request may wait before it is reported. `00:05:00` by default. |
+| `Dispatcher__ClaimBudget` | How long one poll works through its batch before leaving the rest. `00:00:30` by default, 5 to 50 seconds. |
+| `Workers__DataActivitySlots` | How many verification attempts one worker runs at the same time. `2` by default, 1 to 64. |
+
+Every setting is required and validated at start: an out-of-range value stops the
+process, naming the setting and the rule and never the value.
+
+## Instruments
+
+| Instrument | Kind | Tags |
+|------------|------|------|
+| `reportservice.upload.outcomes` | counter | `outcome`, `code`, `stage` |
+| `reportservice.upload.verification.duration` | histogram (s) | `outcome` |
+| `reportservice.intent.dispatch.attempts` | counter | `kind`, `result` |
+| `reportservice.intent.pending.age` | observable gauge (s) | `kind` |
+
+Tags are fixed values only: an upload's identifier, a key or a size is never a
+tag. Identifiers appear on logs and on spans.

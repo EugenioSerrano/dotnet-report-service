@@ -25,6 +25,7 @@
     <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
     <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
+    <Project Path="tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
   </Folder>
 </Solution>

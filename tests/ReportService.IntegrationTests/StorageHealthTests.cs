@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;
-using OrchestrationWorker = orchestration::Program;
+using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 
 namespace ReportService.IntegrationTests;
 

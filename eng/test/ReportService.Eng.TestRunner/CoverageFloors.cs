@@ -70,19 +70,59 @@ internal static partial class CoverageFloors
         new("ReportService.Migrations", Project: "ReportService.Migrations.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Uploads", Project: "ReportService.Uploads.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
     /// <summary>
+    /// Which product assemblies each hermetic test project owns. One assembly is
+    /// measured by one project only: the run passes each project the include of the
+    /// assemblies it owns, so an assembly can neither be measured twice nor be
+    /// measured by a project that merely exercises it. A project without an entry
+    /// here cannot run at all.
+    /// </summary>
+    public static readonly IReadOnlyList<(string Project, IReadOnlyList<string> Assemblies)> Owners =
+    [
+        ("ReportService.Api.Tests", ["ReportService.Api"]),
+        ("ReportService.Migrations.Tests", ["ReportService.Migrations"]),
+        ("ReportService.Storage.Tests", ["ReportService.Storage", "ReportService.Storage.Filesystem"]),
+        ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),
+        ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
+    ];
+
+    /// <summary>The assemblies <paramref name="project"/> measures, or <see langword="null"/> when it owns none.</summary>
+    public static IReadOnlyList<string>? OwnedAssemblies(string project) =>
+        Owners.FirstOrDefault(owner => string.Equals(owner.Project, project, StringComparison.Ordinal)).Assemblies;
+
+    /// <summary>The coverage include arguments of the assemblies <paramref name="project"/> owns.</summary>
+    public static IReadOnlyList<string> ProjectIncludes(string project)
+    {
+        var assemblies = OwnedAssemblies(project);
+        if (assemblies is null)
+        {
+            return [];
+        }
+
+        var arguments = new List<string>();
+        foreach (var assembly in assemblies)
+        {
+            arguments.Add("--coverlet-include");
+            arguments.Add($"[{assembly}]*");
+        }
+
+        return arguments;
+    }
+
+    /// <summary>
     /// Coverage options of every hermetic project. Given on the command line,
     /// they are merged with the coverage tool's default exclusions (a
-    /// testconfig.json would replace those defaults instead).
+    /// testconfig.json would replace those defaults instead). The include is not
+    /// given here: each project is measured on the assemblies it owns.
     /// </summary>
     public static readonly IReadOnlyList<string> Options =
     [
         "--coverlet",
         "--coverlet-output-format", "cobertura",
-        "--coverlet-include", "[ReportService.*]*",
         "--coverlet-exclude", "[ReportService.AppHost]*",
         "--coverlet-exclude", "[ReportService.Eng.*]*",
         "--coverlet-exclude", "[ReportService.Samples.*]*",

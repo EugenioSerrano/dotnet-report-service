@@ -124,9 +124,13 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.
+// One stored-size limit is given to both the API and this worker: a body accepted by
+// one and refused by the other would be a defect of the composition, not of a process.
+var maxStoredBytes = builder.Configuration["Uploads:MaxStoredBytes"] ?? "4294967296";
 var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
+    .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
@@ -146,6 +150,7 @@ var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orch
 var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
     .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
+    .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
     .WithReference(cache)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)

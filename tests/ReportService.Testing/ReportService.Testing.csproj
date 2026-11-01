@@ -34,6 +34,8 @@
     <!-- The store contract is written against the product's own store interface. -->
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <!-- The intent-store contract is written against the worker's own interface. -->
+    <ProjectReference Include="..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
   </ItemGroup>
 
 </Project>

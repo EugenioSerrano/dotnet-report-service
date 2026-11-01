@@ -75,7 +75,7 @@ public sealed class UploadEndpointsTests : IDisposable
         Assert.Equal("header-items-v1", root.GetProperty("profile").GetString());
         Assert.Equal(CreatedAtWire, root.GetProperty("createdAt").GetString());
         Assert.Equal(ExpiresAtWire, root.GetProperty("expiresAt").GetString());
-        Assert.Equal(6, root.EnumerateObject().Count());
+        Assert.Equal(12, root.EnumerateObject().Count());
 
         var record = Assert.Single(_store.Records);
         Assert.Equal(uploadId, record.UploadId);

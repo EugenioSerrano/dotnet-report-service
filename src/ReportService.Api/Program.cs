@@ -33,4 +33,6 @@ app.MapStorageDiagnostics();
 app.MapTelemetryDiagnostics();
 app.MapTelemetryPropagation();
 app.MapUploadEndpoints();
+app.MapUploadContentEndpoint();
+app.MapCompleteUploadEndpoint();
 app.Run();

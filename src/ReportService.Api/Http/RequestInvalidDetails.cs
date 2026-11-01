@@ -36,6 +36,9 @@ public static class RequestInvalidDetails
 
     /// <summary>A member holds a string that breaks the rule its reader declares.</summary>
     public const string InvalidFormatReason = "invalid-format";
+
+    /// <summary>A body that carries content ended before its declared end.</summary>
+    public const string BodyIncompleteReason = "body-incomplete";
 }
 
 /// <summary>
@@ -143,4 +146,10 @@ public sealed class InvalidRequestBody
         RequestInvalidDetails.InvalidFormatReason,
         field,
         detail);
+
+    /// <summary>A body carrying content ended before its declared end.</summary>
+    public static InvalidRequestBody BodyIncomplete() => new(
+        RequestInvalidDetails.BodyIncompleteReason,
+        null,
+        "The request body ended before its declared end.");
 }

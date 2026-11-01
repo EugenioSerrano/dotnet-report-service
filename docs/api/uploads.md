@@ -185,3 +185,112 @@ caller text like any other value:
 | Setting | Meaning |
 |---------|---------|
 | `Uploads__SessionLifetime` | How long a new session accepts data. Required, longer than zero and at most seven days; the shipped value is `1.00:00:00` (24 hours). A value outside that range stops the service at start, naming the setting and never the value. |
+
+## Streaming the content
+
+`PUT /api/v1/uploads/{uploadId}/content` puts the consumer's report data into
+its upload. The body is streamed once, counted as it arrives and never held.
+
+```http
+PUT /api/v1/uploads/dev-upload/content
+X-Consumer-Id: dev-consumer
+Content-Type: application/json
+Content-Encoding: gzip
+
+<the report data, plain or one complete gzip member>
+```
+
+- **One body per upload.** The content is written once; a second body is refused
+  with `409 UPLOAD_STATE_CONFLICT` and the upload keeps the bytes it has.
+- **`Content-Type`** must be `application/json` (parameters such as
+  `charset=utf-8` are accepted). Anything else is refused with
+  `400 REQUEST_INVALID` and `reason: "media-type"`.
+- **`Content-Encoding`** declares how the body is encoded: absent or `identity`
+  means plain, and `gzip` declares **exactly one** gzip member. Any other value
+  (another token, a list, an empty value) is recorded and refused later, when the
+  upload is confirmed, with `UNSUPPORTED_CAPABILITY` and `reason: "encoding"`.
+- **The size limit** is `Uploads__MaxStoredBytes` (4 GiB by default). A declared
+  length above it is refused without reading the body; a body that crosses it
+  while arriving is stopped where it is. Either way the answer is
+  `413 QUOTA_EXCEEDED`, the connection closes with it, and the upload ends
+  `rejected` with `QUOTA_EXCEEDED` / `stored-bytes`. A body of exactly the limit
+  is accepted.
+- **A body that ends early** — the connection fails, or fewer bytes arrive than
+  the length that was declared — is recorded as interrupted and answered
+  `400 REQUEST_INVALID` with `reason: "body-incomplete"` when the answer can still
+  be written. The upload stays confirmable and its verification refuses it.
+- The answer is `200 OK` with the status projection, showing
+  `status: "uploading"` and the bytes received.
+
+## Confirming the upload
+
+`POST /api/v1/uploads/{uploadId}/complete` confirms the upload. The body is
+optional and may declare the hash the consumer expects of its data:
+
+```json
+{ "sha256": "9ffcbf0acedfe4529a6093c4c669efab29c2d523a7794bacfb8eb8a946ca8dd3" }
+```
+
+- The declared hash travels **lower- or upper-case** and is compared with the
+  SHA-256 of the **uncompressed** data, so it is the same declaration whether the
+  body was sent plain or compressed.
+- The document is strict: `application/json`, one object, the member `sha256` at
+  most once, 64 hexadecimal characters. Anything else is refused with
+  `400 REQUEST_INVALID` and the `reason`, `field` and `detail` of the contract,
+  and nothing changes. An empty object declares nothing, which is valid.
+- The answer is `202 Accepted` with the status projection (`status: "verifying"`),
+  and the verification runs **outside the request**, in the orchestration worker.
+- Confirming an upload that has nothing to confirm (`created`, or a body still
+  arriving) is refused with `409 UPLOAD_STATE_CONFLICT`. Confirming again repeats
+  the current state — `202` while verifying, `200` once it ended — unless the
+  repeat declares a different hash, which is refused with `409`.
+- An interrupted transfer can be confirmed: its verification ends it `rejected`.
+
+## What the status shows
+
+```json
+{
+  "uploadId": "upload-3f2b0c9e8d7a4b6c9e1f0a2b3c4d5e6f",
+  "status": "ready",
+  "mode": "API_STREAM",
+  "profile": "header-items-v1",
+  "createdAt": "2026-11-01T04:39:23.123Z",
+  "expiresAt": "2026-11-02T04:39:23.123Z",
+  "receivedBytes": 3735928,
+  "completedAt": "2026-11-01T04:41:02.456Z",
+  "sha256": "d1969e96b5413f21c2f04f1ec789b01fe9ea30e3d6ad78691521350ec580c753",
+  "sizeBytes": 3735928,
+  "rejectionCode": null,
+  "rejectionReason": null
+}
+```
+
+Every member is always present and is `null` while it does not apply.
+`receivedBytes` is the bytes the content operation received; `completedAt` is the
+confirmation time; `sha256` and `sizeBytes` are the hash and size of the
+**uncompressed** data and are shown only once the upload is `ready`; the hash and
+size of the stored object stay in the records and are never shown.
+`rejectionCode` and `rejectionReason` are shown only when the upload is
+`rejected`.
+
+## Rejection codes and reasons
+
+| Code | Reason | Meaning |
+|------|--------|---------|
+| `DATA_INVALID` | `sha256-mismatch` | The declared hash is not the hash of the data. |
+| `DATA_INVALID` | `truncated` | The content is not one complete unit: it ended early, is a concatenation, or is empty while declared compressed. |
+| `DATA_INVALID` | `malformed` | The compressed content is present and corrupt. |
+| `DATA_INVALID` | `modified` | The stored object no longer matches what arrived. |
+| `UNSUPPORTED_CAPABILITY` | `encoding` | The declared encoding is not one the service decodes. |
+| `QUOTA_EXCEEDED` | `stored-bytes` | The body crossed the size limit while it arrived. |
+| `QUOTA_EXCEEDED` | `input-bytes` | The data decompresses to more than the service accepts. |
+
+A rejected upload has no snapshot: no record and no stored object. `DATA_INVALID`
+and `UNSUPPORTED_CAPABILITY` are refusals of the consumer's data, which no retry
+changes; a service-side cause is answered `503 SERVICE_UNAVAILABLE`.
+
+## Configuring the size limit
+
+| Setting | Meaning |
+|---------|---------|
+| `Uploads__MaxStoredBytes` | The most stored bytes one upload may hold. Required, greater than zero; the shipped value is `4294967296` (4 GiB). The limit is configuration, not a promise about the deployment's disk, and the same value is given to the API and to the orchestration worker. |

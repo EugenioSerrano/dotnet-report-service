@@ -23,6 +23,7 @@ internal static class Program
         "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
+        "tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
     ];
 
@@ -76,6 +77,26 @@ internal static class Program
             }
 
             return ExitConfiguration;
+        }
+
+        // Every hermetic project must own the assemblies it measures, so an assembly is
+        // never measured by two projects and never measured by a project that merely
+        // exercises it.
+        if (level == "hermetic")
+        {
+            var unowned = projects
+                .Select(p => Path.GetFileNameWithoutExtension(p))
+                .Where(name => CoverageFloors.OwnedAssemblies(name) is null)
+                .ToList();
+            if (unowned.Count > 0)
+            {
+                foreach (var project in unowned)
+                {
+                    await Console.Error.WriteLineAsync($"The hermetic project {project} owns no product assembly. Add its row to eng/test/ReportService.Eng.TestRunner/CoverageFloors.cs.").ConfigureAwait(false);
+                }
+
+                return ExitConfiguration;
+            }
         }
 
         var runDirectory = RunEvidence.CreateRunDirectory(root, startedAt);
@@ -193,6 +214,7 @@ internal static class Program
         if (level == "hermetic")
         {
             arguments.AddRange(CoverageFloors.Options);
+            arguments.AddRange(CoverageFloors.ProjectIncludes(name));
         }
 
         // The integration classes remove their containers through their own handles.
