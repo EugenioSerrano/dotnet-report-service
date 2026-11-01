@@ -43,10 +43,19 @@ public static class TelemetryDiagnostics
     public const string PropagateRoute = RoutePrefix + "/propagate";
 
     /// <summary>
-    /// The configuration key the composition uses to give a process the
-    /// orchestration worker's address; absent outside a composition.
+    /// The environment entry the composition sets to give a process the
+    /// orchestration worker's endpoint; absent outside a composition.
     /// </summary>
-    public const string OrchestrationWorkerAddressSetting = "services__orchestration-worker__http__0";
+    public const string OrchestrationWorkerAddressEntry = "services__orchestration-worker__http__0";
+
+    /// <summary>
+    /// The configuration key that entry is read under. A process reads the
+    /// environment through its configuration, and a configuration turns the
+    /// double underscore of an environment entry into its own key delimiter,
+    /// so <see cref="OrchestrationWorkerAddressEntry"/> is never a key by
+    /// itself.
+    /// </summary>
+    public const string OrchestrationWorkerAddressSetting = "services:orchestration-worker:http:0";
 
     /// <summary>The name the unit of work's own span carries.</summary>
     public const string UnitOfWorkSpanName = "unit-of-work";
@@ -83,6 +92,19 @@ public static class TelemetryDiagnostics
 
         endpoints.MapGet(PropagateRoute, PropagateAsync);
         return endpoints;
+    }
+
+    /// <summary>
+    /// The orchestration worker's address as this process' configuration holds
+    /// it, or <see langword="null"/> when the process runs without a composition
+    /// around it.
+    /// </summary>
+    /// <param name="configuration">The process' configuration.</param>
+    public static string? OrchestrationWorkerAddress(IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        var address = configuration[OrchestrationWorkerAddressSetting];
+        return string.IsNullOrWhiteSpace(address) ? null : address;
     }
 
     private static async Task MetricsAsync(HttpContext context)
@@ -139,8 +161,8 @@ public static class TelemetryDiagnostics
     private static async Task PropagateAsync(HttpContext context)
     {
         var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-        var worker = configuration[OrchestrationWorkerAddressSetting];
-        if (string.IsNullOrWhiteSpace(worker))
+        var worker = OrchestrationWorkerAddress(configuration);
+        if (worker is null)
         {
             await RefuseAsync(
                 context,

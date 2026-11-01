@@ -103,6 +103,45 @@ public sealed class TelemetryEndpointTests : IDisposable
         Assert.Contains("telemetry.invalid-job", await refused.Content.ReadAsStringAsync(Cancellation), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task ThePropagationRouteRefusesWithNoWorkerAddressWhenTheCompositionGaveNone()
+    {
+        await using var api = Api(diagnostics: true);
+        using var client = api.CreateClient();
+
+        using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.PropagateRoute, UriKind.Relative), Cancellation);
+        var body = await response.Content.ReadAsStringAsync(Cancellation);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Contains("telemetry.no-worker", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ThePropagationRouteReadsTheAddressFromTheEntryTheCompositionSets()
+    {
+        // The composition sets one environment entry per reference, and a process reads the
+        // environment through its configuration: this test states the entry the way the
+        // composition does and expects the route to have it, so an entry the platform writes
+        // and the process cannot read is a failure here rather than in the composition.
+        Environment.SetEnvironmentVariable(TelemetryDiagnostics.OrchestrationWorkerAddressEntry, "http://127.0.0.1:1");
+        try
+        {
+            await using var api = Api(diagnostics: true);
+            using var client = api.CreateClient();
+
+            using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.PropagateRoute, UriKind.Relative), Cancellation);
+            var body = await response.Content.ReadAsStringAsync(Cancellation);
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Contains("telemetry.worker-unreachable", body, StringComparison.Ordinal);
+            Assert.DoesNotContain("telemetry.no-worker", body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(TelemetryDiagnostics.OrchestrationWorkerAddressEntry, null);
+        }
+    }
+
     private WebApplicationFactory<Program> Api(bool diagnostics) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

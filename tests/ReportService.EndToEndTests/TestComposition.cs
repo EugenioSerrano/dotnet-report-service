@@ -32,8 +32,18 @@ internal static class TestComposition
     /// <summary>The render worker's resource name.</summary>
     public const string RenderWorkerName = "render-worker";
 
-    /// <summary>The port the run's telemetry view receives telemetry on.</summary>
-    public const int ReceiverPort = 19701;
+    /// <summary>The telemetry view's resource name in the run's model.</summary>
+    public const string DashboardResourceName = "aspire-dashboard";
+
+    /// <summary>The name the view gives its receiver endpoint in the run's model.</summary>
+    public const string DashboardReceiverEndpointName = "otlp-grpc";
+
+    /// <summary>
+    /// The port the run asks the view's receiver to listen on. The run's ports
+    /// are its own, so the platform may hold the receiver elsewhere; the port the
+    /// container is told is the one the model reports, never this one.
+    /// </summary>
+    public const int RequestedReceiverPort = 19701;
 
     /// <summary>The name the PDF worker's container reaches this machine by.</summary>
     public const string ContainerHostName = "host.docker.internal";
@@ -43,7 +53,7 @@ internal static class TestComposition
     /// <param name="arguments">Arguments the AppHost reads as its own configuration.</param>
     public static async Task<IDistributedApplicationTestingBuilder> CreateAsync(CancellationToken cancellationToken, params string[] arguments)
     {
-        var receiver = Receiver();
+        var address = Address();
         var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
             new DistributedApplicationTestingBuilderOptions { EnableDashboard = true },
             arguments,
@@ -54,11 +64,13 @@ internal static class TestComposition
         // argument of the same name. Its view is not part of the model yet — it is created when
         // the run starts — so the run states what it needs in a source of its own instead: added
         // after the builder's, it is read last, and the view's own configuration copies every
-        // ASPIRE_DASHBOARD_* entry of the live configuration into its process.
+        // ASPIRE_DASHBOARD_* entry of the live configuration into its process. The address here
+        // is the interface the container reaches this machine on; the port is the run's own,
+        // because the run's ports are assigned per run rather than taken from a fixed number.
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             [AnonymousSetting] = "true",
-            [DashboardOtlpEndpointSetting] = Text(receiver),
+            [DashboardOtlpEndpointSetting] = Text(RequestedReceiver(address)),
         });
 
         // Enabling the telemetry view switches the default wait behaviour to stop as soon as a
@@ -67,8 +79,15 @@ internal static class TestComposition
         builder.Services.Configure<ResourceNotificationServiceOptions>(options =>
             options.DefaultWaitBehavior = WaitBehavior.WaitOnResourceUnavailable);
 
+        // The container is pointed at the view through the endpoint the run gives it, read from
+        // the model while the container is being created — that is still before it starts, and
+        // it is the only moment the run knows the port the view listens on. The address stays
+        // the one this machine's container reaches it by.
         var worker = (ContainerResource)builder.Resources.Single(resource => resource.Name == RenderWorkerName);
-        builder.CreateResourceBuilder(worker).WithEnvironment(OtlpEndpointVariable, Text(ContainerReceiver()));
+        builder.CreateResourceBuilder(worker).WithEnvironment(context =>
+        {
+            context.EnvironmentVariables[OtlpEndpointVariable] = Text(ContainerReceiver(builder));
+        });
         return builder;
     }
 
@@ -79,7 +98,7 @@ internal static class TestComposition
     /// container's own name for this machine resolves to here.
     /// </summary>
     /// <exception cref="InvalidOperationException">The name does not resolve to an IPv4 address here.</exception>
-    public static Uri Receiver()
+    public static IPAddress Address()
     {
         IPAddress[] addresses;
         try
@@ -93,14 +112,37 @@ internal static class TestComposition
                 exception);
         }
 
-        var address = addresses.FirstOrDefault(candidate => candidate.AddressFamily == AddressFamily.InterNetwork)
+        return addresses.FirstOrDefault(candidate => candidate.AddressFamily == AddressFamily.InterNetwork)
             ?? throw new InvalidOperationException(
                 $"The PDF worker reaches this machine as '{ContainerHostName}', and the name resolves only to [{string.Join(", ", addresses.Select(candidate => candidate.ToString()))}], none of them IPv4, so the run cannot state the one address its telemetry receiver must bind.");
-        return new UriBuilder(Uri.UriSchemeHttp, address.ToString(), ReceiverPort).Uri;
     }
 
-    /// <summary>The same receiver as the PDF worker's container reaches it.</summary>
-    public static Uri ContainerReceiver() => new UriBuilder(Uri.UriSchemeHttp, ContainerHostName, ReceiverPort).Uri;
+    /// <summary>The receiver as the run asks the view to bind it, address and requested port.</summary>
+    public static Uri RequestedReceiver(IPAddress address) =>
+        new UriBuilder(Uri.UriSchemeHttp, address.ToString(), RequestedReceiverPort).Uri;
+
+    /// <summary>
+    /// The receiver as the PDF worker's container reaches it: the port the run
+    /// gave the view's receiver, which the model reports once the run allocated
+    /// it — never the port this composition asked for.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The run has no receiver endpoint to point the container at.</exception>
+    public static Uri ContainerReceiver(IDistributedApplicationTestingBuilder builder)
+    {
+        var dashboard = builder.Resources.FirstOrDefault(resource => string.Equals(resource.Name, DashboardResourceName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"The composition starts a telemetry view, and the run's model holds no '{DashboardResourceName}' resource to take its receiver's port from.");
+
+        var endpoint = dashboard.Annotations.OfType<EndpointAnnotation>().FirstOrDefault(candidate => string.Equals(candidate.Name, DashboardReceiverEndpointName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"The run's telemetry view has no '{DashboardReceiverEndpointName}' endpoint, so the composition cannot tell the PDF worker where to send its telemetry.");
+
+        var allocated = endpoint.AllocatedEndpoint
+            ?? throw new InvalidOperationException(
+                $"The run had not allocated the telemetry view's receiver when the PDF worker's container was created, so the composition cannot tell the worker where to send its telemetry.");
+
+        return new UriBuilder(Uri.UriSchemeHttp, ContainerHostName, allocated.Port).Uri;
+    }
 
     /// <summary>The address a process receives its telemetry destination from, as text.</summary>
     public static string Text(Uri endpoint) => endpoint.GetLeftPart(UriPartial.Authority);
