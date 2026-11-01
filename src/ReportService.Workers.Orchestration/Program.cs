@@ -5,6 +5,7 @@ using ReportService.ServiceDefaults.Temporal;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceConfiguration();
+builder.AddMetadataDatabase();
 
 // The orchestration and data task queues; work is registered on them as the product gains it.
 builder.AddWorkflowEngine("orchestration-worker", ["report-orchestration", "report-data"]);

@@ -3,6 +3,7 @@ using ReportService.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceConfiguration();
+builder.AddMetadataDatabase();
 builder.AddConsumerRegistry();
 builder.Services.AddHealthChecks();
 builder.AddObjectStorage("api");

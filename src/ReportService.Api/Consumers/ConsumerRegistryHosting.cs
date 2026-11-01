@@ -69,7 +69,11 @@ public static class ConsumerRegistryHosting
     {
         ArgumentNullException.ThrowIfNull(app);
         app.Services.GetRequiredService<ConsumerRegistry>();
-        app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = r => !r.Tags.Contains(DiagnosticTag) });
+        app.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            Predicate = r => !r.Tags.Contains(DiagnosticTag),
+            ResponseWriter = HealthResponseWriter.Json,
+        });
         app.MapHealthChecks(DiagnosticPath, new HealthCheckOptions
         {
             Predicate = r => r.Name == ConsumerRegistryHealthCheck.Name,

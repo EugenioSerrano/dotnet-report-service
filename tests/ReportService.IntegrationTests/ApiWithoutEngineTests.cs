@@ -1,7 +1,11 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using ReportService.ServiceDefaults;
+using ReportService.Testing;
 
 namespace ReportService.IntegrationTests;
 
@@ -13,13 +17,19 @@ public sealed class ApiWithoutEngineTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var api = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.UseSetting("Temporal:Address", $"127.0.0.1:{ClosedPort()}"));
+        {
+            builder.UseSetting("Temporal:Address", $"127.0.0.1:{ClosedPort()}");
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
+        });
         using var client = api.CreateClient();
 
         using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Healthy", await response.Content.ReadAsStringAsync(cancellationToken));
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        Assert.Equal("Healthy", body.RootElement.GetProperty("status").GetString());
     }
 
     // A port that was free a moment ago and has nothing listening on it now.

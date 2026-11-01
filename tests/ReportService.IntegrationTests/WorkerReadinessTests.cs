@@ -5,8 +5,10 @@ using System.Net.Sockets;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
 using Temporalio.Api.Enums.V1;
@@ -104,7 +106,10 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
         {
             builder.UseSetting("Temporal:Address", $"127.0.0.1:{_hostPort}");
             builder.UseSetting("Temporal:Namespace", "default");
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
 
     private async Task StartEngineAsync(CancellationToken cancellationToken)

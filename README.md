@@ -422,6 +422,14 @@ are planned after the MVP.
   5-minute block timeout, 2 concurrent blocks, 1 render per PDF worker);
   measure before relying on them.
 - **PostgreSQL**, **Temporal** and **Valkey** (or Redis) connection settings.
+  The service keeps its own records in a database and a login role of its own,
+  neither of which may be the workflow engine's; the role is not a superuser and
+  owns its database. Supply its connection string as
+  `ConnectionStrings__reportservice`, the schema version the build expects as
+  `Database__ExpectedSchemaVersion`, and apply the migrations before the
+  processes start — see
+  [`docs/metadata-database.md`](docs/metadata-database.md) for the role, the
+  migrations and an existing deployment.
 
 The service publishes measured capacity figures per release on reference
 datasets. It commits to **no SLA**.
@@ -540,7 +548,11 @@ output before any resource starts. It then starts, on the local machine only:
 - `orchestration-worker` — the orchestration worker, a host process connected
   to the workflow engine on the `report-orchestration` and `report-data`
   queues (`/health` on `http://localhost:5081`);
-- `postgres` — PostgreSQL 18 with the `reportservice` database;
+- `migrations` — the one-shot migrator, which brings the metadata database to
+  the schema version the build expects and exits; the API and the orchestration
+  worker start only after it succeeded;
+- `postgres` — PostgreSQL 18 with the `reportservice` database, owned by the
+  `reportservice` login role, which is not a superuser;
 - `cache` — Valkey 9.1;
 - `temporal` — the Temporal development server (gRPC on 7233, web UI on 8233
   inside the container);
@@ -550,13 +562,16 @@ output before any resource starts. It then starts, on the local machine only:
 
 The console prints the dashboard URL (with its login link); the dashboard
 shows every resource, its health and its logs. The composition is up when
-every resource is healthy there. The API waits only for PostgreSQL and
-Valkey: it never depends on the workflow engine, so its `/health` answering
-`Healthy` does not say anything about the workers. Each worker is ready only
-while the workflow engine answers it. What each process owns, what its
-readiness means, and how the consumer registry is declared and changed while
-the service runs are described in
-[`docs/process-topology.md`](docs/process-topology.md). To see every resource
+every resource is healthy there and the migrator has exited successfully. The API
+waits for PostgreSQL, the migrator and Valkey: it never depends on the workflow
+engine, so its `/health` answering `Healthy` does not say anything about the
+workers. The API and the orchestration worker are ready only while the metadata
+database is at the version the build expects; each worker is ready only while the
+workflow engine answers it. What each process owns, what its readiness means, and
+how the consumer registry is declared and changed while the service runs are
+described in [`docs/process-topology.md`](docs/process-topology.md); the
+database, its role and how a change adds a migration are described in
+[`docs/metadata-database.md`](docs/metadata-database.md). To see every resource
 state change in the console as well, run:
 
 ```bash

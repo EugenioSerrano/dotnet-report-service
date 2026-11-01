@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The service's own metadata database and credentials: the `reportservice`
+  database, owned by the `reportservice` login role, which is not a superuser
+  and cannot create databases or roles. The local composition creates both once,
+  from a script the PostgreSQL image runs at initialisation, with a password
+  generated at every start; no process of the service receives the server's
+  bootstrap user.
+- `ReportService.Migrations`, a one-shot migrator: versioned, forward-only SQL
+  scripts embedded in the build, applied in order under a PostgreSQL advisory
+  lock, each in its own transaction with a journal row that records its SHA-256
+  checksum. It refuses a script that changed after it was applied and a journal
+  entry the build does not know, and exits non-zero naming the failing script.
+  Its baseline creates the `report_service` schema; no business table exists yet.
+- A `metadata-database` readiness check in the API and the orchestration worker:
+  ready only when the database is reachable and at the schema version the build
+  expects, with the expected and applied versions in the health body. The PDF
+  worker has no database check until it writes its first record.
+- `ReportService.Migrations.Tests`, the hermetic unit and component tests of the
+  migrator, with a coverage floor in the test runner.
+- `docs/metadata-database.md`: the database and its role, the journal, how a
+  change adds a migration, and how an operator provisions the database and
+  applies migrations to an existing deployment.
+
+### Changed
+
+- The API's `/health` body is JSON, like the workers': the metadata database's
+  check reports the expected and applied schema versions. Status codes are
+  unchanged (200 ready, 503 not ready).
+- The health body's allowed data keys gain `expected`, `applied` and `error`.
+- `Npgsql` becomes a product package and `Dapper` joins it; the composition and
+  the processes that use the database connect as the application role only.
+
 ## [0.1.0] - 2026-10-22
 
 First release. It completes the groundwork milestone of the roadmap

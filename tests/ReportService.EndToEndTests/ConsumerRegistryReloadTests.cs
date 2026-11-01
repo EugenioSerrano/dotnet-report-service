@@ -94,7 +94,11 @@ public sealed class ConsumerRegistryReloadTests : IDisposable
             cancellationToken);
 
         Assert.Equal(fingerprintB, await FingerprintAsync(api, cancellationToken));
-        Assert.Equal("Healthy", await api.GetStringAsync(new Uri("/health", UriKind.Relative), cancellationToken));
+        using (var health = JsonDocument.Parse(await api.GetStringAsync(new Uri("/health", UriKind.Relative), cancellationToken)))
+        {
+            Assert.Equal("Healthy", health.RootElement.GetProperty("status").GetString());
+        }
+
         Assert.Equal(pid, await ProcessIdAsync(app, cancellationToken));
         // One write may be reported more than once by the file watcher; every refusal line is the same.
         var refusal = logs.First(l => l.Contains("Consumer registry change refused", StringComparison.Ordinal));

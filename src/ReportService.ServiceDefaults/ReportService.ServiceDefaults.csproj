@@ -3,9 +3,10 @@
   <!--
     Conventions shared by every process of the service: validated settings,
     the configuration error that never carries a value, the JSON writer of the
-    health endpoints, and the object store with its health check and its
-    development-only diagnostics. It references no workflow-engine package,
-    so the API can use it without carrying one.
+    health endpoints, the readiness check of the metadata database, and the
+    object store with its health check and its development-only diagnostics. It
+    references no workflow-engine package, so the API can use it without
+    carrying one.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -18,6 +19,8 @@
   <ItemGroup>
     <ProjectReference Include="..\ReportService.Storage\ReportService.Storage.csproj" />
     <ProjectReference Include="..\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
 </Project>

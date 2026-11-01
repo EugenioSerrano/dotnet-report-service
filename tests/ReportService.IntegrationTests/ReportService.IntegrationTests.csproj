@@ -25,6 +25,7 @@
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
     <!-- Hosted in memory by the readiness tests. Both have a top-level Program class, so the worker's is reached through its alias. -->
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Migrations\ReportService.Migrations.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" Aliases="orchestration" />
   </ItemGroup>
 

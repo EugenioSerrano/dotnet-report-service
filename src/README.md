@@ -3,8 +3,9 @@
 ## Purpose
 
 Product source: every project that is built, shipped or deployed as part of
-dotnet-report-service — the API, the workers, the workflows, the template
-engine adapters, the storage providers and the Aspire AppHost.
+dotnet-report-service — the API, the workers, the migrator of the metadata
+database, the workflows, the template engine adapters, the storage providers and
+the Aspire AppHost.
 
 ## What goes here
 

@@ -67,6 +67,7 @@ internal static partial class CoverageFloors
     public static readonly IReadOnlyList<CoverageFloor> Floors =
     [
         new("ReportService.Api", Project: "ReportService.Api.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Migrations", Project: "ReportService.Migrations.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];

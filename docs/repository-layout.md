@@ -11,7 +11,8 @@ dotnet-report-service/
 ├── src/                       Product source — one folder per project
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
-│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies and the object store, shared by every process
+│   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
+│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check and the object store, shared by every process
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
 │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
@@ -19,12 +20,13 @@ dotnet-report-service/
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
+│   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; object storage: object-storage.md)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level
@@ -128,10 +130,12 @@ What each test level may reach, the evidence a run leaves under
 | Paged.js | 0.4.3 | Vendored in the render image; no Node.js at runtime |
 
 Package versions appear in `Directory.Packages.props` as the first change
-that needs each package adds it; the packages present so far (Aspire hosting
-13.6.2, Microsoft.Playwright 1.63.0, and for the tests only: xUnit v3 4.0.2,
-coverlet.MTP 10.1.0, Microsoft.AspNetCore.Mvc.Testing 10.0.13, Testcontainers
-4.16.0, Npgsql 10.0.3, Aspire.Hosting.Testing 13.6.2) are listed there.
+that needs each package adds it. The product packages are Aspire hosting 13.6.2,
+Microsoft.Playwright 1.63.0, Temporalio 1.21.0, Npgsql 10.0.3 and Dapper 2.1.89;
+the packages of the tests are xUnit v3 4.0.2, coverlet.MTP 10.1.0,
+Microsoft.AspNetCore.Mvc.Testing 10.0.13, Testcontainers 4.16.0 and
+Aspire.Hosting.Testing 13.6.2. The one-shot migrator and the processes that use
+the metadata database connect with Npgsql and run explicit SQL with Dapper.
 
 ### Container images
 

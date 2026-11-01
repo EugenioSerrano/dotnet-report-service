@@ -50,6 +50,28 @@ public sealed class HealthResponseWriterTests
     }
 
     [Fact]
+    public void TheMetadataDatabaseKeysAreWrittenAndOthersStillDropped()
+    {
+        var report = Report(("metadata-database", HealthStatus.Unhealthy, new Dictionary<string, object>
+        {
+            ["expected"] = "0001_baseline.sql",
+            ["applied"] = "none",
+            ["error"] = "unreachable",
+            ["password"] = PlantedSecret,
+        }));
+
+        var json = HealthResponseWriter.Render(report);
+
+        Assert.DoesNotContain(PlantedSecret, json, StringComparison.Ordinal);
+        using var body = JsonDocument.Parse(json);
+        var data = body.RootElement.GetProperty("checks")[0].GetProperty("data");
+        Assert.Equal(["expected", "applied", "error"], data.EnumerateObject().Select(p => p.Name));
+        Assert.Equal("0001_baseline.sql", data.GetProperty("expected").GetString());
+        Assert.Equal("none", data.GetProperty("applied").GetString());
+        Assert.Equal("unreachable", data.GetProperty("error").GetString());
+    }
+
+    [Fact]
     public void DescriptionAndExceptionTextAreNeverWritten()
     {
         var entry = new HealthReportEntry(

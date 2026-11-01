@@ -2,8 +2,10 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using ReportService.Api.Consumers;
 using ReportService.ServiceDefaults;
+using ReportService.Testing;
 
 namespace ReportService.Api.Tests.Consumers;
 
@@ -41,7 +43,7 @@ public sealed class RegistryEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task HealthKeepsItsPlainShapeWithAnEngineAddressThatAnswersNothing()
+    public async Task HealthIsReadyWithAnEngineAddressThatAnswersNothing()
     {
         var path = _directory.Write("consumers.json", """{ "consumers": [] }""");
         await using var factory = Factory(path, ("Temporal:Address", "127.0.0.1:1"));
@@ -51,7 +53,12 @@ public sealed class RegistryEndpointTests : IDisposable
         using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Healthy", await response.Content.ReadAsStringAsync(cancellationToken));
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        Assert.Equal("Healthy", body.RootElement.GetProperty("status").GetString());
+        var check = Assert.Single(
+            body.RootElement.GetProperty("checks").EnumerateArray(),
+            candidate => candidate.GetProperty("name").GetString() == MetadataDatabaseStub.CheckName);
+        Assert.Equal("Healthy", check.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -98,27 +105,15 @@ public sealed class RegistryEndpointTests : IDisposable
         {
             builder.UseSetting("Consumers:File", registryPath);
             builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory.Path, "storage"));
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
             foreach (var (key, value) in settings)
             {
                 builder.UseSetting(key, value);
             }
+
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
 
-    private static ConfigurationError FindConfigurationError(Exception? exception)
-    {
-        for (var current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is ConfigurationError error)
-            {
-                return error;
-            }
-
-            if (current is AggregateException aggregate && aggregate.InnerExceptions.Count == 1)
-            {
-                return FindConfigurationError(aggregate.InnerExceptions[0]);
-            }
-        }
-
-        throw new Xunit.Sdk.XunitException($"No configuration error was raised; got {exception?.GetType().FullName ?? "no exception"}.");
-    }
+    private static ConfigurationError FindConfigurationError(Exception? exception) => ConfigurationErrors.Find(exception);
 }

@@ -21,6 +21,7 @@ internal static class Program
     private static readonly string[] HermeticProjects =
     [
         "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
+        "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
     ];
 

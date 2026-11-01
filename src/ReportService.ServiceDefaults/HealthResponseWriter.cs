@@ -9,13 +9,15 @@ namespace ReportService.ServiceDefaults;
 /// The JSON body of the health endpoints:
 /// <c>{ "status", "checks": [ { "name", "status", "durationMs", "data" } ] }</c>.
 /// Only the listed data keys are written; a check's description and exception
-/// are never written, so no value from configuration reaches the body.
+/// are never written, so no credential reaches the body.
 /// </summary>
 public static class HealthResponseWriter
 {
     /// <summary>The only data keys a health body may carry.</summary>
     public static readonly IReadOnlySet<string> AllowedDataKeys =
-        new HashSet<string>(["entries", "fingerprint", "address", "namespace", "queues", "provider", "writable", "readable", "error"], StringComparer.Ordinal);
+        new HashSet<string>(
+            ["entries", "fingerprint", "address", "namespace", "queues", "provider", "writable", "readable", "expected", "applied", "error"],
+            StringComparer.Ordinal);
 
     /// <summary>Writes the report as JSON; use as a health endpoint's response writer.</summary>
     public static Task Json(HttpContext context, HealthReport report)

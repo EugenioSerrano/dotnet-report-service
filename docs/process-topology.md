@@ -9,6 +9,7 @@ flowchart TB
     subgraph HOST["Host processes (local composition)"]
         API["API<br/>HTTP, metadata database, cache<br/>no workflow-engine client"]
         ORCH["Orchestration worker<br/>task queues report-orchestration, report-data"]
+        MIG["Migrator<br/>one-shot: applies the schema"]
     end
     subgraph CONT["Container (PDF base image, user app)"]
         PDF["PDF worker<br/>task queue report-pdf-rendering<br/>Chromium"]
@@ -16,24 +17,34 @@ flowchart TB
     PG[("PostgreSQL")]
     VK[("Valkey")]
     TM[("Temporal")]
+    MIG --> PG
     API --> PG
     API --> VK
+    ORCH --> PG
     ORCH --> TM
     PDF --> TM
+    PDF -. "no metadata record yet" .-> PG
 ```
 
 ## The three processes
 
-| Process | Project | Owns | Talks to the workflow engine |
-|---------|---------|------|------------------------------|
-| API | `src/ReportService.Api` | The HTTP surface and the consumer registry | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
-| Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps) and `report-data` (data verification and validation) | Yes |
-| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time) | Yes |
+| Process | Project | Owns | Talks to the metadata database | Talks to the workflow engine |
+|---------|---------|------|-------------------------------|------------------------------|
+| API | `src/ReportService.Api` | The HTTP surface and the consumer registry | Yes — readiness only | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
+| Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps) and `report-data` (data verification and validation) | Yes — readiness only | Yes |
+| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time) | **Not yet** — it writes no metadata record in this version, so it has no database setting and no database check | Yes |
+
+The one-shot migrator `src/ReportService.Migrations` is not a long-running
+process: it applies the database's schema and exits. The API and the
+orchestration worker start only after it succeeded, and its failure keeps both
+from starting. The database, its role, its journal and the migration rules are
+described in [`metadata-database.md`](metadata-database.md).
 
 The two workers share `src/ReportService.ServiceDefaults.Temporal`, the
 workflow-engine connection. All three share `src/ReportService.ServiceDefaults`:
-validated settings and the JSON body of the health endpoints. The API references
-only the second, so it carries no workflow-engine package.
+validated settings, the JSON body of the health endpoints and the metadata
+database's readiness check. The API references only the second, so it carries no
+workflow-engine package.
 
 ## Configuration is checked before anything starts
 
@@ -53,6 +64,8 @@ secret cannot leak through a configuration error.
 | `Temporal:Address` | both workers | yes | The engine's gRPC endpoint, `host:port` (no scheme, no credential) |
 | `Temporal:Namespace` | both workers | yes (default `default`) | The engine namespace |
 | `Consumers:File` | API | no | The consumer registry file; without it, `consumers.json` next to the API |
+| `ConnectionStrings:reportservice` | API, orchestration worker, migrator | yes | The application role's connection string for the metadata database |
+| `Database:ExpectedSchemaVersion` | API, orchestration worker | yes | The schema version the build expects — the highest migration script it embeds |
 
 ## Readiness
 
@@ -105,14 +118,53 @@ A worker's `/health` body:
 ```
 
 A health body carries only the data keys `address`, `namespace`, `queues`,
-`entries` and `fingerprint` — never a description, an exception or a value
-from configuration.
+`entries`, `fingerprint`, `provider`, `writable`, `readable`, `expected`,
+`applied` and `error` — never a description, an exception or a secret value from
+configuration.
 
 ### The API
 
-The API's `/health` answers `Healthy` as plain text. It does **not** depend
-on the workflow engine: the API starts and is ready with the engine stopped.
-In the local composition the API waits only for PostgreSQL and Valkey.
+The API's `/health` body is the same JSON shape. It does **not** depend on the
+workflow engine: the API starts and is ready with the engine stopped. In the
+local composition the API waits for PostgreSQL, the migrator's successful exit
+and Valkey.
+
+```json
+{
+  "status": "Healthy",
+  "checks": [
+    {
+      "name": "metadata-database",
+      "status": "Healthy",
+      "durationMs": 3,
+      "data": { "expected": "0001_baseline.sql", "applied": "0001_baseline.sql" }
+    }
+  ]
+}
+```
+
+The example shows the database check alone; the body also carries the process's
+`storage` check, which reports the storage root's readiness (see
+[`object-storage.md`](object-storage.md)).
+
+### The metadata database check
+
+The API and the orchestration worker report `metadata-database`:
+
+- **Healthy** when the database is reachable and the highest applied script is the
+  version the build expects;
+- **not ready** when it is behind or ahead of that version, with both versions in
+  the body;
+- **not ready** with `error: unreachable` when the database cannot be reached or
+  does not answer within five seconds.
+
+The check is independent of the engine check and of the registry's check: a
+database failure never changes either of them, and a registry reload failure
+never changes the database's answer. An outage does not stop the process — the
+check reports it and recovers on its own when the database returns, and it logs the
+change of state once in each direction.
+
+The PDF worker carries no `metadata-database` check in this version.
 
 ## The consumer registry
 

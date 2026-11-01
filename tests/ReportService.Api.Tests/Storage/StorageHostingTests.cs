@@ -4,10 +4,12 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
+using ReportService.Testing;
 
 namespace ReportService.Api.Tests.Storage;
 
@@ -69,7 +71,8 @@ public sealed class StorageHostingTests : IDisposable
         var entry = report.Entries[StorageHealthCheck.Name];
         Assert.Equal(HealthStatus.Healthy, entry.Status);
         Assert.Equal("filesystem", entry.Data["provider"]);
-        Assert.Equal("Healthy", await client.GetStringAsync(new Uri("/health", UriKind.Relative), Cancellation));
+        using var body = JsonDocument.Parse(await client.GetStringAsync(new Uri("/health", UriKind.Relative), Cancellation));
+        Assert.Equal("Healthy", body.RootElement.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -150,10 +153,14 @@ public sealed class StorageHostingTests : IDisposable
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Storage:Filesystem:Root", Root);
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
             foreach (var (key, value) in settings)
             {
                 builder.UseSetting(key, value);
             }
+
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
 
     private static ConfigurationError FindConfigurationError(Exception? exception)

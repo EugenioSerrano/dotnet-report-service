@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;
 using OrchestrationWorker = orchestration::Program;
@@ -43,6 +44,9 @@ public sealed class StorageHealthTests : IDisposable
         {
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", _root);
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
         using var client = api.CreateClient();
 
@@ -90,6 +94,9 @@ public sealed class StorageHealthTests : IDisposable
         {
             builder.UseSetting("Storage:Provider", "object-store-that-does-not-exist");
             builder.UseSetting("Storage:Filesystem:Root", _root);
+            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
+            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
 
         var exception = Record.Exception(() => api.CreateClient());

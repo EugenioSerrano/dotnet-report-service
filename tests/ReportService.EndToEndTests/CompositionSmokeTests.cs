@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
@@ -8,8 +9,9 @@ namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The whole local composition, started from a test: every resource it
-/// declares becomes healthy, the dependency images are the pinned ones, and
-/// nothing it started is left running afterwards.
+/// declares becomes healthy or, when another resource waits for it to finish,
+/// finishes successfully; the dependency images are the pinned ones, and nothing
+/// it started is left running afterwards.
 /// </summary>
 public sealed class CompositionSmokeTests
 {
@@ -28,15 +30,27 @@ public sealed class CompositionSmokeTests
         AssertImage(appHost.Resources, "cache", pins.Cache);
         AssertImage(appHost.Resources, "temporal", pins.WorkflowEngine);
 
+        // A resource another resource waits on to finish is a one-shot step: it never
+        // reports a health status, so it is checked by its exit code instead (the
+        // migrator).
+        var finishingResources = appHost.Resources
+            .SelectMany(resource => resource.Annotations.OfType<WaitAnnotation>())
+            .Where(wait => wait.WaitType == WaitType.WaitForCompletion)
+            .Select(wait => wait.Resource.Name)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
         // Every resource the composition declares that can report readiness, enumerated from the model so a
         // resource added later is covered.
         var resources = appHost.Resources
             .OfType<IResourceWithWaitSupport>()
             .Where(IsStartedWithTheComposition)
             .Select(r => r.Name)
+            .Where(name => !finishingResources.Contains(name, StringComparer.Ordinal))
             .ToList();
         var containerNames = appHost.Resources.OfType<ContainerResource>().Select(r => r.Name).ToList();
         Assert.NotEmpty(resources);
+        Assert.NotEmpty(finishingResources);
 
         await using (var app = await appHost.BuildAsync(cancellationToken))
         {
@@ -55,6 +69,18 @@ public sealed class CompositionSmokeTests
                 {
                     notHealthy.Add(resource);
                 }
+            }
+
+            foreach (var resource in finishingResources)
+            {
+                var completion = await app.ResourceNotifications.WaitForResourceAsync(
+                    resource,
+                    e => string.Equals(e.Snapshot.State?.Text, KnownResourceStates.Finished, StringComparison.Ordinal)
+                        || string.Equals(e.Snapshot.State?.Text, KnownResourceStates.FailedToStart, StringComparison.Ordinal),
+                    deadline.Token);
+                Assert.True(
+                    completion.Snapshot.ExitCode == 0,
+                    $"{resource} finished with exit code {Convert.ToString(completion.Snapshot.ExitCode, CultureInfo.InvariantCulture) ?? "none"}.");
             }
 
             Assert.True(

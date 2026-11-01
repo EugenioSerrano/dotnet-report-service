@@ -25,6 +25,22 @@
   <ItemGroup>
     <ProjectReference Include="..\ReportService.Api\ReportService.Api.csproj" />
     <ProjectReference Include="..\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <!--
+      The migrator is composed as a project resource and its assembly is read
+      here, so the expected schema version has one source. The AppHost SDK sets
+      ReferenceOutputAssembly=false on a project reference with empty metadata;
+      the metadata below keeps the reference.
+    -->
+    <ProjectReference Include="..\ReportService.Migrations\ReportService.Migrations.csproj"
+                      ReferenceOutputAssembly="true"
+                      ExcludeAssets="none"
+                      Private="true"
+                      SkipGetTargetFrameworkProperties="false" />
+  </ItemGroup>
+
+  <!-- The PostgreSQL image's init script: creates the application role and its database. -->
+  <ItemGroup>
+    <Content Include="postgres-init\10-application-role.sh" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

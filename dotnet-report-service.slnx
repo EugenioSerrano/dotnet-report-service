@@ -9,6 +9,7 @@
   <Folder Name="/src/">
     <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
+    <Project Path="src/ReportService.Migrations/ReportService.Migrations.csproj" />
     <Project Path="src/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
     <Project Path="src/ReportService.ServiceDefaults.Temporal/ReportService.ServiceDefaults.Temporal.csproj" />
     <Project Path="src/ReportService.Storage.Filesystem/ReportService.Storage.Filesystem.csproj" />
@@ -20,6 +21,7 @@
     <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
     <Project Path="tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />
     <Project Path="tests/ReportService.IntegrationTests/ReportService.IntegrationTests.csproj" />
+    <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
     <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
   </Folder>

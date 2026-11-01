@@ -93,7 +93,7 @@ public sealed class SharedStorageRootTests
             evidence.AppendLine("wrong expected hash on an untouched object, API: 422");
 
             // 6. Every process reports its storage check healthy.
-            Assert.Equal("Healthy", await api.GetStringAsync(new Uri("/health", UriKind.Relative), cancellationToken));
+            AssertStorageHealthy(await HealthAsync(api, cancellationToken));
             AssertStorageHealthy(await HealthAsync(orchestration, cancellationToken));
             AssertStorageHealthy(await HealthAsync(worker, cancellationToken));
             evidence.AppendLine("storage checks: API Healthy; orchestration worker Healthy (writable, readable); PDF worker Healthy (writable, readable)");
