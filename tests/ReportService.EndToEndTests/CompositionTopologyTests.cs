@@ -6,6 +6,7 @@ using Aspire.Hosting.Testing;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using ReportService.Migrations;
 
 namespace ReportService.EndToEndTests;
 
@@ -21,9 +22,14 @@ public sealed class CompositionTopologyTests
     // The first run may build the PDF base image and publish the render worker image.
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
 
-    private const string Baseline = "0001_baseline.sql";
     private const string ApplicationRole = "reportservice";
     private const string BootstrapRole = "postgres";
+
+    // The version the code expects and the scripts an empty database must reach: read
+    // from the shipped migration set, exactly as the composition reads them, so a
+    // migration added later changes the expectation with the code instead of here.
+    private static readonly string ExpectedVersion = MigrationCatalog.ExpectedVersion;
+    private static readonly string[] AppliedScripts = [.. MigrationCatalog.Scripts.Select(script => script.Name)];
 
     private static readonly string[] Resources = ["postgres", "cache", "temporal", "render-worker", "orchestration-worker", "api"];
 
@@ -50,8 +56,8 @@ public sealed class CompositionTopologyTests
             Assert.Equal("Healthy", health.RootElement.GetProperty("status").GetString());
             var database = Check(health, "metadata-database");
             Assert.Equal("Healthy", database.GetProperty("status").GetString());
-            Assert.Equal(Baseline, database.GetProperty("data").GetProperty("expected").GetString());
-            Assert.Equal(Baseline, database.GetProperty("data").GetProperty("applied").GetString());
+            Assert.Equal(ExpectedVersion, database.GetProperty("data").GetProperty("expected").GetString());
+            Assert.Equal(ExpectedVersion, database.GetProperty("data").GetProperty("applied").GetString());
         }
 
         using (var registry = JsonDocument.Parse(await api.GetStringAsync(new Uri("/health/registry", UriKind.Relative), cancellationToken)))
@@ -71,8 +77,8 @@ public sealed class CompositionTopologyTests
 
             var database = Check(health, "metadata-database");
             Assert.Equal("Healthy", database.GetProperty("status").GetString());
-            Assert.Equal(Baseline, database.GetProperty("data").GetProperty("expected").GetString());
-            Assert.Equal(Baseline, database.GetProperty("data").GetProperty("applied").GetString());
+            Assert.Equal(ExpectedVersion, database.GetProperty("data").GetProperty("expected").GetString());
+            Assert.Equal(ExpectedVersion, database.GetProperty("data").GetProperty("applied").GetString());
         }
 
         using var renderWorker = app.CreateHttpClient("render-worker", "http");
@@ -120,7 +126,7 @@ public sealed class CompositionTopologyTests
         {
             await journalConnection.OpenAsync(cancellationToken);
             Assert.Equal(
-                [Baseline],
+                AppliedScripts,
                 await journalConnection.QueryAsync<string>(new CommandDefinition(
                     "SELECT script_name FROM public.schema_migrations ORDER BY script_name",
                     cancellationToken: cancellationToken)));
