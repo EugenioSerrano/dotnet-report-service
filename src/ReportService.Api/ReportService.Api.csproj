@@ -5,6 +5,12 @@
     <ProjectReference Include="..\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <!-- The API keeps its own metadata records: explicit SQL over a pooled data source. -->
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
   <!-- The development consumer registry; the running service watches it for changes. -->
   <ItemGroup>
     <Content Update="consumers.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

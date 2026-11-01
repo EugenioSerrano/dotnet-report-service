@@ -2,12 +2,19 @@
 
   <!--
     Shared support for the test projects: repository paths, the composition's
-    pinned images, a bounded wait, an in-memory log capture and the container
-    helper of the integration suite. Referenced by test projects only; it holds
-    no product behaviour and no tests.
+    pinned images, a bounded wait, an in-memory log capture, a fixed clock, the
+    store contract both upload stores are held to and the container helper of the
+    integration suite. Referenced by test projects only; it holds no product
+    behaviour.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <!--
+      The store contract is an abstract test class, so this project carries the test
+      framework's attributes; the framework's build assets require an executable
+      output even for a library that is only ever referenced.
+    -->
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +22,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Testcontainers" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The store contract is written against the product's own store interface. -->
+    <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
   </ItemGroup>
 
 </Project>

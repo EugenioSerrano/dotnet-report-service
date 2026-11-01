@@ -287,8 +287,10 @@ of this service (see [What it is not](#what-it-is-not)).
 
 ## The API
 
-All routes are versioned under `/api/v1`. Errors use RFC 7807 Problem Details
-with a stable `code`.
+All routes are versioned under `/api/v1`. Errors use RFC 9457 Problem Details
+with a stable `code`. The upload operations, the declared `X-Consumer-Id`
+identity header and every error code are described in
+[`docs/api/uploads.md`](docs/api/uploads.md).
 
 | Method and route | Purpose |
 |------------------|---------|
@@ -430,6 +432,9 @@ are planned after the MVP.
   processes start — see
   [`docs/metadata-database.md`](docs/metadata-database.md) for the role, the
   migrations and an existing deployment.
+- **How long an upload session accepts data**, as `Uploads__SessionLifetime`
+  (24 hours by default, at most seven days) — see
+  [`docs/api/uploads.md`](docs/api/uploads.md).
 
 The service publishes measured capacity figures per release on reference
 datasets. It commits to **no SLA**.

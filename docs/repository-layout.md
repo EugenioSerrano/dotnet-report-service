@@ -26,7 +26,7 @@ dotnet-report-service/
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level
@@ -62,6 +62,7 @@ dotnet-report-service/
 | Test run output | `artifacts/test-results/<yyMMdd-HHmm>/` (git-ignored) | `artifacts/test-results/261101-1430/run.json` |
 | Spike | `spikes/NN-<topic>/` | `spikes/01-streaming-parser/` |
 | Documentation page | kebab-case `.md` in `docs/` | `docs/template-authoring.md` |
+| API documentation | one page per resource family under `docs/api/` | `docs/api/uploads.md` |
 
 Product and test projects are added to `dotnet-report-service.slnx` under the
 `src` and `tests` solution folders (`dotnet sln add <path> --solution-folder src`);

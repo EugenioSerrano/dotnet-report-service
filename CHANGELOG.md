@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Upload sessions: a consumer opens one for its report data with
+  `POST /api/v1/uploads` (`header-items-v1`, `API_STREAM`) and receives its
+  `uploadId`, the state `created` and the time it expires, then reads the same
+  status back with `GET /api/v1/uploads/{uploadId}`. A request for any other
+  profile or mode — including direct-to-storage, which this version does not
+  offer — is refused at once with `UNSUPPORTED_CAPABILITY` and no session is
+  created. The declared consumer, carried in the `X-Consumer-Id` header, owns
+  every session it creates, and another consumer's session is answered as one
+  that does not exist.
+- The `report_service.uploads` table, its migration, and the record store behind
+  the upload operations (Dapper over Npgsql, owner-scoped reads, a five-second
+  command timeout).
+- The API's error answers are RFC 9457 problem documents carrying a stable
+  `code` and the request's `traceId`: `CONSUMER_UNKNOWN` (403),
+  `UNSUPPORTED_CAPABILITY` (422), `QUOTA_EXCEEDED` (413), `REQUEST_INVALID`
+  (400, with `field`, `reason` and `unknownFieldCount`), `INPUT_NOT_FOUND` (404)
+  and `SERVICE_UNAVAILABLE` (503 or 500). No answer carries an exception message,
+  a statement, a connection detail or a value the caller sent.
+- `Uploads__SessionLifetime`: how long a new upload session accepts data, one day
+  by default, validated at start.
+- `docs/api/uploads.md`: the identity header, both operations, the session states
+  and every error code.
 - The service's own metadata database and credentials: the `reportservice`
   database, owned by the `reportservice` login role, which is not a superuser
   and cannot create databases or roles. The local composition creates both once,
@@ -20,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lock, each in its own transaction with a journal row that records its SHA-256
   checksum. It refuses a script that changed after it was applied and a journal
   entry the build does not know, and exits non-zero naming the failing script.
-  Its baseline creates the `report_service` schema; no business table exists yet.
+  Its baseline creates the `report_service` schema; the upload sessions add the
+  first business table beside it.
 - A `metadata-database` readiness check in the API and the orchestration worker:
   ready only when the database is reachable and at the schema version the build
   expects, with the expected and applied versions in the health body. The PDF
@@ -33,6 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The error format is stated as RFC 9457 (Problem Details for HTTP APIs), which
+  supersedes the RFC 7807 reference in the README.
 - The API's `/health` body is JSON, like the workers': the metadata database's
   check reports the expected and applied schema versions. Status codes are
   unchanged (200 ready, 503 not ready).

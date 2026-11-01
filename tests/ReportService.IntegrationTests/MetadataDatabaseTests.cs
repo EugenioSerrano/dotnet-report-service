@@ -26,6 +26,10 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
 {
     private const string Baseline = "0001_baseline.sql";
     private const string Role = PostgresFixture.ApplicationRole;
+
+    // The scripts the build ships, in name order: the journal of a fresh database carries exactly these.
+    private static readonly IReadOnlyList<string> CatalogNames = [.. MigrationCatalog.Scripts.Select(script => script.Name)];
+
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan NotReadyDeadline = TimeSpan.FromSeconds(10);
 
@@ -58,17 +62,15 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         assertNoCredential(result);
 
         Assert.True(result.Succeeded, string.Join("; ", result.Lines()));
-        Assert.Equal([Baseline], result.Applied);
-        Assert.Equal(Baseline, result.CurrentVersion);
+        Assert.Equal(CatalogNames, result.Applied);
+        Assert.Equal(MigrationCatalog.ExpectedVersion, result.CurrentVersion);
         Assert.Empty(result.AlreadyApplied);
 
         await using var connection = await server.OpenAsync(database, cancellationToken);
-        var row = await connection.QuerySingleAsync<JournalSnapshot>(new CommandDefinition(
-            "SELECT script_name AS \"ScriptName\", checksum AS \"Checksum\", applied_at AS \"AppliedAt\" FROM public.schema_migrations",
-            cancellationToken: cancellationToken));
-        Assert.Equal(Baseline, row.ScriptName);
-        Assert.Equal(MigrationCatalog.Scripts[0].Checksum, row.Checksum);
-        Assert.NotEqual(default, row.AppliedAt);
+        var rows = await JournalAsync(database, cancellationToken);
+        Assert.Equal(CatalogNames, rows.Select(row => row.ScriptName));
+        Assert.Equal(MigrationCatalog.Scripts.Select(script => script.Checksum), rows.Select(row => row.Checksum));
+        Assert.All(rows, row => Assert.NotEqual(default, row.AppliedAt));
         Assert.Equal(Role, await TextAsync(connection, "SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname = 'report_service'", cancellationToken));
     }
 
@@ -86,7 +88,7 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
 
         Assert.True(second.Succeeded, string.Join("; ", second.Lines()));
         Assert.Empty(second.Applied);
-        Assert.Contains("no change; schema is current at " + Baseline, second.Lines().Single(), StringComparison.Ordinal);
+        Assert.Contains("no change; schema is current at " + MigrationCatalog.ExpectedVersion, second.Lines().Single(), StringComparison.Ordinal);
 
         // The snapshots are compared by value: two journal rows are the same entry
         // when their script, checksum and timestamp agree, never when the objects do.
@@ -101,16 +103,17 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
         await MigrationRunner.RunAsync(server.Application(database), MigrationCatalog.Scripts, cancellationToken);
-        var second = Script("0002_test-table.sql", "CREATE TABLE report_service.it_upgrade (id int PRIMARY KEY);");
+        var second = Script("0003_test-table.sql", "CREATE TABLE report_service.it_upgrade (id int PRIMARY KEY);");
 
         var result = await MigrationRunner.RunAsync(server.Application(database), [.. MigrationCatalog.Scripts, second], cancellationToken);
         assertNoCredential(result);
 
         Assert.True(result.Succeeded, string.Join("; ", result.Lines()));
-        Assert.Equal(["0002_test-table.sql"], result.Applied);
-        Assert.Equal("0002_test-table.sql", result.CurrentVersion);
+        Assert.Equal(new[] { "0003_test-table.sql" }, result.Applied);
+        Assert.Equal("0003_test-table.sql", result.CurrentVersion);
+        string[] expectedJournal = [.. CatalogNames, "0003_test-table.sql"];
         Assert.Equal(
-            [Baseline, "0002_test-table.sql"],
+            expectedJournal,
             (await JournalAsync(database, cancellationToken)).Select(row => row.ScriptName));
     }
 
@@ -120,7 +123,7 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
         var failing = Script(
-            "0002_failing.sql",
+            "0003_failing.sql",
             "CREATE TABLE report_service.it_failing (id int);\nSELECT * FROM report_service.it_missing;");
 
         var result = await MigrationRunner.RunAsync(server.Application(database), [.. MigrationCatalog.Scripts, failing], cancellationToken);
@@ -128,17 +131,17 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
 
         Assert.False(result.Succeeded);
         Assert.NotNull(result.Failure);
-        Assert.Equal("0002_failing.sql", result.Failure.ScriptName);
+        Assert.Equal("0003_failing.sql", result.Failure.ScriptName);
         Assert.True(result.Failure.Position > 0, $"position {result.Failure.Position}");
         Assert.Equal(PostgresErrorCodes.UndefinedTable, result.Failure.SqlState);
         Assert.Contains(
-            "migration '0002_failing.sql' failed at position",
+            "migration '0003_failing.sql' failed at position",
             result.Lines().Single(line => line.Contains("failed", StringComparison.Ordinal)),
             StringComparison.Ordinal);
 
         await using var connection = await server.OpenAsync(database, cancellationToken);
         Assert.Equal(0m, await NumberAsync(connection, "SELECT COUNT(*) FROM pg_tables WHERE tablename = 'it_failing'", cancellationToken));
-        Assert.Equal([Baseline], (await JournalAsync(database, cancellationToken)).Select(row => row.ScriptName));
+        Assert.Equal(CatalogNames, (await JournalAsync(database, cancellationToken)).Select(row => row.ScriptName));
     }
 
     [Fact]
@@ -207,9 +210,9 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         }
 
         Assert.All(results, result => Assert.True(result.Succeeded, string.Join("; ", result.Lines())));
-        Assert.Single(results, result => result.Applied.Count == 1);
+        Assert.Single(results, result => result.Applied.Count == CatalogNames.Count);
         Assert.Single(results, result => result.Applied.Count == 0);
-        Assert.Single(await JournalAsync(database, cancellationToken));
+        Assert.Equal(CatalogNames.Count, (await JournalAsync(database, cancellationToken)).Count);
     }
 
     [Fact]
@@ -218,7 +221,7 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
         var connectionString = server.Application(database);
-        var check = Check(connectionString, Baseline);
+        var check = Check(connectionString, MigrationCatalog.ExpectedVersion);
 
         var before = await check.CheckHealthAsync(Context(), cancellationToken);
         Assert.Equal(HealthStatus.Unhealthy, before.Status);
@@ -227,20 +230,20 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         await MigrationRunner.RunAsync(connectionString, MigrationCatalog.Scripts, cancellationToken);
         var current = await check.CheckHealthAsync(Context(), cancellationToken);
         Assert.Equal(HealthStatus.Healthy, current.Status);
-        Assert.Equal(Baseline, current.Data["expected"]);
-        Assert.Equal(Baseline, current.Data["applied"]);
+        Assert.Equal(MigrationCatalog.ExpectedVersion, current.Data["expected"]);
+        Assert.Equal(MigrationCatalog.ExpectedVersion, current.Data["applied"]);
 
         await using (var connection = await server.OpenAsync(database, cancellationToken))
         {
             await connection.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO public.schema_migrations (script_name, checksum) VALUES (@name, @checksum)",
-                new { name = "0002_ahead.sql", checksum = new string('b', 64) },
+                new { name = "0009_ahead.sql", checksum = new string('b', 64) },
                 cancellationToken: cancellationToken));
         }
 
         var ahead = await check.CheckHealthAsync(Context(), cancellationToken);
         Assert.Equal(HealthStatus.Unhealthy, ahead.Status);
-        Assert.Equal("0002_ahead.sql", ahead.Data["applied"]);
+        Assert.Equal("0009_ahead.sql", ahead.Data["applied"]);
         Assert.DoesNotContain(server.RolePassword, ahead.Description, StringComparison.Ordinal);
     }
 
@@ -254,7 +257,7 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         await using var api = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, server.Application(database));
-            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, Baseline);
+            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
         });
         using var client = api.CreateClient();
 
@@ -306,7 +309,7 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
         var result = await MigrationRunner.RunAsync(server.Application(database), MigrationCatalog.Scripts, cancellationToken);
-        var health = await Check(server.Application(database), Baseline).CheckHealthAsync(Context(), cancellationToken);
+        var health = await Check(server.Application(database), MigrationCatalog.ExpectedVersion).CheckHealthAsync(Context(), cancellationToken);
         var text = string.Join("\n", result.Lines())
             + "\n" + health.Description
             + "\n" + string.Join("\n", health.Data.Select(entry => $"{entry.Key}={entry.Value}"));

@@ -5,42 +5,46 @@ using ReportService.Testing;
 namespace ReportService.Migrations.Tests;
 
 /// <summary>
-/// The scripts embedded in the assembly: the shipped baseline only, its
-/// checksum equal to the file in the source tree, and the validation a bad name,
+/// The scripts embedded in the assembly: the shipped set in name order, each
+/// checksum equal to its file in the source tree, and the validation a bad name,
 /// a number used twice or an empty script is refused by.
 /// </summary>
 public sealed class MigrationCatalogTests
 {
     private const string Baseline = "0001_baseline.sql";
 
-    [Fact]
-    public void TheShippedSetIsTheBaselineOnly()
-    {
-        var script = Assert.Single(MigrationCatalog.Scripts);
+    private const string Uploads = "0002_uploads.sql";
 
-        Assert.Equal(Baseline, script.Name);
-        Assert.True(MigrationScriptName.IsValid(script.Name));
-        Assert.Equal(Baseline, MigrationCatalog.ExpectedVersion);
+    [Fact]
+    public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
+    {
+        Assert.Equal(new[] { Baseline, Uploads }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
+        Assert.Equal(Uploads, MigrationCatalog.ExpectedVersion);
     }
 
     [Fact]
-    public void TheBaselineChecksumIsTheSha256OfTheFileInTheSourceTree()
+    public void EveryShippedScriptMatchesItsFileInTheSourceTree()
     {
-        var path = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Migrations", "Migrations", Baseline);
-        var bytes = File.ReadAllBytes(path);
-        var script = Assert.Single(MigrationCatalog.Scripts);
+        foreach (var script in MigrationCatalog.Scripts)
+        {
+            var path = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Migrations", "Migrations", script.Name);
+            var bytes = File.ReadAllBytes(path);
 
-        Assert.Equal(MigrationScript.ChecksumOf(bytes), script.Checksum);
-        Assert.Equal(Encoding.UTF8.GetString(bytes), script.Sql);
+            Assert.Equal(MigrationScript.ChecksumOf(bytes), script.Checksum);
+            Assert.Equal(Encoding.UTF8.GetString(bytes), script.Sql);
+        }
     }
 
     [Fact]
-    public void TheBaselineHoldsNoBusinessTable()
+    public void TheBaselineCreatesTheSchemaAndTheUploadsScriptAddsTheSessionsTable()
     {
-        var script = Assert.Single(MigrationCatalog.Scripts);
+        var baseline = Assert.Single(MigrationCatalog.Scripts, script => script.Name == Baseline);
+        var uploads = Assert.Single(MigrationCatalog.Scripts, script => script.Name == Uploads);
 
-        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("CREATE SCHEMA IF NOT EXISTS report_service;", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE TABLE", baseline.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE SCHEMA IF NOT EXISTS report_service;", baseline.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE report_service.uploads", uploads.Sql, StringComparison.Ordinal);
     }
 
     [Fact]
