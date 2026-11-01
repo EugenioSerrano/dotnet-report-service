@@ -31,6 +31,15 @@ internal static class Program
     /// <summary>The end-to-end suite: the whole local composition.</summary>
     private const string EndToEndProject = "tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj";
 
+    /// <summary>The composition host; the level prepares the render worker image through it.</summary>
+    private const string AppHostProject = "src/ReportService.AppHost/ReportService.AppHost.csproj";
+
+    /// <summary>The argument that makes the composition host prepare the render worker image and exit.</summary>
+    private const string PrepareOnlyArgument = "--prepare-render-worker-image";
+
+    /// <summary>The variable that tells each composition the run has prepared the render worker image.</summary>
+    private const string ImagePreparedVariable = "REPORTSERVICE_RENDER_WORKER_IMAGE_PREPARED";
+
     /// <summary>Options of every <c>dotnet test</c> call.</summary>
     private static readonly string[] TestOptions = ["-c", "Release", "--no-ansi", "--no-progress"];
 
@@ -75,9 +84,19 @@ internal static class Program
         var containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
 
         var runs = new List<ProjectRun>();
-        foreach (var project in projects)
+        if (level == "e2e")
         {
-            runs.Add(await RunProjectAsync(root, runDirectory, project, level).ConfigureAwait(false));
+            // The image is published once for the whole level, before any test starts:
+            // the classes run concurrently and must never publish it themselves.
+            runs.Add(await PrepareRenderWorkerImageAsync(root, runDirectory).ConfigureAwait(false));
+        }
+
+        if (runs.All(run => run.Passed))
+        {
+            foreach (var project in projects)
+            {
+                runs.Add(await RunProjectAsync(root, runDirectory, project, level).ConfigureAwait(false));
+            }
         }
 
         var exitCode = runs.All(r => r.Passed) ? ExitPassed : ExitTestsFailed;
@@ -128,6 +147,38 @@ internal static class Program
         return exitCode;
     }
 
+    private static async Task<ProjectRun> PrepareRenderWorkerImageAsync(string root, string runDirectory)
+    {
+        const string name = "ReportService.AppHost";
+        var log = Path.Combine(runDirectory, "render-worker-image.log");
+        var arguments = new List<string>
+        {
+            "run",
+            "--project", Path.GetFullPath(Path.Combine(root, AppHostProject)),
+            "-c", "Release",
+            "--no-launch-profile",
+            "--", PrepareOnlyArgument,
+        };
+
+        Console.WriteLine($"> dotnet {string.Join(' ', arguments.Select(Quote))}");
+        int exitCode;
+        await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+        {
+            await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
+            exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer).ConfigureAwait(false);
+        }
+
+        return new ProjectRun(
+            name,
+            AppHostProject,
+            arguments,
+            exitCode,
+            exitCode == 0,
+            Path.GetRelativePath(root, log),
+            null,
+            exitCode == 0 ? null : "the render worker image preparation failed; the end-to-end project was not run");
+    }
+
     private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level)
     {
         var name = Path.GetFileNameWithoutExtension(project);
@@ -144,9 +195,12 @@ internal static class Program
         }
 
         // The integration classes remove their containers through their own handles.
-        var environment = level == "integration"
-            ? new Dictionary<string, string> { ["TESTCONTAINERS_RYUK_DISABLED"] = "true" }
-            : new Dictionary<string, string>();
+        var environment = level switch
+        {
+            "integration" => new Dictionary<string, string> { ["TESTCONTAINERS_RYUK_DISABLED"] = "true" },
+            "e2e" => new Dictionary<string, string> { [ImagePreparedVariable] = "true" },
+            _ => new Dictionary<string, string>(),
+        };
 
         Console.WriteLine($"> dotnet {string.Join(' ', arguments.Select(Quote))}");
         int exitCode;

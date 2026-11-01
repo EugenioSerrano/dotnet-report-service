@@ -34,6 +34,8 @@ failed.
   integration level, because it switches off the Testcontainers resource
   reaper (the tests remove their own containers); running the project
   directly with `dotnet test` would start the reaper's extra container.
+- The end-to-end level prepares the render worker image once, before the tests
+  start, so the classes never publish it at the same time.
 
 ### Run evidence
 
@@ -41,9 +43,12 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
 (git-ignored; a second run in the same minute gets `-2`, `-3`, …):
 
 - `<project>.log` — the full console output of each test project;
+- `render-worker-image.log` — the console output of the end-to-end level's one
+  image-preparation step, which runs before the tests start;
 - `run.json` — the level, start and finish times, the product commit and
   whether the working tree was clean, the reference-environment revision, each
-  project with its arguments and result, and — for the hermetic level — the
+  project with its arguments and result (the end-to-end level lists its
+  image-preparation step first), and — for the hermetic level — the
   coverage options and results; for the integration and end-to-end levels, the
   identities (digests) of the images used and, for integration, the suite's
   containers before and after the run;

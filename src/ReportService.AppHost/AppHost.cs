@@ -1,8 +1,26 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ReportService.AppHost;
 using ReportService.Migrations;
 
-var builder = DistributedApplication.CreateBuilder(args);
+// The end-to-end level prepares the render worker image once for the whole run,
+// before any composition starts: this switch is that one preparation. The
+// composition itself is not started and no resource of it is created.
+var prepareOnly = args.Contains(RenderWorkerImage.PrepareOnlyArgument, StringComparer.Ordinal);
+var builder = DistributedApplication.CreateBuilder(
+    args.Where(argument => !string.Equals(
+        argument, RenderWorkerImage.PrepareOnlyArgument, StringComparison.Ordinal)).ToArray());
+
+if (prepareOnly)
+{
+    // The process exits after the preparation; the factory is not disposed.
+    var logging = LoggerFactory.Create(options => options.AddSimpleConsole(console => console.SingleLine = true));
+    using var services = new ServiceCollection().AddSingleton<ILoggerFactory>(logging).BuildServiceProvider();
+    var image = await RenderWorkerImage.DescribeAsync(builder.AppHostDirectory);
+    await RenderWorkerImage.PrepareAsync(image, services, CancellationToken.None);
+    return;
+}
 
 // The dependency images are pinned in one file, shared with the integration tests.
 var pins = CompositionPins.Read(builder.AppHostDirectory);
@@ -50,10 +68,15 @@ var temporalGrpc = temporal.GetEndpoint("grpc");
 // Render worker: the Linux image built by the .NET SDK on the PDF base image.
 // Before any resource starts, the image is prepared (see RenderWorkerImage).
 var renderWorkerImage = await RenderWorkerImage.DescribeAsync(builder.AppHostDirectory);
+var imagePrepared = string.Equals(
+    Environment.GetEnvironmentVariable(RenderWorkerImage.PreparedVariable),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder.OnBeforeStart((@event, cancellationToken) =>
-        RenderWorkerImage.PrepareAsync(renderWorkerImage, @event.Services, cancellationToken));
+    builder.OnBeforeStart((@event, cancellationToken) => imagePrepared
+        ? RenderWorkerImage.UsePreparedAsync(renderWorkerImage, @event.Services, cancellationToken)
+        : RenderWorkerImage.PrepareAsync(renderWorkerImage, @event.Services, cancellationToken));
 }
 
 // The engine address as each consumer reaches it: a container resolves it on the

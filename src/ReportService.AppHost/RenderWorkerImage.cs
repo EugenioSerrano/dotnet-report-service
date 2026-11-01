@@ -23,6 +23,12 @@ internal sealed record RenderWorkerImage(
     string BaseRepository,
     string BaseTag)
 {
+    /// <summary>The argument that makes the composition host prepare the render worker image and exit.</summary>
+    public const string PrepareOnlyArgument = "--prepare-render-worker-image";
+
+    /// <summary>The variable that tells a composition the run has already prepared the render worker image.</summary>
+    public const string PreparedVariable = "REPORTSERVICE_RENDER_WORKER_IMAGE_PREPARED";
+
     // Development-only registry: pinned image, bound to 127.0.0.1 only.
     private const string RegistryContainerName = "report-service-dev-registry";
     private const string RegistryImage =
@@ -105,6 +111,34 @@ internal sealed record RenderWorkerImage(
             ["publish", image.WorkerProject, "-c", "Release", "-t:PublishContainer", $"-p:PdfBaseImageDigest={digest}"],
             logger,
             cancellationToken);
+    }
+
+    /// <summary>Uses the image the run prepared, without publishing it a second time.</summary>
+    public static async Task UsePreparedAsync(
+        RenderWorkerImage image, IServiceProvider services, CancellationToken cancellationToken)
+    {
+        var logger = services.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("ReportService.AppHost.RenderWorkerImage");
+        try
+        {
+            await RunAsync(
+                image.RepositoryRoot,
+                "docker",
+                ["image", "inspect", "--format", "{{.Id}}", $"{image.Repository}:{image.Tag}"],
+                logger: null,
+                cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new InvalidOperationException(
+                $"The run reports the render worker image {image.Repository}:{image.Tag} as prepared, but the "
+                + "container runtime does not hold it. Run the test level's command, which prepares it once "
+                + "before the tests start.",
+                exception);
+        }
+
+        logger.LogInformation(
+            "Using the render worker image {Image}:{Tag} prepared for this run", image.Repository, image.Tag);
     }
 
     private static async Task EnsureRegistryAsync(
