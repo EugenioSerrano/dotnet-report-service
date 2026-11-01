@@ -124,9 +124,7 @@ public sealed class TelemetryBaselineTests
         using var api = app.CreateHttpClient("api");
         using var dashboard = new HttpClient { BaseAddress = await app.GetDashboardUrlAsync(cancellationToken) };
 
-        var propagated = await api.GetFromJsonAsync<JsonElement>(
-            new Uri(TelemetryDiagnostics.PropagateRoute, UriKind.Relative),
-            cancellationToken);
+        var propagated = await PropagateAsync(api, cancellationToken);
         Assert.True(propagated.GetProperty("same").GetBoolean(), $"The API and the worker answered with different traces: {propagated}");
         var traceId = propagated.GetProperty("traceId").GetString();
         Assert.False(string.IsNullOrWhiteSpace(traceId));
@@ -203,6 +201,31 @@ public sealed class TelemetryBaselineTests
     {
         using var document = JsonDocument.Parse(
             await dashboard.GetStringAsync(new Uri("/api/telemetry/" + signal, UriKind.Relative), cancellationToken));
+        var answer = document.RootElement.Clone();
+        if (!answer.TryGetProperty("data", out var records))
+        {
+            return answer;
+        }
+
+        // The telemetry API hands its records over inside "data", beside the total and returned counts.
+        return records.Clone();
+    }
+
+    /// <summary>
+    /// The API's propagation answer. The route states a designed refusal for a composition
+    /// without the worker's address and for a worker it cannot call, and its body names which
+    /// of the two answered — so a failure carries the body instead of only the status code.
+    /// </summary>
+    private static async Task<JsonElement> PropagateAsync(HttpClient api, CancellationToken cancellationToken)
+    {
+        using var response = await api.GetAsync(
+            new Uri(TelemetryDiagnostics.PropagateRoute, UriKind.Relative),
+            cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        Assert.True(
+            response.IsSuccessStatusCode,
+            $"The API's propagation route answered {(int)response.StatusCode} ({response.StatusCode}): {body}");
+        using var document = JsonDocument.Parse(body);
         return document.RootElement.Clone();
     }
 
