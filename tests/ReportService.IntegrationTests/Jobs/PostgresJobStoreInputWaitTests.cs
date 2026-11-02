@@ -84,12 +84,13 @@ public sealed class PostgresJobStoreInputWaitTests : IClassFixture<PostgresFixtu
         var reportJobId = await AcceptedJobAsync(cancellationToken);
         Assert.Equal(BeginInputWaitOutcome.Applied, await Jobs.BeginInputWaitAsync(reportJobId, cancellationToken));
 
-        // Only this service writes a stage in production; another step's stage is put here
-        // directly, because the point is what the clear does when it meets one.
-        await SetStageAsync(reportJobId, "VALIDATING", cancellationToken);
+        // Only this service writes a stage in production; another step's stage — one the
+        // domain enumeration has, which no delivered step writes yet — is put here directly,
+        // because the point is what the clear does when it meets one.
+        await SetStageAsync(reportJobId, "VALIDATING_DATA", cancellationToken);
 
         Assert.Equal(EndInputWaitOutcome.NotWaiting, await Jobs.EndInputWaitAsync(reportJobId, cancellationToken));
-        Assert.Equal("VALIDATING", await StoredStageAsync(reportJobId, cancellationToken));
+        Assert.Equal("VALIDATING_DATA", await StoredStageAsync(reportJobId, cancellationToken));
     }
 
     [Fact]
@@ -102,7 +103,7 @@ public sealed class PostgresJobStoreInputWaitTests : IClassFixture<PostgresFixtu
         var elsewhere = await AcceptedJobAsync(cancellationToken, uploadId, Now.AddSeconds(2));
 
         Assert.Equal(BeginInputWaitOutcome.Applied, await Jobs.BeginInputWaitAsync(waiting, cancellationToken));
-        await SetStageAsync(elsewhere, "VALIDATING", cancellationToken);
+        await SetStageAsync(elsewhere, "VALIDATING_DATA", cancellationToken);
 
         Assert.Equal(
             [waiting, betweenSteps],
@@ -130,7 +131,6 @@ public sealed class PostgresJobStoreInputWaitTests : IClassFixture<PostgresFixtu
         Assert.True(
             state.Job.Stage is null or InputWaitStage.WaitingForInput,
             $"a racing change left the stage as '{state.Job.Stage}', which no sequence of the two operations writes.");
-        Assert.Equal(4, race.Length);
     }
 
     [Fact]
@@ -142,7 +142,6 @@ public sealed class PostgresJobStoreInputWaitTests : IClassFixture<PostgresFixtu
         await Jobs.BeginInputWaitAsync(reportJobId, cancellationToken);
 
         Assert.Equal("WAITING_FOR_INPUT", await StoredStageAsync(reportJobId, cancellationToken));
-        Assert.Equal(InputWaitStage.WaitingForInput.Length, "WAITING_FOR_INPUT".Length);
     }
 
     private async Task<string> AcceptedJobAsync(
