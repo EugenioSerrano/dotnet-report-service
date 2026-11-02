@@ -21,9 +21,9 @@ namespace ReportService.IntegrationTests;
 
 /// <summary>
 /// The orchestration worker against a real Temporal development server: it is
-/// ready only once connected, polls no queue while no work is registered, is
-/// not ready while the engine is gone and ready again when it returns — with
-/// the same process. The class owns its engine containers.
+/// ready only once connected, each declared queue is then polled by exactly one
+/// engine worker, it is not ready while the engine is gone and ready again when
+/// it returns — with the same process. The class owns its engine containers.
 /// </summary>
 public sealed class WorkerReadinessTests : IAsyncLifetime
 {
@@ -65,8 +65,8 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
         var host = worker.Services.GetRequiredService<TemporalWorkerHost>();
 
         await WaitForStatusAsync(client, HttpStatusCode.OK, ReadyDeadline, cancellationToken);
-        await AssertNoPollerAsync("report-orchestration", cancellationToken);
-        await AssertNoPollerAsync("report-data", cancellationToken);
+        await AssertOnePollerAsync("report-orchestration", TaskQueueType.Workflow, cancellationToken);
+        await AssertOnePollerAsync("report-data", TaskQueueType.Activity, cancellationToken);
 
         await StopEngineAsync();
         await WaitForStatusAsync(client, HttpStatusCode.ServiceUnavailable, NotReadyDeadline, cancellationToken);
@@ -137,16 +137,33 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
         _engine = null;
     }
 
-    private async Task AssertNoPollerAsync(string queue, CancellationToken cancellationToken)
+    /// <summary>
+    /// States the queue's promise: its engine worker polls it, and
+    /// <c>DescribeTaskQueue</c> reports exactly one poller. Readiness answers as soon
+    /// as the connection is made, a moment before the workers are created, so the
+    /// poller is awaited within the same deadline the rest of the case uses — and
+    /// then asserted, never merely awaited.
+    /// </summary>
+    private async Task AssertOnePollerAsync(string queue, TaskQueueType type, CancellationToken cancellationToken)
     {
         var engine = await TemporalClient.ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}"));
-        foreach (var type in new[] { TaskQueueType.Workflow, TaskQueueType.Activity })
-        {
-            var description = await engine.WorkflowService.DescribeTaskQueueAsync(
-                new DescribeTaskQueueRequest { Namespace = "default", TaskQueue = new TaskQueue { Name = queue }, TaskQueueType = type },
-                new RpcOptions { CancellationToken = cancellationToken });
-            Assert.Empty(description.Pollers);
-        }
+        var pollers = new List<PollerInfo>();
+        await Wait.UntilAsync(
+            $"a poller on '{queue}'",
+            async token =>
+            {
+                var description = await engine.WorkflowService.DescribeTaskQueueAsync(
+                    new DescribeTaskQueueRequest { Namespace = "default", TaskQueue = new TaskQueue { Name = queue }, TaskQueueType = type },
+                    new RpcOptions { CancellationToken = token });
+                pollers.Clear();
+                pollers.AddRange(description.Pollers);
+                return pollers.Count > 0;
+            },
+            ReadyDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+
+        Assert.Single(pollers);
     }
 
     private static Task WaitForStatusAsync(HttpClient client, HttpStatusCode expected, TimeSpan deadline, CancellationToken cancellationToken) =>
