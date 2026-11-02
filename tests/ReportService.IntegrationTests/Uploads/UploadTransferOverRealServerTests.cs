@@ -191,10 +191,18 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
         var declared = 32 * 1024 * 1024;
         await SendHalfAndCloseAsync(servers, uploadId, declared, cancellationToken);
 
-        var confirming = await servers.Client.PostAsync(
-            new Uri($"/api/v1/uploads/{uploadId}/complete", UriKind.Relative),
-            content: null,
+        // The client's body ended; the API records how it ended on its own request's way out,
+        // and a confirmation that arrives before that record exists is refused as a state
+        // conflict by the contract. The case waits for the record, which is what it measures.
+        _ = await WaitForStatusAsync(
+            servers,
+            uploadId,
+            "the recorded end of the interrupted body",
+            status => status.GetProperty("receivedBytes").ValueKind != JsonValueKind.Null,
+            TimeSpan.FromSeconds(30),
             cancellationToken);
+
+        using var confirming = await servers.Client.SendAsync(Owned(HttpMethod.Post, $"/api/v1/uploads/{uploadId}/complete"), cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, confirming.StatusCode);
 
         var status = await WaitForEndedAsync(servers, uploadId, cancellationToken);
@@ -214,10 +222,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
         var stopped = await PutAsync(servers, uploadId, bodyBytes, cancellationToken);
         Assert.False(stopped, "the body of this case is inside the size limit and has to be taken whole.");
 
-        var confirming = await servers.Client.PostAsync(
-            new Uri($"/api/v1/uploads/{uploadId}/complete", UriKind.Relative),
-            content: null,
-            cancellationToken);
+        using var confirming = await servers.Client.SendAsync(Owned(HttpMethod.Post, $"/api/v1/uploads/{uploadId}/complete"), cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, confirming.StatusCode);
 
         var status = await WaitForReadyAsync(servers, uploadId, cancellationToken);
@@ -273,7 +278,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
 
         var api = Start(ApiDll, apiEnvironment);
         var worker = Start(WorkerDll, workerEnvironment);
-        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        var client = new HttpClient { BaseAddress = new Uri(apiUrl), Timeout = TimeSpan.FromMinutes(10) };
         var servers = new ServerProcesses(api, worker, client, apiUrl, root);
         try
         {
@@ -354,11 +359,19 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
         Assert.True(build.ExitCode == 0, $"the process {project} does not build: {await output} {await error}");
     }
 
+    // Every operation of a session names its owner: the API answers one that does not with
+    // the same refusal it gives another consumer's session.
+    private static HttpRequestMessage Owned(HttpMethod method, string path)
+    {
+        var request = new HttpRequestMessage(method, new Uri(path, UriKind.Relative));
+        request.Headers.Add("X-Consumer-Id", ConsumerId);
+        return request;
+    }
+
     private static async Task<string> CreateAsync(ServerProcesses servers, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/v1/uploads", UriKind.Relative));
-        request.Headers.Add("X-Consumer-Id", ConsumerId);
-        request.Content = new StringContent(
+        request.Headers.Add("X-Consumer-Id", ConsumerId);        request.Content = new StringContent(
             "{\"mode\":\"API_STREAM\",\"profile\":\"header-items-v1\"}",
             Encoding.UTF8,
             "application/json");
@@ -483,9 +496,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
             what,
             async token =>
             {
-                using var response = await servers.Client.GetAsync(
-                    new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative),
-                    token);
+                using var response = await servers.Client.SendAsync(Owned(HttpMethod.Get, $"/api/v1/uploads/{uploadId}"), token);
                 servers.Sample();
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
