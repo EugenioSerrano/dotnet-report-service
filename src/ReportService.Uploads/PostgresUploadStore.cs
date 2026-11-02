@@ -33,25 +33,34 @@ public sealed class PostgresUploadStore : IUploadStore
         """;
 
     private const string SelectScopedSql = """
-        SELECT upload_id        AS "UploadId",
-               consumer_id      AS "ConsumerId",
-               mode             AS "Mode",
-               declared_profile AS "Profile",
-               status           AS "Status",
-               staging_key      AS "StagingKey",
-               created_at       AS "CreatedAt",
-               expires_at       AS "ExpiresAt",
-               content_encoding AS "ContentEncoding",
-               content_outcome  AS "ContentOutcome",
-               received_bytes   AS "ReceivedBytes",
-               staging_size_bytes AS "StagingSize",
-               staging_sha256   AS "StagingSha256",
-               declared_sha256  AS "DeclaredSha256",
-               completed_at     AS "CompletedAt",
-               rejection_code   AS "RejectionCode",
-               rejection_reason AS "RejectionReason"
-        FROM report_service.uploads
-        WHERE upload_id = @UploadId AND consumer_id = @ConsumerId
+        SELECT u.upload_id        AS "UploadId",
+               u.consumer_id      AS "ConsumerId",
+               u.mode             AS "Mode",
+               u.declared_profile AS "Profile",
+               u.status           AS "Status",
+               u.staging_key      AS "StagingKey",
+               u.created_at       AS "CreatedAt",
+               u.expires_at       AS "ExpiresAt",
+               u.content_encoding AS "ContentEncoding",
+               u.content_outcome  AS "ContentOutcome",
+               u.received_bytes   AS "ReceivedBytes",
+               u.staging_size_bytes AS "StagingSize",
+               u.staging_sha256   AS "StagingSha256",
+               u.declared_sha256  AS "DeclaredSha256",
+               u.completed_at     AS "CompletedAt",
+               u.rejection_code   AS "RejectionCode",
+               u.rejection_reason AS "RejectionReason",
+               s.object_key          AS "SnapshotObjectKey",
+               s.compression         AS "SnapshotCompression",
+               s.profile             AS "SnapshotProfile",
+               s.sha256_uncompressed AS "SnapshotSha256Uncompressed",
+               s.size_uncompressed_bytes AS "SnapshotSizeUncompressed",
+               s.sha256_stored       AS "SnapshotSha256Stored",
+               s.size_stored_bytes   AS "SnapshotSizeStored",
+               s.created_at          AS "SnapshotCreatedAt"
+        FROM report_service.uploads u
+        LEFT JOIN report_service.snapshots s ON s.upload_id = u.upload_id
+        WHERE u.upload_id = @UploadId AND u.consumer_id = @ConsumerId
         """;
 
     private const string SelectForVerificationSql = """
