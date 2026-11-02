@@ -91,16 +91,24 @@ public static class OrchestrationWorkerRegistration
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
+        builder.AddValidatedConfiguration<InputWaitOptions>(InputWaitOptions.SectionPath);
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
+        builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             ReportJobWorkflow.OrchestrationQueue,
             options =>
             {
+                // The wait's bounds are published to the workflow type here, once, while the
+                // process plans its workers — the delivered pattern the verification uses.
+                var inputWait = provider.GetRequiredService<IOptions<InputWaitOptions>>().Value;
+                ReportJobWorkflow.Configure(inputWait.Backstop, inputWait.ContinueAsNewAfter);
+
                 options.AddWorkflow<ReportJobWorkflow>();
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
+                options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

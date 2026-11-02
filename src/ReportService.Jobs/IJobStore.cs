@@ -47,6 +47,32 @@ public interface IJobStore
     Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Records that a queued job is waiting for its upload to be verified. The write is
+    /// conditional on the job still being queued, sets the stage and nothing else, and
+    /// answers the same on a repeat: a job that ended meanwhile is left exactly as it is.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Clears the waiting stage of a job, conditionally on its still carrying it. The write
+    /// sets the stage and nothing else; a repeated clear changes nothing.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads the jobs of an upload that may be waiting for it, in the order they were
+    /// accepted: the queued ones that carry the waiting stage, and the queued ones that
+    /// carry no stage yet — the race before a wait begins and the step between two stages.
+    /// </summary>
+    /// <param name="uploadId">The identifier of the upload.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<IReadOnlyList<string>> FindInputWaitingJobIdsAsync(string uploadId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Moves a job from one of <paramref name="from"/> to <paramref name="to"/>, recording
     /// when it first started. A job already carrying <paramref name="to"/> answers
     /// <see cref="TransitionOutcome.AlreadyApplied"/>; one in any other state is left exactly
