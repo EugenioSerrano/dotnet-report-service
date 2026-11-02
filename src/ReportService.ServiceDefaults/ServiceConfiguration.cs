@@ -50,6 +50,26 @@ public static class ServiceConfiguration
         return configuration.GetSection(sectionPath).Get<T>() ?? new T();
     }
 
+    /// <summary>
+    /// Registers a start-up check of its own, for a rule that spans more than one
+    /// settings record: one record cannot see another's values, so a rule such as
+    /// "this bound has to be at least as long as that one" is checked here. The
+    /// check returns the problems it finds, each naming its setting fully and never
+    /// a value; any of them stops the process like a record's own problem does.
+    /// </summary>
+    /// <param name="builder">The process being built.</param>
+    /// <param name="check">The rule to apply at start.</param>
+    public static IHostApplicationBuilder AddSettingsCheck(
+        this IHostApplicationBuilder builder,
+        Func<IServiceProvider, IEnumerable<ConfigurationProblem>> check)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(check);
+        builder.AddServiceConfiguration();
+        builder.Services.AddSingleton(new SettingsValidation(services => [.. check(services)]));
+        return builder;
+    }
+
     /// <summary>Throws a <see cref="ConfigurationError"/> naming every faulty setting of <paramref name="settings"/>.</summary>
     public static void Validate<T>(T settings, string sectionPath)
         where T : IValidatedSettings

@@ -37,6 +37,9 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The outcome tag of an upload that ended rejected.</summary>
     public const string RejectedOutcome = "rejected";
 
+    /// <summary>The outcome tag of an upload that expired before it ended any other way.</summary>
+    public const string ExpiredOutcome = "expired";
+
     /// <summary>The code tag of an upload that ended ready.</summary>
     public const string NoCode = "none";
 
@@ -76,9 +79,9 @@ public sealed class OrchestrationMetrics : IDisposable
     }
 
     /// <summary>Records that one upload ended with <paramref name="outcome"/> and <paramref name="code"/>.</summary>
-    /// <param name="outcome">A fixed outcome: ready or rejected.</param>
+    /// <param name="outcome">A fixed outcome: ready, rejected or expired.</param>
     /// <param name="code">A fixed code, or none when the upload is ready.</param>
-    /// <param name="stage">A fixed stage: transfer or verification.</param>
+    /// <param name="stage">A fixed stage: transfer, verification, session or verification-deadline.</param>
     public void UploadOutcome(string outcome, string code, string stage) =>
         _outcomes.Add(
             1,

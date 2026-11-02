@@ -25,10 +25,11 @@ public sealed class UploadVerificationActivityOptionsTests
     {
         var options = UploadVerificationActivityOptionsTests_Options(TimeSpan.FromHours(2));
 
-        var activity = UploadVerificationActivityOptions.Create(options);
+        var activity = UploadVerificationActivityOptions.Create(options.StartToClose, TimeSpan.FromHours(6));
 
         Assert.Equal("report-data", activity.TaskQueue);
         Assert.Equal(TimeSpan.FromHours(2), activity.StartToCloseTimeout);
+        Assert.Equal(TimeSpan.FromHours(6), activity.ScheduleToCloseTimeout);
         Assert.Equal(TimeSpan.FromSeconds(60), activity.HeartbeatTimeout);
         Assert.NotNull(activity.RetryPolicy);
         Assert.Equal(TimeSpan.FromSeconds(2), activity.RetryPolicy!.InitialInterval);
@@ -41,7 +42,7 @@ public sealed class UploadVerificationActivityOptionsTests
     [Fact]
     public void TheNeverRetriedCodesAreTheOnesTheDecisionFixed()
     {
-        var activity = UploadVerificationActivityOptions.Create(TimeSpan.FromHours(1));
+        var activity = UploadVerificationActivityOptions.Create(TimeSpan.FromHours(1), TimeSpan.FromHours(6));
 
         Assert.NotNull(activity.RetryPolicy);
         Assert.Equal(
@@ -52,8 +53,8 @@ public sealed class UploadVerificationActivityOptionsTests
     [Fact]
     public void APositiveBoundIsRequired()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => UploadVerificationActivityOptions.Create(TimeSpan.Zero));
-        Assert.Throws<ArgumentOutOfRangeException>(() => UploadVerificationActivityOptions.Create(TimeSpan.FromSeconds(-1)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UploadVerificationActivityOptions.Create(TimeSpan.Zero, TimeSpan.FromHours(6)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UploadVerificationActivityOptions.Create(TimeSpan.FromSeconds(-1), TimeSpan.FromHours(6)));
     }
 
     private static UploadVerificationOptions UploadVerificationActivityOptionsTests_Options(TimeSpan bound) =>
@@ -408,6 +409,8 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         builder.Services.AddSingleton<TimeProvider>(_rig.Clock);
         builder.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";
+        builder.Configuration[$"{VerificationOptions.SectionPath}:{VerificationOptions.VerificationDeadlineSetting}"] = "06:00:00";
+        builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
         builder.AddUploadVerificationWork();
         foreach (var queue in extraQueues)
         {

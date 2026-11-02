@@ -23,7 +23,15 @@ public static class OrchestrationWorkerRegistration
         ArgumentNullException.ThrowIfNull(builder);
         builder.AddValidatedConfiguration<UploadVerificationOptions>(UploadVerificationOptions.SectionPath);
         builder.AddValidatedConfiguration<WorkerOptions>(WorkerOptions.SectionPath);
+        builder.AddValidatedConfiguration<UploadExpiryOptions>(UploadExpiryOptions.SectionPath);
+
+        // The two ends of a verification have to fit together: the deadline the upload is
+        // expired by may not be shorter than one attempt of the verification, or a healthy
+        // attempt would be cut off by its own upload's deadline.
+        builder.AddSettingsCheck(DeadlineAgainstStartToClose);
+
         builder.Services.AddSingleton<UploadVerificationActivities>();
+        builder.Services.AddHostedService<UploadExpirySweeper>();
 
         builder.Services.AddSingleton(_ => new TaskQueueWork(
             UploadVerificationWorkflow.OrchestrationQueue,
@@ -39,13 +47,24 @@ public static class OrchestrationWorkerRegistration
                 options.MaxConcurrentActivities = provider.GetRequiredService<IOptions<WorkerOptions>>().Value.DataActivitySlots;
 
                 // The delivered host creates workflows without a service provider, so the
-                // configured bound of one attempt is published to the workflow type here,
-                // once, while the process plans its workers.
-                UploadVerificationWorkflow.Configure(provider.GetRequiredService<IOptions<UploadVerificationOptions>>().Value.StartToClose);
+                // configured bounds of one verification are published to the workflow type
+                // here, once, while the process plans its workers. The verification's
+                // schedule-to-close is the upload's own deadline, so the engine stops
+                // retrying when that deadline passes.
+                UploadVerificationWorkflow.Configure(
+                    provider.GetRequiredService<IOptions<UploadVerificationOptions>>().Value.StartToClose,
+                    provider.GetRequiredService<IOptions<VerificationOptions>>().Value.VerificationDeadline);
                 options.AddAllActivities(provider.GetRequiredService<UploadVerificationActivities>());
             }));
 
         return builder;
+    }
+
+    private static IReadOnlyList<ConfigurationProblem> DeadlineAgainstStartToClose(IServiceProvider services)
+    {
+        var verification = services.GetRequiredService<IOptions<UploadVerificationOptions>>().Value;
+        var deadline = services.GetRequiredService<IOptions<VerificationOptions>>().Value.VerificationDeadline;
+        return verification.DeadlineProblem(deadline) is { } problem ? [problem] : [];
     }
 
     /// <summary>Registers the dispatching of the durable requests and the settings it runs under.</summary>

@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- An upload ends by itself when nobody finishes it: one that is not confirmed
+  before the end of its session becomes `expired`, takes no more content and
+  cannot be confirmed, and one whose verification outlasts the deadline recorded
+  at its confirmation expires as well and can never become a snapshot
+  afterwards. The end is applied at the moment of any operation on the upload
+  and, without traffic, by a periodic sweep in the orchestration worker that
+  also deletes what an expired upload was still holding. The deadline is
+  configured by `Uploads__VerificationDeadline` (six hours by default, never
+  shorter than one verification attempt) and the sweep by
+  `Uploads__Expiry__SweepInterval` and `Uploads__Expiry__BatchSize`. See
+  `docs/api/uploads.md` and `docs/operations/upload-verification.md`.
+- Every upload operation resolves the declared consumer against the service's
+  consumer registry before it reads the body or touches a record: a consumer
+  that is not registered is refused with `CONSUMER_UNKNOWN`, an inactive one
+  cannot open a new upload (`CONSUMER_INACTIVE`) but keeps reading, streaming to
+  and confirming the uploads it opened while it was active, and a registry change
+  applies without a restart.
+
 - Report data can be **streamed** to an upload — plain, or compressed with
   `Content-Encoding: gzip` — and then **confirmed**: the body is written to the
   upload's staging object as it arrives, counted against the size limit and never

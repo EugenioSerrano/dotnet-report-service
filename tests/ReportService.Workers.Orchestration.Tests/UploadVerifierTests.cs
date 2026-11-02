@@ -678,42 +678,50 @@ internal sealed class ScriptedUploadStore : IUploadStore
         _inner.FindAsync(uploadId, consumerId, cancellationToken);
 
     /// <inheritdoc />
-    public Task<bool> TryStartTransferAsync(string uploadId, string consumerId, UploadContentEncoding encoding, CancellationToken cancellationToken) =>
-        _inner.TryStartTransferAsync(uploadId, consumerId, encoding, cancellationToken);
+    public Task<bool> TryStartTransferAsync(string uploadId, string consumerId, UploadContentEncoding encoding, DateTimeOffset now, CancellationToken cancellationToken) =>
+        _inner.TryStartTransferAsync(uploadId, consumerId, encoding, now, cancellationToken);
 
     /// <inheritdoc />
-    public Task<bool> RecordTransferAsync(string uploadId, UploadContentOutcome outcome, long receivedBytes, long? stagingSize, string? stagingSha256, CancellationToken cancellationToken) =>
-        _inner.RecordTransferAsync(uploadId, outcome, receivedBytes, stagingSize, stagingSha256, cancellationToken);
+    public Task<bool> RecordTransferAsync(string uploadId, UploadContentOutcome outcome, long receivedBytes, long? stagingSize, string? stagingSha256, DateTimeOffset now, CancellationToken cancellationToken) =>
+        _inner.RecordTransferAsync(uploadId, outcome, receivedBytes, stagingSize, stagingSha256, now, cancellationToken);
 
     /// <inheritdoc />
-    public Task<bool> RejectTransferAsync(string uploadId, UploadRejectionCode code, UploadRejectionReason reason, long receivedBytes, CancellationToken cancellationToken) =>
-        _inner.RejectTransferAsync(uploadId, code, reason, receivedBytes, cancellationToken);
+    public Task<bool> RejectTransferAsync(string uploadId, UploadRejectionCode code, UploadRejectionReason reason, long receivedBytes, DateTimeOffset now, CancellationToken cancellationToken) =>
+        _inner.RejectTransferAsync(uploadId, code, reason, receivedBytes, now, cancellationToken);
 
     /// <inheritdoc />
-    public Task<bool> ConfirmAsync(string uploadId, string consumerId, string? declaredSha256, DateTimeOffset completedAt, CancellationToken cancellationToken) =>
-        _inner.ConfirmAsync(uploadId, consumerId, declaredSha256, completedAt, cancellationToken);
+    public Task<bool> ConfirmAsync(string uploadId, string consumerId, string? declaredSha256, DateTimeOffset completedAt, DateTimeOffset now, DateTimeOffset verificationDeadline, CancellationToken cancellationToken) =>
+        _inner.ConfirmAsync(uploadId, consumerId, declaredSha256, completedAt, now, verificationDeadline, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<UploadExpiryOutcome> ExpireIfOverdueAsync(string uploadId, DateTimeOffset now, CancellationToken cancellationToken) =>
+        _inner.ExpireIfOverdueAsync(uploadId, now, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken) =>
+        _inner.ExpireOverdueAsync(now, batchSize, cancellationToken);
 
     /// <inheritdoc />
     public Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken) =>
         _inner.LoadForVerificationAsync(uploadId, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, CancellationToken cancellationToken)
+    public async Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, DateTimeOffset now, CancellationToken cancellationToken)
     {
         if (ReadyResult is { } forced)
         {
             if (Winner is not null)
             {
-                await _inner.CommitReadyAsync(Winner, cancellationToken);
+                await _inner.CommitReadyAsync(Winner, now, cancellationToken);
             }
 
             return forced;
         }
 
-        return await _inner.CommitReadyAsync(snapshot, cancellationToken);
+        return await _inner.CommitReadyAsync(snapshot, now, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task<bool> CommitRejectedAsync(string uploadId, UploadRejectionCode code, UploadRejectionReason reason, CancellationToken cancellationToken) =>
-        _inner.CommitRejectedAsync(uploadId, code, reason, cancellationToken);
+    public Task<bool> CommitRejectedAsync(string uploadId, UploadRejectionCode code, UploadRejectionReason reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+        _inner.CommitRejectedAsync(uploadId, code, reason, now, cancellationToken);
 }

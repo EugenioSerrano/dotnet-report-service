@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
+using ReportService.Api.Consumers;
 using ReportService.Api.Http;
+using ReportService.Api.Telemetry;
+using ReportService.Storage;
 using ReportService.Uploads;
 
 namespace ReportService.Api.Uploads;
@@ -10,9 +13,12 @@ namespace ReportService.Api.Uploads;
 /// background verification and answers before any of that work runs. The declared
 /// content hash is optional and is compared only by the verification; this
 /// operation decides nothing about the content, so it writes no byte to storage and
-/// holds no engine client. A confirmation may be repeated — the answer is then the
-/// upload's current state — but only one confirmation can move an upload, and a
-/// repeated one may not declare a different hash.
+/// holds no engine client. The confirmation is also what puts an end to the
+/// upload's life: it records, beside the request, the instant until which the
+/// verification may still fix a snapshot. A confirmation may be repeated �?" the
+/// answer is then the upload's current state, however that state came about �?" but
+/// only one confirmation can move an upload, and a repeated one may not declare a
+/// different hash.
 /// </summary>
 public static class CompleteUploadEndpoint
 {
@@ -22,13 +28,9 @@ public static class CompleteUploadEndpoint
     /// <summary>What an answer says when a repeated confirmation declares another hash.</summary>
     public const string DifferentDeclarationDetail = "A repeated confirmation cannot declare a different content hash.";
 
-    private const string IdentityReason = "identity";
     private const string NotFoundReason = "not-found";
     private const string StateReason = "state";
     private const string BodySizeReason = "body-size";
-    private const string StorageReason = "storage";
-
-    private const string ServiceUnavailableDetail = "The service could not complete the request for a cause on its side.";
 
     /// <summary>Adds the confirmation operation to the application.</summary>
     /// <param name="endpoints">The application's endpoint route builder.</param>
@@ -42,16 +44,25 @@ public static class CompleteUploadEndpoint
     private static async Task<IResult> ConfirmAsync(
         HttpContext context,
         IUploadStore store,
+        IObjectStore objects,
+        ConsumerRegistry registry,
+        ConsumerRefusalMetrics refusals,
+        IOptions<UploadOptions> options,
         TimeProvider clock,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger(UploadEndpoints.LogCategory);
 
-        if (!ConsumerIdentity.TryRead(context.Request, out var consumerId))
+        // Confirming is kept for a consumer that was made inactive: verification itself
+        // never consults the registry.
+        var gate = ConsumerAccess.Resolve(context.Request, registry.Current, ConsumerRequirement.Registered);
+        if (!gate.Allowed)
         {
-            return Refuse(context, logger, ErrorCodes.ConsumerUnknown, StatusCodes.Status403Forbidden, "Unknown consumer", UploadEndpoints.ConsumerUnknownDetail, IdentityReason);
+            return ConsumerAccess.Refuse(context, gate, ConsumerRefusalMetrics.ConfirmOperation, logger, refusals);
         }
+
+        var consumerId = gate.ConsumerId!;
 
         var uploadId = context.Request.RouteValues["uploadId"] as string ?? string.Empty;
         if (!UploadIdentifier.IsWellFormed(uploadId))
@@ -83,12 +94,17 @@ public static class CompleteUploadEndpoint
             return NotFound(context, logger);
         }
 
+        var now = UploadWireValues.TruncateToMillisecond(clock.GetUtcNow());
+        record = await UploadExpiryStep.ApplyAsync(store, objects, record, now, logger, cancellationToken)
+            .ConfigureAwait(false);
+
         if (record.Status == UploadStatus.Uploading && record.ContentOutcome is not null)
         {
-            var now = UploadWireValues.TruncateToMillisecond(clock.GetUtcNow());
-            if (!await store.ConfirmAsync(uploadId, consumerId, declared, now, cancellationToken).ConfigureAwait(false))
+            var deadline = now + options.Value.VerificationDeadline;
+            if (!await store.ConfirmAsync(uploadId, consumerId, declared, now, now, deadline, cancellationToken).ConfigureAwait(false))
             {
-                // A concurrent change moved the session; the answer is the one its state now admits.
+                // A concurrent change moved the session, or its session ended first: the
+                // answer is the one its state now admits.
                 var current = await store.FindAsync(uploadId, consumerId, cancellationToken).ConfigureAwait(false);
                 return current is null
                     ? NotFound(context, logger)
@@ -111,14 +127,19 @@ public static class CompleteUploadEndpoint
         {
             case UploadStatus.Created:
             case UploadStatus.Uploading:
-                return Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, "Upload state conflict", NoContentDetail, StateReason);
+                return Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, UploadEndpoints.StateConflictTitle, NoContentDetail, StateReason);
+
+            case UploadStatus.Expired when record.CompletedAt is null:
+                // The upload ran out of session before it was ever confirmed: there is
+                // nothing to repeat, and nothing is recorded.
+                return Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, UploadEndpoints.StateConflictTitle, UploadEndpoints.ExpiredDetail, StateReason);
 
             default:
                 // A repeated confirmation: it repeats the current state, unless it declares
                 // another hash than the one this upload was confirmed with.
                 if (declared is not null && !string.Equals(declared, record.DeclaredSha256, StringComparison.OrdinalIgnoreCase))
                 {
-                    return Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, "Upload state conflict", DifferentDeclarationDetail, StateReason);
+                    return Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, UploadEndpoints.StateConflictTitle, DifferentDeclarationDetail, StateReason);
                 }
 
                 Activity.Current?.SetTag(UploadEndpoints.UploadIdTag, record.UploadId);
@@ -132,7 +153,7 @@ public static class CompleteUploadEndpoint
         Results.Accepted($"{UploadEndpoints.RoutePrefix}/{record.UploadId}", UploadStatusResponse.From(record));
 
     private static IResult NotFound(HttpContext context, ILogger logger) =>
-        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, "Upload not found", UploadEndpoints.UploadNotFoundDetail, NotFoundReason);
+        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, UploadEndpoints.NotFoundTitle, UploadEndpoints.UploadNotFoundDetail, NotFoundReason);
 
     private static IResult Refuse(
         HttpContext context,

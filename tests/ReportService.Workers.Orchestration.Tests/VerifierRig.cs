@@ -106,6 +106,7 @@ internal sealed class VerifierRig : IDisposable
     /// <param name="writeObject">Whether the bytes are written to the storage root.</param>
     /// <param name="stagingRecorded">Whether the transfer recorded the object's size and hash.</param>
     /// <param name="confirm">Whether the upload is confirmed, which is what makes it verifying.</param>
+    /// <param name="verificationDeadline">Until when the verification may fix a snapshot; by default a day after the confirmation.</param>
     public async Task<UploadRecord> GivenVerifyingAsync(
         string uploadId,
         byte[] stored,
@@ -114,7 +115,8 @@ internal sealed class VerifierRig : IDisposable
         UploadContentOutcome outcome = UploadContentOutcome.Complete,
         bool writeObject = true,
         bool stagingRecorded = true,
-        bool confirm = true)
+        bool confirm = true,
+        DateTimeOffset? verificationDeadline = null)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var record = new UploadRecord(
@@ -128,7 +130,7 @@ internal sealed class VerifierRig : IDisposable
             CreatedAt.AddDays(1));
 
         await Uploads.CreateAsync(record, cancellationToken);
-        await Uploads.TryStartTransferAsync(uploadId, ConsumerId, encoding, cancellationToken);
+        await Uploads.TryStartTransferAsync(uploadId, ConsumerId, encoding, ConfirmedAt, cancellationToken);
 
         long? size = stagingRecorded ? stored.Length : null;
         string? sha256 = stagingRecorded ? Convert.ToHexStringLower(SHA256.HashData(stored)) : null;
@@ -147,11 +149,19 @@ internal sealed class VerifierRig : IDisposable
             stored.Length,
             outcome == UploadContentOutcome.Complete ? size : null,
             outcome == UploadContentOutcome.Complete ? sha256 : null,
+            ConfirmedAt,
             cancellationToken);
 
         if (confirm)
         {
-            await Uploads.ConfirmAsync(uploadId, ConsumerId, declaredSha256, ConfirmedAt, cancellationToken);
+            await Uploads.ConfirmAsync(
+                uploadId,
+                ConsumerId,
+                declaredSha256,
+                ConfirmedAt,
+                ConfirmedAt,
+                verificationDeadline ?? ConfirmedAt.AddDays(1),
+                cancellationToken);
         }
 
         return (await Uploads.FindAsync(uploadId, ConsumerId, cancellationToken))!;

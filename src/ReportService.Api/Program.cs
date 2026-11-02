@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
+using ReportService.Api.Telemetry;
 using ReportService.Api.Uploads;
 using ReportService.Uploads;
 using ReportService.ServiceDefaults;
@@ -22,6 +23,7 @@ builder.AddObjectStorage("api");
 builder.AddValidatedConfiguration<UploadOptions>(UploadOptions.SectionPath);
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddProblemDetails();
+builder.Services.AddSingleton<ConsumerRefusalMetrics>();
 builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
     services.GetRequiredService<IOptions<DatabaseOptions>>().Value.ConnectionString));
 builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();

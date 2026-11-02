@@ -49,6 +49,14 @@ public sealed record UploadRecord(
     /// <summary>When the consumer confirmed the upload, in UTC.</summary>
     public DateTimeOffset? CompletedAt { get; init; }
 
+    /// <summary>
+    /// Until when the confirmed upload's verification may still fix a snapshot, in
+    /// UTC; counted from <see cref="CompletedAt"/> and null until a confirmation
+    /// records it. It is what an upload that is verifying expires by, never
+    /// <see cref="ExpiresAt"/>.
+    /// </summary>
+    public DateTimeOffset? VerificationDeadline { get; init; }
+
     /// <summary>Why the upload ended rejected; null unless it is rejected.</summary>
     public UploadRejectionCode? RejectionCode { get; init; }
 

@@ -6,6 +6,9 @@ namespace ReportService.Uploads;
 /// without saying whose it is; an upload of another consumer is answered exactly
 /// as a session that does not exist. Every write is one conditional statement or
 /// one transaction, so a step that arrives twice, or too late, changes nothing.
+/// Every write that a late operation could otherwise win carries the instant it
+/// was decided at: an upload past the end of its session takes no more content
+/// and no confirmation, and one past its verification deadline fixes no snapshot.
 /// </summary>
 public interface IUploadStore
 {
@@ -25,12 +28,14 @@ public interface IUploadStore
     /// <param name="uploadId">The identifier of the session.</param>
     /// <param name="consumerId">The declared consumer sending the body.</param>
     /// <param name="encoding">How the body is declared encoded.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
     /// <param name="cancellationToken">The request's cancellation token.</param>
-    /// <returns>True when this call moved the session; false when it was not created any more.</returns>
+    /// <returns>True when this call moved the session; false when it was not created any more, or had expired.</returns>
     Task<bool> TryStartTransferAsync(
         string uploadId,
         string consumerId,
         UploadContentEncoding encoding,
+        DateTimeOffset now,
         CancellationToken cancellationToken);
 
     /// <summary>Records how a transfer ended, once, while the session is receiving.</summary>
@@ -39,14 +44,19 @@ public interface IUploadStore
     /// <param name="receivedBytes">The bytes received.</param>
     /// <param name="stagingSize">The size of the object written, when the bytes landed.</param>
     /// <param name="stagingSha256">The SHA-256 of the object written, when the bytes landed.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
     /// <param name="cancellationToken">The request's cancellation token.</param>
-    /// <returns>True when this call recorded the outcome; false when one was already recorded.</returns>
+    /// <returns>
+    /// True when this call recorded the outcome; false when one was already recorded,
+    /// or when the session had expired by then.
+    /// </returns>
     Task<bool> RecordTransferAsync(
         string uploadId,
         UploadContentOutcome outcome,
         long receivedBytes,
         long? stagingSize,
         string? stagingSha256,
+        DateTimeOffset now,
         CancellationToken cancellationToken);
 
     /// <summary>Ends a session rejected before any confirmation, once, while it is receiving.</summary>
@@ -54,31 +64,67 @@ public interface IUploadStore
     /// <param name="code">Why it was rejected.</param>
     /// <param name="reason">The fixed reason recorded beside the code.</param>
     /// <param name="receivedBytes">The bytes received when the transfer stopped.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
     /// <param name="cancellationToken">The request's cancellation token.</param>
-    /// <returns>True when this call ended the session; false when it had already ended.</returns>
+    /// <returns>True when this call ended the session; false when it had already ended, or had expired.</returns>
     Task<bool> RejectTransferAsync(
         string uploadId,
         UploadRejectionCode code,
         UploadRejectionReason reason,
         long receivedBytes,
+        DateTimeOffset now,
         CancellationToken cancellationToken);
 
     /// <summary>
     /// Moves a session to verifying and records the request that starts its
     /// verification, in one transaction. The request is recorded once per
-    /// session, so a repeated confirmation records no second one.
+    /// session, so a repeated confirmation records no second one. The session's
+    /// verification deadline is recorded by the same transaction, so a confirmed
+    /// upload never stands without one.
     /// </summary>
     /// <param name="uploadId">The identifier of the session.</param>
     /// <param name="consumerId">The declared consumer confirming.</param>
     /// <param name="declaredSha256">The SHA-256 the consumer declared, lower-case hexadecimal, when it declared one.</param>
     /// <param name="completedAt">When the confirmation happened, in UTC.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
+    /// <param name="verificationDeadline">Until when the verification may fix a snapshot, in UTC.</param>
     /// <param name="cancellationToken">The request's cancellation token.</param>
-    /// <returns>True when this call confirmed the session; false when it was not in a confirmable state.</returns>
+    /// <returns>True when this call confirmed the session; false when it was not in a confirmable state, or had expired.</returns>
     Task<bool> ConfirmAsync(
         string uploadId,
         string consumerId,
         string? declaredSha256,
         DateTimeOffset completedAt,
+        DateTimeOffset now,
+        DateTimeOffset verificationDeadline,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Expires one session when <paramref name="now"/> finds it overdue, and returns
+    /// the session as it stands afterwards. A session that is not due, or that another
+    /// writer moved first, is returned unchanged with <see cref="UploadExpiryOutcome.Expired"/>
+    /// false, so the caller answers by the state the upload is actually in.
+    /// </summary>
+    /// <param name="uploadId">The identifier of the session.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
+    /// <param name="cancellationToken">The request's cancellation token.</param>
+    Task<UploadExpiryOutcome> ExpireIfOverdueAsync(
+        string uploadId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Expires up to <paramref name="batchSize"/> overdue sessions, oldest identifier
+    /// first, and names each one it expired with the state it was in before. Several
+    /// callers may run at once: rows one call holds are skipped by another, so an
+    /// upload is expired by exactly one of them.
+    /// </summary>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
+    /// <param name="batchSize">The most sessions one call expires.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(
+        DateTimeOffset now,
+        int batchSize,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -94,21 +140,29 @@ public interface IUploadStore
     /// <summary>
     /// Records a snapshot and moves its session to ready, in one transaction.
     /// The snapshot is unique per session: an earlier attempt that committed
-    /// first wins, and this call reports that instead of writing.
+    /// first wins, and this call reports that instead of writing. A session whose
+    /// verification deadline has passed at <paramref name="now"/> is not ready to
+    /// be committed, so a verification that finishes too late writes nothing.
     /// </summary>
     /// <param name="snapshot">The snapshot to record.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, CancellationToken cancellationToken);
+    Task<SnapshotCommitResult> CommitReadyAsync(
+        SnapshotRecord snapshot,
+        DateTimeOffset now,
+        CancellationToken cancellationToken);
 
-    /// <summary>Ends a verifying session rejected.</summary>
+    /// <summary>Ends a verifying session rejected, while its verification deadline has not passed.</summary>
     /// <param name="uploadId">The identifier of the session.</param>
     /// <param name="code">Why it was rejected.</param>
     /// <param name="reason">The fixed reason recorded beside the code.</param>
+    /// <param name="now">The instant the decision is taken at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    /// <returns>True when this call ended the session; false when it was no longer verifying.</returns>
+    /// <returns>True when this call ended the session; false when it was no longer verifying in time.</returns>
     Task<bool> CommitRejectedAsync(
         string uploadId,
         UploadRejectionCode code,
         UploadRejectionReason reason,
+        DateTimeOffset now,
         CancellationToken cancellationToken);
 }

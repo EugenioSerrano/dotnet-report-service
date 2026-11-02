@@ -113,7 +113,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
             uploads,
             filesystem,
             Options.Create(new VerificationOptions { MaxStoredBytes = 4L * 1024 * 1024 * 1024, MaxUncompressedBytes = 4L * 1024 * 1024 * 1024 }),
-            TimeProvider.System,
+            new FixedTimeProvider(ConfirmedAt),
             NullLogger<UploadVerifier>.Instance,
             metrics);
 
@@ -166,15 +166,16 @@ public sealed class UploadVerificationMemoryTests : IDisposable
             CreatedAt,
             CreatedAt.AddDays(1));
         await uploads.CreateAsync(record, Cancellation);
-        await uploads.TryStartTransferAsync(uploadId, ConsumerId, encoding, Cancellation);
+        await uploads.TryStartTransferAsync(uploadId, ConsumerId, encoding, ConfirmedAt, Cancellation);
         await uploads.RecordTransferAsync(
             uploadId,
             UploadContentOutcome.Complete,
             bodyBytes,
             written.Value!.Size,
             written.Value.Sha256,
+            ConfirmedAt,
             Cancellation);
-        await uploads.ConfirmAsync(uploadId, ConsumerId, null, ConfirmedAt, Cancellation);
+        await uploads.ConfirmAsync(uploadId, ConsumerId, null, ConfirmedAt, ConfirmedAt, ConfirmedAt.AddDays(1), Cancellation);
 
         GC.Collect();
         GC.WaitForPendingFinalizers();

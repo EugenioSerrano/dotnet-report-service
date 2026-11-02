@@ -10,6 +10,9 @@ public static class ErrorCodes
     /// <summary>The request declares no usable consumer identity.</summary>
     public const string ConsumerUnknown = "CONSUMER_UNKNOWN";
 
+    /// <summary>The declared consumer is in the registry and is not active; it may not open a new upload.</summary>
+    public const string ConsumerInactive = "CONSUMER_INACTIVE";
+
     /// <summary>The request asks for something this increment does not offer.</summary>
     public const string UnsupportedCapability = "UNSUPPORTED_CAPABILITY";
 

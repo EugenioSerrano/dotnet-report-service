@@ -28,6 +28,11 @@ public sealed class UploadVerificationWorkflow
 
     private static TimeSpan _startToClose = TimeSpan.FromHours(1);
 
+    private static TimeSpan _scheduleToClose = TimeSpan.FromHours(6);
+
+    /// <summary>The execution settings the next attempt of a verification is scheduled with.</summary>
+    public static ActivityOptions ActivityOptions() => UploadVerificationActivityOptions.Create(_startToClose, _scheduleToClose);
+
     /// <summary>
     /// Publishes the configured time bound of one attempt to the workflow type. The
     /// delivered worker host instantiates workflows without a service provider, so the
@@ -35,10 +40,13 @@ public sealed class UploadVerificationWorkflow
     /// execution starts and never per run.
     /// </summary>
     /// <param name="startToClose">How long one attempt may run.</param>
-    public static void Configure(TimeSpan startToClose)
+    /// <param name="scheduleToClose">How long the engine may keep scheduling attempts of one verification.</param>
+    public static void Configure(TimeSpan startToClose, TimeSpan scheduleToClose)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(startToClose, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(scheduleToClose, TimeSpan.Zero);
         _startToClose = startToClose;
+        _scheduleToClose = scheduleToClose;
     }
 
     /// <summary>The identifier of the one execution that verifies <paramref name="uploadId"/>.</summary>
@@ -57,6 +65,6 @@ public sealed class UploadVerificationWorkflow
         ArgumentNullException.ThrowIfNull(input);
         return await Workflow.ExecuteActivityAsync(
             (UploadVerificationActivities activities) => activities.VerifyUploadAsync(new VerifyUploadInput(input.UploadId)),
-            UploadVerificationActivityOptions.Create(_startToClose)).ConfigureAwait(true);
+            ActivityOptions()).ConfigureAwait(true);
     }
 }

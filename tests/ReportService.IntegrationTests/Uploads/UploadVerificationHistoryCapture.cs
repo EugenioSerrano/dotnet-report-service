@@ -108,7 +108,7 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
                 uploads,
                 objects,
                 Options.Create(new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 }),
-                TimeProvider.System,
+                new FixedTimeProvider(ConfirmedAt),
                 NullLogger<UploadVerifier>.Instance,
                 metrics),
             TimeProvider.System);
@@ -189,15 +189,17 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
             CreatedAt,
             CreatedAt.AddDays(1));
         await uploads.CreateAsync(record, cancellationToken);
-        await uploads.TryStartTransferAsync(UploadId, record.ConsumerId, UploadContentEncoding.Gzip, cancellationToken);
+        await uploads.TryStartTransferAsync(UploadId, record.ConsumerId, UploadContentEncoding.Gzip, ConfirmedAt, cancellationToken);
         await uploads.RecordTransferAsync(
             UploadId,
             UploadContentOutcome.Complete,
             written.Value!.Size,
             written.Value.Size,
             written.Value.Sha256,
+            ConfirmedAt,
             cancellationToken);
-        await uploads.ConfirmAsync(UploadId, record.ConsumerId, null, ConfirmedAt, cancellationToken);
+        await uploads.ConfirmAsync(
+            UploadId, record.ConsumerId, null, ConfirmedAt, ConfirmedAt, ConfirmedAt.AddHours(6), cancellationToken);
     }
 
     private async Task StartEngineAsync(CancellationToken cancellationToken)

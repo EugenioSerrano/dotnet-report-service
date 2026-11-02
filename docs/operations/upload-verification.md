@@ -137,3 +137,52 @@ process, naming the setting and the rule and never the value.
 
 Tags are fixed values only: an upload's identifier, a key or a size is never a
 tag. Identifiers appear on logs and on spans.
+
+## The deadline and how to size it
+
+A confirmed upload carries a verification deadline of its own, recorded in the
+same transaction as the confirmation and counted from it:
+`completedAt + Uploads__VerificationDeadline`. It is what an upload ends by once
+it is `verifying`; the session's own expiry no longer applies to it.
+
+The deadline has to cover the verification's retry schedule, or a healthy attempt
+would be cut off by its own upload's deadline:
+
+- `Uploads__Verification__StartToClose` bounds one attempt (one hour by
+  default), and a verification is given five attempts with a wait that never
+  exceeds a minute between them, so the whole retry window fits inside the
+  shipped six hours;
+- the same value is given to the workflow as the activity's
+  `ScheduleToCloseTimeout`, so the engine stops scheduling attempts when the
+  deadline passes instead of after it;
+- the worker refuses to start when `Uploads__VerificationDeadline` is shorter than
+  `Uploads__Verification__StartToClose`, naming both settings and no value.
+
+A verification attempt that meets an expired upload writes nothing, and an
+attempt whose commit is refused because the deadline passed deletes both its own
+object and the upload's staging object. No snapshot record and no snapshot object
+exist for an upload that expired.
+
+## The expiry sweep
+
+The orchestration worker runs a sweep that makes the stored state catch up
+without traffic:
+
+- every `Uploads__Expiry__SweepInterval` it expires the uploads that are past the
+  end of their session or past their verification deadline, in batches of
+  `Uploads__Expiry__BatchSize`, one round after another until a round finds
+  nothing left;
+- for each upload it expires it deletes the staging object, writes a log line
+  naming the upload and the cause (`session` or `verification-deadline`) and
+  counts the outcome;
+- its update skips the rows another replica or the API is holding, so several
+  processes may expire at once and an upload is expired exactly once;
+- a database or a storage failure is logged with its type and the sweep waits for
+  its next round: it never ends the process and never blocks an upload from being
+  expired later.
+
+| Setting | Meaning |
+|---------|---------|
+| `Uploads__VerificationDeadline` | How long after its confirmation a confirmed upload may still fix a snapshot. `06:00:00` by default, longer than zero, at most seven days and never shorter than `Uploads__Verification__StartToClose`. |
+| `Uploads__Expiry__SweepInterval` | How long the worker waits between two sweep rounds. `00:01:00` by default, between one second and one hour. |
+| `Uploads__Expiry__BatchSize` | The most uploads one round expires. `500` by default, 1 to 5000. |

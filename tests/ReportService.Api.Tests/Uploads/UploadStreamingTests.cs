@@ -610,7 +610,7 @@ public sealed class UploadContentEndpointsTests : IDisposable
     {
         var registry = _directory.Write(
             "consumers.json",
-            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true } ] }""");
+            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true }, { "consumerId": "other-consumer", "active": true } ] }""");
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);

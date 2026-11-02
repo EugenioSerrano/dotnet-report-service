@@ -24,14 +24,23 @@ public sealed class UploadOptions : IValidatedSettings
     /// <summary>The setting of the stored-size limit, relative to <see cref="SectionPath"/>.</summary>
     public const string MaxStoredBytesSetting = "MaxStoredBytes";
 
+    /// <summary>The setting of the verification deadline, relative to <see cref="SectionPath"/>.</summary>
+    public const string VerificationDeadlineSetting = "VerificationDeadline";
+
     /// <summary>The longest accepted lifetime.</summary>
     public static readonly TimeSpan MaximumSessionLifetime = TimeSpan.FromDays(7);
+
+    /// <summary>The longest accepted verification deadline.</summary>
+    public static readonly TimeSpan MaximumVerificationDeadline = TimeSpan.FromDays(7);
 
     /// <summary>How long a new session accepts data.</summary>
     public TimeSpan SessionLifetime { get; set; }
 
     /// <summary>The most stored bytes one upload may hold.</summary>
     public long MaxStoredBytes { get; set; }
+
+    /// <summary>How long after its confirmation a confirmed upload may still fix a snapshot.</summary>
+    public TimeSpan VerificationDeadline { get; set; }
 
     /// <inheritdoc />
     public IEnumerable<ConfigurationProblem> Validate()
@@ -48,6 +57,15 @@ public sealed class UploadOptions : IValidatedSettings
         if (MaxStoredBytes <= 0)
         {
             yield return new ConfigurationProblem(MaxStoredBytesSetting, "is required and must be greater than zero");
+        }
+
+        if (VerificationDeadline <= TimeSpan.Zero)
+        {
+            yield return new ConfigurationProblem(VerificationDeadlineSetting, "is required and must be greater than zero");
+        }
+        else if (VerificationDeadline > MaximumVerificationDeadline)
+        {
+            yield return new ConfigurationProblem(VerificationDeadlineSetting, "must be seven days or less");
         }
     }
 }

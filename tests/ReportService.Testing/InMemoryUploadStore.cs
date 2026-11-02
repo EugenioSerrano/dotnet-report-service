@@ -4,12 +4,14 @@ namespace ReportService.Uploads;
 
 /// <summary>
 /// The upload record store the tests use in place of the database. It answers
-/// the same contract as the real store — owner-scoped reads, one conditional
-/// write per step, one request per confirmed upload, one snapshot per upload —
-/// and it records the calls and the requests it received, so a test can assert
-/// that a refused call wrote nothing and that a repeated step changed nothing.
-/// The shared contract runs against this class and against the real store, so
-/// the double cannot drift away from what it stands in for.
+/// the same contract as the real store �?" owner-scoped reads, one conditional
+/// write per step, one request per confirmed upload, one snapshot per upload, and
+/// the same refusal of every write that arrives at or after the end of the
+/// upload's session or of its verification �?" and it records the calls and the
+/// requests it received, so a test can assert that a refused call wrote nothing
+/// and that a repeated step changed nothing. The shared contract runs against
+/// this class and against the real store, so the double cannot drift away from
+/// what it stands in for.
 /// </summary>
 public sealed class InMemoryUploadStore : IUploadStore
 {
@@ -87,9 +89,11 @@ public sealed class InMemoryUploadStore : IUploadStore
         string uploadId,
         string consumerId,
         UploadContentEncoding encoding,
+        DateTimeOffset now,
         CancellationToken cancellationToken) =>
         Task.FromResult(Update(uploadId, record =>
             record.Status == UploadStatus.Created
+            && now < record.ExpiresAt
             && string.Equals(record.ConsumerId, consumerId, StringComparison.Ordinal)
                 ? record with { Status = UploadStatus.Uploading, ContentEncoding = encoding }
                 : null));
@@ -101,9 +105,10 @@ public sealed class InMemoryUploadStore : IUploadStore
         long receivedBytes,
         long? stagingSize,
         string? stagingSha256,
+        DateTimeOffset now,
         CancellationToken cancellationToken) =>
         Task.FromResult(Update(uploadId, record =>
-            record.Status == UploadStatus.Uploading && record.ContentOutcome is null
+            record.Status == UploadStatus.Uploading && record.ContentOutcome is null && now < record.ExpiresAt
                 ? record with
                 {
                     ContentOutcome = outcome,
@@ -119,9 +124,10 @@ public sealed class InMemoryUploadStore : IUploadStore
         UploadRejectionCode code,
         UploadRejectionReason reason,
         long receivedBytes,
+        DateTimeOffset now,
         CancellationToken cancellationToken) =>
         Task.FromResult(Update(uploadId, record =>
-            record.Status == UploadStatus.Uploading && record.ContentOutcome is null
+            record.Status == UploadStatus.Uploading && record.ContentOutcome is null && now < record.ExpiresAt
                 ? record with
                 {
                     Status = UploadStatus.Rejected,
@@ -137,6 +143,8 @@ public sealed class InMemoryUploadStore : IUploadStore
         string consumerId,
         string? declaredSha256,
         DateTimeOffset completedAt,
+        DateTimeOffset now,
+        DateTimeOffset verificationDeadline,
         CancellationToken cancellationToken)
     {
         lock (_gate)
@@ -144,6 +152,7 @@ public sealed class InMemoryUploadStore : IUploadStore
             if (!_records.TryGetValue(uploadId, out var record)
                 || record.Status != UploadStatus.Uploading
                 || record.ContentOutcome is null
+                || now >= record.ExpiresAt
                 || !string.Equals(record.ConsumerId, consumerId, StringComparison.Ordinal))
             {
                 return Task.FromResult(false);
@@ -153,6 +162,7 @@ public sealed class InMemoryUploadStore : IUploadStore
             {
                 Status = UploadStatus.Verifying,
                 CompletedAt = completedAt,
+                VerificationDeadline = verificationDeadline,
                 DeclaredSha256 = declaredSha256,
             };
             if (!_intents.Any(intent => string.Equals(intent.UploadId, uploadId, StringComparison.Ordinal)))
@@ -161,6 +171,53 @@ public sealed class InMemoryUploadStore : IUploadStore
             }
 
             return Task.FromResult(true);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<UploadExpiryOutcome> ExpireIfOverdueAsync(
+        string uploadId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            if (!_records.TryGetValue(uploadId, out var record))
+            {
+                return Task.FromResult(new UploadExpiryOutcome(null, false));
+            }
+
+            if (!UploadExpiry.IsOverdue(record, now))
+            {
+                return Task.FromResult(new UploadExpiryOutcome(WithSnapshot(record), false));
+            }
+
+            var expired = record with { Status = UploadStatus.Expired };
+            _records[uploadId] = expired;
+            return Task.FromResult(new UploadExpiryOutcome(WithSnapshot(expired), true));
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(
+        DateTimeOffset now,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            var due = _records.Values
+                .Where(record => UploadExpiry.IsOverdue(record, now))
+                .OrderBy(record => record.UploadId, StringComparer.Ordinal)
+                .Take(batchSize)
+                .ToList();
+            foreach (var record in due)
+            {
+                _records[record.UploadId] = record with { Status = UploadStatus.Expired };
+            }
+
+            return Task.FromResult<IReadOnlyList<ExpiredUpload>>(
+                [.. due.Select(record => new ExpiredUpload(record.UploadId, record.Status, record.StagingKey))]);
         }
     }
 
@@ -174,7 +231,10 @@ public sealed class InMemoryUploadStore : IUploadStore
     }
 
     /// <inheritdoc />
-    public Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, CancellationToken cancellationToken)
+    public Task<SnapshotCommitResult> CommitReadyAsync(
+        SnapshotRecord snapshot,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         lock (_gate)
@@ -184,7 +244,10 @@ public sealed class InMemoryUploadStore : IUploadStore
                 return Task.FromResult(SnapshotCommitResult.AlreadyCommitted);
             }
 
-            if (!_records.TryGetValue(snapshot.UploadId, out var record) || record.Status != UploadStatus.Verifying)
+            if (!_records.TryGetValue(snapshot.UploadId, out var record)
+                || record.Status != UploadStatus.Verifying
+                || record.VerificationDeadline is not { } deadline
+                || now >= deadline)
             {
                 return Task.FromResult(SnapshotCommitResult.NotVerifying);
             }
@@ -200,9 +263,12 @@ public sealed class InMemoryUploadStore : IUploadStore
         string uploadId,
         UploadRejectionCode code,
         UploadRejectionReason reason,
+        DateTimeOffset now,
         CancellationToken cancellationToken) =>
         Task.FromResult(Update(uploadId, record =>
             record.Status == UploadStatus.Verifying
+            && record.VerificationDeadline is { } deadline
+            && now < deadline
                 ? record with
                 {
                     Status = UploadStatus.Rejected,

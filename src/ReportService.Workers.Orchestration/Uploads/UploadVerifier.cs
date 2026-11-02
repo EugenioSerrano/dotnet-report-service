@@ -110,6 +110,24 @@ public sealed class UploadVerifier
                 break;
         }
 
+        // An attempt that starts after the deadline writes nothing: the upload is expired
+        // here, and what it was holding is deleted with it.
+        var now = UploadWireValues.TruncateToMillisecond(_clock.GetUtcNow());
+        if (UploadExpiry.IsOverdue(record, now))
+        {
+            var expired = await _uploads.ExpireIfOverdueAsync(uploadId, now, cancellationToken).ConfigureAwait(false);
+            if (expired.Expired)
+            {
+                _logger.LogInformation(
+                    "Upload {UploadId} expired ({ExpiryCause})",
+                    uploadId,
+                    UploadExpiry.CauseOf(record.Status));
+                await TryDeleteAsync(record.StagingKey, cancellationToken).ConfigureAwait(false);
+            }
+
+            return VerificationOutcome.NotVerifying;
+        }
+
         // A body that ended before its end is refused without reading anything.
         if (record.ContentOutcome == UploadContentOutcome.Interrupted)
         {
@@ -293,6 +311,7 @@ public sealed class UploadVerifier
                 started, cancellationToken).ConfigureAwait(false);
         }
 
+        var committedAt = UploadWireValues.TruncateToMillisecond(_clock.GetUtcNow());
         var snapshot = new SnapshotRecord(
             record.UploadId,
             record.ConsumerId,
@@ -303,9 +322,9 @@ public sealed class UploadVerifier
             contentSize,
             tee.StoredSha256,
             tee.StoredLength,
-            UploadWireValues.TruncateToMillisecond(_clock.GetUtcNow()));
+            committedAt);
 
-        var commit = await _uploads.CommitReadyAsync(snapshot, cancellationToken).ConfigureAwait(false);
+        var commit = await _uploads.CommitReadyAsync(snapshot, committedAt, cancellationToken).ConfigureAwait(false);
         switch (commit)
         {
             case SnapshotCommitResult.Committed:
@@ -330,6 +349,15 @@ public sealed class UploadVerifier
 
             default:
                 await TryDeleteAsync(attemptKey, cancellationToken).ConfigureAwait(false);
+
+                // A commit refused because the upload's deadline passed leaves nothing of the
+                // attempt, and nothing of what the upload was holding either.
+                var afterCommit = await _uploads.LoadForVerificationAsync(uploadId, cancellationToken).ConfigureAwait(false);
+                if (afterCommit?.Status == UploadStatus.Expired)
+                {
+                    await TryDeleteAsync(record.StagingKey, cancellationToken).ConfigureAwait(false);
+                }
+
                 return VerificationOutcome.NotVerifying;
         }
     }
@@ -387,11 +415,26 @@ public sealed class UploadVerifier
             await TryDeleteAsync(attemptKey, cancellationToken).ConfigureAwait(false);
         }
 
-        var ended = await _uploads.CommitRejectedAsync(record.UploadId, code, reason, cancellationToken)
+        var ended = await _uploads.CommitRejectedAsync(
+            record.UploadId,
+            code,
+            reason,
+            UploadWireValues.TruncateToMillisecond(_clock.GetUtcNow()),
+            cancellationToken)
             .ConfigureAwait(false);
         if (ended)
         {
             await TryDeleteAsync(record.StagingKey, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // A rejection refused because the upload's deadline passed leaves the upload
+            // expired, and takes what it was holding with it.
+            var afterCommit = await _uploads.LoadForVerificationAsync(record.UploadId, cancellationToken).ConfigureAwait(false);
+            if (afterCommit?.Status == UploadStatus.Expired)
+            {
+                await TryDeleteAsync(record.StagingKey, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         _logger.LogInformation(

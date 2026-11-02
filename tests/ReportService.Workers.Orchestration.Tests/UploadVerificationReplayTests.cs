@@ -57,7 +57,7 @@ public sealed class UploadVerificationReplayTests
     [Fact]
     public void TheAttemptOptionsNameTheDataQueueAndTheBoundedPolicy()
     {
-        var options = UploadVerificationActivityOptions.Create(TimeSpan.FromHours(1));
+        var options = UploadVerificationActivityOptions.Create(TimeSpan.FromHours(1), TimeSpan.FromHours(6));
 
         Assert.Equal("report-data", UploadVerificationActivityOptions.DataQueue);
         Assert.Equal(UploadVerificationActivityOptions.DataQueue, options.TaskQueue);

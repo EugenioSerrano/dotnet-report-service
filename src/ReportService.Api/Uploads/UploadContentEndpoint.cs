@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
+using ReportService.Api.Consumers;
 using ReportService.Api.Http;
+using ReportService.Api.Telemetry;
 using ReportService.Storage;
 using ReportService.Uploads;
 
@@ -10,13 +12,16 @@ namespace ReportService.Api.Uploads;
 /// <summary>
 /// The operation that puts the consumer's report data into its upload: one body
 /// per upload, streamed to the upload's staging object, counted as it arrives and
-/// never held. The order of the decisions is fixed — the declared identity, the
-/// identifier's shape, the media type, the declared encoding, the session's state,
-/// the declared length — and nothing is read from the body before the state has
-/// admitted the transfer. A transfer that crosses the size limit is stopped where
-/// it is; one that ends early is recorded as interrupted; either way the upload
-/// ends in a state the consumer can read back, and the storage port never sees a
-/// failure it has to interpret.
+/// never held. The order of the decisions is fixed �?" the declared consumer at the
+/// registry gate, the identifier's shape, the media type, the declared encoding,
+/// the session's state and its end, the declared length �?" and nothing is read
+/// from the body before the state has admitted the transfer. An upload past the
+/// end of its session takes no content and its answer says so, even when the body
+/// of that request has already been written: what a late transfer stored is
+/// deleted again. A transfer that crosses the size limit is stopped where it is;
+/// one that ends early is recorded as interrupted; either way the upload ends in a
+/// state the consumer can read back, and the storage port never sees a failure it
+/// has to interpret.
 /// </summary>
 public static class UploadContentEndpoint
 {
@@ -36,11 +41,12 @@ public static class UploadContentEndpoint
     public const string BodyIncompleteDetail = "The request body ended before its declared end.";
 
     // The refusal reasons written to the log: constants, never a value from the request.
-    private const string IdentityReason = "identity";
     private const string NotFoundReason = "not-found";
     private const string StateReason = "state";
     private const string QuotaReason = "quota";
     private const string StorageReason = "storage";
+
+    private const string ServiceUnavailableDetail = "The service could not complete the request for a cause on its side.";
 
     /// <summary>Adds the content operation to the application.</summary>
     /// <param name="endpoints">The application's endpoint route builder.</param>
@@ -55,16 +61,24 @@ public static class UploadContentEndpoint
         HttpContext context,
         IUploadStore store,
         IObjectStore objects,
+        ConsumerRegistry registry,
+        ConsumerRefusalMetrics refusals,
         IOptions<UploadOptions> options,
+        TimeProvider clock,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger(UploadEndpoints.LogCategory);
 
-        if (!ConsumerIdentity.TryRead(context.Request, out var consumerId))
+        // Sending content is kept for a consumer that was made inactive: only an upload it
+        // created while active can exist.
+        var gate = ConsumerAccess.Resolve(context.Request, registry.Current, ConsumerRequirement.Registered);
+        if (!gate.Allowed)
         {
-            return Refuse(context, logger, ErrorCodes.ConsumerUnknown, StatusCodes.Status403Forbidden, "Unknown consumer", UploadEndpoints.ConsumerUnknownDetail, IdentityReason);
+            return ConsumerAccess.Refuse(context, gate, ConsumerRefusalMetrics.ContentOperation, logger, refusals);
         }
+
+        var consumerId = gate.ConsumerId!;
 
         // A value that cannot be an identifier refers to an upload that cannot exist.
         var uploadId = context.Request.RouteValues["uploadId"] as string ?? string.Empty;
@@ -86,23 +100,51 @@ public static class UploadContentEndpoint
             return NotFound(context, logger);
         }
 
-        if (record.Status != UploadStatus.Created)
+        // One instant decides the whole request, and it is the instant the writes carry.
+        var now = UploadWireValues.TruncateToMillisecond(clock.GetUtcNow());
+        record = await UploadExpiryStep.ApplyAsync(store, objects, record, now, logger, cancellationToken)
+            .ConfigureAwait(false);
+        if (record.Status == UploadStatus.Expired)
         {
-            return StateConflict(context, logger, StateConflictDetail);
+            return Expired(context, logger);
         }
 
-        if (!await store.TryStartTransferAsync(uploadId, consumerId, encoding, cancellationToken).ConfigureAwait(false))
+        if (record.Status != UploadStatus.Created)
+        {
+            return StateConflict(context, logger);
+        }
+
+        if (!await store.TryStartTransferAsync(uploadId, consumerId, encoding, now, cancellationToken).ConfigureAwait(false))
         {
             // A concurrent request moved the session first; the answer is the one its
             // state now admits.
             var latest = await store.FindAsync(uploadId, consumerId, cancellationToken).ConfigureAwait(false);
-            return latest is null ? NotFound(context, logger) : StateConflict(context, logger, StateConflictDetail);
+            return latest switch
+            {
+                null => NotFound(context, logger),
+                { Status: UploadStatus.Expired } => Expired(context, logger),
+                _ => StateConflict(context, logger),
+            };
         }
 
-        var limit = options.Value.MaxStoredBytes;        if (context.Request.ContentLength is { } declaredLength && declaredLength > limit)
+        var limit = options.Value.MaxStoredBytes;
+        if (context.Request.ContentLength is { } declaredLength && declaredLength > limit)
         {
-            // The declared length alone refuses the transfer, before a byte is read.
-            await store.RejectTransferAsync(uploadId, UploadRejectionCode.QuotaExceeded, UploadRejectionReason.StoredBytes, 0, cancellationToken).ConfigureAwait(false);
+            // The declared length alone refuses the transfer, before a byte is read. An
+            // upload that ended in the meantime is answered by its own state instead.
+            if (!await store.RejectTransferAsync(
+                uploadId, UploadRejectionCode.QuotaExceeded, UploadRejectionReason.StoredBytes, 0, now, cancellationToken)
+                .ConfigureAwait(false))
+            {
+                var latest = await store.FindAsync(uploadId, consumerId, cancellationToken).ConfigureAwait(false);
+                return latest switch
+                {
+                    null => NotFound(context, logger),
+                    { Status: UploadStatus.Expired } => Expired(context, logger),
+                    _ => StateConflict(context, logger),
+                };
+            }
+
             logger.LogInformation("Upload {UploadId} content stopped at the size limit after {ReceivedBytes} bytes", uploadId, 0L);
             return TooLarge(context, logger);
         }
@@ -144,15 +186,21 @@ public static class UploadContentEndpoint
             case UploadStreamFailure.QuotaExceeded:
                 if (landed)
                 {
-                    await DeleteAsync(objects, record.StagingKey, logger, cancellationToken).ConfigureAwait(false);
+                    await DeleteAsync(objects, record.StagingKey, logger, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                await store.RejectTransferAsync(
+                if (!await store.RejectTransferAsync(
                     uploadId,
                     UploadRejectionCode.QuotaExceeded,
                     UploadRejectionReason.StoredBytes,
                     body.BytesRead,
-                    cancellationToken).ConfigureAwait(false);
+                    now,
+                    CancellationToken.None).ConfigureAwait(false))
+                {
+                    return await AnswerForUnrecordedAsync(context, store, objects, record, consumerId, logger, body.BytesRead)
+                        .ConfigureAwait(false);
+                }
+
                 SetTags(uploadId, body.BytesRead);
                 logger.LogInformation("Upload {UploadId} content stopped at the size limit after {ReceivedBytes} bytes", uploadId, body.BytesRead);
                 return TooLarge(context, logger);
@@ -166,7 +214,14 @@ public static class UploadContentEndpoint
                 // The body ended because the consumer left, which cancels this request's own
                 // token: the record of how it ended, and the deletion of what landed, belong to
                 // the upload and outlive the request that carried it.
-                await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
+                if (!await store.RecordTransferAsync(
+                    uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, now, CancellationToken.None)
+                    .ConfigureAwait(false))
+                {
+                    return await AnswerForUnrecordedAsync(context, store, objects, record, consumerId, logger, body.BytesRead)
+                        .ConfigureAwait(false);
+                }
+
                 SetTags(uploadId, body.BytesRead);
                 logger.LogInformation("Upload {UploadId} content ended early after {ReceivedBytes} bytes", uploadId, body.BytesRead);
                 return RequestInvalid(context, logger, InvalidRequestBody.BodyIncomplete());
@@ -180,28 +235,48 @@ public static class UploadContentEndpoint
             // The bytes did not land as they were received: the transfer is recorded as an
             // interruption and the consumer is told to try again with a new upload. The record
             // outlives the request, whose own token may have been cancelled by the consumer.
-            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
+            if (!await store.RecordTransferAsync(
+                uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, now, CancellationToken.None)
+                .ConfigureAwait(false))
+            {
+                return await AnswerForUnrecordedAsync(context, store, objects, record, consumerId, logger, body.BytesRead)
+                    .ConfigureAwait(false);
+            }
+
             SetTags(uploadId, body.BytesRead);
             logger.LogWarning(
                 "Upload {UploadId} content could not be stored ({StorageOutcome})",
                 uploadId,
                 (written?.Outcome ?? StorageOutcome.Transient).ToString());
-            return Refuse(context, logger, ErrorCodes.ServiceUnavailable, StatusCodes.Status503ServiceUnavailable, "Service unavailable", ServiceUnavailableDetail, StorageReason);
+            return ServiceUnavailable(context, logger);
         }
 
         var stored = written!.Value!;
         if (stored.Size != body.BytesRead)
         {
-            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
+            if (!await store.RecordTransferAsync(
+                uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, now, CancellationToken.None)
+                .ConfigureAwait(false))
+            {
+                return await AnswerForUnrecordedAsync(context, store, objects, record, consumerId, logger, body.BytesRead)
+                    .ConfigureAwait(false);
+            }
+
             SetTags(uploadId, body.BytesRead);
             logger.LogWarning(
                 "Upload {UploadId} content could not be stored ({StorageOutcome})",
                 uploadId,
                 StorageOutcome.Success.ToString());
-            return Refuse(context, logger, ErrorCodes.ServiceUnavailable, StatusCodes.Status503ServiceUnavailable, "Service unavailable", ServiceUnavailableDetail, StorageReason);
+            return ServiceUnavailable(context, logger);
         }
 
-        await store.RecordTransferAsync(uploadId, UploadContentOutcome.Complete, body.BytesRead, stored.Size, stored.Sha256, cancellationToken).ConfigureAwait(false);
+        if (!await store.RecordTransferAsync(
+            uploadId, UploadContentOutcome.Complete, body.BytesRead, stored.Size, stored.Sha256, now, cancellationToken)
+            .ConfigureAwait(false))
+        {
+            return await AnswerForUnrecordedAsync(context, store, objects, record, consumerId, logger, body.BytesRead)
+                .ConfigureAwait(false);
+        }
 
         var current = await store.FindAsync(uploadId, consumerId, cancellationToken).ConfigureAwait(false) ?? record;
         SetTags(uploadId, body.BytesRead);
@@ -213,7 +288,37 @@ public static class UploadContentEndpoint
         return Results.Ok(UploadStatusResponse.From(current));
     }
 
-    private const string ServiceUnavailableDetail = "The service could not complete the request for a cause on its side.";
+    /// <summary>
+    /// The answer for a transfer whose result could not be recorded: an upload that
+    /// ended in the meantime answers with its own state and keeps nothing of the
+    /// body that has just been written; anything else is the service's condition.
+    /// </summary>
+    private static async Task<IResult> AnswerForUnrecordedAsync(
+        HttpContext context,
+        IUploadStore store,
+        IObjectStore objects,
+        UploadRecord record,
+        string consumerId,
+        ILogger logger,
+        long receivedBytes)
+    {
+        var latest = await store.FindAsync(record.UploadId, consumerId, context.RequestAborted).ConfigureAwait(false);
+        switch (latest)
+        {
+            case null:
+                return NotFound(context, logger);
+
+            case { Status: UploadStatus.Expired }:
+                // What this late transfer wrote is of no use to an upload that has ended.
+                await DeleteAsync(objects, record.StagingKey, logger, CancellationToken.None).ConfigureAwait(false);
+                SetTags(record.UploadId, receivedBytes);
+                return Expired(context, logger);
+
+            default:
+                SetTags(record.UploadId, receivedBytes);
+                return ServiceUnavailable(context, logger);
+        }
+    }
 
     private static void SetTags(string uploadId, long receivedBytes)
     {
@@ -242,10 +347,16 @@ public static class UploadContentEndpoint
     }
 
     private static IResult NotFound(HttpContext context, ILogger logger) =>
-        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, "Upload not found", UploadEndpoints.UploadNotFoundDetail, NotFoundReason);
+        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, UploadEndpoints.NotFoundTitle, UploadEndpoints.UploadNotFoundDetail, NotFoundReason);
 
-    private static IResult StateConflict(HttpContext context, ILogger logger, string detail) =>
-        Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, "Upload state conflict", detail, StateReason);
+    private static IResult Expired(HttpContext context, ILogger logger) =>
+        Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, UploadEndpoints.StateConflictTitle, UploadEndpoints.ExpiredDetail, StateReason);
+
+    private static IResult StateConflict(HttpContext context, ILogger logger) =>
+        Refuse(context, logger, ErrorCodes.UploadStateConflict, StatusCodes.Status409Conflict, UploadEndpoints.StateConflictTitle, StateConflictDetail, StateReason);
+
+    private static IResult ServiceUnavailable(HttpContext context, ILogger logger) =>
+        Refuse(context, logger, ErrorCodes.ServiceUnavailable, StatusCodes.Status503ServiceUnavailable, "Service unavailable", ServiceUnavailableDetail, StorageReason);
 
     private static IResult RequestInvalid(HttpContext context, ILogger logger, InvalidRequestBody problem) =>
         Refuse(context, logger, ErrorCodes.RequestInvalid, StatusCodes.Status400BadRequest, RequestInvalidDetails.Title, problem.Detail, problem.Reason, problem.Extensions);

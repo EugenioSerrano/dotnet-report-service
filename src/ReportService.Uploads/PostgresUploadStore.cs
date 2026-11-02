@@ -48,6 +48,7 @@ public sealed class PostgresUploadStore : IUploadStore
                u.staging_sha256   AS "StagingSha256",
                u.declared_sha256  AS "DeclaredSha256",
                u.completed_at     AS "CompletedAt",
+               u.verification_deadline AS "VerificationDeadline",
                u.rejection_code   AS "RejectionCode",
                u.rejection_reason AS "RejectionReason",
                s.object_key          AS "SnapshotObjectKey",
@@ -79,6 +80,7 @@ public sealed class PostgresUploadStore : IUploadStore
                u.staging_sha256   AS "StagingSha256",
                u.declared_sha256  AS "DeclaredSha256",
                u.completed_at     AS "CompletedAt",
+               u.verification_deadline AS "VerificationDeadline",
                u.rejection_code   AS "RejectionCode",
                u.rejection_reason AS "RejectionReason",
                s.object_key          AS "SnapshotObjectKey",
@@ -98,6 +100,7 @@ public sealed class PostgresUploadStore : IUploadStore
         UPDATE report_service.uploads
            SET status = 'UPLOADING', content_encoding = @Encoding
          WHERE upload_id = @UploadId AND consumer_id = @ConsumerId AND status = 'CREATED'
+           AND expires_at > @Now
         """;
 
     private const string RecordTransferSql = """
@@ -107,6 +110,7 @@ public sealed class PostgresUploadStore : IUploadStore
                staging_size_bytes = @StagingSize,
                staging_sha256 = @StagingSha256
          WHERE upload_id = @UploadId AND status = 'UPLOADING' AND content_outcome IS NULL
+           AND expires_at > @Now
         """;
 
     private const string RejectTransferSql = """
@@ -116,13 +120,18 @@ public sealed class PostgresUploadStore : IUploadStore
                rejection_reason = @Reason,
                received_bytes = @ReceivedBytes
          WHERE upload_id = @UploadId AND status = 'UPLOADING' AND content_outcome IS NULL
+           AND expires_at > @Now
         """;
 
     private const string ConfirmSql = """
         UPDATE report_service.uploads
-           SET status = 'VERIFYING', completed_at = @CompletedAt, declared_sha256 = @DeclaredSha256
+           SET status = 'VERIFYING',
+               completed_at = @CompletedAt,
+               declared_sha256 = @DeclaredSha256,
+               verification_deadline = @VerificationDeadline
          WHERE upload_id = @UploadId AND consumer_id = @ConsumerId
            AND status = 'UPLOADING' AND content_outcome IS NOT NULL
+           AND expires_at > @Now
         """;
 
     private const string InsertIntentSql = """
@@ -144,12 +153,41 @@ public sealed class PostgresUploadStore : IUploadStore
         UPDATE report_service.uploads
            SET status = 'READY'
          WHERE upload_id = @UploadId AND status = 'VERIFYING'
+           AND verification_deadline > @Now
         """;
 
     private const string CommitRejectedSql = """
         UPDATE report_service.uploads
            SET status = 'REJECTED', rejection_code = @Code, rejection_reason = @Reason
          WHERE upload_id = @UploadId AND status = 'VERIFYING'
+           AND verification_deadline > @Now
+        """;
+
+    private const string ExpireOneSql = """
+        UPDATE report_service.uploads
+           SET status = 'EXPIRED'
+         WHERE upload_id = @UploadId
+           AND ((status IN ('CREATED', 'UPLOADING') AND expires_at <= @Now)
+                OR (status = 'VERIFYING' AND verification_deadline <= @Now))
+        """;
+
+    private const string ExpireOverdueSql = """
+        WITH due AS (
+            SELECT upload_id AS "UploadId", status AS "PreviousStatus"
+              FROM report_service.uploads
+             WHERE (status IN ('CREATED', 'UPLOADING') AND expires_at <= @Now)
+                OR (status = 'VERIFYING' AND verification_deadline <= @Now)
+             ORDER BY upload_id
+             LIMIT @BatchSize
+             FOR UPDATE SKIP LOCKED
+        )
+        UPDATE report_service.uploads u
+           SET status = 'EXPIRED'
+          FROM due
+         WHERE u.upload_id = due."UploadId"
+           AND ((u.status IN ('CREATED', 'UPLOADING') AND u.expires_at <= @Now)
+                OR (u.status = 'VERIFYING' AND u.verification_deadline <= @Now))
+        RETURNING due."UploadId" AS "UploadId", due."PreviousStatus" AS "PreviousStatus", u.staging_key AS "StagingKey"
         """;
 
     private readonly NpgsqlDataSource _dataSource;
@@ -220,6 +258,7 @@ public sealed class PostgresUploadStore : IUploadStore
         string uploadId,
         string consumerId,
         UploadContentEncoding encoding,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -227,7 +266,13 @@ public sealed class PostgresUploadStore : IUploadStore
 
         return await ExecuteAsync(
             StartTransferSql,
-            new { UploadId = uploadId, ConsumerId = consumerId, Encoding = UploadWireValues.ToStoredText(encoding) },
+            new
+            {
+                UploadId = uploadId,
+                ConsumerId = consumerId,
+                Encoding = UploadWireValues.ToStoredText(encoding),
+                Now = UtcInstant(now),
+            },
             cancellationToken).ConfigureAwait(false) == 1;
     }
 
@@ -238,6 +283,7 @@ public sealed class PostgresUploadStore : IUploadStore
         long receivedBytes,
         long? stagingSize,
         string? stagingSha256,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -251,6 +297,7 @@ public sealed class PostgresUploadStore : IUploadStore
                 ReceivedBytes = receivedBytes,
                 StagingSize = stagingSize,
                 StagingSha256 = stagingSha256,
+                Now = UtcInstant(now),
             },
             cancellationToken).ConfigureAwait(false) == 1;
     }
@@ -261,6 +308,7 @@ public sealed class PostgresUploadStore : IUploadStore
         UploadRejectionCode code,
         UploadRejectionReason reason,
         long receivedBytes,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -273,6 +321,7 @@ public sealed class PostgresUploadStore : IUploadStore
                 Code = UploadWireValues.ToStoredText(code),
                 Reason = UploadWireValues.ToStoredText(reason),
                 ReceivedBytes = receivedBytes,
+                Now = UtcInstant(now),
             },
             cancellationToken).ConfigureAwait(false) == 1;
     }
@@ -283,6 +332,8 @@ public sealed class PostgresUploadStore : IUploadStore
         string consumerId,
         string? declaredSha256,
         DateTimeOffset completedAt,
+        DateTimeOffset now,
+        DateTimeOffset verificationDeadline,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -293,7 +344,9 @@ public sealed class PostgresUploadStore : IUploadStore
             UploadId = uploadId,
             ConsumerId = consumerId,
             DeclaredSha256 = declaredSha256,
-            CompletedAt = completedAt.ToUniversalTime().UtcDateTime,
+            CompletedAt = UtcInstant(completedAt),
+            VerificationDeadline = UtcInstant(verificationDeadline),
+            Now = UtcInstant(now),
         };
 
         try
@@ -328,6 +381,66 @@ public sealed class PostgresUploadStore : IUploadStore
     }
 
     /// <inheritdoc />
+    public async Task<UploadExpiryOutcome> ExpireIfOverdueAsync(
+        string uploadId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(uploadId);
+
+        var parameters = new { UploadId = uploadId, Now = UtcInstant(now) };
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            var expired = await connection.ExecuteAsync(new CommandDefinition(
+                ExpireOneSql,
+                parameters,
+                transaction,
+                CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false) == 1;
+
+            var row = await connection.QuerySingleOrDefaultAsync<UploadRow>(new CommandDefinition(
+                SelectForVerificationSql,
+                new { UploadId = uploadId },
+                transaction,
+                CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new UploadExpiryOutcome(row is null ? null : ToRecord(row), expired);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(
+        DateTimeOffset now,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var rows = await connection.QueryAsync<ExpiredRow>(new CommandDefinition(
+                ExpireOverdueSql,
+                new { Now = UtcInstant(now), BatchSize = batchSize },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return [.. rows.Select(row => new ExpiredUpload(
+                row.UploadId,
+                UploadWireValues.ParseStoredStatus(row.PreviousStatus),
+                ParseStagingKey(row.StagingKey)))];
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -349,7 +462,10 @@ public sealed class PostgresUploadStore : IUploadStore
     }
 
     /// <inheritdoc />
-    public async Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, CancellationToken cancellationToken)
+    public async Task<SnapshotCommitResult> CommitReadyAsync(
+        SnapshotRecord snapshot,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -364,7 +480,7 @@ public sealed class PostgresUploadStore : IUploadStore
             snapshot.SizeUncompressed,
             snapshot.Sha256Stored,
             snapshot.SizeStored,
-            CreatedAt = snapshot.CreatedAt.ToUniversalTime().UtcDateTime,
+            CreatedAt = UtcInstant(snapshot.CreatedAt),
         };
 
         try
@@ -380,7 +496,7 @@ public sealed class PostgresUploadStore : IUploadStore
 
             var changed = await connection.ExecuteAsync(new CommandDefinition(
                 MarkReadySql,
-                new { snapshot.UploadId },
+                new { snapshot.UploadId, Now = UtcInstant(now) },
                 transaction,
                 CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
@@ -409,6 +525,7 @@ public sealed class PostgresUploadStore : IUploadStore
         string uploadId,
         UploadRejectionCode code,
         UploadRejectionReason reason,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(uploadId);
@@ -420,6 +537,7 @@ public sealed class PostgresUploadStore : IUploadStore
                 UploadId = uploadId,
                 Code = UploadWireValues.ToStoredText(code),
                 Reason = UploadWireValues.ToStoredText(reason),
+                Now = UtcInstant(now),
             },
             cancellationToken).ConfigureAwait(false) == 1;
     }
@@ -458,6 +576,7 @@ public sealed class PostgresUploadStore : IUploadStore
         StagingSha256 = row.StagingSha256,
         DeclaredSha256 = row.DeclaredSha256,
         CompletedAt = row.CompletedAt is null ? null : Utc(row.CompletedAt.Value),
+        VerificationDeadline = row.VerificationDeadline is null ? null : Utc(row.VerificationDeadline.Value),
         RejectionCode = row.RejectionCode is null ? null : UploadWireValues.ParseStoredCode(row.RejectionCode),
         RejectionReason = row.RejectionReason is null ? null : UploadWireValues.ParseStoredReason(row.RejectionReason),
         Snapshot = row.SnapshotObjectKey is null
@@ -481,6 +600,9 @@ public sealed class PostgresUploadStore : IUploadStore
 
     // The server returns timestamptz as a UTC DateTime; the record keeps the same instant with an offset of zero.
     private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
+
+    // Every instant travels to the server as the UTCDateTime of the instant it names.
+    private static DateTime UtcInstant(DateTimeOffset value) => value.ToUniversalTime().UtcDateTime;
 
     // The server never answered, or it answered that it cannot serve right now: both are transient.
     private static bool IsUnavailable(Exception exception) => exception is TimeoutException
@@ -523,6 +645,8 @@ public sealed class PostgresUploadStore : IUploadStore
 
         public DateTime? CompletedAt { get; set; }
 
+        public DateTime? VerificationDeadline { get; set; }
+
         public string? RejectionCode { get; set; }
 
         public string? RejectionReason { get; set; }
@@ -542,5 +666,15 @@ public sealed class PostgresUploadStore : IUploadStore
         public long? SnapshotSizeStored { get; set; }
 
         public DateTime? SnapshotCreatedAt { get; set; }
+    }
+
+    // Dapper maps the columns the batch expiry returns onto these settable properties.
+    private sealed class ExpiredRow
+    {
+        public string UploadId { get; set; } = string.Empty;
+
+        public string PreviousStatus { get; set; } = string.Empty;
+
+        public string StagingKey { get; set; } = string.Empty;
     }
 }

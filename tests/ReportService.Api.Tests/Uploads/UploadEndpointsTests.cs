@@ -237,15 +237,15 @@ public sealed class UploadEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task AWellFormedIdentityThatThisIncrementDoesNotCheckIsAccepted()
+    public async Task ARegisteredConsumerOpensAnUploadForItself()
     {
         var client = Client();
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        using var response = await client.SendAsync(CreateRequest(["an-unregistered-consumer"], Json(ValidBody)), cancellationToken);
+        using var response = await client.SendAsync(CreateRequest([OtherConsumer], Json(ValidBody)), cancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal("an-unregistered-consumer", Assert.Single(_store.Records).ConsumerId);
+        Assert.Equal(OtherConsumer, Assert.Single(_store.Records).ConsumerId);
     }
 
     [Theory]
@@ -501,7 +501,7 @@ public sealed class UploadEndpointsTests : IDisposable
     {
         var registry = _directory.Write(
             "consumers.json",
-            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true } ] }""");
+            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true }, { "consumerId": "other-consumer", "active": true } ] }""");
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);
@@ -622,6 +622,7 @@ public sealed class UploadEndpointsTests : IDisposable
             string uploadId,
             string consumerId,
             UploadContentEncoding encoding,
+            DateTimeOffset now,
             CancellationToken cancellationToken) => Task.FromException<bool>(failure);
 
         public Task<bool> RecordTransferAsync(
@@ -630,6 +631,7 @@ public sealed class UploadEndpointsTests : IDisposable
             long receivedBytes,
             long? stagingSize,
             string? stagingSha256,
+            DateTimeOffset now,
             CancellationToken cancellationToken) => Task.FromException<bool>(failure);
 
         public Task<bool> RejectTransferAsync(
@@ -637,6 +639,7 @@ public sealed class UploadEndpointsTests : IDisposable
             UploadRejectionCode code,
             UploadRejectionReason reason,
             long receivedBytes,
+            DateTimeOffset now,
             CancellationToken cancellationToken) => Task.FromException<bool>(failure);
 
         public Task<bool> ConfirmAsync(
@@ -644,19 +647,33 @@ public sealed class UploadEndpointsTests : IDisposable
             string consumerId,
             string? declaredSha256,
             DateTimeOffset completedAt,
+            DateTimeOffset now,
+            DateTimeOffset verificationDeadline,
             CancellationToken cancellationToken) => Task.FromException<bool>(failure);
+
+        public Task<UploadExpiryOutcome> ExpireIfOverdueAsync(
+            string uploadId,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => Task.FromException<UploadExpiryOutcome>(failure);
+
+        public Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(
+            DateTimeOffset now,
+            int batchSize,
+            CancellationToken cancellationToken) => Task.FromException<IReadOnlyList<ExpiredUpload>>(failure);
 
         public Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken) =>
             Task.FromException<UploadRecord?>(failure);
 
         public Task<SnapshotCommitResult> CommitReadyAsync(
             SnapshotRecord snapshot,
+            DateTimeOffset now,
             CancellationToken cancellationToken) => Task.FromException<SnapshotCommitResult>(failure);
 
         public Task<bool> CommitRejectedAsync(
             string uploadId,
             UploadRejectionCode code,
             UploadRejectionReason reason,
+            DateTimeOffset now,
             CancellationToken cancellationToken) => Task.FromException<bool>(failure);
     }
 }

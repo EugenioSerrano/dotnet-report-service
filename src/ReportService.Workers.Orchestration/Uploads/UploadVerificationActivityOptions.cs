@@ -47,22 +47,21 @@ public static class UploadVerificationActivityOptions
     ];
 
     /// <summary>Builds the attempt's execution settings.</summary>
-    /// <param name="options">The configured time bound of one attempt.</param>
-    public static ActivityOptions Create(UploadVerificationOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(options);
-        return Create(options.StartToClose);
-    }
-
-    /// <summary>Builds the attempt's execution settings for a bound of <paramref name="startToClose"/>.</summary>
     /// <param name="startToClose">How long one attempt may run.</param>
-    public static ActivityOptions Create(TimeSpan startToClose)
+    /// <param name="scheduleToClose">
+    /// How long the engine may keep scheduling attempts of one verification: the upload's
+    /// own verification deadline, so the engine stops retrying when the upload's deadline
+    /// passes rather than after it.
+    /// </param>
+    public static ActivityOptions Create(TimeSpan startToClose, TimeSpan scheduleToClose)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(startToClose, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(scheduleToClose, TimeSpan.Zero);
         return new ActivityOptions
         {
             TaskQueue = DataQueue,
             StartToCloseTimeout = startToClose,
+            ScheduleToCloseTimeout = scheduleToClose,
             HeartbeatTimeout = HeartbeatTimeout,
             RetryPolicy = new RetryPolicy
             {

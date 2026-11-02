@@ -124,6 +124,7 @@ public sealed class CompleteUploadEndpointsTests : IDisposable
                 Hash,
                 2,
                 Now),
+            Now,
             cancellationToken);
 
         using var afterEnd = await client.SendAsync(ConfirmRequest([Consumer], uploadId, null), cancellationToken);
@@ -247,7 +248,7 @@ public sealed class CompleteUploadEndpointsTests : IDisposable
     {
         var registry = _directory.Write(
             "consumers.json",
-            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true } ] }""");
+            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true }, { "consumerId": "other-consumer", "active": true } ] }""");
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);
@@ -303,8 +304,8 @@ public sealed class CompleteUploadEndpointsTests : IDisposable
 
     private async Task RecordInterruptedAsync(string uploadId, CancellationToken cancellationToken)
     {
-        Assert.True(await _store.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, cancellationToken));
-        Assert.True(await _store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, 10, null, null, cancellationToken));
+        Assert.True(await _store.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, Now, cancellationToken));
+        Assert.True(await _store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, 10, null, null, Now, cancellationToken));
     }
 
     private static HttpRequestMessage ConfirmRequest(string[] identities, string uploadId, string? body)

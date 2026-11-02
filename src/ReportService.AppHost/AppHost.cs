@@ -127,10 +127,17 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
 // One stored-size limit is given to both the API and this worker: a body accepted by
 // one and refused by the other would be a defect of the composition, not of a process.
 var maxStoredBytes = builder.Configuration["Uploads:MaxStoredBytes"] ?? "4294967296";
+
+// The verification deadline of a confirmed upload is one value for the whole composition:
+// the API records it at the confirmation, and the worker gives the verification the same
+// span as its schedule-to-close, so the engine stops retrying when the upload's own
+// deadline passes.
+var verificationDeadline = builder.Configuration["Uploads:VerificationDeadline"] ?? "06:00:00";
 var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
     .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
+    .WithEnvironment("Uploads__VerificationDeadline", verificationDeadline)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
@@ -151,6 +158,7 @@ var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
     .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
     .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
+    .WithEnvironment("Uploads__VerificationDeadline", verificationDeadline)
     .WithReference(cache)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
@@ -167,6 +175,13 @@ var api = builder.AddProject<Projects.ReportService_Api>("api")
 if (builder.Configuration["Consumers:File"] is { Length: > 0 } registryFile)
 {
     api.WithEnvironment("Consumers__File", registryFile);
+}
+
+// A session lifetime other than the API's own (for example, one a test sets), so a
+// short-lived session can be observed on the running service.
+if (builder.Configuration["Uploads:SessionLifetime"] is { Length: > 0 } apiSessionLifetime)
+{
+    api.WithEnvironment("Uploads__SessionLifetime", apiSessionLifetime);
 }
 
 builder.Build().Run();

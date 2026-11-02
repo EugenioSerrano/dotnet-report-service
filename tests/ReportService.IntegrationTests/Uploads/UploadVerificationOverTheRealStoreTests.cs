@@ -67,7 +67,7 @@ public sealed class UploadVerificationOverTheRealStoreTests : IClassFixture<Post
             new PostgresUploadStore(_dataSource),
             _objects,
             Options.Create(new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 }),
-            TimeProvider.System,
+            new FixedTimeProvider(new DateTimeOffset(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero)),
             LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning)).CreateLogger<UploadVerifier>(),
             _metrics);
     }
@@ -185,7 +185,8 @@ public sealed class UploadVerificationOverTheRealStoreTests : IClassFixture<Post
         }
 
         await store.CreateAsync(record, cancellationToken);
-        await store.TryStartTransferAsync(uploadId, record.ConsumerId, encoding, cancellationToken);
+        var decidedAt = new DateTimeOffset(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero);
+        await store.TryStartTransferAsync(uploadId, record.ConsumerId, encoding, decidedAt, cancellationToken);
 
         using var source = new MemoryStream(stored, writable: false);
         var written = await _objects!.WriteAsync(stagingKey, source, cancellationToken);
@@ -197,12 +198,15 @@ public sealed class UploadVerificationOverTheRealStoreTests : IClassFixture<Post
             written.Value!.Size,
             written.Value.Size,
             written.Value.Sha256,
+            decidedAt,
             cancellationToken);
         Assert.True(await store.ConfirmAsync(
             uploadId,
             record.ConsumerId,
             declaredSha256,
-            new DateTimeOffset(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero),
+            decidedAt,
+            decidedAt,
+            decidedAt.AddHours(6),
             cancellationToken));
     }
 

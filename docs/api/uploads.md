@@ -295,3 +295,58 @@ changes; a service-side cause is answered `503 SERVICE_UNAVAILABLE`.
 |---------|---------|
 | `Uploads__MaxStoredBytes` | The most stored bytes one upload may hold. Required, greater than zero; the shipped value is `4294967296` (4 GiB). The limit is configuration, not a promise about the deployment's disk, and the same value is given to the API and to the orchestration worker. |
 | `Uploads__MaxUncompressedBytes` | The most the stored data may decompress to. Required, greater than zero; the shipped value is `4294967296` (4 GiB). It is enforced by the orchestration worker as the data leaves the decompressor, so a small compressed body that expands past it is refused with `QUOTA_EXCEEDED` and the reason `input-bytes`; the same value is given to the API and to the worker. |
+
+## Who may use an upload
+
+Every operation of this API resolves the declared `X-Consumer-Id` against the
+service's consumer registry **before it reads the body and before it touches any
+record**. The registry is a file the operator maintains; a change to it applies
+to the next request without a restart, and a request that is already running is
+decided by the registry it started with.
+
+| Operation | What it needs of the declared consumer | What an inactive consumer gets |
+|-----------|----------------------------------------|--------------------------------|
+| `POST /api/v1/uploads` | registered **and active** | `403 CONSUMER_INACTIVE`; no upload is created and the body is not read |
+| `GET /api/v1/uploads/{uploadId}` | registered | the status, exactly as an active consumer would read it |
+| `PUT /api/v1/uploads/{uploadId}/content` | registered | the content is accepted, as for an active consumer |
+| `POST /api/v1/uploads/{uploadId}/complete` | registered | the confirmation is accepted, as for an active consumer |
+
+A consumer that is removed from the registry loses every operation on its
+uploads on the next request; one that is readmitted gains them back. Making a
+consumer inactive never locks it out of the uploads it already opened: only
+opening a new one is refused.
+
+An identity that is absent, empty, repeated, comma-joined or outside the
+registry's characters, and one that is simply not in the registry, are all
+refused with the same `403 CONSUMER_UNKNOWN` — the same `title` and `detail`
+whether or not the upload the request names exists, because no record is read at
+all. Another consumer's upload is answered exactly as one that does not exist:
+`404 INPUT_NOT_FOUND`, with the same `title` and `detail` as for an absent
+identifier, and the storage of that upload is never touched.
+
+## When an upload ends
+
+An upload has two ends, and they are different:
+
+- **the end of its session** (`expiresAt`) bounds the confirmation. An upload
+  that was not confirmed before it — `created` or `uploading`, content received
+  or not — becomes `expired`, takes no more content and cannot be confirmed.
+  Content sent to it is answered `409 UPLOAD_STATE_CONFLICT` with the detail
+  *"The upload has expired."*, without reading a byte of the body; a transfer
+  still running when the end passes is not recorded, its staging object is
+  deleted and it is answered `409`.
+- **the verification deadline** bounds the verification, and is counted from the
+  confirmation, not from the session. An upload still `verifying` at
+  `completedAt + Uploads__VerificationDeadline` becomes `expired` and can never
+  become a snapshot, even if a verification finishes later. A repeated
+  confirmation of such an upload answers `200` with `status: "expired"` and
+  records nothing; a repeated confirmation that declares a content hash
+  different from the one the upload was confirmed with is answered `409`.
+
+`expired` is final. The end is applied at the moment of any operation on the
+upload and, without traffic, by a periodic sweep that also deletes what an
+expired upload was still holding.
+
+| Setting | Meaning |
+|---------|---------|
+| `Uploads__VerificationDeadline` | How long after its confirmation a confirmed upload may still fix a snapshot. Required, longer than zero, at most seven days, and never shorter than one verification attempt (`Uploads__Verification__StartToClose`); the shipped value is `06:00:00`. The same value is given to the API and to the orchestration worker. |

@@ -189,15 +189,16 @@ public sealed class VerifyUploadActivityTests
                 CreatedAt,
                 CreatedAt.AddDays(1));
             await rig.Uploads.CreateAsync(record, cancellationToken);
-            await rig.Uploads.TryStartTransferAsync(UploadId, ConsumerId, UploadContentEncoding.None, cancellationToken);
+            await rig.Uploads.TryStartTransferAsync(UploadId, ConsumerId, UploadContentEncoding.None, ConfirmedAt, cancellationToken);
             await rig.Uploads.RecordTransferAsync(
                 UploadId,
                 UploadContentOutcome.Complete,
                 content.Length,
                 content.Length,
                 Convert.ToHexStringLower(SHA256.HashData(content)),
+                ConfirmedAt,
                 cancellationToken);
-            await rig.Uploads.ConfirmAsync(UploadId, ConsumerId, null, ConfirmedAt, cancellationToken);
+            await rig.Uploads.ConfirmAsync(UploadId, ConsumerId, null, ConfirmedAt, ConfirmedAt, ConfirmedAt.AddDays(1), cancellationToken);
             return rig;
         }
 

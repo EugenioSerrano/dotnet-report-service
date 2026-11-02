@@ -2,19 +2,23 @@ using ReportService.Uploads;
 
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
+using ReportService.Api.Consumers;
 using ReportService.Api.Http;
+using ReportService.Api.Telemetry;
 using ReportService.Storage;
 
 namespace ReportService.Api.Uploads;
 
 /// <summary>
 /// The upload operations of the public API: a consumer opens a session for its
-/// data and reads that session's status. Both answer the declared consumer only;
-/// both refuse before anything is written, so a request the service does not
-/// serve leaves no session behind. The conventions fixed here — the declared
-/// identity header, the problem document with its stable code, the bounded
-/// reading of a control body — are the ones every later operation of this API
-/// follows.
+/// data and reads that session's status. Every operation of this API answers the
+/// declared consumer only, and each of them starts with the same gate: the
+/// declared identity is resolved against the consumer registry before the body is
+/// read and before any record is touched, so a request the service does not serve
+/// leaves no session behind and learns nothing about the ones it does. The
+/// conventions fixed here �?" the declared identity header, the problem document
+/// with its stable code, the bounded reading of a control body �?" are the ones
+/// every later operation of this API follows.
 /// </summary>
 public static class UploadEndpoints
 {
@@ -35,6 +39,15 @@ public static class UploadEndpoints
 
     /// <summary>What an answer says when the creation document is over the bound.</summary>
     public const string BodyTooLargeDetail = "The request body is larger than this operation accepts.";
+
+    /// <summary>What an answer says when the upload is past the end of its life.</summary>
+    public const string ExpiredDetail = "The upload has expired.";
+
+    /// <summary>What an answer says when the upload does not admit the operation in its current state.</summary>
+    public const string StateConflictTitle = "Upload state conflict";
+
+    /// <summary>What an answer says when the named upload does not exist for the declared consumer.</summary>
+    public const string NotFoundTitle = "Upload not found";
 
     /// <summary>What an answer says when the declared mode is not offered.</summary>
     public const string UnsupportedModeDetail =
@@ -61,6 +74,8 @@ public static class UploadEndpoints
     private static async Task<IResult> CreateAsync(
         HttpContext context,
         IUploadStore store,
+        ConsumerRegistry registry,
+        ConsumerRefusalMetrics refusals,
         TimeProvider timeProvider,
         IOptions<UploadOptions> options,
         ILoggerFactory loggerFactory,
@@ -68,11 +83,14 @@ public static class UploadEndpoints
     {
         var logger = loggerFactory.CreateLogger(LogCategory);
 
-        if (!ConsumerIdentity.TryRead(context.Request, out var consumerId))
+        // Opening a session is the one operation an inactive consumer may not perform.
+        var gate = ConsumerAccess.Resolve(context.Request, registry.Current, ConsumerRequirement.Active);
+        if (!gate.Allowed)
         {
-            return Refuse(context, logger, ErrorCodes.ConsumerUnknown, StatusCodes.Status403Forbidden, "Unknown consumer", ConsumerUnknownDetail, RefusalReasons.Identity);
+            return ConsumerAccess.Refuse(context, gate, ConsumerRefusalMetrics.CreateOperation, logger, refusals);
         }
 
+        var consumerId = gate.ConsumerId!;
         var read = await CreateUploadRequestReader.ReadAsync(context.Request, cancellationToken).ConfigureAwait(false);
         switch (read)
         {
@@ -139,16 +157,25 @@ public static class UploadEndpoints
     private static async Task<IResult> ReadAsync(
         HttpContext context,
         IUploadStore store,
+        IObjectStore objects,
+        ConsumerRegistry registry,
+        ConsumerRefusalMetrics refusals,
+        TimeProvider timeProvider,
         string uploadId,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger(LogCategory);
 
-        if (!ConsumerIdentity.TryRead(context.Request, out var consumerId))
+        // Reading is kept for a consumer that was made inactive: the gate asks only
+        // that it is registered.
+        var gate = ConsumerAccess.Resolve(context.Request, registry.Current, ConsumerRequirement.Registered);
+        if (!gate.Allowed)
         {
-            return Refuse(context, logger, ErrorCodes.ConsumerUnknown, StatusCodes.Status403Forbidden, "Unknown consumer", ConsumerUnknownDetail, RefusalReasons.Identity);
+            return ConsumerAccess.Refuse(context, gate, ConsumerRefusalMetrics.StatusOperation, logger, refusals);
         }
+
+        var consumerId = gate.ConsumerId!;
 
         // A value that cannot be an identifier refers to a session that cannot exist: it is
         // answered as a missing one, without a read, so the answer says nothing about which
@@ -163,6 +190,10 @@ public static class UploadEndpoints
         {
             return NotFound(context, logger);
         }
+
+        var now = UploadWireValues.TruncateToMillisecond(timeProvider.GetUtcNow());
+        record = await UploadExpiryStep.ApplyAsync(store, objects, record, now, logger, cancellationToken)
+            .ConfigureAwait(false);
 
         Activity.Current?.SetTag(UploadIdTag, record.UploadId);
         return Results.Ok(UploadStatusResponse.From(record));
@@ -183,7 +214,7 @@ public static class UploadEndpoints
     }
 
     private static IResult NotFound(HttpContext context, ILogger logger) =>
-        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, "Upload not found", UploadNotFoundDetail, RefusalReasons.NotFound);
+        Refuse(context, logger, ErrorCodes.InputNotFound, StatusCodes.Status404NotFound, NotFoundTitle, UploadNotFoundDetail, RefusalReasons.NotFound);
 
     private static IResult Refuse(
         HttpContext context,
@@ -203,8 +234,6 @@ public static class UploadEndpoints
     // The refusal reasons written to the log: constants, never a value from the request.
     private static class RefusalReasons
     {
-        public const string Identity = "identity";
-
         public const string BodySize = "body-size";
 
         public const string Mode = "mode";
