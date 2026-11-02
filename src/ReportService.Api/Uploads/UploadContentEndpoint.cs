@@ -160,10 +160,13 @@ public static class UploadContentEndpoint
             case UploadStreamFailure.Interrupted:
                 if (landed)
                 {
-                    await DeleteAsync(objects, record.StagingKey, logger, cancellationToken).ConfigureAwait(false);
+                    await DeleteAsync(objects, record.StagingKey, logger, CancellationToken.None).ConfigureAwait(false);
                 }
 
-                await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, cancellationToken).ConfigureAwait(false);
+                // The body ended because the consumer left, which cancels this request's own
+                // token: the record of how it ended, and the deletion of what landed, belong to
+                // the upload and outlive the request that carried it.
+                await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
                 SetTags(uploadId, body.BytesRead);
                 logger.LogInformation("Upload {UploadId} content ended early after {ReceivedBytes} bytes", uploadId, body.BytesRead);
                 return RequestInvalid(context, logger, InvalidRequestBody.BodyIncomplete());
@@ -175,8 +178,9 @@ public static class UploadContentEndpoint
         if (!landed)
         {
             // The bytes did not land as they were received: the transfer is recorded as an
-            // interruption and the consumer is told to try again with a new upload.
-            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, cancellationToken).ConfigureAwait(false);
+            // interruption and the consumer is told to try again with a new upload. The record
+            // outlives the request, whose own token may have been cancelled by the consumer.
+            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
             SetTags(uploadId, body.BytesRead);
             logger.LogWarning(
                 "Upload {UploadId} content could not be stored ({StorageOutcome})",
@@ -188,7 +192,7 @@ public static class UploadContentEndpoint
         var stored = written!.Value!;
         if (stored.Size != body.BytesRead)
         {
-            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, cancellationToken).ConfigureAwait(false);
+            await store.RecordTransferAsync(uploadId, UploadContentOutcome.Interrupted, body.BytesRead, null, null, CancellationToken.None).ConfigureAwait(false);
             SetTags(uploadId, body.BytesRead);
             logger.LogWarning(
                 "Upload {UploadId} content could not be stored ({StorageOutcome})",
