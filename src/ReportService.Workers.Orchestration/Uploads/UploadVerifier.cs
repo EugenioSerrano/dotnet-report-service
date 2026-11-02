@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ReportService.Storage;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Telemetry;
@@ -40,14 +41,14 @@ public sealed class UploadVerifier
     /// <summary>Creates the verifier over the stores, the limits and the process's clock.</summary>
     /// <param name="uploads">The upload records, including the outcome commit.</param>
     /// <param name="objects">The object storage port.</param>
-    /// <param name="options">The stored and decompressed size limits.</param>
+    /// <param name="options">The stored and decompressed size limits, as the process validated them.</param>
     /// <param name="clock">The clock the snapshot's creation time and the progress interval are measured with.</param>
     /// <param name="logger">The log the outcome is written to, with identifiers and codes only.</param>
     /// <param name="metrics">The process's instruments.</param>
     public UploadVerifier(
         IUploadStore uploads,
         IObjectStore objects,
-        VerificationOptions options,
+        IOptions<VerificationOptions> options,
         TimeProvider clock,
         ILogger<UploadVerifier> logger,
         OrchestrationMetrics metrics)
@@ -60,7 +61,7 @@ public sealed class UploadVerifier
         ArgumentNullException.ThrowIfNull(metrics);
         _uploads = uploads;
         _objects = objects;
-        _options = options;
+        _options = options.Value;
         _clock = clock;
         _logger = logger;
         _metrics = metrics;

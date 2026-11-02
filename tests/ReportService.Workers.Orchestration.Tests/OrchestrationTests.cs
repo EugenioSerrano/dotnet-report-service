@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
@@ -289,14 +290,14 @@ public sealed class IntentDispatcherTests : IDisposable
             _store,
             _starter,
             _holder,
-            new DispatcherOptions
+            Options.Create(new DispatcherOptions
             {
                 PollInterval = TimeSpan.FromSeconds(1),
                 BatchSize = batchSize,
                 AlertAfter = TimeSpan.FromMinutes(5),
                 ClaimBudget = TimeSpan.FromSeconds(30),
-            },
-            new UploadVerificationOptions { StartToClose = verificationBound ?? TimeSpan.FromHours(1) },
+            }),
+            Options.Create(new UploadVerificationOptions { StartToClose = verificationBound ?? TimeSpan.FromHours(1) }),
             _clock,
             _metrics,
             _loggerFactory.CreateLogger<IntentDispatcher>());

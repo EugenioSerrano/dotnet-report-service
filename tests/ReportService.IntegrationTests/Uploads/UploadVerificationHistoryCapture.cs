@@ -3,6 +3,7 @@ extern alias orchestration;
 using System.Globalization;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -106,7 +107,7 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
             new UploadVerifier(
                 uploads,
                 objects,
-                new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 },
+                Options.Create(new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 }),
                 TimeProvider.System,
                 NullLogger<UploadVerifier>.Instance,
                 metrics),

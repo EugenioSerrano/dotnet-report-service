@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -150,7 +151,7 @@ public sealed class VerifyUploadActivityTests
             Verifier = new UploadVerifier(
                 Uploads,
                 Objects,
-                new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 },
+                Options.Create(new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 }),
                 Clock,
                 NullLogger<UploadVerifier>.Instance,
                 _metrics);

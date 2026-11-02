@@ -61,7 +61,7 @@ internal sealed class VerifierRig : IDisposable
         Verifier = new UploadVerifier(
             Uploads,
             Objects,
-            Options,
+            Microsoft.Extensions.Options.Options.Create(Options),
             Clock,
             _loggerFactory.CreateLogger<UploadVerifier>(),
             _metrics);
@@ -174,7 +174,7 @@ internal sealed class VerifierRig : IDisposable
     public UploadVerifier VerifierOver(IUploadStore uploads) => new(
         uploads,
         Objects,
-        Options,
+        Microsoft.Extensions.Options.Options.Create(Options),
         Clock,
         _loggerFactory.CreateLogger<UploadVerifier>(),
         _metrics);

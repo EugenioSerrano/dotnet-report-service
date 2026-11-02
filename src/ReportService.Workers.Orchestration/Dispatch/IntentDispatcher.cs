@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Orchestration.Telemetry;
@@ -41,8 +42,8 @@ public sealed class IntentDispatcher : BackgroundService
     /// <param name="store">The durable requests.</param>
     /// <param name="starter">The engine operations a dispatch needs.</param>
     /// <param name="holder">The process's current engine connection.</param>
-    /// <param name="options">The polling settings.</param>
-    /// <param name="verification">The settings the dispatched work runs under, summarized in its reference.</param>
+    /// <param name="options">The polling settings, as the process validated them.</param>
+    /// <param name="verification">The settings the dispatched work runs under, summarized in its reference, as the process validated them.</param>
     /// <param name="clock">The clock every wait, age and budget is measured with.</param>
     /// <param name="metrics">The process's instruments.</param>
     /// <param name="logger">The log, which carries identifiers and codes only.</param>
@@ -50,8 +51,8 @@ public sealed class IntentDispatcher : BackgroundService
         IIntentStore store,
         IWorkflowStarter starter,
         TemporalClientHolder holder,
-        DispatcherOptions options,
-        UploadVerificationOptions verification,
+        IOptions<DispatcherOptions> options,
+        IOptions<UploadVerificationOptions> verification,
         TimeProvider clock,
         OrchestrationMetrics metrics,
         ILogger<IntentDispatcher> logger)
@@ -67,8 +68,8 @@ public sealed class IntentDispatcher : BackgroundService
         _store = store;
         _starter = starter;
         _holder = holder;
-        _options = options;
-        _verification = verification;
+        _options = options.Value;
+        _verification = verification.Value;
         _clock = clock;
         _metrics = metrics;
         _logger = logger;

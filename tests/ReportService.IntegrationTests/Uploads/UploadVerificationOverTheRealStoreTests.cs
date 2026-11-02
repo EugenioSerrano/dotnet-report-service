@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Text;
 using Dapper;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Migrations;
 using ReportService.Storage;
@@ -65,7 +66,7 @@ public sealed class UploadVerificationOverTheRealStoreTests : IClassFixture<Post
         _verifier = new UploadVerifier(
             new PostgresUploadStore(_dataSource),
             _objects,
-            new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 },
+            Options.Create(new VerificationOptions { MaxStoredBytes = 8 << 20, MaxUncompressedBytes = 8 << 20 }),
             TimeProvider.System,
             LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning)).CreateLogger<UploadVerifier>(),
             _metrics);

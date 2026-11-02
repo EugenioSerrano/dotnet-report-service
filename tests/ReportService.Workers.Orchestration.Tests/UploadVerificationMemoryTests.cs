@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.IO.Pipelines;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -111,7 +112,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
         var verifier = new UploadVerifier(
             uploads,
             filesystem,
-            new VerificationOptions { MaxStoredBytes = 4L * 1024 * 1024 * 1024, MaxUncompressedBytes = 4L * 1024 * 1024 * 1024 },
+            Options.Create(new VerificationOptions { MaxStoredBytes = 4L * 1024 * 1024 * 1024, MaxUncompressedBytes = 4L * 1024 * 1024 * 1024 }),
             TimeProvider.System,
             NullLogger<UploadVerifier>.Instance,
             metrics);
