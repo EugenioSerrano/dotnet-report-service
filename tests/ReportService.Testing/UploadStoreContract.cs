@@ -192,6 +192,9 @@ public abstract class UploadStoreContract : IAsyncLifetime
             TestContext.Current.CancellationToken));
     }
 
+    /// <summary>The consumer every case of this contract records sessions for.</summary>
+    private const string Consumer = "dev-consumer";
+
     /// <summary>The lower-case hexadecimal hash every case of this contract uses.</summary>
     protected const string Hash = "9ffcbf0acedfe4529a6093c4c669efab29c2d523a7794bacfb8eb8a946ca8dd3";
 
@@ -280,18 +283,66 @@ public abstract class UploadStoreContract : IAsyncLifetime
         var index = 0;
         foreach (var status in Enum.GetValues<UploadStatus>())
         {
-            var record = Session(
-                "upload-" + index++.ToString("x8", CultureInfo.InvariantCulture) + new string('0', 24),
-                status: status);
+            // Every state is reached the way the service reaches it: the session is created
+            // in its first state and moved on by the step that owns the transition, which
+            // sets the fields that state owns (the instant a confirmation happened, the code
+            // and reason a rejection carries). A session past its expiry has no step in this
+            // store yet, so it is the one state a session is created in.
+            var uploadId = "upload-" + index++.ToString("x8", CultureInfo.InvariantCulture) + new string('0', 24);
+            var record = Session(uploadId, status: ReachedByCreation(status) ? status : UploadStatus.Created);
 
             await Store.CreateAsync(record, cancellationToken);
-            var found = await Store.FindAsync(record.UploadId, record.ConsumerId, cancellationToken);
+            await DriveToAsync(uploadId, status, cancellationToken);
+            var found = await Store.FindAsync(uploadId, record.ConsumerId, cancellationToken);
 
             Assert.NotNull(found);
             Assert.Equal(status, found!.Status);
             Assert.Equal(UploadMode.ApiStream, found.Mode);
             Assert.Equal(DataProfile.HeaderItemsV1, found.Profile);
             Assert.Equal(record.StagingKey, found.StagingKey);
+        }
+    }
+
+    /// <summary>Whether a session is created in <paramref name="status"/> rather than moved into it.</summary>
+    private static bool ReachedByCreation(UploadStatus status) =>
+        status is UploadStatus.Created or UploadStatus.Expired;
+
+    /// <summary>Moves a created session to <paramref name="status"/> through the store's own steps.</summary>
+    private async Task DriveToAsync(string uploadId, UploadStatus status, CancellationToken cancellationToken)
+    {
+        if (status is UploadStatus.Created or UploadStatus.Expired)
+        {
+            return;
+        }
+
+        Assert.True(await Store.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.Gzip, cancellationToken));
+        if (status is UploadStatus.Uploading)
+        {
+            return;
+        }
+
+        if (status is UploadStatus.Rejected)
+        {
+            // A transfer the service stops at its limit ends the session before any
+            // outcome is recorded, which is the only way that step admits.
+            Assert.True(await Store.RejectTransferAsync(
+                uploadId, UploadRejectionCode.DataInvalid, UploadRejectionReason.Truncated, 900, cancellationToken));
+            return;
+        }
+
+        Assert.True(await Store.RecordTransferAsync(
+            uploadId, UploadContentOutcome.Complete, 900, 800, Hash, cancellationToken));
+        switch (status)
+        {
+            case UploadStatus.Verifying:
+                Assert.True(await Store.ConfirmAsync(uploadId, Consumer, Hash, Confirmed, cancellationToken));
+                break;
+            case UploadStatus.Ready:
+                Assert.True(await Store.ConfirmAsync(uploadId, Consumer, Hash, Confirmed, cancellationToken));
+                Assert.Equal(SnapshotCommitResult.Committed, await Store.CommitReadyAsync(Snapshot(uploadId, "a"), cancellationToken));
+                break;
+            default:
+                throw new InvalidOperationException($"the contract has no step to {status}");
         }
     }
 }
