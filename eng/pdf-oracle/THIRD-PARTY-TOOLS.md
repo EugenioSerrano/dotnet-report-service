@@ -31,9 +31,9 @@ re-read per build. The row's version is the probe date, not a pin for the 48.
 
 Four disposable containers on the pinned base; nothing installed on a host. A
 package whose version changed is treated as changed and **inside** the set; only
-the unchanged base packages are outside C3. The probe's raw output is not
-retained in the repository: the per-build re-read above is the evidence of
-record, and this table is the acceptance basis, not a version pin.
+the unchanged base packages are outside C3. The 0-upgraded figure is the
+acceptance basis; the raw diff is not retained, so the per-build re-read above is
+the control, and this table is the acceptance basis, not a version pin.
 
 | # | Package | Version (probe 2026-11-02) | Licence (from `/usr/share/doc/<pkg>/copyright`) |
 |---|---------|----------------------------|--------------------------------------------------|
@@ -115,7 +115,9 @@ SPEC-261101-0254's gate row is therefore compliant.
 
 The probe's diff is the 50 packages the install adds. The base image also carries
 the 22 packages below. They are already present in the base image and were not
-installed by the oracle; the other 75 base packages are also outside C3.
+installed by the oracle; the other 75 base packages are also outside C3. The 22
+are the shared-library closure of the two binaries (`ldd` on `pdftotext` and
+`qpdf` in the base image); the other 75 are not part of that closure.
 **They are outside the C3 accepted closure:** ADR-013 §3.1 item 1 covers the apt
 packages installed as dependencies of poppler-utils and qpdf, and ADR-004's
 base-image note leaves the base OS packages under their own licences. They are
@@ -158,10 +160,11 @@ the expressions the row lists, or when a copyright file is missing. Exact
 versions and licences, and the image digest, are recorded per build; the list
 changes only by the owner's commit, which is the record of this acceptance.
 
-- Accepted by: `human:eugenioserrano` (commit `611fd0f`, 2026-11-02T15:09:40-03:00; its author is `Eugenio Serrano <eugenioserrano@msn.com>`, its parent `e9dc44e`, and it changes only this note)
+- Accepted by: `human:eugenioserrano` (commit `611fd0f`, 2026-11-02T15:09:40-03:00; its author is `Eugenio Serrano <eugenioserrano@msn.com>`, its parent `e9dc44e`, and it changes only this note — confirmed from git history by `agent:avenga-devflow` on 2026-11-02)
 - Date: `2026-11-02`
 - Scope accepted: **section 1 only** (the 50 packages installed by the image; the 22 base packages are not part of this acceptance).
 
-The initial entries were proposed in SPEC-261101-0254 §6 B.3 (the oracle plan);
-the owner's acceptance is the commit above. C1/C2 are stated and verified in
-SPEC-261101-0254 and the V-Bounce MEM; C4/C5 are outside this note.
+SPEC-261101-0254 §6 B.3 requires that this list be proposed for
+`human:eugenioserrano`'s acceptance before the first build; section 1 is the
+proposal, and the commit above is the acceptance. C1/C2 are stated and verified
+in SPEC-261101-0254 and the V-Bounce MEM; C4/C5 are outside this note.
