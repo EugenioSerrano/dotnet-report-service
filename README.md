@@ -290,7 +290,10 @@ of this service (see [What it is not](#what-it-is-not)).
 All routes are versioned under `/api/v1`. Errors use RFC 9457 Problem Details
 with a stable `code`. The upload operations, the declared `X-Consumer-Id`
 identity header and every error code are described in
-[`docs/api/uploads.md`](docs/api/uploads.md).
+[`docs/api/uploads.md`](docs/api/uploads.md). Creating a report job, the answer
+it gives and every refusal it returns are described in
+[`docs/api/report-jobs.md`](docs/api/report-jobs.md), which also says which
+members of a job request this increment does not accept yet.
 
 | Method and route | Purpose |
 |------------------|---------|

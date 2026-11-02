@@ -96,12 +96,17 @@ request in the metadata database in the same transaction that moves the upload t
 `verifying`; the orchestration worker's dispatcher turns it into one execution of
 the verification workflow.
 
+Each request carries a **kind**, and the kind names the workflow it is turned
+into: `start-upload-verification` starts one verification of an upload, and
+`start-job` starts the work of one accepted report job. A process that does not
+serve a kind never dispatches it and never fails it.
+
 - Each poll claims a bounded batch of the requests that are due, skipping rows
   another process holds, and keeps them in one transaction while it works.
 - For each request it asks the engine whether the execution already exists before
   starting one, so a process that stopped between a start and its record — or a
   second worker polling beside the first — still produces exactly one execution
-  per upload.
+  per upload or per job.
 - A request is never failed. A failed attempt is recorded with its wait and tried
   again, with the wait doubling from two seconds up to one minute. The claim
   transaction is bounded in time, so a slow engine can never hold a row beyond
@@ -134,9 +139,10 @@ process, naming the setting and the rule and never the value.
 | `reportservice.upload.verification.duration` | histogram (s) | `outcome` |
 | `reportservice.intent.dispatch.attempts` | counter | `kind`, `result` |
 | `reportservice.intent.pending.age` | observable gauge (s) | `kind` |
+| `reportservice.job.outcomes` | counter | `status`, `code` |
 
-Tags are fixed values only: an upload's identifier, a key or a size is never a
-tag. Identifiers appear on logs and on spans.
+Tags are fixed values only: an upload's identifier, a job's identifier, a key or a
+size is never a tag. Identifiers appear on logs and on spans.
 
 ## The deadline and how to size it
 

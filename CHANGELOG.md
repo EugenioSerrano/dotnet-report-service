@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Report jobs: a consumer creates one with `POST /api/v1/report-jobs` for a
+  confirmed upload it owns, a template reference and the output format it wants,
+  and receives `202 Accepted` with the job's identifier, the state `queued` and
+  the URL its status is read from. The job, its requested output, the template
+  reference exactly as the request wrote it and the request to start it are
+  written together in one transaction before the answer is given, so a client
+  that closes its connection after sending its request has still created a job
+  that runs. The orchestration worker starts each accepted job exactly once,
+  across restarts of both processes; a job whose upload is refused or runs out
+  of time ends failed with the upload's own condition. The creation operation
+  checks the consumer against the registry before it reads anything else and
+  answers an unsupported format or profile, an unusable data reference and a
+  malformed body with their own codes; `Idempotency-Key`, `render` and
+  `metadata` are not honoured yet. See `docs/api/report-jobs.md` and
+  `docs/operations/upload-verification.md`.
+
 - An upload ends by itself when nobody finishes it: one that is not confirmed
   before the end of its session becomes `expired`, takes no more content and
   cannot be confirmed, and one whose verification outlasts the deadline recorded

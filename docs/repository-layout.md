@@ -29,7 +29,7 @@ dotnet-report-service/
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md)
+├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   └── test/                  The test runner: one command per test level
@@ -65,7 +65,7 @@ dotnet-report-service/
 | Test run output | `artifacts/test-results/<yyMMdd-HHmm>/` (git-ignored) | `artifacts/test-results/261101-1430/run.json` |
 | Spike | `spikes/NN-<topic>/` | `spikes/01-streaming-parser/` |
 | Documentation page | kebab-case `.md` in `docs/` | `docs/template-authoring.md` |
-| API documentation | one page per resource family under `docs/api/` | `docs/api/uploads.md` |
+| API documentation | one page per resource family under `docs/api/` | `docs/api/uploads.md`, `docs/api/report-jobs.md` |
 
 Product and test projects are added to `dotnet-report-service.slnx` under the
 `src` and `tests` solution folders (`dotnet sln add <path> --solution-folder src`);
@@ -233,3 +233,11 @@ choices of taste:
 - `src/ReportService.Workers.Orchestration/Uploads/` - the verification step: the read that is teed, the checksum, the decision that a compressed object is one complete unit of content, and the outcome it commits. The instruments are in `Telemetry/OrchestrationMetrics.cs`.
 - `docs/operations/upload-verification.md` - what the step enforces, its settings and its instruments.
 - `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suite of that step.
+
+## Where report jobs live
+
+- `src/ReportService.Jobs/` - the job records and their store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
+- `src/ReportService.Workers.Orchestration/Jobs/` - one job as a workflow: the check of its data reference, the failure that ends it, and the settings its steps run under.
+- `src/ReportService.Api/Jobs/` - the creation operation, the strict reader of its document and the answer it gives.
+- `docs/api/report-jobs.md` - the request, the answer and every refusal.
+- `tests/ReportService.Jobs.Tests/` and `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suites of the records and of the workflow's steps.
