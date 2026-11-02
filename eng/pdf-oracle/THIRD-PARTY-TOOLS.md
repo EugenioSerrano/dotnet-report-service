@@ -16,24 +16,24 @@ product assembly (ADR-013 C1-C5).
 
 Versions are the archive state on 2026-11-02, the probe date. The build snapshots
 `dpkg-query -W` before and after the install and takes the **added or changed**
-packages as its package set (the probe's method); the base packages already
-present are outside C3. For every package in that set, the build re-reads the
-version and the **full** `/usr/share/doc/<pkg>/copyright`, records both with the
-image digest in the Bolt's SPEC/MEM evidence, and stops when a package is absent
-from this list, when **any stanza** in the copyright file is not among the
-expressions the row lists, or when a copyright file is missing. `poppler-utils`
-and `qpdf` are pinned by the SPEC; the 48 dependencies are re-read per build. The
-row's version is the probe date, not a pin for the 48.
+packages as its package set (the probe's method); the unchanged base packages
+already present are outside C3. For every package in that set, the build re-reads
+the version and the **full** `/usr/share/doc/<pkg>/copyright`, records both with
+the image digest in the Bolt's SPEC/MEM evidence, and stops when a package is
+absent from this list, when **any stanza** in the copyright file is not among
+the expressions the row lists, or when a copyright file is missing.
+`poppler-utils` and `qpdf` are pinned by the SPEC; the 48 dependencies are
+re-read per build. The row's version is the probe date, not a pin for the 48.
 
 ### Probe (2026-11-02)
 
 `docker run --rm --user 0:0 <base>@sha256:d5633778… bash -lc 'apt-get update -qq; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/before; apt-get install -y -qq --no-install-recommends poppler-utils qpdf; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/after; diff /tmp/before /tmp/after; for p in $(diff /tmp/before /tmp/after | sed -n "s/^> //p" | cut -d" " -f1); do echo "== $p"; cat /usr/share/doc/$p/copyright; done'`
 
 Four disposable containers on the pinned base; nothing installed on a host. A
-package whose version changed is treated as changed, not added; a base package
-upgraded by the install is outside C3. The probe's raw output is not retained in
-the repository: the per-build re-read above is the evidence of record, and this
-table is the acceptance basis, not a version pin.
+package whose version changed is treated as changed and **inside** the set; only
+the unchanged base packages are outside C3. The probe's raw output is not
+retained in the repository: the per-build re-read above is the evidence of
+record, and this table is the acceptance basis, not a version pin.
 
 | # | Package | Version (probe 2026-11-02) | Licence (from `/usr/share/doc/<pkg>/copyright`) |
 |---|---------|----------------------------|--------------------------------------------------|
@@ -103,16 +103,19 @@ dual-licence file is listed by all its branches, and the build records the exact
 stanzas and the copyright file's SHA-256. The waiver does not cover a library
 loaded into a test process.
 
-**qpdf is not waived.** `qpdf` and `libqpdf29t64` are Apache-2.0 and need no
-G21 waiver; the GPL rows are the waived closure. SPEC-261101-0254 revision 2's
-gate row records the whole closure as `waived`; ADR-013 §3.1 item 1 excludes
-qpdf, so that row is overbroad and the discrepancy is owed to the SPEC's next
-revision. This record does not override the SPEC; the build records both.
+**qpdf is in the closure and the gate is `waived`.** `qpdf` and `libqpdf29t64`
+are Apache-2.0; ADR-013 §3.1 item 1 says qpdf needs no waiver, while item 4
+orders the gate recorded `waived — ADR-013` for each package of the closure.
+The C3 records the closure as waived, following item 4; the item-1/item-4
+tension is the accepted ADR's and needs an OQ or a superseding ADR, not a
+one-sided reading. SPEC-261101-0254's gate row is therefore compliant.
 
 ## 2. Packages already in the base image (22) — outside the C3 accepted closure
 
 The probe's diff is the 50 packages the install adds. The base image also carries
-the 22 packages below. **They are outside the C3 accepted closure:** ADR-013
+the 22 packages below. They are the subset of the 97 base packages that the
+probe identified as runtime-closure relevant; the other base packages are also
+outside C3. **They are outside the C3 accepted closure:** ADR-013
 §3.1 item 1 covers the apt packages installed as dependencies of poppler-utils
 and qpdf, and ADR-004's base-image note leaves the base OS packages under their
 own licences. They are listed for completeness only; they are not accepted here
@@ -150,12 +153,14 @@ acceptance.
 **Status: accepted by the owner on 2026-11-02; section 1 only.** The owner of the
 ADR-013 waiver, `human:eugenioserrano`, accepts the package-to-licence rows of
 section 1 and no others. Section 2 is outside this acceptance. The build stops
-when a package is absent, when a row's licence expression (one of the
-alternatives listed) does not match the copyright file, or when a copyright file
-is missing. Exact versions and licences, and the image digest, are recorded per
-build; the list changes only by the owner's commit, which is the record of this
-acceptance.
+when a package is absent, when **any stanza** in the copyright file is not among
+the expressions the row lists, or when a copyright file is missing. Exact
+versions and licences, and the image digest, are recorded per build; the list
+changes only by the owner's commit, which is the record of this acceptance.
 
-- Accepted by: `human:eugenioserrano`
+- Accepted by: `human:eugenioserrano` (commit `611fd0f`, 2026-11-02T15:09:40-03:00)
 - Date: `2026-11-02`
 - Scope accepted: **section 1 only** (the 50 packages installed by the image; the 22 base packages are not part of this acceptance).
+
+C1/C2 are stated and verified in SPEC-261101-0254 and the V-Bounce MEM; C4/C5
+are outside this note.
