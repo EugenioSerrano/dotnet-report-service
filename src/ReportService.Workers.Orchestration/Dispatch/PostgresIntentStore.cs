@@ -80,13 +80,13 @@ public sealed class PostgresIntentStore(NpgsqlDataSource dataSource) : IIntentSt
                 transaction: transaction,
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
-            var claimed = await connection.QueryAsync<IntentRecord>(new CommandDefinition(
+            var claimed = await connection.QueryAsync<IntentRow>(new CommandDefinition(
                 ClaimSql,
                 new { Now = now, BatchSize = batchSize },
                 transaction,
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
-            return new Claim(connection, transaction, [.. claimed]);
+            return new Claim(connection, transaction, [.. claimed.Select(row => row.ToRecord())]);
         }
         catch
         {
@@ -104,11 +104,21 @@ public sealed class PostgresIntentStore(NpgsqlDataSource dataSource) : IIntentSt
     public async Task<TimeSpan?> OldestPendingAgeAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-        var oldest = await connection.QuerySingleAsync<DateTimeOffset?>(new CommandDefinition(
+        var oldest = await connection.QuerySingleAsync<DateTime?>(new CommandDefinition(
             OldestPendingSql,
             commandTimeout: CommandTimeoutSeconds,
             cancellationToken: cancellationToken)).ConfigureAwait(false);
-        return oldest is { } instant ? now - instant : null;
+        return oldest is { } instant ? now - Utc(instant) : null;
+    }
+
+    // The server returns a timestamptz as a UTC DateTime; the record keeps the same instant
+    // with an offset of zero, so a caller compares instants and never a wall-clock time.
+    private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
+
+    /// <summary>One claimed request as the database returns it.</summary>
+    private sealed record IntentRow(long IntentId, string Kind, string SubjectId, int Attempts, DateTime CreatedAt)
+    {
+        public IntentRecord ToRecord() => new(IntentId, Kind, SubjectId, Attempts, Utc(CreatedAt));
     }
 
     private sealed class Claim(NpgsqlConnection connection, NpgsqlTransaction transaction, IReadOnlyList<IntentRecord> intents) : IIntentClaim
