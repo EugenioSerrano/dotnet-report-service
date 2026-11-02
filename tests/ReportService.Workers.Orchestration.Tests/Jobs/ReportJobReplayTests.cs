@@ -1,50 +1,57 @@
+using ReportService.Testing;
+using ReportService.Workers.Orchestration.Jobs;
 using Temporalio.Api.Enums.V1;
 using Temporalio.Common;
 using Temporalio.Worker;
 using Temporalio.Workflows;
-using ReportService.Workers.Orchestration.Jobs;
 
 namespace ReportService.Workers.Orchestration.Tests.Jobs;
 
 /// <summary>
-/// Replays the job histories captured against a real engine, so a change that would
-/// make a running execution non-deterministic fails here instead of in production. A
-/// history file is a fixture: it is generated once, against an engine, by the opt-in
-/// capture case of the integration suite, and committed with the change that captured
-/// it. The fixtures are part of what this work delivers, so a missing one fails the
-/// case: nothing was replayed, and a case that had nothing to check is not a result.
+/// The bounds a job's wait runs under are published to the workflow type once per process,
+/// so a case that publishes them and a case that plans the production workers cannot run at
+/// the same time: one would see the other's settings.
 /// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class JobWorkflowSettings
+{
+    /// <summary>The name every case that publishes those settings shares.</summary>
+    public const string Name = "the job workflow's published settings";
+}
+
+/// <summary>
+/// Replays the job histories recorded against a real engine, so a change that would make a
+/// running execution non-deterministic fails here instead of in production. A history file
+/// is a fixture: it is generated once, against an engine, by the opt-in capture case of the
+/// integration suite, and committed with the change that captured it. Each recording is
+/// replayed under the two settings it was taken with, because those settings decide which
+/// commands the recorded run wrote. The fixtures are part of what this work delivers, so a
+/// missing one fails the case: nothing was replayed, and a case that had nothing to check
+/// is not a result.
+/// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class ReportJobReplayTests
 {
     /// <summary>The directory the captured histories are committed in.</summary>
     public static readonly string HistoriesDirectory = Path.Combine("Histories", "Jobs");
 
-    /// <summary>A job whose input was ready when the workflow ran.</summary>
-    public const string ReadyHistory = "report-job-ready.json";
-
-    /// <summary>A job whose input had been rejected when the workflow ran.</summary>
-    public const string RejectedHistory = "report-job-rejected.json";
-
-    /// <summary>
-    /// A job whose input was still confirming when the workflow ran. The committed
-    /// history is the one an earlier build produced, which stopped at its continuation
-    /// point instead of waiting; the build now waits, so the recording has to be taken
-    /// again before it can be replayed and it is not in <see cref="Histories"/> until it is.
-    /// </summary>
-    public const string VerifyingHistory = "report-job-verifying.json";
-
-    /// <summary>Every committed history of one job run, in the order the cases name them.</summary>
-    public static readonly string[] Histories = [ReadyHistory, RejectedHistory];
+    /// <summary>Every committed recording, by the name the suite reads it by.</summary>
+    public static TheoryData<string> Recordings { get; } =
+        new(JobHistoryFixtures.All.Select(fixture => fixture.File));
 
     [Theory]
-    [InlineData(ReadyHistory)]
-    [InlineData(RejectedHistory)]
-    public async Task EveryCapturedHistoryReplaysWithoutADivergence(string file)
+    [MemberData(nameof(Recordings))]
+    public async Task EveryRecordedHistoryReplaysUnderTheSettingsItWasTakenWith(string file)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, HistoriesDirectory, file);
+        var fixture = JobHistoryFixtures.ByFile(file);
+        var path = JobHistoryFiles.PathOf(file);
         Assert.True(
             File.Exists(path),
-            $"the recorded job history {file} is missing from {Path.Combine(AppContext.BaseDirectory, HistoriesDirectory)}: the fixture is the outcome of a run against a real engine and it is part of this work, so there is nothing to replay.");
+            $"the recorded job history {file} is missing from {Path.GetDirectoryName(path)}: the fixture is the outcome of a run against a real engine and it is part of this work, so there is nothing to replay.");
+
+        // The two settings are the run's own: a recording of a wait that continues as a new
+        // run replays only when the workflow is told the same check limit it ran under.
+        ReportJobWorkflow.Configure(fixture.Backstop, fixture.ContinueAsNewAfter);
 
         var options = new WorkflowReplayerOptions();
         options.Workflows.Add(WorkflowDefinition.Create(typeof(ReportJobWorkflow)));
@@ -83,87 +90,245 @@ public sealed class ReportJobReplayTests
 }
 
 /// <summary>
-/// The bound every job history must stay inside: the longest path of this build is
-/// the input check followed by the failure, seventeen events, and a workflow task the
-/// engine had to reschedule adds two more. A history of a job that did not have to wait
-/// starts no timer at all, so a recording that carries one is a different design than
-/// the one that was decided.
+/// What every committed job history shows about the run it records: the checks it stayed
+/// inside, the stage it left behind, the timer it waited on or was spared, and — where the
+/// run continued as a new one — that it did so before anything after the wait was started.
+/// The pass limit is asserted as the relationship to the history budget for the value each
+/// recording was taken with, never as a number of its own and never for the default alone.
 /// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class ReportJobHistoryBoundTests
 {
-    /// <summary>The events the longest path of this build writes.</summary>
+    /// <summary>The events the longest path of a job that did not have to wait writes.</summary>
     public const int LongestPathEvents = 17;
 
     /// <summary>The events one rescheduled workflow task adds.</summary>
     public const int EventsPerLostWorkflowTask = 2;
 
+    /// <summary>The recordings of a job whose first check of its upload already answered.</summary>
+    public static TheoryData<string> OfAJobThatDidNotWait { get; } =
+        new(JobHistoryFixtures.OfAJobThatDidNotWait.Select(fixture => fixture.File));
+
+    /// <summary>The recordings that carry the wait of a job for its upload.</summary>
+    public static TheoryData<string> OfAJobThatWaited { get; } =
+        new(JobHistoryFixtures.OfAJobThatWaited.Select(fixture => fixture.File));
+
+    /// <summary>The recordings of a run that left the wait with its upload's outcome.</summary>
+    public static TheoryData<string> OfARunThatLeftTheWait { get; } =
+        new(JobHistoryFixtures.OfARunThatLeftTheWait.Select(fixture => fixture.File));
+
     [Theory]
-    [InlineData(ReportJobReplayTests.ReadyHistory)]
-    [InlineData(ReportJobReplayTests.RejectedHistory)]
-    public async Task EveryHistoryStaysInsideTheBoundAndCarriesNoTimer(string file)
+    [MemberData(nameof(OfAJobThatDidNotWait))]
+    public async Task AJobThatDidNotWaitCarriesNoTimerAndChecksItsInputOnce(string file)
     {
-        var history = await ReadAsync(file);
-        var rescheduled = history.Events.Count(entry => entry.EventType == EventType.WorkflowTaskTimedOut);
+        var history = await JobHistoryFiles.ReadAsync(file);
+        var rescheduled = Rescheduled(history);
         var allowed = LongestPathEvents + (EventsPerLostWorkflowTask * rescheduled);
 
         Assert.True(
             history.Events.Count <= allowed,
-            $"{file} holds {history.Events.Count} events, and the longest path allows {allowed} ({LongestPathEvents} plus {EventsPerLostWorkflowTask} per rescheduled workflow task, of which it records {rescheduled}).");
+            $"{file} holds {history.Events.Count} events, and the longest path of a job that did not wait allows {allowed} ({LongestPathEvents} plus {EventsPerLostWorkflowTask} per rescheduled workflow task, of which it records {rescheduled}).");
         Assert.DoesNotContain(history.Events, entry => entry.EventType == EventType.TimerStarted);
+        Assert.Equal(1, Scheduled(history, ReportJobActivities.ResolveInputName));
+        Assert.Equal(0, Scheduled(history, InputWaitActivities.BeginName));
+        Assert.Equal(0, Scheduled(history, InputWaitActivities.EndName));
     }
 
     [Theory]
-    [InlineData(ReportJobReplayTests.ReadyHistory)]
-    [InlineData(ReportJobReplayTests.RejectedHistory)]
-    public async Task EveryHistoryChecksTheInputExactlyOnce(string file)
+    [InlineData(JobHistoryFixtures.ReadyFile, 0)]
+    [InlineData(JobHistoryFixtures.RejectedFile, 1)]
+    public async Task TheFailureOfAFirstCheckIsWrittenOnlyWhenTheUploadEndedTheJob(string file, int failures)
     {
-        var history = await ReadAsync(file);
+        var history = await JobHistoryFiles.ReadAsync(file);
 
-        var checks = history.Events
-            .Where(entry => entry.EventType == EventType.ActivityTaskScheduled)
-            .Count(entry => string.Equals(
+        Assert.Equal(failures, Scheduled(history, ReportJobActivities.FailJobName));
+    }
+
+    [Theory]
+    [MemberData(nameof(OfAJobThatWaited))]
+    public async Task ARunThatWaitedStayedInsideTheLimitItWasTakenWith(string file)
+    {
+        var fixture = JobHistoryFixtures.ByFile(file);
+
+        // The relationship, not the number: the ceiling is whatever the two counted values
+        // make it, and the limit this recording was taken with stays inside it.
+        Assert.True(
+            InputWaitHistoryBudget.KeepsTheBound(fixture.ContinueAsNewAfter),
+            $"{file} was taken with {fixture.ContinueAsNewAfter} checks, and one run writes {InputWaitHistoryBudget.WorstCaseEventsPerPass} events per check over its own {InputWaitHistoryBudget.PrefixEvents}, inside a history of {InputWaitHistoryBudget.HistoryLimit}.");
+
+        var history = await JobHistoryFiles.ReadAsync(file);
+        var checks = Scheduled(history, ReportJobActivities.ResolveInputName);
+        var passes = checks - 1;
+
+        Assert.True(
+            checks >= 2,
+            $"{file} holds {checks} input checks: a recording of a wait checks the input once before it waits and at least once more.");
+        Assert.True(
+            passes <= fixture.ContinueAsNewAfter,
+            $"{file} took {passes} checks in one run, and that run was allowed {fixture.ContinueAsNewAfter} before it had to continue as a new one.");
+        Assert.Equal(1, Scheduled(history, InputWaitActivities.BeginName));
+
+        var rescheduled = Rescheduled(history);
+        Assert.True(
+            history.Events.Count <= InputWaitHistoryBudget.DefaultPassesCeiling + (EventsPerLostWorkflowTask * rescheduled),
+            $"{file} holds {history.Events.Count} events, and a run keeps at most {InputWaitHistoryBudget.DefaultPassesCeiling} at the default settings ({rescheduled} rescheduled workflow tasks recorded).");
+    }
+
+    [Theory]
+    [MemberData(nameof(OfARunThatLeftTheWait))]
+    public async Task ARunThatLeftTheWaitClearedTheStageOnceBeforeItEnded(string file)
+    {
+        var history = await JobHistoryFiles.ReadAsync(file);
+
+        Assert.Equal(1, Scheduled(history, InputWaitActivities.EndName));
+        var cleared = EventId(history, InputWaitActivities.EndName);
+        var failed = EventId(history, ReportJobActivities.FailJobName);
+        Assert.True(
+            failed is null || cleared < failed,
+            $"{file} clears the stage at event {cleared} and fails the job at event {failed}: the wait ends before the outcome step, whatever the outcome.");
+    }
+
+    [Theory]
+    [InlineData(JobHistoryFixtures.WaitingThenRejectedFile, "DATA_INVALID", "input-rejected")]
+    [InlineData(JobHistoryFixtures.WaitingThenExpiredFile, "INPUT_NOT_FOUND", "input-expired")]
+    public async Task ARunThatEndedWithItsUploadCarriesItsCodeAndTheReasonContract(
+        string file,
+        string errorCode,
+        string reason)
+    {
+        var history = await JobHistoryFiles.ReadAsync(file);
+
+        var failure = Assert.Single(
+            history.Events,
+            entry => entry.EventType == EventType.ActivityTaskScheduled
+                     && string.Equals(
+                         entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
+                         ReportJobActivities.FailJobName,
+                         StringComparison.Ordinal));
+        var input = failure.ActivityTaskScheduledEventAttributes.Input.Payloads_[0].Data.ToStringUtf8();
+
+        Assert.Contains(errorCode, input, StringComparison.Ordinal);
+        Assert.Contains(reason, input, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheRunThatContinuedEndedWithTheContinuationAndFailedNothing()
+    {
+        var fixture = JobHistoryFixtures.ContinuedAsNew;
+        var history = await JobHistoryFiles.ReadAsync(fixture.File);
+
+        Assert.Equal(EventType.WorkflowExecutionContinuedAsNew, history.Events.Last().EventType);
+        Assert.Equal(0, Scheduled(history, ReportJobActivities.FailJobName));
+        Assert.Equal(0, Scheduled(history, InputWaitActivities.EndName));
+        Assert.Equal(fixture.ContinueAsNewAfter, Scheduled(history, ReportJobActivities.ResolveInputName) - 1);
+    }
+
+    [Fact]
+    public async Task NoRunContinuedAsANewOneAfterAChildExecutionWasStarted()
+    {
+        var continued = new List<string>();
+        foreach (var fixture in JobHistoryFixtures.All)
+        {
+            var history = await JobHistoryFiles.ReadAsync(fixture.File);
+            var continuation = history.Events.FirstOrDefault(
+                entry => entry.EventType == EventType.WorkflowExecutionContinuedAsNew);
+            if (continuation is null)
+            {
+                continue;
+            }
+
+            continued.Add(fixture.File);
+
+            // The confinement the continuation lives under: it is thrown from inside the wait,
+            // before any step after it has started a child execution of its own.
+            var beforeTheContinuation = history.Events
+                .Where(entry => entry.EventId < continuation.EventId)
+                .ToList();
+            Assert.DoesNotContain(beforeTheContinuation, entry => entry.EventType == EventType.StartChildWorkflowExecutionInitiated);
+            Assert.DoesNotContain(beforeTheContinuation, entry => entry.EventType == EventType.ChildWorkflowExecutionStarted);
+        }
+
+        Assert.NotEmpty(continued);
+    }
+
+    [Theory]
+    [InlineData(JobHistoryFixtures.WaitingThenReadyAfterANotificationFile)]
+    [InlineData(JobHistoryFixtures.ContinuedAfterANotificationFile)]
+    public async Task ARunWokenByANotificationCarriesNoTimerOfTheCheckItWoke(string file)
+    {
+        var history = await JobHistoryFiles.ReadAsync(file);
+
+        var signalled = Assert.Single(history.Events, entry => entry.EventType == EventType.WorkflowExecutionSignaled);
+        var woken = history.Events.First(entry =>
+            entry.EventType == EventType.ActivityTaskScheduled
+            && entry.EventId > signalled.EventId
+            && string.Equals(
                 entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
                 ReportJobActivities.ResolveInputName,
                 StringComparison.Ordinal));
 
-        Assert.Equal(1, checks);
+        // The pass starts its timer before the notification arrives, so a recording woken by
+        // the notification records that timer's start and its cancellation, never a fire: a
+        // fired timer would be the backstop answering, not the notification.
+        Assert.DoesNotContain(
+            history.Events,
+            entry => entry.EventType == EventType.TimerFired
+                     && entry.EventId > signalled.EventId
+                     && entry.EventId < woken.EventId);
     }
 
     [Fact]
-    public async Task ARejectedInputEndsTheJobWithTheFailureStep()
+    public async Task TheRunThatWasWokenByItsOwnTimerCarriesTheFireThatWokeIt()
     {
-        var history = await ReadAsync(ReportJobReplayTests.RejectedHistory);
+        var history = await JobHistoryFiles.ReadAsync(JobHistoryFixtures.Verifying.File);
+        var fired = Assert.Single(history.Events, entry => entry.EventType == EventType.TimerFired);
 
-        var failures = history.Events
-            .Where(entry => entry.EventType == EventType.ActivityTaskScheduled)
-            .Count(entry => string.Equals(
+        var lastCheck = history.Events.Last(entry =>
+            entry.EventType == EventType.ActivityTaskScheduled
+            && string.Equals(
                 entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
-                ReportJobActivities.FailJobName,
+                ReportJobActivities.ResolveInputName,
                 StringComparison.Ordinal));
 
-        Assert.Equal(1, failures);
+        Assert.True(
+            fired.EventId < lastCheck.EventId,
+            $"the recorded timer fired at event {fired.EventId} and the check it woke is at {lastCheck.EventId}.");
     }
 
-    [Theory]
-    [InlineData(ReportJobReplayTests.ReadyHistory)]
-    public async Task AnInputThatIsNotRejectedRunsNoFailure(string file)
-    {
-        var history = await ReadAsync(file);
-
-        var failures = history.Events
-            .Where(entry => entry.EventType == EventType.ActivityTaskScheduled)
-            .Count(entry => string.Equals(
+    private static int Scheduled(WorkflowHistory history, string activityName) =>
+        history.Events.Count(entry =>
+            entry.EventType == EventType.ActivityTaskScheduled
+            && string.Equals(
                 entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
-                ReportJobActivities.FailJobName,
+                activityName,
                 StringComparison.Ordinal));
 
-        Assert.Equal(0, failures);
-    }
+    private static long? EventId(WorkflowHistory history, string activityName) =>
+        history.Events
+            .Where(entry => entry.EventType == EventType.ActivityTaskScheduled
+                            && string.Equals(
+                                entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
+                                activityName,
+                                StringComparison.Ordinal))
+            .Select(entry => (long?)entry.EventId)
+            .FirstOrDefault();
 
-    private static async Task<WorkflowHistory> ReadAsync(string file) =>
+    private static int Rescheduled(WorkflowHistory history) =>
+        history.Events.Count(entry => entry.EventType == EventType.WorkflowTaskTimedOut);
+}
+
+/// <summary>The committed recordings as files of this suite.</summary>
+internal static class JobHistoryFiles
+{
+    /// <summary>The full path of the recording <paramref name="file"/>.</summary>
+    /// <param name="file">The name the suite reads the recording by.</param>
+    public static string PathOf(string file) =>
+        Path.Combine(AppContext.BaseDirectory, ReportJobReplayTests.HistoriesDirectory, file);
+
+    /// <summary>Reads one committed recording.</summary>
+    /// <param name="file">The name the suite reads the recording by.</param>
+    public static async Task<WorkflowHistory> ReadAsync(string file) =>
         WorkflowHistory.FromJson(
             Path.GetFileNameWithoutExtension(file),
-            await File.ReadAllTextAsync(
-                Path.Combine(AppContext.BaseDirectory, ReportJobReplayTests.HistoriesDirectory, file),
-                TestContext.Current.CancellationToken));
+            await File.ReadAllTextAsync(PathOf(file), TestContext.Current.CancellationToken));
 }

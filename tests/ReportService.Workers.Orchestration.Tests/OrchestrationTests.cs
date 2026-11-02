@@ -13,6 +13,7 @@ using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
+using ReportService.Workers.Orchestration.Tests.Jobs;
 
 namespace ReportService.Workers.Orchestration.Tests;
 
@@ -421,6 +422,7 @@ public sealed class InMemoryIntentStoreContractTests : IntentStoreContract
 /// the concurrency bound it configured — and a registration on a queue the process
 /// does not declare stops start-up rather than being silently dropped.
 /// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
 {
     private readonly VerifierRig _rig = new();

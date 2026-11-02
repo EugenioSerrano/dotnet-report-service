@@ -8,6 +8,7 @@ using ReportService.Storage.Filesystem;
 using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
+using ReportService.Workers.Orchestration.Tests.Jobs;
 
 namespace ReportService.Workers.Orchestration.Tests;
 
@@ -18,6 +19,7 @@ namespace ReportService.Workers.Orchestration.Tests;
 /// reach a container that only the host builds. Nothing here starts the process;
 /// building the container is what the host does before it serves anything.
 /// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class OrchestrationWorkerCompositionTests
 {
     [Fact]
@@ -96,7 +98,8 @@ public sealed class OrchestrationWorkerCompositionTests
     }
 
     /// <summary>The settings the process needs, at the values the worker's own defaults carry.</summary>
-    private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)    {
+    private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)
+    {
         [DatabaseOptions.ConnectionStringSetting] = "Host=127.0.0.1;Port=5432;Database=report_service;Username=report_service;Password=unused",
         [DatabaseOptions.ExpectedSchemaVersionSetting] = "0003_upload-content-snapshots-and-intents.sql",
         [$"{ObjectStorageSettings.SectionPath}:{nameof(ObjectStorageSettings.Provider)}"] = "filesystem",
