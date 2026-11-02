@@ -6,10 +6,13 @@ namespace ReportService.Api.Tests.Telemetry;
 /// <summary>
 /// Two telemetry hosts alive at the same time, each with a unit of work of its own:
 /// each capture holds the span started inside its own unit and nothing of the other
-/// host's, and a capture with no unit open holds nothing. The class sits outside the
-/// telemetry collection, so it runs beside the rest of the project — the load a
-/// capture has to survive.
+/// host's, and a capture with no unit open holds nothing. The class runs with the
+/// telemetry collection because a host start replaces the service's process-wide
+/// unit-of-work log scope, which those cases depend on; the capture it proves is
+/// correct whichever cases run beside it, and it still runs beside every case of the
+/// project outside that collection.
 /// </summary>
+[Collection(TelemetryCollection.Name)]
 public sealed class CaptureIsolationTests
 {
     private const string FirstUnitSpan = "span-of-the-first-unit";

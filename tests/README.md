@@ -127,7 +127,10 @@ returns a snapshot, so a case that runs beside another one that is exporting can
 enumerate a collection someone is writing. The telemetry cases that open a unit of
 work run one at a time because the service's unit-of-work log scope is bound to one
 process-wide logger factory and the last host to start replaces it — that
-serialisation is not what makes a capture correct. The end-to-end composition class
+serialisation is not what makes a capture correct. The class that starts two hosts at
+once to prove two captures stay apart runs with those cases for the same reason: a
+host start replaces the unit-of-work log scope, so it would disturb them, while the
+capture it proves is correct either way. The end-to-end composition class
 states, in one table, the state each worker reports for each of its queues, which is
 the work the service registers: a change that registers work on a queue updates that
 table in the same change.
