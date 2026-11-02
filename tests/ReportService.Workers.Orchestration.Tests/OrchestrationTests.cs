@@ -10,6 +10,7 @@ using ReportService.Storage;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration;
 using ReportService.Workers.Orchestration.Dispatch;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
 
@@ -439,7 +440,13 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(2, plan[0].Options.Workflows.Count);
-        Assert.Equal(5, plan[0].Options.Activities.Count);
+        Assert.Equal(7, plan[0].Options.Activities.Count);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitActivities.BeginName);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitActivities.EndName);
         Assert.Equal("report-data", plan[1].Queue);
         Assert.Empty(plan[1].Options.Workflows);
         Assert.Equal(2, plan[1].Options.Activities.Count);

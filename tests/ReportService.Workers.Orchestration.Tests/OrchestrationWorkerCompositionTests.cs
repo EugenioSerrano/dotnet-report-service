@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage.Filesystem;
 using ReportService.Workers.Orchestration.Dispatch;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
 
 namespace ReportService.Workers.Orchestration.Tests;
@@ -53,9 +55,48 @@ public sealed class OrchestrationWorkerCompositionTests
         }
     }
 
-    /// <summary>The settings the process needs, at the values the worker's own defaults carry.</summary>
-    private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)
+    [Fact]
+    public void TheWaitingStepsArePlannedOnTheQueueTheJobWorkflowRunsOn()
     {
+        var root = Directory.CreateTempSubdirectory("worker-composition-");
+        try
+        {
+            var builder = Host.CreateApplicationBuilder();
+            builder.Configuration.AddInMemoryCollection(Settings(root.FullName));
+            builder.ConfigureContainer(new DefaultServiceProviderFactory(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
+            OrchestrationWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+            var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
+            var plan = WorkerPlan.Plan(
+                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                registrations);
+
+            // One worker per queue, whatever is registered on it: the job's steps and the
+            // waiting steps share the orchestration worker and nothing is added to the data one.
+            var orchestration = Assert.Single(plan, worker => worker.Queue == ReportJobWorkflow.OrchestrationQueue);
+            var activities = orchestration.Options.Activities.Select(activity => activity.Name).ToList();
+            Assert.Contains(InputWaitActivities.BeginName, activities);
+            Assert.Contains(InputWaitActivities.EndName, activities);
+            Assert.Contains(ReportJobActivities.ResolveInputName, activities);
+            Assert.Contains(
+                orchestration.Options.Workflows,
+                workflow => workflow.Name == ReportJobWorkflow.WorkflowType);
+
+            // The settings the wait runs under are published and valid as the process starts.
+            var options = host.Services.GetRequiredService<IOptions<InputWaitOptions>>().Value;
+            Assert.Empty(options.Validate());
+            Assert.Contains(plan, worker => worker.Queue == "report-data");
+        }
+        finally
+        {
+            root.Delete(true);
+        }
+    }
+
+    /// <summary>The settings the process needs, at the values the worker's own defaults carry.</summary>
+    private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)    {
         [DatabaseOptions.ConnectionStringSetting] = "Host=127.0.0.1;Port=5432;Database=report_service;Username=report_service;Password=unused",
         [DatabaseOptions.ExpectedSchemaVersionSetting] = "0003_upload-content-snapshots-and-intents.sql",
         [$"{ObjectStorageSettings.SectionPath}:{nameof(ObjectStorageSettings.Provider)}"] = "filesystem",

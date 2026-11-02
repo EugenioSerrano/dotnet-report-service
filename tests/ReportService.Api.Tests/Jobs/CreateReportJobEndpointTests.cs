@@ -371,6 +371,15 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.TransitionOutputAsync(outputId, now, cancellationToken);
 
+        public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
+            inner.BeginInputWaitAsync(reportJobId, cancellationToken);
+
+        public Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
+            inner.EndInputWaitAsync(reportJobId, cancellationToken);
+
+        public Task<IReadOnlyList<string>> FindInputWaitingJobIdsAsync(string uploadId, CancellationToken cancellationToken) =>
+            inner.FindInputWaitingJobIdsAsync(uploadId, cancellationToken);
+
         public Task<PartitionCommitResult> CommitPartitionAsync(PartitionRecord partition, CancellationToken cancellationToken) =>
             inner.CommitPartitionAsync(partition, cancellationToken);
 
@@ -421,6 +430,12 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<IReadOnlyList<string>> FindInputWaitingJobIdsAsync(string uploadId, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<PartitionCommitResult> CommitPartitionAsync(PartitionRecord partition, CancellationToken cancellationToken) => throw Unreachable();
 
