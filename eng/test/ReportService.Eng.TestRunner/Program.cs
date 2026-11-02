@@ -28,6 +28,7 @@ internal static class Program
         "tests/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj",
         "tests/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
+        "tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
         "tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
         "tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj",

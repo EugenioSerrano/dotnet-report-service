@@ -1,0 +1,17 @@
+{
+  "paper": "A4",
+  "widthMm": 210,
+  "heightMm": 297,
+  "marginMm": { "top": 15, "right": 12, "bottom": 18, "left": 12 },
+  "columns": [
+    { "column": "seq", "startMm": 12, "endMm": 26 },
+    { "column": "date", "startMm": 26, "endMm": 48 },
+    { "column": "description", "startMm": 48, "endMm": 168 },
+    { "column": "amount", "startMm": 168, "endMm": 198 }
+  ],
+  "headRow": ["Seq", "Date", "Description", "Amount"],
+  "headerAnchors": ["$.reportTitle", "$.customer.name", "$.currency", "$.totals.recordCount"],
+  "trail": "$.freeText",
+  "grouped": false,
+  "blockTotal": false
+}

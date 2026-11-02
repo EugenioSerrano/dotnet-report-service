@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Storage.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
@@ -222,4 +222,54 @@ across restarts (`JobStartTests`), the client that closes its connection before
 reading its answer (`JobAcceptanceOverRealServerTests`), and — for a build that
 prints — the job that runs to a terminal status (`JobNeverLostNeverDoubledTests`,
 which carries `[Trait("Requires", "printing")]`).
+
+## The independent judge of a printed document
+
+`ReportService.PdfOracle` reads a printed PDF with the text tools of its own image
+(`pdfinfo` for the page count, `pdftotext -bbox -enc UTF-8` for every word and its
+box) and judges it against the data the document was printed from. It references no
+product assembly and no PDF library, so its verdict is reached without the code it
+judges, and it shares nothing with the product's own verification.
+
+- **What it judges:** the page's size and frame, the two bands no text may print in,
+  the column captions on every page, every record printed once and in order, each
+  row's date, description and amount against the record, the amount of a row that
+  runs over a page break on the page the row begins on, the header values printed
+  before the table, the text printed after it, and the continuation mark the layout
+  must not print. A failure names its rule, the kind of failure (`row-lost`,
+  `row-duplicated`, `row-order`, `text-dropped`, `text-repeated`, `text-altered`,
+  `structure-lost`), the record, the field and the page — never a value of the data
+  or of the printed text.
+- **What it reads beside the document:** the fixture (a `header-items-v1` snapshot)
+  and a declaration of the page the package lays out — paper, margins, columns,
+  column captions, the header members printed before the table and the one printed
+  after it. The declaration names no page of a row: the row's first page is the page
+  its own first text — its number — printed on. The declarations of the rendering
+  suite's packages live in
+  `ReportService.Testing/OracleExpectations/`, and `ReportService.PdfOracle.Tests`
+  holds them to the packages themselves: the column names and their order in the row
+  template, the width each column declares in the stylesheet, the offset that width
+  and the manifest's left margin put it at, and the fact that the columns fill the
+  content area without a gap and without an overlap. A band that agrees only with the
+  declaration's own previous band fails.
+- **How it is held to itself:** `ReportService.PdfOracle.Tests` builds a passing
+  document by hand, plants one failure at a time in its words — a lost word on the
+  page a row continues on, a repeated line, a lost row, swapped words, a row out of
+  order, a duplicated row, a page without text, a record number the data does not
+  hold — and requires each to be reported with the class it plants. A second group
+  changes one cell of a row and nothing else — the amount, another record's amount,
+  the date, an amount that prints nowhere, a wrong amount on the second page, a
+  correct amount moved to the page a split row continues on — so the rule that owns
+  a row's date and amount (TI-4) is proved to fail on the failure it exists for, and
+  a third plants a continuation mark outside every row for the half of TI-7 no
+  control reaches. The command has its own cases: its one verb, its options, the
+  verdict it prints or writes, and the three exit codes.
+- **Command:** `ReportService.PdfOracle verdict --pdf <file> --fixture <snapshot>
+  --expectation <declaration> [--out <verdict>]`. It exits 0 for a verdict (a
+  document that fails a rule is a verdict, not an error), 1 when the document, the
+  snapshot or the declaration cannot be read, and 2 on a usage error. Each text tool
+  is given two minutes and is stopped when it outlives them, so a read that hangs is
+  refused instead of holding the suite; a caller that cancels gets its cancellation
+  back and no verdict. The tool needs `poppler-utils`, so it runs in its own image,
+  never on a host.
 
