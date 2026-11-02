@@ -8,7 +8,7 @@ is a test-only reader, invoked as separate processes, never linked into a
 product assembly (ADR-013 C1-C5).
 
 - **Base:** `mcr.microsoft.com/dotnet/aspnet:10.0.13-noble@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac` (Ubuntu 24.04.5 LTS, amd64).
-- **Installed by the image:** `apt-get install --no-install-recommends poppler-utils qpdf` — 50 packages added to the 97-package base (probe of 2026-11-02; four disposable containers, `--rm`, nothing installed on a host).
+- **Installed by the image:** `apt-get install --no-install-recommends poppler-utils qpdf` — the probe reported **50 packages newly installed and 0 upgraded** (97 → 147) on 2026-11-02, four disposable containers, `--rm`, nothing installed on a host; the raw diff is not retained, so the build re-reads the set.
 - **Invocation:** `pdftotext`, `pdfinfo`, `pdftoppm` and `qpdf` as separate processes; no library from this list is loaded into a test process.
 - **Waiver:** ADR-013 §3.1 covers poppler-utils and qpdf **with the apt packages installed as their dependencies**; the rows below are that dependency closure. The list changes only by the owner's commit (C3).
 
@@ -106,22 +106,22 @@ loaded into a test process.
 **qpdf is in the closure and the gate is `waived`.** `qpdf` and `libqpdf29t64`
 are Apache-2.0; ADR-013 §3.1 item 1 says qpdf needs no waiver, while item 4
 orders the gate recorded `waived — ADR-013` for each package of the closure.
-The C3 records the closure as waived, following item 4; the item-1/item-4
-tension is the accepted ADR's and needs an OQ or a superseding ADR, not a
-one-sided reading. SPEC-261101-0254's gate row is therefore compliant.
+The SPEC's gate row records the closure as waived, following item 4; this C3
+records the package-to-licence list; the item-1/item-4 tension is the accepted
+ADR's and needs an OQ or a superseding ADR, not a one-sided reading.
+SPEC-261101-0254's gate row is therefore compliant.
 
 ## 2. Packages already in the base image (22) — outside the C3 accepted closure
 
 The probe's diff is the 50 packages the install adds. The base image also carries
-the 22 packages below. They are the subset of the 97 base packages that the
-probe identified as runtime-closure relevant; the other base packages are also
-outside C3. **They are outside the C3 accepted closure:** ADR-013
-§3.1 item 1 covers the apt packages installed as dependencies of poppler-utils
-and qpdf, and ADR-004's base-image note leaves the base OS packages under their
-own licences. They are listed for completeness only; they are not accepted here
-and need no row in section 1. **Their licences were not read by the probe**; if a
-future scope ever includes the base, they must be read the same way before that
-acceptance.
+the 22 packages below. They are already present in the base image and were not
+installed by the oracle; the other 75 base packages are also outside C3.
+**They are outside the C3 accepted closure:** ADR-013 §3.1 item 1 covers the apt
+packages installed as dependencies of poppler-utils and qpdf, and ADR-004's
+base-image note leaves the base OS packages under their own licences. They are
+listed for completeness only; they are not accepted here and need no row in
+section 1. **Their licences were not read by the probe**; if a future scope ever
+includes the base, they must be read the same way before that acceptance.
 
 | Package | Version |
 |---------|---------|
@@ -158,9 +158,10 @@ the expressions the row lists, or when a copyright file is missing. Exact
 versions and licences, and the image digest, are recorded per build; the list
 changes only by the owner's commit, which is the record of this acceptance.
 
-- Accepted by: `human:eugenioserrano` (commit `611fd0f`, 2026-11-02T15:09:40-03:00)
+- Accepted by: `human:eugenioserrano` (commit `611fd0f`, 2026-11-02T15:09:40-03:00; its author is `Eugenio Serrano <eugenioserrano@msn.com>`, its parent `e9dc44e`, and it changes only this note)
 - Date: `2026-11-02`
 - Scope accepted: **section 1 only** (the 50 packages installed by the image; the 22 base packages are not part of this acceptance).
 
-C1/C2 are stated and verified in SPEC-261101-0254 and the V-Bounce MEM; C4/C5
-are outside this note.
+The initial entries were proposed in SPEC-261101-0254 §6 B.3 (the oracle plan);
+the owner's acceptance is the commit above. C1/C2 are stated and verified in
+SPEC-261101-0254 and the V-Bounce MEM; C4/C5 are outside this note.
