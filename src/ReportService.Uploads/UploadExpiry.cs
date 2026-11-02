@@ -28,13 +28,30 @@ public static class UploadExpiry
     public static bool IsOverdue(UploadRecord upload, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(upload);
-        return upload.Status switch
-        {
-            UploadStatus.Created or UploadStatus.Uploading => now >= upload.ExpiresAt,
-            UploadStatus.Verifying => now >= (upload.VerificationDeadline ?? DateTimeOffset.MaxValue),
-            _ => false,
-        };
+        return IsOverdue(upload.Status, upload.ExpiresAt, upload.VerificationDeadline, now);
     }
+
+    /// <summary>
+    /// Whether an upload in <paramref name="status"/> may no longer be used at
+    /// <paramref name="now"/>. The same rule as
+    /// <see cref="IsOverdue(UploadRecord, DateTimeOffset)"/>, stated over the four
+    /// values the decision needs, so a reader that has the upload's state, its two
+    /// expiry instants and nothing else answers exactly what the record answers.
+    /// </summary>
+    /// <param name="status">The state the upload is in.</param>
+    /// <param name="expiresAt">When the upload's session ends, in UTC.</param>
+    /// <param name="verificationDeadline">Until when a confirmed upload may still fix a snapshot, in UTC.</param>
+    /// <param name="now">The instant to judge it at, in UTC.</param>
+    public static bool IsOverdue(
+        UploadStatus status,
+        DateTimeOffset expiresAt,
+        DateTimeOffset? verificationDeadline,
+        DateTimeOffset now) => status switch
+    {
+        UploadStatus.Created or UploadStatus.Uploading => now >= expiresAt,
+        UploadStatus.Verifying => now >= (verificationDeadline ?? DateTimeOffset.MaxValue),
+        _ => false,
+    };
 
     /// <summary>The cause of the expiry of an upload last seen in <paramref name="status"/>.</summary>
     /// <param name="status">The state the upload was in before it expired.</param>

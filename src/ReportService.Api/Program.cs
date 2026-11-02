@@ -3,8 +3,10 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
+using ReportService.Api.Jobs;
 using ReportService.Api.Telemetry;
 using ReportService.Api.Uploads;
+using ReportService.Jobs;
 using ReportService.Uploads;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
@@ -28,6 +30,11 @@ builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
     services.GetRequiredService<IOptions<DatabaseOptions>>().Value.ConnectionString));
 builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();
 
+// Report jobs: acceptance stores the job, its output, its template reference and its start
+// request in one transaction of the same database, and answers only after that commit.
+builder.Services.AddSingleton<IJobStore, PostgresJobStore>();
+builder.Services.AddSingleton<JobAcceptanceMetrics>();
+
 var app = builder.Build();
 app.UseApiExceptionHandler();
 app.UseConsumerRegistry();
@@ -37,4 +44,5 @@ app.MapTelemetryPropagation();
 app.MapUploadEndpoints();
 app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
+app.MapCreateReportJobEndpoint();
 app.Run();

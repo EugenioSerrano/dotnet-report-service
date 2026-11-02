@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The report job records, shared by the API and the orchestration worker: one
+    place that says what a job is, what its requested outputs are and how each of
+    them is read and written, so the process that accepts a job and the process
+    that runs it can never disagree about its state. No HTTP and no
+    workflow-engine type enters this library.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
+  </ItemGroup>
+
+  <!-- Explicit SQL over a pooled data source; the versions are declared centrally. -->
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+</Project>
