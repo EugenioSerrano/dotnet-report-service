@@ -75,6 +75,8 @@ internal static partial class CoverageFloors
         new("ReportService.Uploads", Project: "ReportService.Uploads.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Rendering", Project: "ReportService.Rendering.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Templates", Project: "ReportService.Templates.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.TemplatePackages", Project: "ReportService.TemplatePackages.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.TemplateSource", Project: "ReportService.TemplateSource.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
@@ -95,6 +97,8 @@ internal static partial class CoverageFloors
         ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),
         ("ReportService.Rendering.Tests", ["ReportService.Rendering"]),
         ("ReportService.Templates.Tests", ["ReportService.Templates"]),
+        ("ReportService.TemplatePackages.Tests", ["ReportService.TemplatePackages"]),
+        ("ReportService.TemplateSource.Tests", ["ReportService.TemplateSource"]),
         // The fixture library and the test template packages are test support:
         // they hold no product behaviour, so the project measures them and the
         // run reports them without a floor.

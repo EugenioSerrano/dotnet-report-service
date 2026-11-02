@@ -12,7 +12,8 @@ namespace ReportService.Api.Consumers;
 /// is the one the service configuration carries, and the caller hands over a
 /// single snapshot of it, so a registry change that lands mid-request is seen by
 /// the next request and not by the one already running. Nothing here touches the
-/// database, the object store or the body.
+/// database, the object store or the body. Every operation of this API starts
+/// here, including the reads that take no body at all.
 /// </summary>
 public static class ConsumerAccess
 {
@@ -88,7 +89,7 @@ public static class ConsumerAccess
         if (result.Inactive)
         {
             logger.LogInformation(
-                "Upload request refused with {ErrorCode} for consumer {ConsumerId} ({Operation})",
+                "Request refused with {ErrorCode} for consumer {ConsumerId} ({Operation})",
                 ErrorCodes.ConsumerInactive,
                 result.ConsumerId,
                 operation);
@@ -101,7 +102,7 @@ public static class ConsumerAccess
         }
 
         logger.LogInformation(
-            "Upload request refused with {ErrorCode} ({Operation}, {IdentityState})",
+            "Request refused with {ErrorCode} ({Operation}, {IdentityState})",
             ErrorCodes.ConsumerUnknown,
             operation,
             state);

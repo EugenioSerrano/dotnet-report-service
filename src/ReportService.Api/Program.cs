@@ -5,8 +5,10 @@ using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Telemetry;
+using ReportService.Api.Templates;
 using ReportService.Api.Uploads;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
@@ -35,6 +37,11 @@ builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();
 builder.Services.AddSingleton<IJobStore, PostgresJobStore>();
 builder.Services.AddSingleton<JobAcceptanceMetrics>();
 
+// Taken template versions: the owner's read answers the record the take committed. The
+// API holds the record and never the source, so this registration is the only way a
+// version reaches the request path.
+builder.Services.AddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
+
 var app = builder.Build();
 app.UseApiExceptionHandler();
 app.UseConsumerRegistry();
@@ -45,4 +52,5 @@ app.MapUploadEndpoints();
 app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
 app.MapCreateReportJobEndpoint();
+app.MapGetTemplateVersionEndpoint();
 app.Run();

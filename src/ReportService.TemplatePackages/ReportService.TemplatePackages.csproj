@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The taken template version: its record and store, the parsed manifest and
+    its JSON form, the storage-key mapping, the deterministic package archive
+    and the reader of the taken copy. It holds no source client: nothing here
+    reaches the template repository, so the API can reference this project
+    without ever seeing a way to read the source.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Storage\ReportService.Storage.csproj" />
+  </ItemGroup>
+
+</Project>

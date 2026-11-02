@@ -5,6 +5,9 @@
     <ProjectReference Include="..\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
     <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
     <ProjectReference Include="..\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <!-- The taken version's record and store. The project holds no source client, so the
+         API can name what it keeps without ever being able to read the repository. -->
+    <ProjectReference Include="..\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
   </ItemGroup>
 
   <!-- The API keeps its own metadata records: explicit SQL over a pooled data source. -->

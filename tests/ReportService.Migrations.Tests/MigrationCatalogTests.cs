@@ -23,12 +23,14 @@ public sealed class MigrationCatalogTests
 
     private const string PdfOutput = "0006_pdf-output.sql";
 
+    private const string TemplateVersions = "0007_template-versions.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(PdfOutput, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(TemplateVersions, MigrationCatalog.ExpectedVersion);
     }
 
     [Fact]

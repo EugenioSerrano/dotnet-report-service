@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit and component tests of ReportService.TemplateSource: the settings, the
+    client against the source's documented shapes through an in-process handler,
+    the warning a changed taken version produces and the check seam. Hermetic:
+    no container, no socket, no network.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

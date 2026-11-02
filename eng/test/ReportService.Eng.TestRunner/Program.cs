@@ -31,6 +31,8 @@ internal static class Program
         "tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
         "tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj",
+        "tests/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj",
+        "tests/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj",
         "tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
     ];

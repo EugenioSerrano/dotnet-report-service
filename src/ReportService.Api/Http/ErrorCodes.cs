@@ -25,6 +25,9 @@ public static class ErrorCodes
     /// <summary>The named upload does not exist for the declared consumer.</summary>
     public const string InputNotFound = "INPUT_NOT_FOUND";
 
+    /// <summary>The named template version does not exist for the declared consumer.</summary>
+    public const string TemplateNotFound = "TEMPLATE_NOT_FOUND";
+
     /// <summary>The upload does not admit the operation in its current state.</summary>
     public const string UploadStateConflict = "UPLOAD_STATE_CONFLICT";
 
