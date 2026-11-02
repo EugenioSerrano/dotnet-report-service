@@ -13,7 +13,10 @@ namespace ReportService.Eng.TestRunner;
 /// evidence under <c>artifacts/test-results/&lt;stamp&gt;/</c> and exits
 /// non-zero, naming the cause, when any project fails or a coverage floor is
 /// not met. The projects of each level are fixed here; the command takes no
-/// project path from its caller.
+/// project path from its caller. The integration and end-to-end levels accept
+/// <c>--without-printing</c>, which leaves every test class marked as needing
+/// the printing steps out of the run — for a check on a build that cannot print
+/// yet, never for a covering run.
 /// </summary>
 internal static class Program
 {
@@ -40,6 +43,15 @@ internal static class Program
     /// <summary>The argument that makes the composition host prepare the render worker image and exit.</summary>
     private const string PrepareOnlyArgument = "--prepare-render-worker-image";
 
+    /// <summary>
+    /// The argument that leaves the test classes marked as needing the printing steps out of
+    /// an integration or end-to-end run. The covering run never passes it.
+    /// </summary>
+    public const string WithoutPrintingArgument = "--without-printing";
+
+    /// <summary>The trait every test class that needs the printing steps carries.</summary>
+    public const string RequiresPrintingTrait = "Requires=printing";
+
     /// <summary>The variable that tells each composition the run has prepared the render worker image.</summary>
     private const string ImagePreparedVariable = "REPORTSERVICE_RENDER_WORKER_IMAGE_PREPARED";
 
@@ -53,13 +65,21 @@ internal static class Program
 
     public static async Task<int> Main(string[] args)
     {
-        if (args.Length != 1 || args[0] is not ("hermetic" or "integration" or "e2e"))
+        var levels = args.Where(argument => !string.Equals(argument, WithoutPrintingArgument, StringComparison.Ordinal)).ToList();
+        var withoutPrinting = args.Contains(WithoutPrintingArgument, StringComparer.Ordinal);
+        if (levels.Count != 1 || levels[0] is not ("hermetic" or "integration" or "e2e"))
         {
-            await Console.Error.WriteLineAsync("Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|e2e").ConfigureAwait(false);
+            await Console.Error.WriteLineAsync($"Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|e2e [{WithoutPrintingArgument}]").ConfigureAwait(false);
             return ExitConfiguration;
         }
 
-        var level = args[0];
+        var level = levels[0];
+        if (withoutPrinting && level == "hermetic")
+        {
+            await Console.Error.WriteLineAsync($"{WithoutPrintingArgument} selects the group of the integration and end-to-end levels that needs the printing steps; the hermetic level has none.").ConfigureAwait(false);
+            return ExitConfiguration;
+        }
+
         var root = RunEvidence.FindRepositoryRoot();
         var startedAt = DateTimeOffset.Now;
         var projects = level switch
@@ -101,7 +121,7 @@ internal static class Program
         }
 
         var runDirectory = RunEvidence.CreateRunDirectory(root, startedAt);
-        Console.WriteLine($"Running the {level} level; evidence in {Path.GetRelativePath(root, runDirectory)}");
+        Console.WriteLine($"Running the {level} level{(withoutPrinting ? " without the classes that need the printing steps" : string.Empty)}; evidence in {Path.GetRelativePath(root, runDirectory)}");
 
         var usesContainers = level != "hermetic";
         var containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
@@ -118,7 +138,7 @@ internal static class Program
         {
             foreach (var project in projects)
             {
-                runs.Add(await RunProjectAsync(root, runDirectory, project, level).ConfigureAwait(false));
+                runs.Add(await RunProjectAsync(root, runDirectory, project, level, withoutPrinting).ConfigureAwait(false));
             }
         }
 
@@ -202,7 +222,7 @@ internal static class Program
             exitCode == 0 ? null : "the render worker image preparation failed; the end-to-end project was not run");
     }
 
-    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level)
+    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level, bool withoutPrinting)
     {
         var name = Path.GetFileNameWithoutExtension(project);
         var resultsDirectory = Path.Combine(runDirectory, name);
@@ -216,6 +236,13 @@ internal static class Program
         {
             arguments.AddRange(CoverageFloors.Options);
             arguments.AddRange(CoverageFloors.ProjectIncludes(name));
+        }
+
+        // The platform's own switch for leaving a trait's tests out; it goes after the
+        // separator, because it is an argument of the test application and not of dotnet test.
+        if (withoutPrinting)
+        {
+            arguments.AddRange(["--", "--filter-not-trait", RequiresPrintingTrait]);
         }
 
         // The integration classes remove their containers through their own handles.

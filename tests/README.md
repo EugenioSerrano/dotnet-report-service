@@ -34,6 +34,13 @@ failed.
   integration level, because it switches off the Testcontainers resource
   reaper (the tests remove their own containers); running the project
   directly with `dotnet test` would start the reaper's extra container.
+- The `integration` and `e2e` commands accept **`--without-printing`**, which
+  leaves every test class carrying the trait `[Trait("Requires", "printing")]`
+  out of the run. It exists for a check on a build that does not print a report
+  yet; the flag is passed to the projects after `--` as
+  `--filter-not-trait Requires=printing`. A covering run never passes it — a
+  run without it executes the printing-dependent classes, and those fail by name
+  when the printing steps are not part of the build.
 - The end-to-end level prepares the render worker image once, before the tests
   start, so the classes never publish it at the same time.
 
@@ -193,4 +200,26 @@ Three further classes of the same project:
   case of the integration suite (`REPORTSERVICE_CAPTURE_WORKFLOW_HISTORY` names the
   file to write), and committed with the change that recorded them. The case
   **fails** when no history exists — a case with nothing to check is not a result.
+
+## The report job suite
+
+The same project holds the tests of one report job's own work: `ReportJobActivitiesTests`
+runs the check of the job's data reference and the failure that ends it against
+the shared in-memory records, the case for every state an upload and a job can
+be in; `ReportJobActivityOptionsTests` asserts every execution setting of those
+steps; and `ReportJobReplayTests` with `ReportJobHistoryBoundTests` replay the
+histories under `Histories/Jobs/` — one captured with a ready input, one with a
+rejected input and one with a confirming input — and hold each of them to the
+longest path this build writes, with no timer in it and exactly one check of the
+input. The histories are recorded by the opt-in capture case of the integration
+suite, which runs against the SDK's local engine and needs no container.
+
+The integration project holds the suites that exercise a job against real
+dependencies: the job store's shared contract on PostgreSQL
+(`PostgresJobStoreContractTests`, with the schema's checks and two open
+transactions competing for one upload), the accepted job that starts exactly once
+across restarts (`JobStartTests`), the client that closes its connection before
+reading its answer (`JobAcceptanceOverRealServerTests`), and — for a build that
+prints — the job that runs to a terminal status (`JobNeverLostNeverDoubledTests`,
+which carries `[Trait("Requires", "printing")]`).
 
