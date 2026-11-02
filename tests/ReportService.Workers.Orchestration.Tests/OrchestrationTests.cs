@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
@@ -284,6 +285,54 @@ public sealed class IntentDispatcherTests : IDisposable
         Assert.Equal(Now, reference.RecordedAt);
     }
 
+    [Fact]
+    public async Task AStartJobRequestIsStartedAsTheJobWorkflowOfItsOwnIdentifier()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.StartJob, ReportJobId, Now);
+        _starter.OnStart = (workflowId, _) => new WorkflowStart(workflowId, "run-job");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal($"report-job/{ReportJobId}", Assert.Single(_starter.Started));
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        var reference = Assert.Single(_store.References);
+        Assert.Equal($"report-job/{ReportJobId}", reference.WorkflowId);
+        Assert.Equal("run-job", reference.RunId);
+        Assert.Contains("metadata: start-to-close 30s", reference.RetryPolicy, StringComparison.Ordinal);
+        Assert.Contains("unbounded", reference.RetryPolicy, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AJobsRequestsAreDispatchedInTheOrderTheyWereRecorded()
+    {
+        const string FirstJob = "job-00000000000000000000000000000001";
+        const string SecondJob = "job-00000000000000000000000000000002";
+        _store.Enqueue(IntentKinds.StartJob, FirstJob, Now);
+        _store.Enqueue(IntentKinds.StartJob, SecondJob, Now);
+        _starter.OnStart = (workflowId, _) => new WorkflowStart(workflowId, "run");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal([$"report-job/{FirstJob}", $"report-job/{SecondJob}"], _starter.Started);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        Assert.Equal("DISPATCHED", _store.StatusOf(2));
+    }
+
+    [Fact]
+    public async Task AJobThatIsAlreadyStartedIsNotStartedAgainAndItsReferenceIsKept()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.StartJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-existing");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, _starter.Starts);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        Assert.Equal("run-existing", Assert.Single(_store.References).RunId);
+    }
+
     private IntentDispatcher Dispatcher(
         int batchSize = 50,
         TimeSpan? verificationBound = null) =>
@@ -315,18 +364,27 @@ public sealed class IntentDispatcherTests : IDisposable
 
         public int Starts { get; private set; }
 
+        public List<string> Started { get; } = [];
+
         public Task<WorkflowStart?> DescribeAsync(string workflowId, CancellationToken cancellationToken)
         {
             var count = ++_describes;
             return Task.FromResult(OnDescribe is null ? Described : OnDescribe(count, workflowId));
         }
 
-        public Task<WorkflowStart> StartAsync(string workflowId, string uploadId, CancellationToken cancellationToken)
+        public Task<WorkflowStart> StartUploadVerificationAsync(string workflowId, string uploadId, CancellationToken cancellationToken) =>
+            Start(workflowId, uploadId);
+
+        public Task<WorkflowStart> StartReportJobAsync(string workflowId, string reportJobId, CancellationToken cancellationToken) =>
+            Start(workflowId, reportJobId);
+
+        private Task<WorkflowStart> Start(string workflowId, string subjectId)
         {
             Starts++;
-            return OnStart is null
-                ? Task.FromResult(new WorkflowStart(workflowId, "run-default"))
-                : Task.FromResult(OnStart(workflowId, uploadId));
+            Started.Add(workflowId);
+            return Task.FromResult(OnStart is null
+                ? new WorkflowStart(workflowId, "run-default")
+                : OnStart(workflowId, subjectId));
         }
     }
 
@@ -373,14 +431,14 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
     }
 
     [Fact]
-    public void BothDeclaredQueuesGetExactlyOneWorkerWithItsOwnRegistration()
+    public void BothDeclaredQueuesGetExactlyOneWorkerWithItsRegistrations()
     {
         var plan = Plan(["report-orchestration", "report-data"]);
 
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
-        Assert.Single(plan[0].Options.Workflows);
-        Assert.Empty(plan[0].Options.Activities);
+        Assert.Equal(2, plan[0].Options.Workflows.Count);
+        Assert.Equal(2, plan[0].Options.Activities.Count);
         Assert.Equal("report-data", plan[1].Queue);
         Assert.Empty(plan[1].Options.Workflows);
         Assert.Single(plan[1].Options.Activities);
@@ -407,11 +465,14 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddSingleton(_rig.Verifier);
         builder.Services.AddSingleton<TimeProvider>(_rig.Clock);
+        builder.Services.AddSingleton<IJobStore>(new InMemoryJobStore(new InMemoryUploadStore()));
+        builder.Services.AddSingleton<OrchestrationMetrics>();
         builder.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";
         builder.Configuration[$"{VerificationOptions.SectionPath}:{VerificationOptions.VerificationDeadlineSetting}"] = "06:00:00";
         builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
         builder.AddUploadVerificationWork();
+        builder.AddReportJobWork();
         foreach (var queue in extraQueues)
         {
             builder.Services.AddTaskQueueWork(queue, options => options.MaxConcurrentActivities = 1);

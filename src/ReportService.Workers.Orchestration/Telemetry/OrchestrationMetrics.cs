@@ -25,6 +25,12 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The gauge of how long the oldest pending request has waited.</summary>
     public const string PendingAgeInstrumentName = "reportservice.intent.pending.age";
 
+    /// <summary>The counter of job outcomes.</summary>
+    public const string JobOutcomesInstrumentName = "reportservice.job.outcomes";
+
+    /// <summary>The status tag of a job that ended failed.</summary>
+    public const string FailedJobStatus = "FAILED";
+
     /// <summary>The stages an outcome can belong to.</summary>
     public const string TransferStage = "transfer";
 
@@ -53,6 +59,7 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Counter<long> _outcomes;
     private readonly Histogram<double> _duration;
     private readonly Counter<long> _attempts;
+    private readonly Counter<long> _jobOutcomes;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
@@ -71,6 +78,10 @@ public sealed class OrchestrationMetrics : IDisposable
             DispatchAttemptsInstrumentName,
             unit: "{attempt}",
             description: "Attempts to dispatch a durable request, by kind and result.");
+        _jobOutcomes = _meter.CreateCounter<long>(
+            JobOutcomesInstrumentName,
+            unit: "{job}",
+            description: "Report jobs that ended, by status and code.");
         _meter.CreateObservableGauge(
             PendingAgeInstrumentName,
             ObservePendingAge,
@@ -105,6 +116,15 @@ public sealed class OrchestrationMetrics : IDisposable
             1,
             new KeyValuePair<string, object?>("kind", kind),
             new KeyValuePair<string, object?>("result", result));
+
+    /// <summary>Records one job that ended.</summary>
+    /// <param name="status">The status the job ended with, a fixed value.</param>
+    /// <param name="code">The code it ended with, a fixed value.</param>
+    public void JobOutcome(string status, string code) =>
+        _jobOutcomes.Add(
+            1,
+            new KeyValuePair<string, object?>("status", status),
+            new KeyValuePair<string, object?>("code", code));
 
     /// <summary>Publishes how long the oldest pending request of <paramref name="kind"/> has waited.</summary>
     /// <param name="kind">The request's kind, a fixed value.</param>

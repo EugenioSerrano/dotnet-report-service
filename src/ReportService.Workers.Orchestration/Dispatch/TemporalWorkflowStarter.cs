@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using ReportService.ServiceDefaults.Temporal;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
 using Temporalio.Api.Enums.V1;
 using Temporalio.Client;
@@ -44,19 +45,46 @@ public sealed class TemporalWorkflowStarter(TemporalClientHolder holder) : IWork
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowStart> StartAsync(string workflowId, string uploadId, CancellationToken cancellationToken)
+    public async Task<WorkflowStart> StartUploadVerificationAsync(string workflowId, string uploadId, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workflowId);
         ArgumentException.ThrowIfNullOrWhiteSpace(uploadId);
+        return await StartAsync(
+            workflowId,
+            (UploadVerificationWorkflow workflow) => workflow.RunAsync(new UploadVerificationInput(uploadId)),
+            UploadVerificationWorkflow.OrchestrationQueue,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowStart> StartReportJobAsync(string workflowId, string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workflowId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(reportJobId);
+        return await StartAsync(
+            workflowId,
+            (ReportJobWorkflow workflow) => workflow.RunAsync(new ReportJobInput(reportJobId)),
+            ReportJobWorkflow.OrchestrationQueue,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    // One start, whatever the workflow: the identifier is stable, a second start of it is
+    // refused by the engine and served by the execution already there.
+    private async Task<WorkflowStart> StartAsync<TWorkflow>(
+        string workflowId,
+        System.Linq.Expressions.Expression<Func<TWorkflow, Task>> workflowRun,
+        string taskQueue,
+        CancellationToken cancellationToken)
+    {
         var client = Current();
         try
         {
             var handle = await client.StartWorkflowAsync(
-                    (UploadVerificationWorkflow workflow) => workflow.RunAsync(new UploadVerificationInput(uploadId)),
+                    workflowRun,
                     new WorkflowOptions
                     {
                         Id = workflowId,
-                        TaskQueue = UploadVerificationWorkflow.OrchestrationQueue,
+                        TaskQueue = taskQueue,
                         IdConflictPolicy = WorkflowIdConflictPolicy.Fail,
                         IdReusePolicy = WorkflowIdReusePolicy.RejectDuplicate,
                     })

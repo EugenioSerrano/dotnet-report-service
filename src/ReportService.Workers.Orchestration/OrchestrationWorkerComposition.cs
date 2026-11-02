@@ -53,6 +53,9 @@ public static class OrchestrationWorkerComposition
         builder.AddUploadVerificationWork();
         builder.AddIntentDispatch();
 
+        // One accepted job: its workflow and its metadata steps on the orchestration queue.
+        builder.AddReportJobWork();
+
         return builder;
     }
 }

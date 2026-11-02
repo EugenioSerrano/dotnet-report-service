@@ -1,8 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Orchestration.Dispatch;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
 
 namespace ReportService.Workers.Orchestration;
@@ -76,6 +79,26 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<IIntentStore, PostgresIntentStore>();
         builder.Services.AddSingleton<IWorkflowStarter, TemporalWorkflowStarter>();
         builder.Services.AddHostedService<IntentDispatcher>();
+        return builder;
+    }
+
+    /// <summary>
+    /// Registers the work one accepted job runs — the job workflow and the two metadata
+    /// steps on the orchestration queue — and the records those steps read and write.
+    /// </summary>
+    /// <param name="builder">The process being built.</param>
+    public static IHostApplicationBuilder AddReportJobWork(this IHostApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
+        builder.Services.AddSingleton<ReportJobActivities>();
+        builder.Services.AddSingleton(provider => new TaskQueueWork(
+            ReportJobWorkflow.OrchestrationQueue,
+            options =>
+            {
+                options.AddWorkflow<ReportJobWorkflow>();
+                options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
+            }));
         return builder;
     }
 }

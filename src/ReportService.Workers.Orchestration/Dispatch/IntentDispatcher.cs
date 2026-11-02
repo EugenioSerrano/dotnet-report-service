@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
 
@@ -98,6 +99,15 @@ public sealed class IntentDispatcher : BackgroundService
         + $"max {UploadVerificationActivityOptions.MaximumInterval.TotalSeconds:0}s, "
         + $"{UploadVerificationActivityOptions.MaximumAttempts} attempts";
 
+    /// <summary>A constant summary of the policy the dispatched request's work runs under.</summary>
+    /// <param name="kind">The request's kind, a fixed value.</param>
+    /// <param name="verificationStartToClose">The configured bound of one verification attempt.</param>
+    public static string RetryPolicySummaryFor(string kind, TimeSpan verificationStartToClose) => kind switch
+    {
+        IntentKinds.StartJob => ReportJobActivityOptions.RetryPolicySummary,
+        _ => RetryPolicySummary(verificationStartToClose),
+    };
+
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -152,14 +162,14 @@ public sealed class IntentDispatcher : BackgroundService
 
     private async Task DispatchAsync(IIntentClaim claim, IntentRecord intent, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (!string.Equals(intent.Kind, IntentKinds.StartUploadVerification, StringComparison.Ordinal))
+        if (PlanFor(intent) is not { } plan)
         {
             // A kind this process does not serve is never dispatched and never failed.
             _logger.LogError("Intent {IntentId} has a kind this process does not serve", intent.IntentId);
             return;
         }
 
-        var workflowId = UploadVerificationWorkflow.WorkflowIdFor(intent.SubjectId);
+        var workflowId = plan.WorkflowId;
         try
         {
             if (_holder.Current is null)
@@ -175,7 +185,7 @@ public sealed class IntentDispatcher : BackgroundService
             {
                 try
                 {
-                    served = await _starter.StartAsync(workflowId, intent.SubjectId, cancellationToken).ConfigureAwait(false);
+                    served = await plan.Start(workflowId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
@@ -194,7 +204,7 @@ public sealed class IntentDispatcher : BackgroundService
                     served.WorkflowId,
                     served.RunId,
                     ConfigurationValidation.ProductVersion(),
-                    RetryPolicySummary(_verification.StartToClose),
+                    RetryPolicySummaryFor(intent.Kind, _verification.StartToClose),
                     now),
                 now,
                 cancellationToken).ConfigureAwait(false);
@@ -219,6 +229,25 @@ public sealed class IntentDispatcher : BackgroundService
                 wait.TotalSeconds);
         }
     }
+
+    // What a request of this kind is turned into: the identifier its execution must have, and
+    // the start that produces it. A kind this process does not serve has no plan.
+    private DispatchPlan? PlanFor(IntentRecord intent) => intent.Kind switch
+    {
+        IntentKinds.StartUploadVerification => new DispatchPlan(
+            UploadVerificationWorkflow.WorkflowIdFor(intent.SubjectId),
+            (workflowId, cancellationToken) => _starter.StartUploadVerificationAsync(workflowId, intent.SubjectId, cancellationToken)),
+        IntentKinds.StartJob => new DispatchPlan(
+            ReportJobWorkflow.WorkflowIdFor(intent.SubjectId),
+            (workflowId, cancellationToken) => _starter.StartReportJobAsync(workflowId, intent.SubjectId, cancellationToken)),
+        _ => null,
+    };
+
+    // The two things a plan needs: the identifier an execution must have, and the start
+    // that asks the engine for it.
+    private readonly record struct DispatchPlan(
+        string WorkflowId,
+        Func<string, CancellationToken, Task<WorkflowStart>> Start);
 
     // One warning per waiting request and process, so a stuck request is visible once and not once per poll.
     private void ReportIfLate(IntentRecord intent, DateTimeOffset now)
