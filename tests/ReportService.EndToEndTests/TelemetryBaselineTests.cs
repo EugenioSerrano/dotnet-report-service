@@ -55,12 +55,19 @@ public sealed class TelemetryBaselineTests
                 {
                     var capture = await CaptureAsync(client, token);
                     return capture.GetProperty("service").GetProperty("name").GetString() == service
-                        && capture.GetProperty("service").GetProperty("version").GetString() == version
                         && capture.GetProperty("points").GetArrayLength() > 0;
                 },
                 EvidenceDeadline,
                 PollInterval,
                 cancellationToken);
+
+            // The capture answering and the process being this build are two facts, and only
+            // the first is about the wire: a worker started from another image answers with its
+            // own version, so the version is stated here rather than hidden in the wait.
+            var reported = (await CaptureAsync(client, cancellationToken)).GetProperty("service").GetProperty("version").GetString();
+            Assert.True(
+                string.Equals(reported, version, StringComparison.Ordinal),
+                $"{service} reports version {reported} and this build is {version}: the process was started from another build, so its telemetry answers for that one. Prepare the render worker image from the tree under test before the class runs.");
         }
 
         // Logs, spans and traces: read from the run's telemetry view, which is the wire the
@@ -91,16 +98,19 @@ public sealed class TelemetryBaselineTests
 
         foreach (var service in Services)
         {
-            await Wait.UntilAsync(
-                $"the start-up line of {service}",
-                async token => Lines(await DashboardAsync(dashboard, "logs", token)).Any(line =>
-                    line.Service == service
-                    && line.Message.Contains("version=" + version, StringComparison.Ordinal)
-                    && line.Message.Contains("commit=" + commit, StringComparison.Ordinal)
-                    && line.Message.Contains("runtime=", StringComparison.Ordinal)),
-                EvidenceDeadline,
-                PollInterval,
-                cancellationToken);
+            // Waiting for the line and then reading what it carries separates "the view never
+            // heard from the process" from "the process runs another build": the view cannot
+            // tell the two apart while a single condition asks for both.
+            var line = await WaitForStartUpLineAsync(dashboard, service, cancellationToken);
+            Assert.True(
+                line.Contains("version=" + version, StringComparison.Ordinal),
+                $"The {service} start-up line does not name this build: '{line}'. A process started from another build answers with its own version.");
+            Assert.True(
+                line.Contains("commit=" + commit, StringComparison.Ordinal),
+                $"The {service} start-up line does not name its commit: '{line}'.");
+            Assert.True(
+                line.Contains("runtime=", StringComparison.Ordinal),
+                $"The {service} start-up line does not name its runtime: '{line}'.");
         }
 
         await Wait.UntilAsync(
@@ -196,6 +206,30 @@ public sealed class TelemetryBaselineTests
 
     private static async Task<JsonElement> CaptureAsync(HttpClient client, CancellationToken cancellationToken) =>
         await client.GetFromJsonAsync<JsonElement>(new Uri(TelemetryDiagnostics.MetricsRoute, UriKind.Relative), cancellationToken);
+
+    /// <summary>
+    /// The first start-up line the view received from a process, once one arrives.
+    /// The line is returned rather than only awaited, so what it names can be asserted
+    /// on its own — a process of another build answers, and the failure says so.
+    /// </summary>
+    private static async Task<string> WaitForStartUpLineAsync(HttpClient dashboard, string service, CancellationToken cancellationToken)
+    {
+        var line = string.Empty;
+        await Wait.UntilAsync(
+            $"a start-up line of {service}",
+            async token =>
+            {
+                line = Lines(await DashboardAsync(dashboard, "logs", token))
+                    .Where(entry => entry.Service == service && entry.Message.Contains("started", StringComparison.Ordinal))
+                    .Select(entry => entry.Message)
+                    .FirstOrDefault() ?? string.Empty;
+                return line.Length > 0;
+            },
+            EvidenceDeadline,
+            PollInterval,
+            cancellationToken);
+        return line;
+    }
 
     private static async Task<JsonElement> DashboardAsync(HttpClient dashboard, string signal, CancellationToken cancellationToken)
     {

@@ -26,6 +26,14 @@ internal static class TestComposition
     /// <summary>The dashboard setting that fixes the receiver's address.</summary>
     public const string DashboardOtlpEndpointSetting = "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL";
 
+    /// <summary>
+    /// The dashboard setting that gives the view's run store a directory of its own.
+    /// The view keeps a lock per run under its data directory and refuses to start
+    /// when another view holds the same run, so two compositions that start at the
+    /// same instant must not share one.
+    /// </summary>
+    public const string DashboardDataDirectorySetting = "ASPIRE_DASHBOARD_DATA_DIRECTORY";
+
     /// <summary>The variable a process reads its telemetry destination from.</summary>
     public const string OtlpEndpointVariable = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
@@ -58,7 +66,11 @@ internal static class TestComposition
     /// <param name="arguments">Arguments the AppHost reads as its own configuration.</param>
     public static async Task<IDistributedApplicationTestingBuilder> CreateAsync(CancellationToken cancellationToken, params string[] arguments)
     {
-        var address = Address();
+        // The receiver's address is resolved here, once for this composition: the
+        // value written into the run's configuration below is the one value both the
+        // receiver's bind and the container's destination are read from, so a machine
+        // with more than one interface cannot answer differently for the two.
+        var receiver = RequestedReceiver(Address());
         var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
             new DistributedApplicationTestingBuilderOptions { EnableDashboard = true },
             arguments,
@@ -72,10 +84,13 @@ internal static class TestComposition
         // ASPIRE_DASHBOARD_* entry of the live configuration into its process. The address here
         // is the interface the container reaches this machine on; the port is the run's own,
         // because the run's ports are assigned per run rather than taken from a fixed number.
+        // The view also gets a data directory of its own, so its run lock belongs to this
+        // composition alone and a second view started at the same instant cannot collide with it.
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             [AnonymousSetting] = "true",
-            [DashboardOtlpEndpointSetting] = Text(RequestedReceiver(address)),
+            [DashboardOtlpEndpointSetting] = Text(receiver),
+            [DashboardDataDirectorySetting] = ViewDataDirectory(),
         });
 
         // Enabling the telemetry view switches the default wait behaviour to stop as soon as a
@@ -86,14 +101,30 @@ internal static class TestComposition
 
         // The container is pointed at the view through the endpoint the run gives it, read from
         // the model while the container is being created — that is still before it starts, and
-        // it is the only moment the run knows the port the view listens on. The address stays
-        // the one this machine's container reaches it by.
+        // it is the only moment the run knows the port the view listens on. Its address is read
+        // back from the receiver entry written above: the same value the receiver binds, stated
+        // once, so the two halves of the destination cannot drift apart.
         var worker = (ContainerResource)builder.Resources.Single(resource => resource.Name == RenderWorkerName);
         builder.CreateResourceBuilder(worker).WithEnvironment(context =>
         {
             context.EnvironmentVariables[OtlpEndpointVariable] = Text(ContainerReceiver(builder));
         });
         return builder;
+    }
+
+    /// <summary>
+    /// A data directory for this composition's telemetry view, created if it does
+    /// not exist. The view keeps one run database and one lock file per run below
+    /// it, and two views writing one directory refuse to start; a directory per
+    /// composition is what keeps a test class independent of any other composition
+    /// running beside it. It lives in the machine's temporary directory and is left
+    /// for the operating system to clean up.
+    /// </summary>
+    public static string ViewDataDirectory()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "report-service-telemetry-view", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
     }
 
     /// <summary>
@@ -127,23 +158,43 @@ internal static class TestComposition
         new UriBuilder(Uri.UriSchemeHttp, address.ToString(), RequestedReceiverPort).Uri;
 
     /// <summary>
-    /// The receiver as the PDF worker's container reaches it: the port the run
-    /// gave the view's receiver, which the model reports once the run allocated
-    /// it — never the port this composition asked for — on the address the
-    /// receiver is bound to.
+    /// The address carried by a receiver entry. This is the one value a composition
+    /// states and reads back: the receiver binds it and the render worker's container
+    /// dials it, so it is parsed from the text the run wrote rather than resolved
+    /// again — a machine with more than one interface answers a second resolution
+    /// differently, and the container then exports into the void.
+    /// </summary>
+    /// <param name="receiverEndpoint">The receiver entry as the run states it.</param>
+    /// <exception cref="InvalidOperationException">The entry is not an absolute address.</exception>
+    public static IPAddress ConfiguredReceiverAddress(string? receiverEndpoint)
+    {
+        if (!Uri.TryCreate(receiverEndpoint, UriKind.Absolute, out var receiver)
+            || !IPAddress.TryParse(receiver.Host, out var address))
+        {
+            throw new InvalidOperationException(
+                $"The composition states its telemetry receiver as an absolute address, and '{receiverEndpoint}' is not one an address can be read back from, so the render worker's container cannot be pointed at the receiver.");
+        }
+
+        return address;
+    }
+
+    /// <summary>
+    /// The receiver as the render worker's container reaches it: the address the
+    /// receiver is bound on — read back from the receiver entry the run states — and
+    /// the port the run allocated, which the model reports once the run allocated it,
+    /// never the port this composition asked for.
     /// <para>
-    /// The address is the one <see cref="Address"/> answers, stated literally in
-    /// the container's destination. The name <see cref="ContainerHostName"/> is
-    /// not usable here: it resolves to this machine on the host, but inside a
-    /// container it resolves to the container runtime's own gateway, which
-    /// forwards to the host's loopback only — and the receiver is bound on the
-    /// interface, so a container dialling that name is refused. Measured on the
+    /// The address is stated literally in the container's destination. The name
+    /// <see cref="ContainerHostName"/> is not usable here: it resolves to this machine
+    /// on the host, but inside a container it resolves to the container runtime's own
+    /// gateway, which forwards to the host's loopback only — and the receiver is bound
+    /// on the interface, so a container dialling that name is refused. Measured on the
     /// reference environment: <c>host.docker.internal</c> resolves to
     /// <c>192.168.65.254</c> inside the container, a dial there is refused, and a
     /// dial to the interface address the receiver is bound on connects.
     /// </para>
     /// </summary>
-    /// <exception cref="InvalidOperationException">The run has no receiver endpoint to point the container at.</exception>
+    /// <exception cref="InvalidOperationException">The run has no receiver endpoint or no address to point the container at.</exception>
     public static Uri ContainerReceiver(IDistributedApplicationTestingBuilder builder)
     {
         var dashboard = builder.Resources.FirstOrDefault(resource => string.Equals(resource.Name, DashboardResourceName, StringComparison.Ordinal))
@@ -158,7 +209,9 @@ internal static class TestComposition
             ?? throw new InvalidOperationException(
                 $"The run had not allocated the telemetry view's receiver when the PDF worker's container was created, so the composition cannot tell the worker where to send its telemetry.");
 
-        return ContainerReceiver(Address(), allocated.Port);
+        return ContainerReceiver(
+            ConfiguredReceiverAddress(builder.Configuration[DashboardOtlpEndpointSetting]),
+            allocated.Port);
     }
 
     /// <summary>

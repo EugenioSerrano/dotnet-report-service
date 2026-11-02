@@ -24,6 +24,20 @@ public sealed class TelemetryReceiverAddressTests
     }
 
     [Fact]
+    public void TheContainersDestinationIsReadBackFromTheReceiverEntryAndNeverResolvedAgain()
+    {
+        // A documentation address: no name resolution on this machine can produce it, so a
+        // destination that carries it was built from the value the receiver was given.
+        const string ReceiverEntry = "http://203.0.113.7:19701";
+        IPAddress configured = TestComposition.ConfiguredReceiverAddress(ReceiverEntry);
+        var destination = TestComposition.ContainerReceiver(configured, 43210);
+
+        Assert.Equal(IPAddress.Parse("203.0.113.7"), configured);
+        Assert.Equal("203.0.113.7", destination.Host);
+        Assert.Equal(43210, destination.Port);
+    }
+
+    [Fact]
     public void TheContainersDestinationCarriesThePortTheRunAllocated()
     {
         var destination = TestComposition.ContainerReceiver(TestComposition.Address(), 43210);
