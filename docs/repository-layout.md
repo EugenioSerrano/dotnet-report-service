@@ -11,6 +11,7 @@ dotnet-report-service/
 ├── src/                       Product source — one folder per project
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
+│   ├── ReportService.Jobs/                        The report job records: acceptance, outputs, template references, shared by the API and the orchestration worker
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
 │   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
@@ -20,6 +21,7 @@ dotnet-report-service/
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
+│   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.Uploads.Tests/        Unit tests of the shared upload library (hermetic)

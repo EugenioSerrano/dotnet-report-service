@@ -19,12 +19,14 @@ public sealed class MigrationCatalogTests
 
     private const string Deadline = "0004_upload-verification-deadline.sql";
 
+    private const string Jobs = "0005_report-jobs.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(Deadline, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Jobs, MigrationCatalog.ExpectedVersion);
     }
 
     [Fact]
@@ -49,6 +51,19 @@ public sealed class MigrationCatalogTests
         Assert.DoesNotContain("CREATE TABLE", baseline.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("CREATE SCHEMA IF NOT EXISTS report_service;", baseline.Sql, StringComparison.Ordinal);
         Assert.Contains("CREATE TABLE report_service.uploads", uploads.Sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheJobsScriptCreatesTheJobTablesAndWidensTheIntentKinds()
+    {
+        var jobs = Assert.Single(MigrationCatalog.Scripts, script => script.Name == Jobs);
+
+        Assert.Contains("CREATE TABLE report_service.report_jobs", jobs.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE report_service.report_outputs", jobs.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE report_service.template_references", jobs.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER TABLE report_service.intents", jobs.Sql, StringComparison.Ordinal);
+        Assert.Contains("DROP CONSTRAINT intents_kind_check", jobs.Sql, StringComparison.Ordinal);
+        Assert.Contains("'start-job'", jobs.Sql, StringComparison.Ordinal);
     }
 
     [Fact]

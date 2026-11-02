@@ -1,0 +1,326 @@
+using ReportService.Jobs;
+using ReportService.Storage;
+using ReportService.Uploads;
+
+namespace ReportService.Testing;
+
+/// <summary>
+/// The behaviour every report job store must show, written once and run against
+/// both of them: the in-memory double the component tests use and the store of the
+/// real database. Because it is the same class in both places, the double cannot
+/// quietly drift away from the store it stands in for — a change to the contract
+/// fails one of them. The uploads an acceptance is judged against are made through
+/// the upload store's own steps, so each case starts from a state the service can
+/// actually reach, and every instant is fixed so a boundary is decided exactly.
+/// </summary>
+public abstract class JobStoreContract : IAsyncLifetime
+{
+    /// <summary>The consumer every case accepts its jobs for.</summary>
+    public const string Consumer = "dev-consumer";
+
+    /// <summary>The instant every case decides at.</summary>
+    protected static readonly DateTimeOffset Now = new(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero);
+
+    /// <summary>The instant every confirmation of this contract happened at.</summary>
+    protected static readonly DateTimeOffset Confirmed = Now.AddMinutes(-1);
+
+    /// <summary>The lower-case hexadecimal hash every case of this contract uses.</summary>
+    protected const string Hash = "9ffcbf0acedfe4529a6093c4c669efab29c2d523a7794bacfb8eb8a946ca8dd3";
+
+    private int _sequence;
+
+    /// <summary>The job records under test, and the upload records they are judged against.</summary>
+    protected IJobStore Store { get; private set; } = null!;
+
+    /// <summary>The upload records an acceptance is judged against.</summary>
+    protected IUploadStore Uploads { get; private set; } = null!;
+
+    /// <summary>The states an upload can be in when a job is accepted against it.</summary>
+    protected enum UploadState
+    {
+        Created,
+        Uploading,
+        Verifying,
+        Ready,
+        Rejected,
+        Expired,
+        VerifyingPastItsDeadline,
+    }
+
+    /// <summary>Creates the two stores this class's cases run against.</summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected abstract Task<(IJobStore Jobs, IUploadStore Uploads)> CreateStoresAsync(CancellationToken cancellationToken);
+
+    /// <summary>Releases what <see cref="CreateStoresAsync"/> created, when the stores hold anything.</summary>
+    /// <param name="jobs">The job records.</param>
+    /// <param name="uploads">The upload records.</param>
+    protected virtual ValueTask DisposeStoresAsync(IJobStore jobs, IUploadStore uploads) => default;
+
+    [Fact]
+    public async Task AcceptingAJobStoresItWithItsOutputAndItsStartRequest()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+
+        var result = await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var accepted = Assert.IsType<JobAcceptanceResult.Accepted>(result);
+        Assert.Equal(acceptance.ReportJobId, accepted.Job.ReportJobId);
+        Assert.Equal(Consumer, accepted.Job.ConsumerId);
+        Assert.Equal(uploadId, accepted.Job.UploadId);
+        Assert.Equal(ReportJobStatus.Queued, accepted.Job.Status);
+        Assert.Equal(Now, accepted.Job.ReportClock);
+        Assert.Equal(Now, accepted.Job.CreatedAt);
+        Assert.Null(accepted.Job.Stage);
+        Assert.Null(accepted.Job.ErrorCode);
+        Assert.Null(accepted.Job.StartedAt);
+        Assert.Null(accepted.Job.FinishedAt);
+        Assert.False(accepted.Job.IsTerminal);
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(state);
+        Assert.Equal(ReportJobStatus.Queued, state!.Job.Status);
+        var output = Assert.Single(state.Outputs);
+        Assert.Equal(acceptance.OutputId, output.OutputId);
+        Assert.Equal(OutputFormat.Pdf, output.Format);
+        Assert.Equal(OutputStatus.Pending, output.Status);
+        Assert.Null(output.ErrorCode);
+        Assert.Equal(UploadStatus.Ready, state.UploadStatus);
+        Assert.Equal(Now.AddHours(1), state.UploadExpiresAt);
+    }
+
+    [Fact]
+    public async Task AVerifyingUploadThatIsStillInTimeIsAccepted()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+
+        var result = await Store.AcceptAsync(Acceptance(uploadId), Now, cancellationToken);
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(result);
+        var state = await Store.FindForWorkflowAsync(((JobAcceptanceResult.Accepted)result).Job.ReportJobId, cancellationToken);
+        Assert.NotNull(state);
+        Assert.Equal(UploadStatus.Verifying, state!.UploadStatus);
+        Assert.Equal(Now.AddHours(5), state.VerificationDeadline);
+    }
+
+    [Fact]
+    public async Task EveryUnusableDataReferenceIsRefusedAndStoresNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        foreach (var state in new[]
+                 {
+                     UploadState.Created,
+                     UploadState.Uploading,
+                     UploadState.Rejected,
+                     UploadState.Expired,
+                     UploadState.VerifyingPastItsDeadline,
+                 })
+        {
+            var uploadId = await SeedAsync(state, cancellationToken: cancellationToken);
+            var acceptance = Acceptance(uploadId);
+
+            var result = await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+            Assert.True(result is JobAcceptanceResult.UploadUnusable, $"an upload in {state} must not be usable");
+            Assert.Null(await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken));
+        }
+
+        var ofAnotherConsumer = await SeedAsync(UploadState.Ready, "another-consumer", cancellationToken);
+        var foreign = Acceptance(ofAnotherConsumer);
+        Assert.True(await Store.AcceptAsync(foreign, Now, cancellationToken) is JobAcceptanceResult.UploadUnusable);
+        Assert.Null(await Store.FindForWorkflowAsync(foreign.ReportJobId, cancellationToken));
+
+        var absent = Acceptance("upload-ffffffffffffffffffffffffffffffff");
+        Assert.True(await Store.AcceptAsync(absent, Now, cancellationToken) is JobAcceptanceResult.UploadUnusable);
+        Assert.Null(await Store.FindForWorkflowAsync(absent.ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AVerifyingUploadIsJudgedAtTheInstantOfAcceptanceToTheMillisecond()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var deadline = Now.AddHours(5);
+        var justInTime = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+        var atItsDeadline = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(
+            await Store.AcceptAsync(Acceptance(justInTime), deadline.AddMilliseconds(-1), cancellationToken));
+
+        var late = Acceptance(atItsDeadline);
+        Assert.True(await Store.AcceptAsync(late, deadline, cancellationToken) is JobAcceptanceResult.UploadUnusable);
+        Assert.Null(await Store.FindForWorkflowAsync(late.ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task FailingAJobEndsTheJobAndEveryOutputThatHadNotEnded()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        var endedAt = Now.AddSeconds(3);
+        var outcome = await Store.FailJobAsync(
+            acceptance.ReportJobId, "INPUT_NOT_FOUND", "input-expired", endedAt, cancellationToken);
+
+        Assert.Equal(JobFailureOutcome.Applied, outcome);
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(state);
+        Assert.Equal(ReportJobStatus.Failed, state!.Job.Status);
+        Assert.Equal("INPUT_NOT_FOUND", state.Job.ErrorCode);
+        Assert.Equal("input-expired", state.Job.ErrorReason);
+        Assert.Equal(endedAt, state.Job.FinishedAt);
+        Assert.True(state.Job.IsTerminal);
+        var output = Assert.Single(state.Outputs);
+        Assert.Equal(OutputStatus.Failed, output.Status);
+        Assert.Equal("INPUT_NOT_FOUND", output.ErrorCode);
+        Assert.Equal(endedAt, output.FinishedAt);
+    }
+
+    [Fact]
+    public async Task AJobEndsOnceAndKeepsTheConditionItFirstEndedWith()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        Assert.Equal(
+            JobFailureOutcome.Applied,
+            await Store.FailJobAsync(acceptance.ReportJobId, "INPUT_NOT_FOUND", "input-expired", Now.AddSeconds(1), cancellationToken));
+        Assert.Equal(
+            JobFailureOutcome.AlreadyTerminal,
+            await Store.FailJobAsync(acceptance.ReportJobId, "TEMPLATE_NOT_FOUND", "template-missing", Now.AddSeconds(2), cancellationToken));
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(state);
+        Assert.Equal("INPUT_NOT_FOUND", state!.Job.ErrorCode);
+        Assert.Equal("input-expired", state.Job.ErrorReason);
+        Assert.Equal(Now.AddSeconds(1), state.Job.FinishedAt);
+        var output = Assert.Single(state.Outputs);
+        Assert.Equal("INPUT_NOT_FOUND", output.ErrorCode);
+        Assert.Equal(Now.AddSeconds(1), output.FinishedAt);
+    }
+
+    [Fact]
+    public async Task AnUnknownJobIsNotFoundAndFailingItChangesNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var unknown = "job-ffffffffffffffffffffffffffffffff";
+
+        Assert.Null(await Store.FindForWorkflowAsync(unknown, cancellationToken));
+        Assert.Equal(
+            JobFailureOutcome.AlreadyTerminal,
+            await Store.FailJobAsync(unknown, "INPUT_NOT_FOUND", "input-expired", Now, cancellationToken));
+        Assert.Null(await Store.FindForWorkflowAsync(unknown, cancellationToken));
+    }
+
+    /// <summary>An acceptance of a job over <paramref name="uploadId"/>, with identifiers of their own.</summary>
+    /// <param name="uploadId">The upload the job reports on.</param>
+    /// <param name="consumerId">The consumer the job is accepted for.</param>
+    /// <param name="version">The version the acceptance names; null for a reference by name.</param>
+    protected JobAcceptance Acceptance(string uploadId, string consumerId = Consumer, string? version = "1.0.0") => new(
+        JobIdentifier.Create(),
+        JobIdentifier.CreateOutput(),
+        consumerId,
+        uploadId,
+        "pilot-grouped",
+        version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
+        version);
+
+    /// <summary>Creates an upload and drives it to <paramref name="state"/> through the upload store's own steps.</summary>
+    /// <param name="state">The state the upload must be in.</param>
+    /// <param name="consumerId">The owner of the upload.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>The identifier of the upload.</returns>
+    protected async Task<string> SeedAsync(
+        UploadState state,
+        string consumerId = Consumer,
+        CancellationToken cancellationToken = default)
+    {
+        var uploadId = UploadIdentifier.Prefix + (++_sequence).ToString("x32", System.Globalization.CultureInfo.InvariantCulture);
+        var record = new UploadRecord(
+            uploadId,
+            consumerId,
+            UploadMode.ApiStream,
+            DataProfile.HeaderItemsV1,
+            UploadStatus.Created,
+            ObjectKey.FromSegments("staging", uploadId, "content"),
+            Now.AddHours(-1),
+            Now.AddHours(1));
+        await Uploads.CreateAsync(record, cancellationToken);
+
+        if (state is UploadState.Created)
+        {
+            return uploadId;
+        }
+
+        Assert.True(await Uploads.TryStartTransferAsync(
+            uploadId, consumerId, UploadContentEncoding.None, Now.AddMinutes(-30), cancellationToken));
+        if (state is UploadState.Uploading)
+        {
+            return uploadId;
+        }
+
+        if (state is UploadState.Rejected)
+        {
+            Assert.True(await Uploads.RejectTransferAsync(
+                uploadId, UploadRejectionCode.DataInvalid, UploadRejectionReason.Truncated, 12, Now.AddMinutes(-20), cancellationToken));
+            return uploadId;
+        }
+
+        if (state is UploadState.Expired)
+        {
+            Assert.True((await Uploads.ExpireIfOverdueAsync(uploadId, record.ExpiresAt, cancellationToken)).Expired);
+            return uploadId;
+        }
+
+        Assert.True(await Uploads.RecordTransferAsync(
+            uploadId, UploadContentOutcome.Complete, 900, 800, Hash, Now.AddMinutes(-20), cancellationToken));
+
+        // A verifying upload past its deadline is confirmed just in time and then outlives the
+        // deadline; one that is in time keeps a deadline hours ahead of the decision.
+        var deadline = state is UploadState.VerifyingPastItsDeadline ? Now : Now.AddHours(5);
+        Assert.True(await Uploads.ConfirmAsync(
+            uploadId, consumerId, Hash, Confirmed, Now.AddMinutes(-20), deadline, cancellationToken));
+
+        if (state is UploadState.Ready)
+        {
+            Assert.Equal(
+                SnapshotCommitResult.Committed,
+                await Uploads.CommitReadyAsync(Snapshot(uploadId, consumerId), Now.AddMinutes(-10), cancellationToken));
+        }
+
+        return uploadId;
+    }
+
+    /// <summary>A snapshot of <paramref name="uploadId"/> for the ready state.</summary>
+    /// <param name="uploadId">The upload the snapshot belongs to.</param>
+    /// <param name="consumerId">The owner of the upload.</param>
+    protected static SnapshotRecord Snapshot(string uploadId, string consumerId = Consumer) => new(
+        uploadId,
+        consumerId,
+        ObjectKey.FromSegments("snapshots", uploadId, "a"),
+        UploadContentEncoding.None,
+        DataProfile.HeaderItemsV1,
+        Hash,
+        900,
+        Hash,
+        900,
+        Now.AddMinutes(-10));
+
+    /// <inheritdoc />
+    public async ValueTask InitializeAsync() =>
+        (Store, Uploads) = await CreateStoresAsync(TestContext.Current.CancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (Store is not null)
+        {
+            await DisposeStoresAsync(Store, Uploads);
+        }
+    }
+}

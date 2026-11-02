@@ -67,6 +67,7 @@ internal static partial class CoverageFloors
     public static readonly IReadOnlyList<CoverageFloor> Floors =
     [
         new("ReportService.Api", Project: "ReportService.Api.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Jobs", Project: "ReportService.Jobs.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Migrations", Project: "ReportService.Migrations.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
@@ -84,6 +85,7 @@ internal static partial class CoverageFloors
     public static readonly IReadOnlyList<(string Project, IReadOnlyList<string> Assemblies)> Owners =
     [
         ("ReportService.Api.Tests", ["ReportService.Api"]),
+        ("ReportService.Jobs.Tests", ["ReportService.Jobs"]),
         ("ReportService.Migrations.Tests", ["ReportService.Migrations"]),
         ("ReportService.Storage.Tests", ["ReportService.Storage", "ReportService.Storage.Filesystem"]),
         ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),

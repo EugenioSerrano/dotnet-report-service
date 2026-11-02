@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Migrations.Tests`, `ReportService.Storage.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Storage.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
@@ -69,8 +69,11 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   unit/component project adds its product assembly's row there in the same
   change**; an assembly with a row that is missing from the report fails the
   run. An assembly with no coverable line yet is reported `n/a`.
-- The two assemblies with a floor are `ReportService.Api` and
-  `ReportService.Migrations`, both at **80 % line / 70 % branch**.
+- Every product assembly with a unit/component project carries the
+  **80 % line / 70 % branch** floor: `ReportService.Api`,
+  `ReportService.Jobs`, `ReportService.Migrations`, `ReportService.Storage`,
+  `ReportService.Storage.Filesystem`, `ReportService.Uploads` and
+  `ReportService.Workers.Orchestration`.
 - An assembly without a floor is still reported: `ReportService.ServiceDefaults`
   and `ReportService.ServiceDefaults.Temporal` appear with their figures and no
   floor, because they have no unit/component project of their own yet.
