@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Printing a composed block: the browser session, the print itself, the package
+    route policy that confines every request of a document to the package, and the
+    two seams a test uses to compose a known-bad document. The seams are internal
+    and named to the rendering host and the rendering test projects only.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.RenderingHost" />
+    <InternalsVisibleTo Include="ReportService.Rendering.Tests" />
+    <InternalsVisibleTo Include="ReportService.RenderingTests" />
+  </ItemGroup>
+
+</Project>

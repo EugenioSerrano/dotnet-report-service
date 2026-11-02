@@ -27,7 +27,9 @@ internal static class Program
         "tests/ReportService.Data.Tests/ReportService.Data.Tests.csproj",
         "tests/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
+        "tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
+        "tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj",
         "tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
     ];

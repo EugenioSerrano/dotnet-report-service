@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Composing a block into HTML: the adapter contract every template engine is
+    reached through, the Scriban adapter, the render context, the escaping
+    policy, the caller-side guards, the block composer and the prepared-template
+    cache. No other product assembly references a template engine package.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Scriban" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Data\ReportService.Data.csproj" />
+  </ItemGroup>
+
+</Project>

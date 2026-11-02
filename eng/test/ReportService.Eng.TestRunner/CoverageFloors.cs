@@ -73,6 +73,8 @@ internal static partial class CoverageFloors
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Uploads", Project: "ReportService.Uploads.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Rendering", Project: "ReportService.Rendering.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Templates", Project: "ReportService.Templates.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
@@ -91,6 +93,8 @@ internal static partial class CoverageFloors
         ("ReportService.Migrations.Tests", ["ReportService.Migrations"]),
         ("ReportService.Storage.Tests", ["ReportService.Storage", "ReportService.Storage.Filesystem"]),
         ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),
+        ("ReportService.Rendering.Tests", ["ReportService.Rendering"]),
+        ("ReportService.Templates.Tests", ["ReportService.Templates"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
     ];
 
@@ -133,6 +137,10 @@ internal static partial class CoverageFloors
         "--coverlet-exclude", "[ReportService.Testing]*",
         "--coverlet-exclude-by-file", "**/Program.cs",
         "--coverlet-exclude-by-file", "**/obj/**",
+        // The browser session and the print itself drive a real browser; they are
+        // verified by the rendering suite and the worker-level integration tests.
+        "--coverlet-exclude-by-file", "**/BrowserSession.cs",
+        "--coverlet-exclude-by-file", "**/ChromiumPdfPrinter.cs",
     ];
 
     /// <summary>The file name pattern of a Cobertura report written by the coverage tool.</summary>
