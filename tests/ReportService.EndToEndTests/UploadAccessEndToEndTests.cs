@@ -125,6 +125,9 @@ public sealed class UploadAccessEndToEndTests : IDisposable
             PollInterval,
             cancellationToken);
 
+        // The service is still ready going into the next step.
+        await AssertHealthyAsync(api, cancellationToken);
+
         // A second upload is opened while its consumer is active; the registry file is then
         // rewritten with that consumer inactive, under the running API. The change is in force
         // once the registry's fingerprint moves; from then on the consumer may not open another
@@ -168,6 +171,9 @@ public sealed class UploadAccessEndToEndTests : IDisposable
         Assert.Equal("ready", await StatusAsync(api, upload, cancellationToken));
         Assert.Equal("ready", await StatusAsync(api, second, cancellationToken));
 
+        // Ready with that consumer inactive, and with both of its uploads ended ready.
+        await AssertHealthyAsync(api, cancellationToken);
+
         // An upload nobody confirms expires at the end of its session and takes nothing more.
         await File.WriteAllTextAsync(registry, ActiveRegistry(), cancellationToken);
         await Wait.UntilAsync(
@@ -193,11 +199,7 @@ public sealed class UploadAccessEndToEndTests : IDisposable
 
         // The service stayed ready throughout, and it is the same process it was at the start:
         // every change above was applied to the running API, without a restart.
-        using (var health = await api.GetAsync("/health", cancellationToken))
-        {
-            Assert.Equal(HttpStatusCode.OK, health.StatusCode);
-            Assert.Contains("Healthy", await BodyAsync(health, cancellationToken), StringComparison.Ordinal);
-        }
+        await AssertHealthyAsync(api, cancellationToken);
 
         Assert.Equal(process, await ApiProcessIdAsync(app, cancellationToken));
     }
@@ -210,6 +212,15 @@ public sealed class UploadAccessEndToEndTests : IDisposable
             ',',
             consumers.Select(consumer =>
                 $"{{ \"consumerId\": \"{consumer.ConsumerId}\", \"active\": {(consumer.Active ? "true" : "false")} }}")) + "] }";
+
+    // The service is ready: the same answer the composition waits for at start, asked of the
+    // running API at each step of the flow and not only at its end.
+    private static async Task AssertHealthyAsync(HttpClient api, CancellationToken cancellationToken)
+    {
+        using var health = await api.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, health.StatusCode);
+        Assert.Contains("Healthy", await BodyAsync(health, cancellationToken), StringComparison.Ordinal);
+    }
 
     // The fingerprint of the registry the running API holds: it moves when the file's
     // content is accepted, and it is the composition's own value-free signal for that.
