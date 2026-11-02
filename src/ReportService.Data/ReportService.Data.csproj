@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The snapshot's data side: one forward-only reader of the document profile, the
+    record model it yields, the limits the profile fixes, the single-block
+    partitioner and the block and index documents it writes. Base class library
+    only: no storage, no database, no workflow-engine type enters this library.
+  -->
+  <PropertyGroup>
+    <RootNamespace>ReportService.Data</RootNamespace>
+  </PropertyGroup>
+
+</Project>

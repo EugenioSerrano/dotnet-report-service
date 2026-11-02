@@ -45,4 +45,82 @@ public interface IJobStore
     /// <param name="now">The instant the failure is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
     Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Moves a job from one of <paramref name="from"/> to <paramref name="to"/>, recording
+    /// when it first started. A job already carrying <paramref name="to"/> answers
+    /// <see cref="TransitionOutcome.AlreadyApplied"/>; one in any other state is left exactly
+    /// as it is.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="from">The states the change may start from.</param>
+    /// <param name="to">The state to move it to.</param>
+    /// <param name="now">The instant the change is decided at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<TransitionOutcome> TransitionJobAsync(
+        string reportJobId,
+        IReadOnlyList<ReportJobStatus> from,
+        ReportJobStatus to,
+        DateTimeOffset now,
+        CancellationToken cancellationToken);
+
+    /// <summary>Moves a pending output to running, recording when it started.</summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="now">The instant the change is decided at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Records a job's partition once. A partition another attempt wrote first is reported
+    /// with the record it wrote, never replaced.
+    /// </summary>
+    /// <param name="partition">The partition to record.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PartitionCommitResult> CommitPartitionAsync(PartitionRecord partition, CancellationToken cancellationToken);
+
+    /// <summary>Reads the partition of a job, or <see langword="null"/> when none was recorded.</summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PartitionRecord?> FindPartitionAsync(string reportJobId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Commits one rendered block in a transaction that holds the guard: the job is not
+    /// ending or ended, and the output is still running. A commit another attempt wrote first
+    /// is reported with the record it wrote, never replaced.
+    /// </summary>
+    /// <param name="commit">The commit to record.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PartCommitResult> CommitPartAsync(PartCommit commit, CancellationToken cancellationToken);
+
+    /// <summary>Reads the commit of one block of an output, or <see langword="null"/> when none exists.</summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="blockIndex">The block's position in the partition.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Publishes an output's artifact in one transaction under the same guard as a block
+    /// commit, and marks the output succeeded. An output already published is reported with
+    /// the artifact that exists.
+    /// </summary>
+    /// <param name="artifact">The artifact to record.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken);
+
+    /// <summary>Ends one output that has not ended yet with the code of the condition.</summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="code">The code of the condition that ended it.</param>
+    /// <param name="now">The instant the failure is decided at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Closes a job from the states its outputs imply, in one transaction: every output
+    /// succeeded makes the job succeeded, a failed output makes it failed with that output's
+    /// code. A job that already ended, or whose outputs have not all ended, is left as it is.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="now">The instant the close is decided at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken);
 }

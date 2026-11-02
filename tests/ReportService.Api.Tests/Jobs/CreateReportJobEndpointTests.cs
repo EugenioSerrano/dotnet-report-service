@@ -359,6 +359,38 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             DateTimeOffset now,
             CancellationToken cancellationToken) =>
             inner.FailJobAsync(reportJobId, code, reason, now, cancellationToken);
+
+        public Task<TransitionOutcome> TransitionJobAsync(
+            string reportJobId,
+            IReadOnlyList<ReportJobStatus> from,
+            ReportJobStatus to,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) =>
+            inner.TransitionJobAsync(reportJobId, from, to, now, cancellationToken);
+
+        public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.TransitionOutputAsync(outputId, now, cancellationToken);
+
+        public Task<PartitionCommitResult> CommitPartitionAsync(PartitionRecord partition, CancellationToken cancellationToken) =>
+            inner.CommitPartitionAsync(partition, cancellationToken);
+
+        public Task<PartitionRecord?> FindPartitionAsync(string reportJobId, CancellationToken cancellationToken) =>
+            inner.FindPartitionAsync(reportJobId, cancellationToken);
+
+        public Task<PartCommitResult> CommitPartAsync(PartCommit commit, CancellationToken cancellationToken) =>
+            inner.CommitPartAsync(commit, cancellationToken);
+
+        public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+            inner.FindPartAsync(outputId, blockIndex, cancellationToken);
+
+        public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken) =>
+            inner.PublishAsync(artifact, cancellationToken);
+
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailOutputAsync(outputId, code, now, cancellationToken);
+
+        public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FinalizeJobAsync(reportJobId, now, cancellationToken);
     }
 
     // Stands in for records that cannot be reached at all.
@@ -380,5 +412,31 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             DateTimeOffset now,
             CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<TransitionOutcome> TransitionJobAsync(
+            string reportJobId,
+            IReadOnlyList<ReportJobStatus> from,
+            ReportJobStatus to,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<PartitionCommitResult> CommitPartitionAsync(PartitionRecord partition, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<PartitionRecord?> FindPartitionAsync(string reportJobId, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<PartCommitResult> CommitPartAsync(PartCommit commit, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
+
+        private static JobStoreUnavailableException Unreachable() =>
+            new("08006", new TimeoutException("the server did not answer"));
     }
 }

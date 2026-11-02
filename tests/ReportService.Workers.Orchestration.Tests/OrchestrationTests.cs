@@ -6,6 +6,7 @@ using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
+using ReportService.Storage;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration;
 using ReportService.Workers.Orchestration.Dispatch;
@@ -438,10 +439,10 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(2, plan[0].Options.Workflows.Count);
-        Assert.Equal(2, plan[0].Options.Activities.Count);
+        Assert.Equal(5, plan[0].Options.Activities.Count);
         Assert.Equal("report-data", plan[1].Queue);
         Assert.Empty(plan[1].Options.Workflows);
-        Assert.Single(plan[1].Options.Activities);
+        Assert.Equal(2, plan[1].Options.Activities.Count);
         Assert.Equal(3, plan[1].Options.MaxConcurrentActivities);
     }
 
@@ -465,7 +466,9 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddSingleton(_rig.Verifier);
         builder.Services.AddSingleton<TimeProvider>(_rig.Clock);
-        builder.Services.AddSingleton<IJobStore>(new InMemoryJobStore(new InMemoryUploadStore()));
+        builder.Services.AddSingleton<IJobStore>(new InMemoryJobStore(_rig.Uploads));
+        builder.Services.AddSingleton<IUploadStore>(_rig.Uploads);
+        builder.Services.AddSingleton<IObjectStore>(_rig.Objects);
         builder.Services.AddSingleton<OrchestrationMetrics>();
         builder.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";

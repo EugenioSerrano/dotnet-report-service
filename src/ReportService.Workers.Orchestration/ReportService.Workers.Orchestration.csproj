@@ -7,6 +7,7 @@
   -->
   <ItemGroup>
     <ProjectReference Include="..\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\ReportService.Jobs\ReportService.Jobs.csproj" />
     <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
   </ItemGroup>

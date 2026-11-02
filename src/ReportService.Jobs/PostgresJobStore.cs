@@ -18,7 +18,7 @@ namespace ReportService.Jobs;
 /// detail.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "PostgreSQL adapter; verified by the shared job-store contract against a real database in the integration cycle")]
-public sealed class PostgresJobStore : IJobStore
+public sealed partial class PostgresJobStore : IJobStore
 {
     /// <summary>How long one command of this store may take.</summary>
     public const int CommandTimeoutSeconds = 5;

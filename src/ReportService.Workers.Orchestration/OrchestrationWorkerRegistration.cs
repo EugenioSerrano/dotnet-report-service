@@ -92,12 +92,22 @@ public static class OrchestrationWorkerRegistration
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
         builder.Services.AddSingleton<ReportJobActivities>();
+        builder.Services.AddSingleton<JobTransitionActivities>();
+        builder.Services.AddSingleton<ValidateAndPartitionActivity>();
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             ReportJobWorkflow.OrchestrationQueue,
             options =>
             {
                 options.AddWorkflow<ReportJobWorkflow>();
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
+                options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
+            }));
+        builder.Services.AddSingleton(provider => new TaskQueueWork(
+            PdfOutputActivityOptions.DataQueue,
+            options =>
+            {
+                options.MaxConcurrentActivities = provider.GetRequiredService<IOptions<WorkerOptions>>().Value.DataActivitySlots;
+                options.AddAllActivities(provider.GetRequiredService<ValidateAndPartitionActivity>());
             }));
         return builder;
     }

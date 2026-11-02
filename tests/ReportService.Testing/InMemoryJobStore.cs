@@ -13,7 +13,7 @@ namespace ReportService.Testing;
 /// repeated step changed nothing. The shared contract runs against this class and
 /// against the real store, so the double cannot drift away from what it stands in for.
 /// </summary>
-public sealed class InMemoryJobStore : IJobStore
+public sealed partial class InMemoryJobStore : IJobStore
 {
     /// <summary>The kind of request an acceptance records for the job's start.</summary>
     public const string StartJobKind = "start-job";

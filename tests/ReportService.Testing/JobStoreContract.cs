@@ -217,6 +217,171 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Null(await Store.FindForWorkflowAsync(unknown, cancellationToken));
     }
 
+    [Fact]
+    public async Task APartitionIsRecordedOnceAndReadBack()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        var partition = Partition(acceptance.ReportJobId);
+
+        var first = await Store.CommitPartitionAsync(partition, cancellationToken);
+        var second = await Store.CommitPartitionAsync(partition with { RecordCount = 999 }, cancellationToken);
+
+        Assert.Equal(PartitionCommitOutcome.Committed, first.Outcome);
+        Assert.Equal(PartitionCommitOutcome.AlreadyCommitted, second.Outcome);
+        Assert.Equal(partition.RecordCount, second.Existing.RecordCount);
+        var read = await Store.FindPartitionAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(read);
+        Assert.Equal(partition.IndexSha256, read!.IndexSha256);
+    }
+
+    [Fact]
+    public async Task AJobTransitionStartsOnlyFromTheStatesItNames()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Equal(
+            TransitionOutcome.NotApplicable,
+            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Running], ReportJobStatus.Validating, Now, cancellationToken));
+        Assert.Equal(
+            TransitionOutcome.Applied,
+            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken));
+        Assert.Equal(
+            TransitionOutcome.AlreadyApplied,
+            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken));
+        Assert.Equal(
+            TransitionOutcome.Applied,
+            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken));
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(ReportJobStatus.Running, state!.Job.Status);
+        Assert.Equal(Now, state.Job.StartedAt);
+    }
+
+    [Fact]
+    public async Task AnOutputStartsOnce()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Equal(TransitionOutcome.Applied, await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+        Assert.Equal(TransitionOutcome.AlreadyApplied, await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ABlockIsCommittedOnlyForARunningOutput()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var refused = await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        Assert.Equal(PartCommitOutcome.GuardRefused, refused.Outcome);
+        Assert.Null(await Store.FindPartAsync(acceptance.OutputId, 0, cancellationToken));
+
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var committed = await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
+        Assert.Equal(Hash, committed.Existing!.Sha256);
+
+        var again = await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 9 }, cancellationToken);
+        Assert.Equal(PartCommitOutcome.AlreadyCommitted, again.Outcome);
+        Assert.Equal(3, again.Existing!.PageCount);
+    }
+
+    [Fact]
+    public async Task PublicationSucceedsTheOutputOnceAndClosesTheJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        var published = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        Assert.Equal(PublishOutcome.Published, published.Outcome);
+        Assert.Equal(ArtifactId, published.ArtifactId);
+
+        var again = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        Assert.Equal(PublishOutcome.AlreadyPublished, again.Outcome);
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(OutputStatus.Succeeded, Assert.Single(state!.Outputs).Status);
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Succeeded, closed.Status);
+        Assert.Equal(
+            JobFinalizationOutcome.AlreadyTerminal,
+            (await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(2), cancellationToken)).Outcome);
+    }
+
+    [Fact]
+    public async Task AFailedOutputFailsTheJobWithItsCode()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+        Assert.Equal(
+            OutputFailureOutcome.AlreadyTerminal,
+            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Failed, closed.Status);
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("PAGINATION_FAILED", state!.Job.ErrorCode);
+        Assert.Equal("output-failed", state.Job.ErrorReason);
+    }
+
+    /// <summary>A partition of <paramref name="reportJobId"/>, holding one record.</summary>
+    /// <param name="reportJobId">The job it belongs to.</param>
+    protected static PartitionRecord Partition(string reportJobId) => new(
+        reportJobId,
+        1,
+        1,
+        1,
+        24,
+        $"index/{reportJobId}/0/attempt",
+        Hash,
+        120,
+        Now);
+
+    /// <summary>A commit of block 0 of <paramref name="outputId"/>.</summary>
+    /// <param name="outputId">The output it belongs to.</param>
+    protected static PartCommit Commit(string outputId) => new(
+        outputId,
+        0,
+        $"block/{outputId}/0/attempt",
+        Hash,
+        1_024,
+        3,
+        Hash,
+        Now);
+
+    /// <summary>The identifier every published artifact of this contract carries.</summary>
+    protected const string ArtifactId = "artifact-0123456789abcdef0123456789abcdef";
+
+    /// <summary>An artifact of <paramref name="outputId"/>.</summary>
+    /// <param name="reportJobId">The job it belongs to.</param>
+    /// <param name="outputId">The output it is the result of.</param>
+    protected static ArtifactRecord Artifact(string reportJobId, string outputId) => new(
+        ArtifactId,
+        reportJobId,
+        outputId,
+        OutputFormat.Pdf,
+        "application/pdf",
+        $"outputs/{reportJobId}/{outputId}/attempt",
+        Hash,
+        2_048,
+        3,
+        Now);
     /// <summary>An acceptance of a job over <paramref name="uploadId"/>, with identifiers of their own.</summary>
     /// <param name="uploadId">The upload the job reports on.</param>
     /// <param name="consumerId">The consumer the job is accepted for.</param>
