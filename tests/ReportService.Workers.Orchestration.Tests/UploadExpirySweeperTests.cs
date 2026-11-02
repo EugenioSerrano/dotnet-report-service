@@ -222,10 +222,131 @@ public sealed class UploadExpirySweeperTests
         ObjectKey.FromSegments("staging", uploadId, "content"),
         Now.AddHours(-1),
         expiresAt ?? Later)
+        {
+            CompletedAt = status == UploadStatus.Verifying ? Now.AddHours(-7) : null,
+            VerificationDeadline = status == UploadStatus.Verifying ? deadline ?? Later : null,
+        };
+
+    [Fact]
+    public async Task AStopDuringARoundEndsTheSweepWithoutFailingTheHost()
     {
-        CompletedAt = status == UploadStatus.Verifying ? Now.AddHours(-7) : null,
-        VerificationDeadline = status == UploadStatus.Verifying ? deadline ?? Later : null,
-    };
+        var clock = new ManualTimeProvider(Now);
+        using var stopping = new CancellationTokenSource();
+        using var metrics = new OrchestrationMetrics();
+        var sweeper = new UploadExpirySweeper(
+            new StoppingStore(stopping),
+            new RecordingObjectStore(),
+            Options.Create(new UploadExpiryOptions { SweepInterval = TimeSpan.FromMinutes(1), BatchSize = 500 }),
+            clock,
+            metrics,
+            new LoggerFactory([new LogCapture()]).CreateLogger<UploadExpirySweeper>());
+
+        await sweeper.StartAsync(stopping.Token);
+        try
+        {
+            await Wait.UntilAsync(
+                "the sweep to arm its interval",
+                _ => Task.FromResult(clock.PendingTimers > 0),
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromMilliseconds(20),
+                CancellationToken.None);
+
+            // The process stops while a round is running: the round's own call is cancelled, and
+            // the loop ends quietly — a host that is shutting down is not a failure of its sweep.
+            clock.Advance(TimeSpan.FromMinutes(1));
+            await sweeper.ExecuteTask!.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+
+            Assert.True(sweeper.ExecuteTask!.IsCompletedSuccessfully);
+        }
+        finally
+        {
+            await sweeper.StopAsync(CancellationToken.None);
+            sweeper.Dispose();
+        }
+    }
+
+    /// <summary>The record store of a process that stops in the middle of a sweep round.</summary>
+    internal sealed class StoppingStore(CancellationTokenSource stopping) : IUploadStore
+    {
+        /// <inheritdoc />
+        public Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(
+            DateTimeOffset now,
+            int batchSize,
+            CancellationToken cancellationToken)
+        {
+            stopping.Cancel();
+            return Task.FromException<IReadOnlyList<ExpiredUpload>>(new OperationCanceledException(cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public Task CreateAsync(UploadRecord record, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("the sweep creates nothing");
+
+        /// <inheritdoc />
+        public Task<UploadRecord?> FindAsync(string uploadId, string consumerId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("the sweep looks nothing up by caller");
+
+        /// <inheritdoc />
+        public Task<bool> TryStartTransferAsync(
+            string uploadId,
+            string consumerId,
+            UploadContentEncoding encoding,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep starts no transfer");
+
+        /// <inheritdoc />
+        public Task<bool> RecordTransferAsync(
+            string uploadId,
+            UploadContentOutcome outcome,
+            long receivedBytes,
+            long? stagingSize,
+            string? stagingSha256,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep records no transfer");
+
+        /// <inheritdoc />
+        public Task<bool> RejectTransferAsync(
+            string uploadId,
+            UploadRejectionCode code,
+            UploadRejectionReason reason,
+            long receivedBytes,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep rejects no transfer");
+
+        /// <inheritdoc />
+        public Task<bool> ConfirmAsync(
+            string uploadId,
+            string consumerId,
+            string? declaredSha256,
+            DateTimeOffset completedAt,
+            DateTimeOffset now,
+            DateTimeOffset verificationDeadline,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep confirms nothing");
+
+        /// <inheritdoc />
+        public Task<UploadExpiryOutcome> ExpireIfOverdueAsync(
+            string uploadId,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep expires one upload through its batch");
+
+        /// <inheritdoc />
+        public Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("the sweep verifies nothing");
+
+        /// <inheritdoc />
+        public Task<SnapshotCommitResult> CommitReadyAsync(
+            SnapshotRecord snapshot,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep commits no snapshot");
+
+        /// <inheritdoc />
+        public Task<bool> CommitRejectedAsync(
+            string uploadId,
+            UploadRejectionCode code,
+            UploadRejectionReason reason,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) => throw new NotSupportedException("the sweep rejects nothing");
+    }
 
     /// <summary>The storage port, recording what it was asked to delete and failing when told to.</summary>
     internal sealed class RecordingObjectStore : IObjectStore

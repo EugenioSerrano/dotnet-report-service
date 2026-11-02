@@ -4,10 +4,10 @@ namespace ReportService.Uploads;
 
 /// <summary>
 /// The upload record store the tests use in place of the database. It answers
-/// the same contract as the real store �?" owner-scoped reads, one conditional
+/// the same contract as the real store — owner-scoped reads, one conditional
 /// write per step, one request per confirmed upload, one snapshot per upload, and
 /// the same refusal of every write that arrives at or after the end of the
-/// upload's session or of its verification �?" and it records the calls and the
+/// upload's session or of its verification — and it records the calls and the
 /// requests it received, so a test can assert that a refused call wrote nothing
 /// and that a repeated step changed nothing. The shared contract runs against
 /// this class and against the real store, so the double cannot drift away from

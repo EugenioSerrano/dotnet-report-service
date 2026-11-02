@@ -12,9 +12,9 @@ namespace ReportService.Api.Uploads;
 /// <summary>
 /// The operation that puts the consumer's report data into its upload: one body
 /// per upload, streamed to the upload's staging object, counted as it arrives and
-/// never held. The order of the decisions is fixed �?" the declared consumer at the
+/// never held. The order of the decisions is fixed — the declared consumer at the
 /// registry gate, the identifier's shape, the media type, the declared encoding,
-/// the session's state and its end, the declared length �?" and nothing is read
+/// the session's state and its end, the declared length — and nothing is read
 /// from the body before the state has admitted the transfer. An upload past the
 /// end of its session takes no content and its answer says so, even when the body
 /// of that request has already been written: what a late transfer stored is

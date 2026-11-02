@@ -13,9 +13,10 @@ namespace ReportService.EndToEndTests;
 /// Who may use an upload, on the running composition: the registry file names two
 /// active consumers and one inactive one, and the API's sessions are short so an
 /// upload can be left unconfirmed past its end. Every refusal is the same answer
-/// whatever it hides, another consumer's upload is answered as a missing one, the
-/// service needs no restart for a registry change, and an upload nobody confirmed
-/// expires without taking the service down.
+/// whatever it hides, another consumer's upload is answered as a missing one — the
+/// read, the content and the confirmation alike — the service needs no restart for a
+/// registry change, and an upload nobody confirmed expires without taking the service
+/// down.
 /// </summary>
 public sealed class UploadAccessEndToEndTests : IDisposable
 {
@@ -26,6 +27,7 @@ public sealed class UploadAccessEndToEndTests : IDisposable
 
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
     private static readonly TimeSpan SettleBound = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ChangeBound = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(200);
 
     private readonly string _directory = Path.Combine(
@@ -40,7 +42,7 @@ public sealed class UploadAccessEndToEndTests : IDisposable
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var registry = Path.Combine(_directory, "consumers.json");
-        await File.WriteAllTextAsync(registry, Registry(("consumer-a", true), ("consumer-b", true), ("consumer-c", false)), cancellationToken);
+        await File.WriteAllTextAsync(registry, ActiveRegistry(), cancellationToken);
 
         var appHost = await TestComposition.CreateAsync(
             cancellationToken,
@@ -55,6 +57,11 @@ public sealed class UploadAccessEndToEndTests : IDisposable
         }
 
         using var api = app.CreateHttpClient("api");
+
+        // The API's start, as the composition reports it: one process, and its identity says
+        // whether it was restarted. A registry change at the end must leave it as it is.
+        var process = await ApiProcessIdAsync(app, cancellationToken);
+        var active = await FingerprintAsync(api, cancellationToken);
 
         // An unknown identity is refused on every operation, with one answer, whether or
         // not the upload it names exists.
@@ -80,16 +87,24 @@ public sealed class UploadAccessEndToEndTests : IDisposable
             Assert.Contains("CONSUMER_INACTIVE", await BodyAsync(refused, cancellationToken), StringComparison.Ordinal);
         }
 
-        // Another consumer's upload is answered exactly as an upload that does not exist.
+        // Another consumer's upload is answered exactly as an upload that does not exist, on
+        // every operation of it: the read, the content and the confirmation.
         var absent = "upload-44444444444444444444444444444444";
-        using (var foreign = await SendAsync(api, StatusRequest(upload, "consumer-b"), cancellationToken))
-        using (var missing = await SendAsync(api, StatusRequest(absent, "consumer-b"), cancellationToken))
+        var foreignAndMissing = new (HttpRequestMessage Foreign, HttpRequestMessage Missing)[]
         {
-            Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
-            Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-            Assert.Equal(
-                await ProblemAsync(missing, cancellationToken),
-                await ProblemAsync(foreign, cancellationToken));
+            (StatusRequest(upload, "consumer-b"), StatusRequest(absent, "consumer-b")),
+            (ContentRequest(upload, "consumer-b"), ContentRequest(absent, "consumer-b")),
+            (ConfirmRequest(upload, "consumer-b"), ConfirmRequest(absent, "consumer-b")),
+        };
+        foreach (var (foreign, missing) in foreignAndMissing)
+        {
+            using var taken = await SendAsync(api, foreign, cancellationToken);
+            using var never = await SendAsync(api, missing, cancellationToken);
+            Assert.Equal(HttpStatusCode.NotFound, taken.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, never.StatusCode);
+            var problem = await ProblemAsync(taken, cancellationToken);
+            Assert.Equal(await ProblemAsync(never, cancellationToken), problem);
+            Assert.Contains("INPUT_NOT_FOUND", problem, StringComparison.Ordinal);
         }
 
         // The owner streams its content and confirms it, and the upload ends ready.
@@ -110,7 +125,57 @@ public sealed class UploadAccessEndToEndTests : IDisposable
             PollInterval,
             cancellationToken);
 
-        // An upload nobody confirmed expires at the end of its session and takes nothing more.
+        // A second upload is opened while its consumer is active; the registry file is then
+        // rewritten with that consumer inactive, under the running API. The change is in force
+        // once the registry's fingerprint moves; from then on the consumer may not open another
+        // upload, and the one it already has it may still fill, confirm and read.
+        var second = await CreateAsync(api, "consumer-a", cancellationToken);
+        await File.WriteAllTextAsync(
+            registry,
+            Registry(("consumer-a", false), ("consumer-b", true), ("consumer-c", false)),
+            cancellationToken);
+        var inactive = active;
+        await Wait.UntilAsync(
+            "the registry change on the running API",
+            async token => (inactive = await FingerprintAsync(api, token)) != active,
+            ChangeBound,
+            PollInterval,
+            cancellationToken);
+        Assert.NotEqual(active, inactive);
+
+        using (var refused = await SendAsync(api, CreateRequest("consumer-a"), cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+            Assert.Contains("CONSUMER_INACTIVE", await BodyAsync(refused, cancellationToken), StringComparison.Ordinal);
+        }
+
+        using (var sent = await SendAsync(api, ContentRequest(second, "consumer-a"), cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+        }
+
+        using (var confirmed = await SendAsync(api, ConfirmRequest(second, "consumer-a"), cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.Accepted, confirmed.StatusCode);
+        }
+
+        await Wait.UntilAsync(
+            "the second upload to end ready",
+            async token => await StatusAsync(api, second, token) == "ready",
+            SettleBound,
+            PollInterval,
+            cancellationToken);
+        Assert.Equal("ready", await StatusAsync(api, upload, cancellationToken));
+        Assert.Equal("ready", await StatusAsync(api, second, cancellationToken));
+
+        // An upload nobody confirms expires at the end of its session and takes nothing more.
+        await File.WriteAllTextAsync(registry, ActiveRegistry(), cancellationToken);
+        await Wait.UntilAsync(
+            "the restored registry on the running API",
+            async token => await FingerprintAsync(api, token) != inactive,
+            ChangeBound,
+            PollInterval,
+            cancellationToken);
         var abandoned = await CreateAsync(api, "consumer-a", cancellationToken);
         await Wait.UntilAsync(
             "the unconfirmed upload to expire",
@@ -126,17 +191,48 @@ public sealed class UploadAccessEndToEndTests : IDisposable
             Assert.Equal(HttpStatusCode.Conflict, lateConfirm.StatusCode);
         }
 
-        // The service stayed ready throughout.
-        using var health = await api.GetAsync("/health", cancellationToken);
-        Assert.Equal(HttpStatusCode.OK, health.StatusCode);
-        Assert.Contains("Healthy", await BodyAsync(health, cancellationToken), StringComparison.Ordinal);
+        // The service stayed ready throughout, and it is the same process it was at the start:
+        // every change above was applied to the running API, without a restart.
+        using (var health = await api.GetAsync("/health", cancellationToken))
+        {
+            Assert.Equal(HttpStatusCode.OK, health.StatusCode);
+            Assert.Contains("Healthy", await BodyAsync(health, cancellationToken), StringComparison.Ordinal);
+        }
+
+        Assert.Equal(process, await ApiProcessIdAsync(app, cancellationToken));
     }
+
+    private static string ActiveRegistry() =>
+        Registry(("consumer-a", true), ("consumer-b", true), ("consumer-c", false));
 
     private static string Registry(params (string ConsumerId, bool Active)[] consumers) =>
         "{ \"consumers\": [" + string.Join(
             ',',
             consumers.Select(consumer =>
                 $"{{ \"consumerId\": \"{consumer.ConsumerId}\", \"active\": {(consumer.Active ? "true" : "false")} }}")) + "] }";
+
+    // The fingerprint of the registry the running API holds: it moves when the file's
+    // content is accepted, and it is the composition's own value-free signal for that.
+    private static async Task<string> FingerprintAsync(HttpClient api, CancellationToken cancellationToken)
+    {
+        using var body = JsonDocument.Parse(
+            await api.GetStringAsync(new Uri("/health/registry", UriKind.Relative), cancellationToken));
+        return body.RootElement.GetProperty("checks")[0].GetProperty("data").GetProperty("fingerprint").GetString()!;
+    }
+
+    // The process the composition reports for a project resource; the hosting library's own
+    // constant for this property name is not public.
+    private const string ProcessIdProperty = "executable.pid";
+
+    // The API's process as the composition reports it; unchanged means not restarted.
+    private static async Task<string> ApiProcessIdAsync(DistributedApplication app, CancellationToken cancellationToken)
+    {
+        var resource = await app.ResourceNotifications.WaitForResourceAsync(
+            "api",
+            e => e.Snapshot.Properties.Any(p => p.Name == ProcessIdProperty && p.Value is not null),
+            cancellationToken);
+        return Convert.ToString(resource.Snapshot.Properties.Single(p => p.Name == ProcessIdProperty).Value, CultureInfo.InvariantCulture)!;
+    }
 
     private static async Task<string> CreateAsync(HttpClient api, string consumerId, CancellationToken cancellationToken)
     {

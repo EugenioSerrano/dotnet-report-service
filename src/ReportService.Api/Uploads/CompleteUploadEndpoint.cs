@@ -15,8 +15,8 @@ namespace ReportService.Api.Uploads;
 /// operation decides nothing about the content, so it writes no byte to storage and
 /// holds no engine client. The confirmation is also what puts an end to the
 /// upload's life: it records, beside the request, the instant until which the
-/// verification may still fix a snapshot. A confirmation may be repeated �?" the
-/// answer is then the upload's current state, however that state came about �?" but
+/// verification may still fix a snapshot. A confirmation may be repeated — the
+/// answer is then the upload's current state, however that state came about — but
 /// only one confirmation can move an upload, and a repeated one may not declare a
 /// different hash.
 /// </summary>

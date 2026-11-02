@@ -30,7 +30,8 @@ public sealed class UploadExpirySweeper : BackgroundService
 
     private static readonly ActivitySource Source = new(TelemetryDefaults.ActivitySourceName);
 
-    private readonly IUploadStore _uploads;    private readonly IObjectStore _objects;
+    private readonly IUploadStore _uploads;
+    private readonly IObjectStore _objects;
     private readonly UploadExpiryOptions _options;
     private readonly TimeProvider _clock;
     private readonly OrchestrationMetrics _metrics;
@@ -79,7 +80,16 @@ public sealed class UploadExpirySweeper : BackgroundService
                 return;
             }
 
-            await SweepAsync(stoppingToken).ConfigureAwait(false);
+            try
+            {
+                await SweepAsync(stoppingToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // The process is stopping while a round runs: a round that was cut off
+                // is not a failure, and the host is waiting for this service to end.
+                return;
+            }
         }
     }
 

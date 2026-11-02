@@ -16,8 +16,8 @@ namespace ReportService.Api.Uploads;
 /// declared identity is resolved against the consumer registry before the body is
 /// read and before any record is touched, so a request the service does not serve
 /// leaves no session behind and learns nothing about the ones it does. The
-/// conventions fixed here �?" the declared identity header, the problem document
-/// with its stable code, the bounded reading of a control body �?" are the ones
+/// conventions fixed here — the declared identity header, the problem document
+/// with its stable code, the bounded reading of a control body — are the ones
 /// every later operation of this API follows.
 /// </summary>
 public static class UploadEndpoints

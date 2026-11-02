@@ -33,9 +33,15 @@ internal sealed class UploadApiHost : IDisposable
     /// <summary>Starts the service over a registry carrying <paramref name="consumers"/>.</summary>
     /// <param name="consumers">The registry, as identity and active flag, in file order.</param>
     /// <param name="sessionLifetime">How long a new session accepts data, as the configuration writes it.</param>
-    public UploadApiHost((string ConsumerId, bool Active)[] consumers, string sessionLifetime = "1.00:00:00")
+    /// <param name="clock">The clock the service reads, when the case already holds one.</param>
+    /// <param name="store">Wraps the record store the service is given, so a case can place an event inside one call.</param>
+    public UploadApiHost(
+        (string ConsumerId, bool Active)[] consumers,
+        string sessionLifetime = "1.00:00:00",
+        ManualTimeProvider? clock = null,
+        Func<IUploadStore, IUploadStore>? store = null)
     {
-        Clock = new ManualTimeProvider(Now);
+        Clock = clock ?? new ManualTimeProvider(Now);
         Lifetime = TimeSpan.Parse(sessionLifetime, System.Globalization.CultureInfo.InvariantCulture);
         _registryPath = _directory.Write("consumers.json", Registry(consumers));
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -50,7 +56,7 @@ internal sealed class UploadApiHost : IDisposable
             {
                 MetadataDatabaseStub.UseHealthy(services);
                 services.RemoveAll<IUploadStore>();
-                services.AddSingleton<IUploadStore>(Store);
+                services.AddSingleton(store is null ? Store : store(Store));
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(Clock);
             });

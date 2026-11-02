@@ -2,6 +2,7 @@ using System.Net;
 using ReportService.Api.Http;
 using ReportService.Api.Uploads;
 using ReportService.Storage;
+using ReportService.Testing;
 using ReportService.Uploads;
 
 namespace ReportService.Api.Tests.Uploads;
@@ -12,6 +13,8 @@ namespace ReportService.Api.Tests.Uploads;
 /// no more content and no confirmation, and one whose verification outlasts its own
 /// deadline expires as well and can never become a snapshot afterwards. Both answers
 /// are exact at the boundary, and both are shown by the record, not only by the answer.
+/// A body that is still arriving when the session's end passes is answered by the
+/// state the upload is in, and keeps nothing of what it wrote.
 /// </summary>
 public sealed class UploadExpiryEndpointsTests
 {
@@ -40,6 +43,32 @@ public sealed class UploadExpiryEndpointsTests
         var staging = await host.Objects.GetInfoAsync(record.StagingKey, Cancellation);
         Assert.Equal(StorageOutcome.NotFound, staging.Outcome);
         Assert.Contains(host.Logs.Lines, line => line.Contains("expired (session)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ATransferWhoseSessionEndsBeforeItsRecordIsAnsweredExpiredAndKeepsNothing()
+    {
+        var clock = new ManualTimeProvider(UploadApiHost.Now);
+        var writer = new ExpiringBeforeTheRecord(clock, "dev-consumer");
+        using var host = new UploadApiHost(Consumers, clock: clock, store: writer.Wrap);
+        var uploadId = await host.CreateAsync();
+
+        using var response = await host.Client.SendAsync(UploadApiHost.ContentRequest(uploadId, "dev-consumer"), Cancellation);
+
+        // The session's end passed while the body was still arriving: the transfer had already
+        // started, and its record could no longer be written.
+        Assert.Equal(UploadStatus.Uploading, writer.StatusWhenEnded);
+        Assert.Equal(1, writer.Expiries);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var problem = await UploadApiHost.ProblemAsync(response);
+        Assert.Contains(ErrorCodes.UploadStateConflict, problem, StringComparison.Ordinal);
+        Assert.Contains(UploadEndpoints.ExpiredDetail, problem, StringComparison.Ordinal);
+
+        var record = await host.Store.FindAsync(uploadId, "dev-consumer", Cancellation);
+        Assert.Equal(UploadStatus.Expired, record!.Status);
+        Assert.Null(record.ContentOutcome);
+        var staging = await host.Objects.GetInfoAsync(record.StagingKey, Cancellation);
+        Assert.Equal(StorageOutcome.NotFound, staging.Outcome);
     }
 
     [Fact]
@@ -162,5 +191,121 @@ public sealed class UploadExpiryEndpointsTests
 
         Assert.Equal(HttpStatusCode.OK, repeated.StatusCode);
         Assert.Equal("expired", await UploadApiHost.StatusOfAsync(repeated));
+    }
+
+    /// <summary>
+    /// The upload records the content operation writes through, with the session's end
+    /// arriving in the middle of a transfer: the upload is expired at the one instant the
+    /// transfer is about to record how it ended, which is what the sweep, another replica
+    /// or a concurrent request does. Every call but that one is the delivered double's own
+    /// answer, and the expiry is the store's own rule, not a status written by hand.
+    /// </summary>
+    private sealed class ExpiringBeforeTheRecord(ManualTimeProvider clock, string consumerId)
+    {
+        private int _expiries;
+
+        /// <summary>How many transfers the session's end met before their record.</summary>
+        public int Expiries => Volatile.Read(ref _expiries);
+
+        /// <summary>The state the upload was in when its session's end passed.</summary>
+        public UploadStatus? StatusWhenEnded { get; private set; }
+
+        /// <summary>Wraps the store the host is given.</summary>
+        /// <param name="inner">The store of the host.</param>
+        public IUploadStore Wrap(IUploadStore inner)
+        {
+            ArgumentNullException.ThrowIfNull(inner);
+            return new Store(this, inner);
+        }
+
+        // The session's end passes just before the transfer's own record is written.
+        private async Task EndTheSessionAsync(IUploadStore inner, string uploadId, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Exchange(ref _expiries, 1) != 0)
+            {
+                return;
+            }
+
+            var record = await inner.FindAsync(uploadId, consumerId, cancellationToken).ConfigureAwait(false);
+            if (record is null)
+            {
+                return;
+            }
+
+            StatusWhenEnded = record.Status;
+            clock.Advance(record.ExpiresAt - clock.GetUtcNow());
+            await inner.ExpireIfOverdueAsync(uploadId, clock.GetUtcNow(), cancellationToken).ConfigureAwait(false);
+        }
+
+        private sealed class Store(ExpiringBeforeTheRecord owner, IUploadStore inner) : IUploadStore
+        {
+            public Task CreateAsync(UploadRecord record, CancellationToken cancellationToken) =>
+                inner.CreateAsync(record, cancellationToken);
+
+            public Task<UploadRecord?> FindAsync(string uploadId, string consumerId, CancellationToken cancellationToken) =>
+                inner.FindAsync(uploadId, consumerId, cancellationToken);
+
+            public Task<bool> TryStartTransferAsync(
+                string uploadId,
+                string consumerId,
+                UploadContentEncoding encoding,
+                DateTimeOffset now,
+                CancellationToken cancellationToken) =>
+                inner.TryStartTransferAsync(uploadId, consumerId, encoding, now, cancellationToken);
+
+            public async Task<bool> RecordTransferAsync(
+                string uploadId,
+                UploadContentOutcome outcome,
+                long receivedBytes,
+                long? stagingSize,
+                string? stagingSha256,
+                DateTimeOffset now,
+                CancellationToken cancellationToken)
+            {
+                await owner.EndTheSessionAsync(inner, uploadId, cancellationToken).ConfigureAwait(false);
+                return await inner
+                    .RecordTransferAsync(uploadId, outcome, receivedBytes, stagingSize, stagingSha256, now, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            public Task<bool> RejectTransferAsync(
+                string uploadId,
+                UploadRejectionCode code,
+                UploadRejectionReason reason,
+                long receivedBytes,
+                DateTimeOffset now,
+                CancellationToken cancellationToken) =>
+                inner.RejectTransferAsync(uploadId, code, reason, receivedBytes, now, cancellationToken);
+
+            public Task<bool> ConfirmAsync(
+                string uploadId,
+                string consumerId,
+                string? declaredSha256,
+                DateTimeOffset completedAt,
+                DateTimeOffset now,
+                DateTimeOffset verificationDeadline,
+                CancellationToken cancellationToken) =>
+                inner.ConfirmAsync(uploadId, consumerId, declaredSha256, completedAt, now, verificationDeadline, cancellationToken);
+
+            public Task<UploadExpiryOutcome> ExpireIfOverdueAsync(string uploadId, DateTimeOffset now, CancellationToken cancellationToken) =>
+                inner.ExpireIfOverdueAsync(uploadId, now, cancellationToken);
+
+            public Task<IReadOnlyList<ExpiredUpload>> ExpireOverdueAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken) =>
+                inner.ExpireOverdueAsync(now, batchSize, cancellationToken);
+
+            public Task<UploadRecord?> LoadForVerificationAsync(string uploadId, CancellationToken cancellationToken) =>
+                inner.LoadForVerificationAsync(uploadId, cancellationToken);
+
+            public Task<SnapshotCommitResult> CommitReadyAsync(SnapshotRecord snapshot, DateTimeOffset now, CancellationToken cancellationToken) =>
+                inner.CommitReadyAsync(snapshot, now, cancellationToken);
+
+            public Task<bool> CommitRejectedAsync(
+                string uploadId,
+                UploadRejectionCode code,
+                UploadRejectionReason reason,
+                DateTimeOffset now,
+                CancellationToken cancellationToken) =>
+                inner.CommitRejectedAsync(uploadId, code, reason, now, cancellationToken);
+        }
     }
 }
