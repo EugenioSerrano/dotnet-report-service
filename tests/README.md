@@ -117,6 +117,21 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   `report-service-it-`.
 - Test names describe behaviour.
 
+### Telemetry captures in a test
+
+A test that reads the telemetry a host produced opens the unit of work the telemetry
+belongs to (`TelemetryTestHost.BeginUnit()`): the capture keeps the spans of that
+unit's trace and nothing else, so two hosts alive at the same time never read each
+other's spans, and a case that opens no unit reads an empty capture. Every read
+returns a snapshot, so a case that runs beside another one that is exporting cannot
+enumerate a collection someone is writing. The telemetry cases that open a unit of
+work run one at a time because the service's unit-of-work log scope is bound to one
+process-wide logger factory and the last host to start replaces it — that
+serialisation is not what makes a capture correct. The end-to-end composition class
+states, in one table, the state each worker reports for each of its queues, which is
+the work the service registers: a change that registers work on a queue updates that
+table in the same change.
+
 ## What goes here
 
 - **Unit and component tests**, one project per `src/` project.
