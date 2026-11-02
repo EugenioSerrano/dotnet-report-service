@@ -38,12 +38,15 @@ public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, 
 
     /// <summary>The states a job is moved forward from, for each state it can be moved to.</summary>
     /// <param name="to">The state to move the job to.</param>
+    /// <remarks>
+    /// Only the states the job's path passes through are here: a job is queued, moves to
+    /// validating, then to running. It ends through the step that closes it, which writes the
+    /// terminal state from the outcome of its outputs, so no transition of this step targets one.
+    /// </remarks>
     public static IReadOnlyList<ReportJobStatus> SourcesOf(ReportJobStatus to) => to switch
     {
         ReportJobStatus.Validating => [ReportJobStatus.Queued],
-        ReportJobStatus.Running => [ReportJobStatus.Validating, ReportJobStatus.Partitioning],
-        ReportJobStatus.Finalizing => [ReportJobStatus.Running],
-        ReportJobStatus.Succeeded or ReportJobStatus.Failed => [ReportJobStatus.Finalizing],
+        ReportJobStatus.Running => [ReportJobStatus.Validating],
         _ => [],
     };
 

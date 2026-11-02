@@ -25,6 +25,8 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
 
     private const string ConsumerId = "dev-consumer";
 
+    private const string UploadId = UploadIdentifier.Prefix + "0123456789abcdef0123456789abcdef";
+
     private static readonly DateTimeOffset Now = new(2026, 11, 1, 6, 12, 30, 400, TimeSpan.Zero);
 
     private readonly LoggerFactory _loggerFactory;
@@ -130,10 +132,111 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         var cancellationToken = TestContext.Current.CancellationToken;
         await SeedAcceptedJobAsync(Encoding.UTF8.GetBytes("""{"contractVersion":"2.0","header":{},"items":[]}"""), cancellationToken);
 
-        var failure = await Assert.ThrowsAsync<DataContractViolation>(RunAsync);
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
 
-        Assert.Equal("contract-version", failure.Reason);
+        Assert.Equal(DataContractViolation.DataInvalid, failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=contract-version", failure.Message, StringComparison.Ordinal);
         Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASnapshotLargerThanOneBlockEndsTheStepWithTheCodeOfTheLimit()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(DataContractLimits.BlockRecords + 1), cancellationToken);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+
+        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("limit=block", failure.Message, StringComparison.Ordinal);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASnapshotThatNoLongerMatchesItsRecordEndsTheStepWithoutBeingRetried()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var snapshot = Records(2);
+        await SeedAcceptedJobAsync(snapshot, cancellationToken);
+
+        // The object under the recorded key loses its last bytes after it was recorded: the
+        // size no longer matches the record, so the pass reaches the end of the stored
+        // content and the reader's own verification refuses it.
+        var stored = Path.Combine(_root, "snapshots", UploadId, "a");
+        await File.WriteAllBytesAsync(stored, snapshot[..^4], cancellationToken);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASnapshotTheProviderCannotVerifyEndsTheStepWithoutBeingRetried()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(2), cancellationToken);
+        Objects.ReadFailure = StorageOutcome.IntegrityFailure;
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+    }
+
+    [Fact]
+    public async Task ATemporaryStorageFaultKeepsThePortsExceptionSoItIsRetried()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(2), cancellationToken);
+        Objects.ReadFailure = StorageOutcome.Transient;
+
+        var failure = await Assert.ThrowsAsync<StorageException>(RunAsync);
+
+        Assert.Equal(StorageOutcome.Transient, failure.Outcome);
+    }
+
+    [Fact]
+    public async Task AnIndexPageThatNoLongerMatchesItsRecordEndsTheStepWithoutBeingRetried()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var entry = new BlockIndexEntry(
+            0,
+            $"block/{ReportJobId}/0/attempt",
+            new string('a', 64),
+            1_024,
+            1,
+            25,
+            512);
+        var page = BlockIndexPage.Serialize(new BlockIndexPage(SingleBlockPartitioner.PartitionerVersion, [entry]));
+        var indexKey = ObjectKey.FromSegments("index", ReportJobId, "0", "attempt");
+        using var content = new MemoryStream(page, writable: false);
+        var write = await Objects.WriteAsync(indexKey, content, cancellationToken);
+        Assert.True(write.Succeeded);
+
+        // The partition record names the size of the page that exists but not its SHA-256: the
+        // page is read to its end and the reader's own verification refuses it.
+        await Jobs.CommitPartitionAsync(
+            new PartitionRecord(
+                ReportJobId,
+                SingleBlockPartitioner.PartitionerVersion,
+                1,
+                25,
+                512,
+                indexKey.ToString(),
+                new string('b', 64),
+                write.Value!.Size,
+                Now),
+            cancellationToken);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("index page", failure.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -213,7 +316,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
     // service can reach.
     private async Task SeedAcceptedJobAsync(byte[] snapshot, CancellationToken cancellationToken)
     {
-        var uploadId = UploadIdentifier.Prefix + "0123456789abcdef0123456789abcdef";
+        var uploadId = UploadId;
         var staging = ObjectKey.FromSegments("staging", uploadId, "content");
         var created = Now.AddHours(-1);
         await Uploads.CreateAsync(

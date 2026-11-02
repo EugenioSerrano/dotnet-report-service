@@ -31,6 +31,9 @@ public sealed class ValidateAndPartitionActivity(
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "ValidateAndPartition";
 
+    /// <summary>The code a failure on the service's side ends a job with.</summary>
+    private const string ExecutionFailed = "EXECUTION_FAILED";
+
     /// <summary>Reads one job's snapshot and records its partition.</summary>
     /// <param name="input">The job to partition.</param>
     [Activity(Name)]
@@ -58,7 +61,7 @@ public sealed class ValidateAndPartitionActivity(
             .ConfigureAwait(false);
         if (!read.Succeeded)
         {
-            throw new StorageException(read.Outcome, read.Error!);
+            throw RefuseUnverifiable(read.Outcome, read.Error!, "the snapshot");
         }
 
         var attempt = ActivityExecutionContext.Current.Info;
@@ -75,11 +78,43 @@ public sealed class ValidateAndPartitionActivity(
             : verified.Content;
 
         // The block is one bounded document — at most the block's own maximum — so it is held
-        // while it is written, and never the snapshot or the record set.
+        // while it is written, and never the snapshot or the record set. The beat runs beside
+        // the pass, so a slow read inside it cannot silence the step.
         using var block = new MemoryStream();
-        var summary = await SingleBlockPartitioner
-            .PartitionAsync(HeaderItemsReader.ReadAsync(content, cancellationToken), block, cancellationToken, BeatProgress)
-            .ConfigureAwait(false);
+        long recordsRead = 0;
+        using var passEnds = new CancellationTokenSource();
+        var beat = ActivityHeartbeat.WhileRunningAsync(
+            PdfOutputActivityOptions.HeartbeatEvery,
+            () => Interlocked.Read(ref recordsRead),
+            count => ActivityExecutionContext.Current.Heartbeat(new PartitionHeartbeat(count)),
+            passEnds.Token);
+
+        PartitionSummary summary;
+        try
+        {
+            summary = await SingleBlockPartitioner
+                .PartitionAsync(
+                    HeaderItemsReader.ReadAsync(content, cancellationToken),
+                    block,
+                    cancellationToken,
+                    count => Interlocked.Exchange(ref recordsRead, count))
+                .ConfigureAwait(false);
+        }
+        catch (DataContractViolation violation)
+        {
+            // The profile's own diagnostic: the rule, the position, and no value of the document.
+            throw new ApplicationFailureException(violation.Message, errorType: violation.Code, nonRetryable: true);
+        }
+        catch (StorageIntegrityException)
+        {
+            // The bytes read no longer match the size and SHA-256 recorded for them.
+            throw Refuse(ExecutionFailed, "the snapshot does not match its record");
+        }
+        finally
+        {
+            await passEnds.CancelAsync().ConfigureAwait(false);
+            await beat.ConfigureAwait(false);
+        }
 
         var blockKey = ObjectKey.FromSegments("block", jobId, "0", attemptId);
         block.Position = 0;
@@ -143,9 +178,6 @@ public sealed class ValidateAndPartitionActivity(
     private static ObjectWrite Written(ObjectWrite? write, string what) =>
         write ?? throw new InvalidOperationException($"the storage provider reported success without {what}");
 
-    private void BeatProgress(long recordsRead) =>
-        ActivityExecutionContext.Current.Heartbeat(new PartitionHeartbeat(recordsRead));
-
     private async Task<PartitionResult> ResultOfAsync(PartitionRecord partition, CancellationToken cancellationToken)
     {
         var indexRead = await objects
@@ -157,15 +189,21 @@ public sealed class ValidateAndPartitionActivity(
             .ConfigureAwait(false);
         if (!indexRead.Succeeded)
         {
-            throw new StorageException(indexRead.Outcome, indexRead.Error!);
+            throw RefuseUnverifiable(indexRead.Outcome, indexRead.Error!, "the index page");
         }
 
         byte[] json;
-        await using (var page = indexRead.Value!)
+        try
         {
+            await using var page = indexRead.Value!;
             using var buffer = new MemoryStream();
             await page.Content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
             json = buffer.ToArray();
+        }
+        catch (StorageIntegrityException)
+        {
+            // The page read back no longer matches the size and SHA-256 recorded for it.
+            throw Refuse(ExecutionFailed, "the index page does not match its record");
         }
 
         var first = BlockIndexPage.Parse(json).Blocks[0];
@@ -187,6 +225,15 @@ public sealed class ValidateAndPartitionActivity(
     // same snapshot read again reaches the same answer.
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);
+
+    // A read whose stored content does not match the size and SHA-256 recorded for it is a
+    // refusal too, and never retried; it is a failure on the service's side rather than a
+    // refusal of the data, so it ends the job with that code. Every other outcome keeps the
+    // port's own exception, so a temporary fault is still retried.
+    private static Exception RefuseUnverifiable(StorageOutcome outcome, StorageError error, string what) =>
+        outcome == StorageOutcome.IntegrityFailure
+            ? Refuse(ExecutionFailed, what + " does not match its record")
+            : new StorageException(outcome, error);
 }
 
 /// <summary>The beat a running data step reports: how many records it has read so far.</summary>
