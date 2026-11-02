@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Http;
 using ReportService.Api.Http;
 
@@ -8,10 +9,36 @@ namespace ReportService.Api.Tests.Uploads;
 /// value and name something the registry's grammar admits. Everything else — the
 /// header absent, empty, repeated, joined by commas, or holding a character or a
 /// length the registry does not admit — leaves the request without an identity,
-/// and the value is read as sent, never trimmed or folded.
+/// and the value is read as sent, never trimmed or folded. The identity header
+/// alone is read byte for byte, so a caller that is not UTF-8 still reaches the
+/// grammar; every other header keeps the framework's own reading.
 /// </summary>
 public sealed class ConsumerIdentityTests
 {
+    [Theory]
+    [InlineData("X-Consumer-Id")]
+    [InlineData("x-consumer-id")]
+    [InlineData("X-CONSUMER-ID")]
+    public void TheIdentityHeaderIsReadByteForByte(string headerName)
+    {
+        Assert.Equal(Encoding.Latin1, ConsumerIdentity.HeaderDecoding(headerName));
+    }
+
+    [Theory]
+    [InlineData("Content-Type")]
+    [InlineData("X-Consumer-Id-Suffix")]
+    [InlineData("Accept")]
+    public void EveryOtherHeaderKeepsTheFrameworksOwnReading(string headerName)
+    {
+        Assert.Null(ConsumerIdentity.HeaderDecoding(headerName));
+    }
+
+    [Fact]
+    public void AReadingIsOnlyAskedWithAHeaderName()
+    {
+        Assert.Throws<ArgumentNullException>(() => ConsumerIdentity.HeaderDecoding(null!));
+    }
+
     [Fact]
     public void AHeaderWithOneValidValueIsTheIdentity()
     {

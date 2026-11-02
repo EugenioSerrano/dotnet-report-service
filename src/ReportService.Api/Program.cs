@@ -35,6 +35,11 @@ builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();
 builder.Services.AddSingleton<IJobStore, PostgresJobStore>();
 builder.Services.AddSingleton<JobAcceptanceMetrics>();
 
+// The declared consumer identity is a byte value: it is read byte for byte, so the identity
+// check answers a value outside ASCII instead of the transport refusing it.
+builder.WebHost.ConfigureKestrel(options =>
+    options.RequestHeaderEncodingSelector = ConsumerIdentity.HeaderDecoding);
+
 var app = builder.Build();
 app.UseApiExceptionHandler();
 app.UseConsumerRegistry();

@@ -119,6 +119,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Npgsql` becomes a product package and `Dapper` joins it; the composition and
   the processes that use the database connect as the application role only.
 
+### Fixed
+
+- A declared consumer identity carrying bytes outside ASCII is refused by the
+  service with `403 CONSUMER_UNKNOWN` like every other unusable identity,
+  instead of being refused by the HTTP transport with `400` and no body.
+
 ## [0.1.0] - 2026-10-22
 
 First release. It completes the groundwork milestone of the roadmap

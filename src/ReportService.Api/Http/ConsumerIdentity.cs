@@ -1,5 +1,7 @@
 namespace ReportService.Api.Http;
 
+using System.Text;
+
 /// <summary>
 /// The declared consumer identity of a request, carried in the
 /// <c>X-Consumer-Id</c> header: a header keeps the identity out of the paths the
@@ -15,6 +17,26 @@ public static class ConsumerIdentity
 
     /// <summary>The longest identity the registry admits.</summary>
     public const int MaxLength = 128;
+
+    /// <summary>
+    /// The encoding the transport uses to read <paramref name="headerName"/>, or
+    /// <see langword="null"/> for the framework's own reading. The declared
+    /// identity is a byte value: a caller that is not UTF-8 puts bytes on the
+    /// header that no UTF-8 sequence explains, and the service — not the
+    /// transport — is the layer that answers an unusable identity. ISO-8859-1
+    /// maps every byte onto one character and never fails, so every declared
+    /// value reaches the identity check; the grammar then refuses whatever the
+    /// registry does not admit.
+    /// </summary>
+    /// <param name="headerName">The name of the request header being read.</param>
+    public static Encoding? HeaderDecoding(string headerName)
+    {
+        ArgumentNullException.ThrowIfNull(headerName);
+
+        return string.Equals(headerName, HeaderName, StringComparison.OrdinalIgnoreCase)
+            ? Encoding.Latin1
+            : null;
+    }
 
     /// <summary>
     /// Reads the identity of <paramref name="request"/>.

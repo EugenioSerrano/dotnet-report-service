@@ -22,6 +22,9 @@ X-Consumer-Id: dev-consumer
 - The header must be present **exactly once**, carry **one** value and match
   `[A-Za-z0-9._-]{1,128}`. Comparison is ordinal: the value is used exactly as
   sent.
+- The value is read **byte for byte**, so a declaration carrying bytes outside
+  ASCII is answered like every other unusable identity instead of being refused
+  by the HTTP layer.
 - The identity is **declared, not authenticated**. The service trusts it. Put
   the API behind your own gateway, network isolation or authentication layer and
   let that layer set or overwrite the header; called directly, anyone who reaches

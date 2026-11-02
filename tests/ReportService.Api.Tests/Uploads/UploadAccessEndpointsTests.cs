@@ -41,6 +41,36 @@ public sealed class UploadAccessEndpointsTests
     }
 
     [Fact]
+    public async Task ADeclarationOutsideTheGrammarIsAnsweredLikeAMissingAndAnUnregisteredOne()
+    {
+        using var host = new UploadApiHost(Consumers);
+        var uploadId = await host.CreateAsync();
+        var missing = await AnswerAsync(host, null, uploadId);
+        var recordsBefore = host.Store.Records.Count;
+        var callsBefore = Calls(host.Store);
+
+        // A declaration carrying a character outside the grammar - the decoded form of a value
+        // read byte for byte - is one more unusable declaration: the same answer, and no upload.
+        foreach (var declared in new[] { "dev-consum\u00e9r", "consumer-z" })
+        {
+            var answer = await AnswerAsync(host, declared, uploadId);
+            Assert.Equal(HttpStatusCode.Forbidden, answer.Status);
+            Assert.Equal(ErrorCodes.ConsumerUnknown, answer.Code);
+            Assert.Equal("Unknown consumer", answer.Title);
+            Assert.Equal(UploadEndpoints.ConsumerUnknownDetail, answer.Detail);
+            Assert.Equal(missing.Problem, answer.Problem);
+
+            using var created = await host.Client.SendAsync(
+                UploadApiHost.CreateRequest(declared), TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.Forbidden, created.StatusCode);
+            Assert.Equal(missing.Problem, await UploadApiHost.ProblemAsync(created));
+        }
+
+        Assert.Equal(recordsBefore, host.Store.Records.Count);
+        Assert.Equal(callsBefore, Calls(host.Store));
+    }
+
+    [Fact]
     public async Task TheSameAnswerIsGivenForAnUploadThatDoesNotExist()
     {
         using var host = new UploadApiHost(Consumers);
