@@ -30,6 +30,15 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
     // The scripts the build ships, in name order: the journal of a fresh database carries exactly these.
     private static readonly IReadOnlyList<string> CatalogNames = [.. MigrationCatalog.Scripts.Select(script => script.Name)];
 
+    /// <summary>
+    /// The name of a script one number after the highest the build ships, so a script a case
+    /// adds is always the next one and never collides with a delivered migration.
+    /// </summary>
+    /// <param name="slug">The description part of the name.</param>
+    private static string NextScriptName(string slug) =>
+        (int.Parse(MigrationScriptName.Number(CatalogNames[^1]), CultureInfo.InvariantCulture) + 1)
+            .ToString("0000", CultureInfo.InvariantCulture) + "_" + slug + ".sql";
+
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan NotReadyDeadline = TimeSpan.FromSeconds(10);
 
@@ -103,15 +112,16 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
         await MigrationRunner.RunAsync(server.Application(database), MigrationCatalog.Scripts, cancellationToken);
-        var second = Script("0003_test-table.sql", "CREATE TABLE report_service.it_upgrade (id int PRIMARY KEY);");
+        var added = NextScriptName("test-table");
+        var second = Script(added, "CREATE TABLE report_service.it_upgrade (id int PRIMARY KEY);");
 
         var result = await MigrationRunner.RunAsync(server.Application(database), [.. MigrationCatalog.Scripts, second], cancellationToken);
         assertNoCredential(result);
 
         Assert.True(result.Succeeded, string.Join("; ", result.Lines()));
-        Assert.Equal(new[] { "0003_test-table.sql" }, result.Applied);
-        Assert.Equal("0003_test-table.sql", result.CurrentVersion);
-        string[] expectedJournal = [.. CatalogNames, "0003_test-table.sql"];
+        Assert.Equal(new[] { added }, result.Applied);
+        Assert.Equal(added, result.CurrentVersion);
+        string[] expectedJournal = [.. CatalogNames, added];
         Assert.Equal(
             expectedJournal,
             (await JournalAsync(database, cancellationToken)).Select(row => row.ScriptName));
@@ -122,8 +132,9 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var database = await server.CreateDatabaseAsync(cancellationToken);
+        var failingName = NextScriptName("failing");
         var failing = Script(
-            "0003_failing.sql",
+            failingName,
             "CREATE TABLE report_service.it_failing (id int);\nSELECT * FROM report_service.it_missing;");
 
         var result = await MigrationRunner.RunAsync(server.Application(database), [.. MigrationCatalog.Scripts, failing], cancellationToken);
@@ -131,11 +142,11 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
 
         Assert.False(result.Succeeded);
         Assert.NotNull(result.Failure);
-        Assert.Equal("0003_failing.sql", result.Failure.ScriptName);
+        Assert.Equal(failingName, result.Failure.ScriptName);
         Assert.True(result.Failure.Position > 0, $"position {result.Failure.Position}");
         Assert.Equal(PostgresErrorCodes.UndefinedTable, result.Failure.SqlState);
         Assert.Contains(
-            "migration '0003_failing.sql' failed at position",
+            $"migration '{failingName}' failed at position",
             result.Lines().Single(line => line.Contains("failed", StringComparison.Ordinal)),
             StringComparison.Ordinal);
 
