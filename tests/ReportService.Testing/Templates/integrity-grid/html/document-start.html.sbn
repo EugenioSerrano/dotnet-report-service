@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ header.reportTitle | html.escape }}</title>
+<link rel="stylesheet" href="https://report.invalid/html/styles.css">
+</head>
+<body>
+<header>
+<h1>{{ header.reportTitle | html.escape }}</h1>
+<p class="customer">{{ header.customer.name | html.escape }} &middot; {{ header.currency | html.escape }} &middot; {{ header.totals.recordCount }}</p>
+</header>
+<main class="detail">
+<div class="row head"><span class="col-seq">Seq</span><span class="col-date">Date</span><span class="col-description">Description</span><span class="col-amount">Amount</span></div>

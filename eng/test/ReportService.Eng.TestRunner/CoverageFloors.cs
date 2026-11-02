@@ -95,6 +95,10 @@ internal static partial class CoverageFloors
         ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),
         ("ReportService.Rendering.Tests", ["ReportService.Rendering"]),
         ("ReportService.Templates.Tests", ["ReportService.Templates"]),
+        // The fixture library and the test template packages are test support:
+        // they hold no product behaviour, so the project measures them and the
+        // run reports them without a floor.
+        ("ReportService.Fixtures.Tests", ["ReportService.Testing"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
     ];
 

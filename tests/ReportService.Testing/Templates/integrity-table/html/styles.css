@@ -1,0 +1,65 @@
+html {
+  font-family: "Liberation Sans", sans-serif;
+  font-size: 9pt;
+  line-height: 1.25;
+  color: #000;
+}
+
+body {
+  margin: 0;
+}
+
+h1 {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: 0 0 2mm 0;
+}
+
+p.customer {
+  margin: 0 0 3mm 0;
+}
+
+table.detail {
+  width: 186mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.detail th,
+table.detail td {
+  padding: 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.detail th {
+  font-weight: bold;
+}
+
+.col-seq {
+  width: 14mm;
+}
+
+.col-date {
+  width: 22mm;
+}
+
+.col-description {
+  width: 120mm;
+}
+
+.col-amount {
+  width: 30mm;
+  text-align: right;
+}
+
+.description {
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+.free-text {
+  margin: 3mm 0 0 0;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}

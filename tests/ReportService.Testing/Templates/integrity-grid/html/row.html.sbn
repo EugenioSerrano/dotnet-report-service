@@ -1,0 +1,1 @@
+<div class="row"><span class="col-seq">{{ item.sequence }}</span><span class="col-date">{{ item.date | html.escape }}</span><span class="col-description description">{{ item.description | html.escape }}</span><span class="col-amount">{{ item.amount }}</span></div>
