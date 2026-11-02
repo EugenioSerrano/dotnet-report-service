@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using ReportService.Migrations;
@@ -256,8 +257,10 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
             await GivenAnUploadWhoseDeadlineIsPassingAsync(dataSource, root, UploadId, cancellationToken);
 
             // The worker's own registrations with the sweep in process, and the data queue's engine
-            // worker left out of them: the upload's deadline passes while no attempt can run.
-            await using var orchestration = Worker(enginePort, connectionString, root, UploadVerificationActivityOptions.DataQueue);
+            // worker left out of them: the upload's deadline passes while no attempt can run. This
+            // host keeps the orchestration queue's work, so its engine worker serves the workflow
+            // that runs once the deadline has passed.
+            await using var orchestration = Worker(enginePort, connectionString, root, UploadVerificationWorkflow.OrchestrationQueue);
             using (var orchestrationHealth = orchestration.CreateClient())
             {
                 await WaitForHealthyAsync(orchestrationHealth, cancellationToken);
@@ -371,19 +374,32 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         });
 
     // A process creates one engine worker per declared queue that has work. This case needs the two
-    // halves of that process at two moments, so it removes the other half's registration and each
-    // host starts exactly the engine worker its moment calls for; the product keeps no test switch.
+    // halves of that process at two moments, so it keeps only the wanted queue's registration and
+    // each host starts exactly the engine worker its moment calls for; the product keeps no test
+    // switch. The work is registered by the product's own factories, which build the registration
+    // and only then state its queue, so the wanted one is picked after it is built - and a queue
+    // with no work at all fails here instead of silently leaving a second worker of this process.
     private static void KeepOnlyQueueWork(IServiceCollection services, string queue)
     {
-        var other = services
+        var registrations = services
             .Where(descriptor => descriptor.ServiceType == typeof(TaskQueueWork)
-                && descriptor.ImplementationInstance is TaskQueueWork work
-                && !string.Equals(work.Queue, queue, StringComparison.Ordinal))
+                && descriptor.ImplementationFactory is not null)
+            .Select(descriptor => descriptor.ImplementationFactory!)
             .ToList();
-        foreach (var descriptor in other)
+        services.RemoveAll<TaskQueueWork>();
+        services.AddSingleton(provider =>
         {
-            services.Remove(descriptor);
-        }
+            foreach (var registration in registrations)
+            {
+                if (registration(provider) is TaskQueueWork work
+                    && string.Equals(work.Queue, queue, StringComparison.Ordinal))
+                {
+                    return work;
+                }
+            }
+
+            throw new InvalidOperationException($"No work is registered on the task queue '{queue}'.");
+        });
     }
 
     private static string Duration(TimeSpan value) => value.ToString("c", CultureInfo.InvariantCulture);
