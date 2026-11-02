@@ -86,8 +86,14 @@ public sealed class ReportJobWorkflow
 
             case InputOutcome.Verifying:
                 // The job is accepted and not running: it records the step it is in and waits
-                // for its upload, and only then does control reach the continuation point.
-                await WaitForInputAsync(input.ReportJobId).ConfigureAwait(true);
+                // for its upload. Only an upload that became ready brings control to the
+                // continuation point; a wait that ended with the job itself, or with the
+                // upload rejected or expired, has already ended the job.
+                if (!await WaitForInputAsync(input.ReportJobId).ConfigureAwait(true))
+                {
+                    return;
+                }
+
                 break;
 
             case InputOutcome.Rejected:
@@ -118,7 +124,13 @@ public sealed class ReportJobWorkflow
     /// upload settles, the job ends elsewhere or the run has taken all the checks it may.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
-    private async Task WaitForInputAsync(string reportJobId)
+    /// <returns>
+    /// True when the upload became ready, so the job continues at the point after the wait;
+    /// false when the wait ended for any other reason — the upload was rejected or expired,
+    /// so the job has failed, or the job itself ended while it waited, so nothing is left to
+    /// run and nothing may claim its input is ready.
+    /// </returns>
+    private async Task<bool> WaitForInputAsync(string reportJobId)
     {
         var options = ReportJobActivityOptions.Create();
         var begun = await Workflow.ExecuteActivityAsync(
@@ -127,7 +139,7 @@ public sealed class ReportJobWorkflow
         if (begun == BeginInputWaitOutcome.NotQueued)
         {
             // The job ended while this run was busy; there is nothing to wait for.
-            return;
+            return false;
         }
 
         var checks = 0;
@@ -153,25 +165,27 @@ public sealed class ReportJobWorkflow
             switch (resolution.Outcome)
             {
                 case InputOutcome.Terminal:
+                    // The job ended elsewhere while it waited: the stage it left behind is
+                    // cleared, and the run ends here without a step of its own.
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
-                    return;
+                    return false;
 
                 case InputOutcome.Ready:
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input ready after {Checks} checks", reportJobId, checks);
-                    return;
+                    return true;
 
                 case InputOutcome.Rejected:
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input rejected after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
-                    return;
+                    return false;
 
                 case InputOutcome.Expired:
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input expired after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, ReportJobActivities.InputNotFound, "input-expired", options).ConfigureAwait(true);
-                    return;
+                    return false;
 
                 case InputOutcome.Verifying:
                     // The count is read after the check, never before it: a nudge that arrived
