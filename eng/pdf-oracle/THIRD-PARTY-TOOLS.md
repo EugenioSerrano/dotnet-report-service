@@ -15,8 +15,20 @@ product assembly (ADR-013 C1-C5).
 ## 1. Packages installed by the oracle image (50)
 
 Versions are the archive state on 2026-11-02, the probe date. The build re-reads
-every version with `dpkg-query` and records it with the image digest; a package
-absent from this list, or carrying a licence not listed here, stops the build.
+**every version and every licence** from the installed image (`dpkg-query` and
+`/usr/share/doc/<pkg>/copyright`) and records both with the image digest. The
+build stops when a package is absent from this list, when the copyright file
+does not match the row's licence expression (one of the alternatives the row
+lists), or when a copyright file is missing. The row's version is the probe
+date, not a pin.
+
+### Probe (2026-11-02)
+
+`docker run --rm --user 0:0 <base>@sha256:d5633778… bash -lc 'apt-get update -qq; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/before; apt-get install -y -qq --no-install-recommends poppler-utils qpdf; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/after; diff /tmp/before /tmp/after; for p in $(diff /tmp/before /tmp/after | sed -n "s/^> //p" | cut -d" " -f1); do echo "== $p"; head -c 4000 /usr/share/doc/$p/copyright; done'`
+
+Four disposable containers on the pinned base; nothing installed on a host. The
+raw output is not retained in the repository: the per-build re-read above is the
+evidence of record, and this table is the acceptance basis, not a version pin.
 
 | # | Package | Version (probe 2026-11-02) | Licence (from `/usr/share/doc/<pkg>/copyright`) |
 |---|---------|----------------------------|--------------------------------------------------|
@@ -71,22 +83,33 @@ absent from this list, or carrying a licence not listed here, stops the build.
 | 49 | poppler-utils | 24.02.0-1ubuntu9.11 | GPL-2 or GPL-3 (+ Apache-2.0 stanzas) |
 | 50 | qpdf | 11.9.0-1.1ubuntu0.1 | Apache-2.0 (+ SAPHIR MIT-style, RSA notice) |
 
-**Copyleft rows the acceptance must see:** 6 (cairo, LGPL-2.1/MPL-1.1), 13
-(jbig, GPL-2+), 15 (libjpeg8, LGPL-2.1), 17 (keyutils, GPL-2+/LGPL-2+), 29 and
-49 (poppler, GPL-2/GPL-3), 32 (rtmp, GPL-2+/LGPL-2.1), 37 (ssh, LGPL-2.1), and
-the GPL stanzas inside 7, 21, 33, 34 and 36. All of them are apt dependencies
+**Copyleft rows the acceptance must see:** 2-3 (DejaVu, Bitstream Vera + GPL-2+
+font exception), 6 (cairo, LGPL-2.1/MPL-1.1), 11 (freetype, FTL or GPL-2+), 13
+(jbig, GPL-2+), 15 (libjpeg8, LGPL-2.1), 17 (keyutils, GPL-2+/LGPL-2+), 20
+(lcms2, GPL-3 stanza), 24-25 (NSS, MPL-2.0), 28 (libpng, GPL-2+ alternative), 29
+and 49 (poppler, GPL-2/GPL-3), 32 (rtmp, GPL-2+/LGPL-2.1), 37 (ssh, LGPL-2.1),
+and the GPL stanzas inside 7, 21, 33, 34 and 36. All of them are apt dependencies
 installed by the two top-level packages; ADR-013 §3.1 covers exactly that
-closure. The waiver does not cover a library loaded into a test process.
+closure. Where a row offers a permissive branch (6, 11, 17, 28, 36, 37), this
+acceptance does not elect one: the row's expression is "one of", and the build
+records the branch the copyright file actually offers. The waiver does not cover
+a library loaded into a test process.
 
-## 2. Packages already in the base image (22) — closure reading to confirm
+**qpdf is not waived.** `qpdf` and `libqpdf29t64` are Apache-2.0 and need no
+G21 waiver; the GPL rows are the waived closure. A SPEC copying this list must
+not record qpdf as `waived`: ADR-013 §3.1 item 4's gate applies to the poppler
+closure, not to qpdf.
+
+## 2. Packages already in the base image (22) — outside the C3 accepted closure
 
 The probe's diff is the 50 packages the install adds. The base image also carries
-the 22 packages below, which are part of the runtime closure but not installed by
-the two top-level packages. **Their versions were read; their licences were not**
-— the probe read `/usr/share/doc/<pkg>/copyright` only for the 50 installed
-packages. If the owner includes the base in the accepted closure, these 22 must
-be read the same way before acceptance; the absence of a licence column is not
-an implied grant.
+the 22 packages below. **They are outside the C3 accepted closure:** ADR-013
+§3.1 item 1 covers the apt packages installed as dependencies of poppler-utils
+and qpdf, and ADR-004's base-image note leaves the base OS packages under their
+own licences. They are listed for completeness only; they are not accepted here
+and need no row in section 1. **Their licences were not read by the probe**; if a
+future scope ever includes the base, they must be read the same way before that
+acceptance.
 
 | Package | Version |
 |---------|---------|
@@ -115,12 +138,14 @@ an implied grant.
 
 ## 3. Owner acceptance (C3)
 
-**Status: pending.** The owner of the ADR-013 waiver, `human:eugenioserrano`,
-accepts the package-to-licence rows of section 1 — and section 2 if the closure
-reading includes the base — and no others. A closure package absent from the
-accepted list, or carrying a licence not listed, stops the build. Exact versions
-and the image digest are recorded per build; the list changes only by the
-owner's commit, which is the record of this acceptance.
+**Status: accepted by the owner on 2026-11-02; section 1 only.** The owner of the
+ADR-013 waiver, `human:eugenioserrano`, accepts the package-to-licence rows of
+section 1 and no others. Section 2 is outside this acceptance. The build stops
+when a package is absent, when a row's licence expression (one of the
+alternatives listed) does not match the copyright file, or when a copyright file
+is missing. Exact versions and licences, and the image digest, are recorded per
+build; the list changes only by the owner's commit, which is the record of this
+acceptance.
 
 - Accepted by: `human:eugenioserrano`
 - Date: `2026-11-02`
