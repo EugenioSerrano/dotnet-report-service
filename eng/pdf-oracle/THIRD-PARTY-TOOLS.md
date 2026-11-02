@@ -14,21 +14,26 @@ product assembly (ADR-013 C1-C5).
 
 ## 1. Packages installed by the oracle image (50)
 
-Versions are the archive state on 2026-11-02, the probe date. The build re-reads
-**every version and every licence** from the installed image (`dpkg-query` and
-`/usr/share/doc/<pkg>/copyright`) and records both with the image digest. The
-build stops when a package is absent from this list, when the copyright file
-does not match the row's licence expression (one of the alternatives the row
-lists), or when a copyright file is missing. The row's version is the probe
-date, not a pin.
+Versions are the archive state on 2026-11-02, the probe date. The build snapshots
+`dpkg-query -W` before and after the install and takes the **added or changed**
+packages as its package set (the probe's method); the base packages already
+present are outside C3. For every package in that set, the build re-reads the
+version and the **full** `/usr/share/doc/<pkg>/copyright`, records both with the
+image digest in the Bolt's SPEC/MEM evidence, and stops when a package is absent
+from this list, when **any stanza** in the copyright file is not among the
+expressions the row lists, or when a copyright file is missing. `poppler-utils`
+and `qpdf` are pinned by the SPEC; the 48 dependencies are re-read per build. The
+row's version is the probe date, not a pin for the 48.
 
 ### Probe (2026-11-02)
 
-`docker run --rm --user 0:0 <base>@sha256:d5633778… bash -lc 'apt-get update -qq; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/before; apt-get install -y -qq --no-install-recommends poppler-utils qpdf; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/after; diff /tmp/before /tmp/after; for p in $(diff /tmp/before /tmp/after | sed -n "s/^> //p" | cut -d" " -f1); do echo "== $p"; head -c 4000 /usr/share/doc/$p/copyright; done'`
+`docker run --rm --user 0:0 <base>@sha256:d5633778… bash -lc 'apt-get update -qq; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/before; apt-get install -y -qq --no-install-recommends poppler-utils qpdf; dpkg-query -W -f="${Package} ${Version}\n" >/tmp/after; diff /tmp/before /tmp/after; for p in $(diff /tmp/before /tmp/after | sed -n "s/^> //p" | cut -d" " -f1); do echo "== $p"; cat /usr/share/doc/$p/copyright; done'`
 
-Four disposable containers on the pinned base; nothing installed on a host. The
-raw output is not retained in the repository: the per-build re-read above is the
-evidence of record, and this table is the acceptance basis, not a version pin.
+Four disposable containers on the pinned base; nothing installed on a host. A
+package whose version changed is treated as changed, not added; a base package
+upgraded by the install is outside C3. The probe's raw output is not retained in
+the repository: the per-build re-read above is the evidence of record, and this
+table is the acceptance basis, not a version pin.
 
 | # | Package | Version (probe 2026-11-02) | Licence (from `/usr/share/doc/<pkg>/copyright`) |
 |---|---------|----------------------------|--------------------------------------------------|
@@ -86,19 +91,23 @@ evidence of record, and this table is the acceptance basis, not a version pin.
 **Copyleft rows the acceptance must see:** 2-3 (DejaVu, Bitstream Vera + GPL-2+
 font exception), 6 (cairo, LGPL-2.1/MPL-1.1), 11 (freetype, FTL or GPL-2+), 13
 (jbig, GPL-2+), 15 (libjpeg8, LGPL-2.1), 17 (keyutils, GPL-2+/LGPL-2+), 20
-(lcms2, GPL-3 stanza), 24-25 (NSS, MPL-2.0), 28 (libpng, GPL-2+ alternative), 29
-and 49 (poppler, GPL-2/GPL-3), 32 (rtmp, GPL-2+/LGPL-2.1), 37 (ssh, LGPL-2.1),
-and the GPL stanzas inside 7, 21, 33, 34 and 36. All of them are apt dependencies
+(lcms2, GPL-3 stanza), 23 (nghttp2, GPL-3+ with Autoconf exception), 24-25 (NSS,
+MPL-2.0), 28 (libpng, GPL-2+ alternative), 29 and 49 (poppler, GPL-2/GPL-3), 30
+(psl, gnulib stanza), 32 (rtmp, GPL-2+/LGPL-2.1), 37 (ssh, LGPL-2.1), and the
+GPL stanzas inside 7, 21, 33, 34 and 36. All of them are apt dependencies
 installed by the two top-level packages; ADR-013 §3.1 covers exactly that
-closure. Where a row offers a permissive branch (6, 11, 17, 28, 36, 37), this
-acceptance does not elect one: the row's expression is "one of", and the build
-records the branch the copyright file actually offers. The waiver does not cover
-a library loaded into a test process.
+closure. The row lists **every** expression the copyright file may carry; the
+build accepts the file only if **all** its stanzas are among them, so an added
+stanza (for example an AGPL stanza) stops the build. No branch is elected: a
+dual-licence file is listed by all its branches, and the build records the exact
+stanzas and the copyright file's SHA-256. The waiver does not cover a library
+loaded into a test process.
 
 **qpdf is not waived.** `qpdf` and `libqpdf29t64` are Apache-2.0 and need no
-G21 waiver; the GPL rows are the waived closure. A SPEC copying this list must
-not record qpdf as `waived`: ADR-013 §3.1 item 4's gate applies to the poppler
-closure, not to qpdf.
+G21 waiver; the GPL rows are the waived closure. SPEC-261101-0254 revision 2's
+gate row records the whole closure as `waived`; ADR-013 §3.1 item 1 excludes
+qpdf, so that row is overbroad and the discrepancy is owed to the SPEC's next
+revision. This record does not override the SPEC; the build records both.
 
 ## 2. Packages already in the base image (22) — outside the C3 accepted closure
 
