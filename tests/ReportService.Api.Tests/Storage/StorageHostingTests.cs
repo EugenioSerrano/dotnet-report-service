@@ -29,32 +29,32 @@ public sealed class StorageHostingTests : IDisposable
     private string Root => Path.Combine(_directory.Path, "storage");
 
     [Fact]
-    public async Task UnknownProviderStopsTheStartNamingTheSetting()
+    public void UnknownProviderStopsTheStartNamingTheSetting()
     {
-        await using var api = Api(("Storage:Provider", "cloud"));
+        using var probe = Probe(("Storage:Provider", "cloud"));
 
-        var error = FindConfigurationError(Record.Exception(() => api.CreateClient()));
+        var error = probe.Refusal();
 
         Assert.Equal("setting 'Storage:Provider': is not a known provider (known: filesystem)", error.Message);
     }
 
     [Fact]
-    public async Task ProcessOutsideDevelopmentHasNoDefaultProvider()
+    public void ProcessOutsideDevelopmentHasNoDefaultProvider()
     {
-        await using var api = Api().WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        using var probe = Probe("Production");
 
-        var error = FindConfigurationError(Record.Exception(() => api.CreateClient()));
+        var error = probe.Refusal();
 
         Assert.Equal("Storage:Provider", error.Setting);
         Assert.Equal("is required; no provider is selected by default", error.Reason);
     }
 
     [Fact]
-    public async Task MissingRootThatMayNotBeCreatedStopsTheStartWithoutItsPath()
+    public void MissingRootThatMayNotBeCreatedStopsTheStartWithoutItsPath()
     {
-        await using var api = Api(("Storage:Filesystem:CreateIfMissing", "false"));
+        using var probe = Probe(("Storage:Filesystem:CreateIfMissing", "false"));
 
-        var error = FindConfigurationError(Record.Exception(() => api.CreateClient()));
+        var error = probe.Refusal();
 
         Assert.Equal("setting 'Storage:Filesystem:Root': the directory does not exist", error.Message);
         Assert.DoesNotContain(_directory.Path, error.ToString(), StringComparison.OrdinalIgnoreCase);
@@ -163,21 +163,24 @@ public sealed class StorageHostingTests : IDisposable
             builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
         });
 
-    private static ConfigurationError FindConfigurationError(Exception? exception)
-    {
-        for (var current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is ConfigurationError error)
-            {
-                return error;
-            }
+    private StartFailureProbe Probe(params (string Key, string Value)[] settings) => Probe("Development", settings);
 
-            if (current is AggregateException aggregate && aggregate.InnerExceptions.Count == 1)
-            {
-                return FindConfigurationError(aggregate.InnerExceptions[0]);
-            }
+    private StartFailureProbe Probe(string environment, params (string Key, string Value)[] settings)
+    {
+        var configuration = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["Storage:Filesystem:Root"] = Root,
+            [DatabaseOptions.ConnectionStringSetting] = MetadataDatabaseStub.ConnectionString,
+            [DatabaseOptions.ExpectedSchemaVersionSetting] = MetadataDatabaseStub.ExpectedVersion,
+        };
+        foreach (var (key, value) in settings)
+        {
+            configuration[key] = value;
         }
 
-        throw new Xunit.Sdk.XunitException($"No configuration error was raised; got {exception?.GetType().FullName ?? "no exception"}.");
+        return StartFailureProbe.Create(
+            configuration,
+            environment,
+            services => MetadataDatabaseStub.UseHealthy(services));
     }
 }

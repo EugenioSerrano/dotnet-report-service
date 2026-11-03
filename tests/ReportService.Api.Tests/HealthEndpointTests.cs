@@ -64,14 +64,15 @@ public sealed class HealthEndpointTests : IDisposable
     [Fact]
     public void TheApiStopsAtStartWhenTheMetadataConnectionStringIsMissing()
     {
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-        {
-            builder.UseSetting("Storage:Filesystem:Root", _storage.Path);
-            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, Baseline);
-            builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));
-        });
+        using var probe = StartFailureProbe.Create(
+            new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["Storage:Filesystem:Root"] = _storage.Path,
+                [DatabaseOptions.ExpectedSchemaVersionSetting] = Baseline,
+            },
+            replacements: services => MetadataDatabaseStub.UseHealthy(services));
 
-        var error = ConfigurationErrors.Find(Record.Exception(() => factory.CreateClient()));
+        var error = probe.Refusal();
 
         Assert.Equal("setting 'ConnectionStrings:reportservice': is required", error.Message);
     }
