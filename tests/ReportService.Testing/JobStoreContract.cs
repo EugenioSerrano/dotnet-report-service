@@ -340,6 +340,108 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal("output-failed", state.Job.ErrorReason);
     }
 
+    [Fact]
+    public async Task RecordingTheWaitOfAQueuedJobAppliesTheStageAndARepeatChangesNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Equal(BeginInputWaitOutcome.Applied, await Store.BeginInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        var waiting = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(InputWaitStage.WaitingForInput, waiting!.Job.Stage);
+        Assert.Equal(ReportJobStatus.Queued, waiting.Job.Status);
+
+        Assert.Equal(BeginInputWaitOutcome.Applied, await Store.BeginInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        var again = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(InputWaitStage.WaitingForInput, again!.Job.Stage);
+        Assert.Equal(waiting.Job, again.Job);
+    }
+
+    [Fact]
+    public async Task AJobThatHasEndedNeverWaitsAndAnAbsentJobIsNotQueued()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        Assert.Equal(
+            JobFailureOutcome.Applied,
+            await Store.FailJobAsync(acceptance.ReportJobId, "INPUT_NOT_FOUND", "input-expired", Now, cancellationToken));
+
+        Assert.Equal(BeginInputWaitOutcome.NotQueued, await Store.BeginInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        var ended = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(ended!.Job.Stage);
+        Assert.Equal(ReportJobStatus.Failed, ended.Job.Status);
+
+        Assert.Equal(
+            BeginInputWaitOutcome.NotQueued,
+            await Store.BeginInputWaitAsync("job-ffffffffffffffffffffffffffffffff", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ClearingTheWaitAppliesOnceAndARepeatIsANoOp()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.BeginInputWaitAsync(acceptance.ReportJobId, cancellationToken);
+
+        Assert.Equal(EndInputWaitOutcome.Applied, await Store.EndInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        var cleared = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(cleared!.Job.Stage);
+        Assert.Equal(ReportJobStatus.Queued, cleared.Job.Status);
+
+        Assert.Equal(EndInputWaitOutcome.NotWaiting, await Store.EndInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        Assert.Null((await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Job.Stage);
+    }
+
+    [Fact]
+    public async Task AQueuedJobThatNeverWaitedIsNotWaiting()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Equal(EndInputWaitOutcome.NotWaiting, await Store.EndInputWaitAsync(acceptance.ReportJobId, cancellationToken));
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(state!.Job.Stage);
+        Assert.Equal(ReportJobStatus.Queued, state.Job.Status);
+    }
+
+    [Fact]
+    public async Task TheJobsThatMayBeWaitingOnAnUploadAreFoundInCreationOrder()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+        var otherUploadId = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+
+        var first = Acceptance(uploadId);
+        var second = Acceptance(uploadId);
+        var third = Acceptance(uploadId);
+        var elsewhere = Acceptance(otherUploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(first, Now, cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(second, Now.AddSeconds(1), cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(third, Now.AddSeconds(2), cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(elsewhere, Now, cancellationToken));
+
+        // Nothing has waited yet: a queued job with no stage is one that may be about to.
+        Assert.Equal(
+            [first.ReportJobId, second.ReportJobId, third.ReportJobId],
+            await Store.FindInputWaitingJobIdsAsync(uploadId, cancellationToken));
+
+        Assert.Equal(BeginInputWaitOutcome.Applied, await Store.BeginInputWaitAsync(second.ReportJobId, cancellationToken));
+        Assert.Equal(
+            [first.ReportJobId, second.ReportJobId, third.ReportJobId],
+            await Store.FindInputWaitingJobIdsAsync(uploadId, cancellationToken));
+
+        await Store.FailJobAsync(first.ReportJobId, "INPUT_NOT_FOUND", "input-expired", Now, cancellationToken);
+        Assert.Equal(
+            [second.ReportJobId, third.ReportJobId],
+            await Store.FindInputWaitingJobIdsAsync(uploadId, cancellationToken));
+
+        Assert.Empty(await Store.FindInputWaitingJobIdsAsync("upload-ffffffffffffffffffffffffffffffff", cancellationToken));
+    }
+
     /// <summary>A partition of <paramref name="reportJobId"/>, holding one record.</summary>
     /// <param name="reportJobId">The job it belongs to.</param>
     protected static PartitionRecord Partition(string reportJobId) => new(

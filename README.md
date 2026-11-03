@@ -293,7 +293,9 @@ identity header and every error code are described in
 [`docs/api/uploads.md`](docs/api/uploads.md). Creating a report job, the answer
 it gives and every refusal it returns are described in
 [`docs/api/report-jobs.md`](docs/api/report-jobs.md), which also says which
-members of a job request this increment does not accept yet.
+members of a job request this increment does not accept yet. Reading back a
+taken template version, and every refusal that read returns, is described in
+[`docs/api/templates.md`](docs/api/templates.md).
 
 | Method and route | Purpose |
 |------------------|---------|

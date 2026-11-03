@@ -1,11 +1,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage.Filesystem;
 using ReportService.Workers.Orchestration.Dispatch;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
+using ReportService.Workers.Orchestration.Tests.Jobs;
 
 namespace ReportService.Workers.Orchestration.Tests;
 
@@ -16,6 +19,7 @@ namespace ReportService.Workers.Orchestration.Tests;
 /// reach a container that only the host builds. Nothing here starts the process;
 /// building the container is what the host does before it serves anything.
 /// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class OrchestrationWorkerCompositionTests
 {
     [Fact]
@@ -46,6 +50,56 @@ public sealed class OrchestrationWorkerCompositionTests
                 builder.Services,
                 descriptor => descriptor.ServiceType == typeof(IHostedService)
                     && descriptor.ImplementationType == typeof(IntentDispatcher));
+        }
+        finally
+        {
+            root.Delete(true);
+        }
+    }
+
+    [Fact]
+    public void TheWaitingStepsArePlannedOnTheQueueTheJobWorkflowRunsOn()
+    {
+        var root = Directory.CreateTempSubdirectory("worker-composition-");
+        try
+        {
+            var builder = Host.CreateApplicationBuilder();
+            builder.Configuration.AddInMemoryCollection(Settings(root.FullName));
+            builder.ConfigureContainer(new DefaultServiceProviderFactory(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
+            OrchestrationWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+            var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
+            var plan = WorkerPlan.Plan(
+                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                registrations);
+
+            // One worker per queue, whatever is registered on it: the job's steps and the
+            // waiting steps share the orchestration worker and nothing is added to the data one.
+            var orchestration = Assert.Single(plan, worker => worker.Queue == ReportJobWorkflow.OrchestrationQueue);
+            var activities = orchestration.Options.Activities.Select(activity => activity.Name).ToList();
+            Assert.Contains(InputWaitActivities.BeginName, activities);
+            Assert.Contains(InputWaitActivities.EndName, activities);
+            Assert.Contains(InputWaitSignalActivities.Name, activities);
+            Assert.Contains(ReportJobActivities.ResolveInputName, activities);
+            Assert.Contains(
+                orchestration.Options.Workflows,
+                workflow => workflow.Name == ReportJobWorkflow.WorkflowType);
+            Assert.Contains(
+                orchestration.Options.Workflows,
+                workflow => workflow.Name == UploadVerificationWorkflow.WorkflowType);
+
+            // The step that tells the waiting jobs their upload changed is served by the same
+            // worker that runs the job and the verification: nothing is added to the data queue.
+            Assert.DoesNotContain(
+                plan.Where(worker => worker.Queue != ReportJobWorkflow.OrchestrationQueue),
+                worker => worker.Options.Activities.Any(activity => activity.Name == InputWaitSignalActivities.Name));
+
+            // The settings the wait runs under are published and valid as the process starts.
+            var options = host.Services.GetRequiredService<IOptions<InputWaitOptions>>().Value;
+            Assert.Empty(options.Validate());
+            Assert.Contains(plan, worker => worker.Queue == "report-data");
         }
         finally
         {

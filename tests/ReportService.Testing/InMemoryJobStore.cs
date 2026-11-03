@@ -223,4 +223,62 @@ public sealed partial class InMemoryJobStore : IJobStore
             return Task.FromResult(JobFailureOutcome.Applied);
         }
     }
+
+    /// <inheritdoc />
+    public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            if (!_jobs.TryGetValue(reportJobId, out var job) || job.Status != ReportJobStatus.Queued)
+            {
+                return Task.FromResult(BeginInputWaitOutcome.NotQueued);
+            }
+
+            _jobs[reportJobId] = job with { Stage = InputWaitStage.WaitingForInput };
+            return Task.FromResult(BeginInputWaitOutcome.Applied);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            if (!_jobs.TryGetValue(reportJobId, out var job)
+                || !string.Equals(job.Stage, InputWaitStage.WaitingForInput, StringComparison.Ordinal))
+            {
+                return Task.FromResult(EndInputWaitOutcome.NotWaiting);
+            }
+
+            _jobs[reportJobId] = job with { Stage = null };
+            return Task.FromResult(EndInputWaitOutcome.Applied);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> FindInputWaitingJobIdsAsync(string uploadId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(uploadId);
+
+        lock (_gate)
+        {
+            // The same predicate and the same order as the statement the database runs: the
+            // queued jobs of the upload, with the waiting stage or with none yet.
+            IReadOnlyList<string> waiting =
+            [
+                .. _jobs.Values
+                    .Where(job => string.Equals(job.UploadId, uploadId, StringComparison.Ordinal)
+                        && job.Status == ReportJobStatus.Queued
+                        && (job.Stage is null || string.Equals(job.Stage, InputWaitStage.WaitingForInput, StringComparison.Ordinal)))
+                    .OrderBy(job => job.CreatedAt)
+                    .ThenBy(job => job.ReportJobId, StringComparer.Ordinal)
+                    .Select(job => job.ReportJobId),
+            ];
+            return Task.FromResult(waiting);
+        }
+    }
 }

@@ -19,6 +19,8 @@
     <Project Path="src/ReportService.Storage/ReportService.Storage.csproj" />
     <Project Path="src/ReportService.Templates/ReportService.Templates.csproj" />
     <Project Path="src/ReportService.Rendering/ReportService.Rendering.csproj" />
+    <Project Path="src/ReportService.TemplatePackages/ReportService.TemplatePackages.csproj" />
+    <Project Path="src/ReportService.TemplateSource/ReportService.TemplateSource.csproj" />
     <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
     <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
   </Folder>
@@ -35,6 +37,8 @@
     <Project Path="tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
     <Project Path="tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
     <Project Path="tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj" />
+    <Project Path="tests/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj" />
+    <Project Path="tests/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj" />
     <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
     <Project Path="tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />

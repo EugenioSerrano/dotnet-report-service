@@ -35,7 +35,7 @@ namespace ReportService.IntegrationTests.Jobs;
 /// started exactly once when the worker starts, also when a process died between the
 /// start and its own record; a job whose upload is refused or ran out of time before
 /// the worker starts ends with the upload's own outcome; and a job whose upload is
-/// still confirming stops where it is, with nothing in its history that waits.
+/// still confirming stays queued and is never failed.
 /// <para>
 /// The API and the worker are the product's own registrations, hosted in this process:
 /// the API answers, the worker polls the engine and the database, and the engine is the
@@ -246,7 +246,7 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
     }
 
     [Fact]
-    public async Task AJobWhoseUploadIsStillConfirmingStopsQueuedAndItsHistoryWaitsOnNothing()
+    public async Task AJobWhoseUploadIsStillConfirmingStopsQueuedAndIsNotFailed()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var uploadId = await GivenUploadAsync(UploadStatus.Verifying, DateTimeOffset.UtcNow.AddHours(6), cancellationToken);
@@ -257,18 +257,26 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
         using var workerClient = worker.CreateClient();
         await WaitForStatusAsync(workerClient, HttpStatusCode.OK, cancellationToken);
 
-        var client = await EngineClientAsync(cancellationToken);
-        var handle = client.GetWorkflowHandle(workflowId);
+        // The run has done everything it will do before its upload settles: a build with the
+        // waiting stage starts its timer, and a build without it reaches the point after the
+        // check and completes. Neither may end the job.
         await Wait.UntilAsync(
-            $"the run of {workflowId} to complete",
-            async token => (await HistoryAsync(workflowId, token)).Events.Any(entry => entry.EventType == EventType.WorkflowExecutionCompleted),
+            $"the run of {workflowId} to reach the point where it waits or stops",
+            async token =>
+            {
+                var history = await HistoryAsync(workflowId, token);
+                return history.Events.Any(entry => entry.EventType is EventType.TimerStarted or EventType.WorkflowExecutionCompleted);
+            },
             DispatchDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
 
         var history = await HistoryAsync(workflowId, cancellationToken);
-        Assert.DoesNotContain(history.Events, entry => entry.EventType == EventType.TimerStarted);
-        Assert.Single(Activities(history, ReportJobActivities.ResolveInputName));
+
+        // A confirming upload never fails the job and never lets the run claim its input is
+        // ready: the check runs, and how often it runs again while the upload confirms is
+        // the stage that waits for it, not this case.
+        Assert.NotEmpty(Activities(history, ReportJobActivities.ResolveInputName));
         Assert.Empty(Activities(history, ReportJobActivities.FailJobName));
 
         var state = await JobAsync(reportJobId, cancellationToken);
@@ -326,6 +334,19 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
                         now),
                     now,
                     cancellationToken));
+        }
+
+        if (status is UploadStatus.Verifying)
+        {
+            // The confirmation left a verification request behind, and this process's worker
+            // would run it and settle the upload from a content the case never wrote. The
+            // request is withdrawn so the upload stays confirming for as long as the case
+            // reads its job, which is the state a job sees while its input is still in doubt.
+            await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(
+                "DELETE FROM report_service.intents WHERE kind = 'start-upload-verification' AND subject_id = @UploadId",
+                new { UploadId = uploadId },
+                cancellationToken: cancellationToken));
         }
 
         return uploadId;

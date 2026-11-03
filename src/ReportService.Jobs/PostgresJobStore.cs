@@ -112,6 +112,29 @@ public sealed partial class PostgresJobStore : IJobStore
          WHERE report_job_id = @ReportJobId AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
         """;
 
+    private const string BeginInputWaitSql = """
+        UPDATE report_service.report_jobs
+           SET stage = @Stage
+         WHERE report_job_id = @ReportJobId AND status = 'QUEUED'
+        RETURNING report_job_id
+        """;
+
+    private const string EndInputWaitSql = """
+        UPDATE report_service.report_jobs
+           SET stage = NULL
+         WHERE report_job_id = @ReportJobId AND stage = @Stage
+        RETURNING report_job_id
+        """;
+
+    private const string SelectInputWaitingJobsSql = """
+        SELECT report_job_id
+        FROM report_service.report_jobs
+        WHERE upload_id = @UploadId
+          AND status = 'QUEUED'
+          AND (stage IS NULL OR stage = @Stage)
+        ORDER BY created_at, report_job_id
+        """;
+
     private readonly NpgsqlDataSource _dataSource;
 
     /// <summary>Reads and writes through <paramref name="dataSource"/>, which the process owns.</summary>
@@ -281,6 +304,69 @@ public sealed partial class PostgresJobStore : IJobStore
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             return failed == 0 ? JobFailureOutcome.AlreadyTerminal : JobFailureOutcome.Applied;
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var written = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+                BeginInputWaitSql,
+                new { ReportJobId = reportJobId, Stage = InputWaitStage.WaitingForInput },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return written is null ? BeginInputWaitOutcome.NotQueued : BeginInputWaitOutcome.Applied;
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var written = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+                EndInputWaitSql,
+                new { ReportJobId = reportJobId, Stage = InputWaitStage.WaitingForInput },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return written is null ? EndInputWaitOutcome.NotWaiting : EndInputWaitOutcome.Applied;
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> FindInputWaitingJobIdsAsync(string uploadId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(uploadId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var identifiers = await connection.QueryAsync<string>(new CommandDefinition(
+                SelectInputWaitingJobsSql,
+                new { UploadId = uploadId, Stage = InputWaitStage.WaitingForInput },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return [.. identifiers];
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {

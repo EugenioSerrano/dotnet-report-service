@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,8 +11,10 @@ using ReportService.Storage;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration;
 using ReportService.Workers.Orchestration.Dispatch;
+using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
+using ReportService.Workers.Orchestration.Tests.Jobs;
 
 namespace ReportService.Workers.Orchestration.Tests;
 
@@ -420,6 +423,7 @@ public sealed class InMemoryIntentStoreContractTests : IntentStoreContract
 /// the concurrency bound it configured — and a registration on a queue the process
 /// does not declare stops start-up rather than being silently dropped.
 /// </summary>
+[Collection(JobWorkflowSettings.Name)]
 public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
 {
     private readonly VerifierRig _rig = new();
@@ -439,7 +443,16 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(2, plan[0].Options.Workflows.Count);
-        Assert.Equal(5, plan[0].Options.Activities.Count);
+        Assert.Equal(8, plan[0].Options.Activities.Count);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitActivities.BeginName);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitActivities.EndName);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitSignalActivities.Name);
         Assert.Equal("report-data", plan[1].Queue);
         Assert.Empty(plan[1].Options.Workflows);
         Assert.Equal(2, plan[1].Options.Activities.Count);
@@ -474,6 +487,10 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";
         builder.Configuration[$"{VerificationOptions.SectionPath}:{VerificationOptions.VerificationDeadlineSetting}"] = "06:00:00";
         builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
+
+        // The notification of waiting jobs goes through the engine connection the worker holds,
+        // and this container is built without the engine host: the holder is what the seam needs.
+        builder.Services.TryAddSingleton<TemporalClientHolder>();
         builder.AddUploadVerificationWork();
         builder.AddReportJobWork();
         foreach (var queue in extraQueues)

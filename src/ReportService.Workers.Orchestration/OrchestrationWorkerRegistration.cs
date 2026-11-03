@@ -91,16 +91,30 @@ public static class OrchestrationWorkerRegistration
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
+        builder.AddValidatedConfiguration<InputWaitOptions>(InputWaitOptions.SectionPath);
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
+        builder.Services.AddSingleton<InputWaitActivities>();
+        builder.Services.AddSingleton<InputWaitSignalActivities>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
+
+        // The nudge a finished verification sends to the jobs of its upload goes through the
+        // engine connection the worker already holds; the seam is what the tests double.
+        builder.Services.TryAddSingleton<IWorkflowSignaller, TemporalWorkflowSignaller>();
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             ReportJobWorkflow.OrchestrationQueue,
             options =>
             {
+                // The wait's bounds are published to the workflow type here, once, while the
+                // process plans its workers — the delivered pattern the verification uses.
+                var inputWait = provider.GetRequiredService<IOptions<InputWaitOptions>>().Value;
+                ReportJobWorkflow.Configure(inputWait.Backstop, inputWait.ContinueAsNewAfter);
+
                 options.AddWorkflow<ReportJobWorkflow>();
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
+                options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
+                options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit and component tests of ReportService.TemplatePackages: the key
+    encoding, the version syntax, the package archive and its reader, the parsed
+    manifest and the pin contract. Hermetic: no container, no network; files
+    only under a temporary directory unique to each test.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+  </ItemGroup>
+
+</Project>

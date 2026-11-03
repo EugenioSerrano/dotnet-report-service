@@ -101,6 +101,37 @@ public sealed class ReportJobActivitiesTests
     }
 
     [Fact]
+    public async Task TheOutcomeOfAWaitIsCountedWithAConstantOutcome()
+    {
+        using var measurements = new JobOutcomeMeasurements();
+        using var rig = await Rig.CreateAsync();
+        await rig.Jobs.BeginInputWaitAsync(rig.ReportJobId, TestContext.Current.CancellationToken);
+
+        var resolution = await rig.ResolveAsync();
+
+        Assert.Equal(InputOutcome.Ready, resolution.Outcome);
+        var counted = Assert.Single(
+            measurements.Captured,
+            measurement => measurement.Name == OrchestrationMetrics.InputWaitOutcomesInstrumentName);
+        Assert.Equal(1L, counted.Value);
+        Assert.Equal("ready", counted.Tag("outcome"));
+    }
+
+    [Fact]
+    public async Task ACheckThatIsNotPartOfAWaitIsNotCountedAsOne()
+    {
+        using var measurements = new JobOutcomeMeasurements();
+        using var rig = await Rig.CreateAsync();
+
+        var resolution = await rig.ResolveAsync();
+
+        Assert.Equal(InputOutcome.Ready, resolution.Outcome);
+        Assert.DoesNotContain(
+            measurements.Captured,
+            measurement => measurement.Name == OrchestrationMetrics.InputWaitOutcomesInstrumentName);
+    }
+
+    [Fact]
     public async Task AJobThatHadAlreadyEndedIsTerminal()
     {
         using var rig = await Rig.CreateAsync();
@@ -329,6 +360,8 @@ public sealed class ReportJobActivitiesTests
     private sealed class JobOutcomeMeasurements : IDisposable
     {
         private readonly MeterListener _listener = new();
+        private readonly Lock _gate = new();
+        private readonly List<Measurement> _captured = [];
 
         public JobOutcomeMeasurements()
         {
@@ -340,11 +373,27 @@ public sealed class ReportJobActivitiesTests
                 }
             };
             _listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
-                Captured.Add(new Measurement(instrument.Name, value, tags.ToArray())));
+            {
+                // The product's meter is process-wide and other cases record on it while this one
+                // runs, on other threads: the capture is taken under a lock and read as a snapshot.
+                lock (_gate)
+                {
+                    _captured.Add(new Measurement(instrument.Name, value, tags.ToArray()));
+                }
+            });
             _listener.Start();
         }
 
-        public List<Measurement> Captured { get; } = [];
+        public IReadOnlyList<Measurement> Captured
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _captured];
+                }
+            }
+        }
 
         public void Dispose() => _listener.Dispose();
 

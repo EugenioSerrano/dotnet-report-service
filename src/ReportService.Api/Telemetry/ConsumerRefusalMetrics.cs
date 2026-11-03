@@ -27,9 +27,12 @@ public sealed class ConsumerRefusalMetrics : IDisposable
     /// <summary>The operation that confirms an upload.</summary>
     public const string ConfirmOperation = "confirm";
 
+    /// <summary>The operation that reads a taken template version's metadata.</summary>
+    public const string TemplateVersionOperation = "template-version";
+
     /// <summary>Every operation the gate protects.</summary>
     public static readonly IReadOnlyList<string> Operations =
-        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation];
+        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation];
 
     private readonly Meter _meter = new(TelemetryDefaults.MeterName);
     private readonly Counter<long> _refusals;
@@ -39,7 +42,7 @@ public sealed class ConsumerRefusalMetrics : IDisposable
         _refusals = _meter.CreateCounter<long>(
             InstrumentName,
             unit: "{request}",
-            description: "Upload requests refused at the consumer gate, by code, operation and identity state.");
+            description: "Requests refused at the consumer gate, by code, operation and identity state.");
 
     /// <summary>Records one refused request.</summary>
     /// <param name="code">The refusal's code, a fixed value.</param>
