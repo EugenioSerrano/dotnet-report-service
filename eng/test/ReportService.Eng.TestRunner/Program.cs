@@ -8,7 +8,7 @@ namespace ReportService.Eng.TestRunner;
 
 /// <summary>
 /// One command per test level:
-/// <c>dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|e2e</c>.
+/// <c>dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|rendering|e2e</c>.
 /// Runs the level's test projects with <c>dotnet test</c>, writes the run
 /// evidence under <c>artifacts/test-results/&lt;stamp&gt;/</c> and exits
 /// non-zero, naming the cause, when any project fails or a coverage floor is
@@ -37,6 +37,9 @@ internal static class Program
         "tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
     ];
+
+    /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
+    private const string RenderingProject = "tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj";
 
     /// <summary>The integration suite: real dependencies in containers.</summary>
     private const string IntegrationProject = "tests/ReportService.IntegrationTests/ReportService.IntegrationTests.csproj";
@@ -99,6 +102,7 @@ internal static class Program
         {
             "hermetic" => HermeticProjects,
             "integration" => [IntegrationProject],
+            "rendering" => [RenderingProject],
             _ => new[] { EndToEndProject },
         };
 
@@ -157,7 +161,7 @@ internal static class Program
         }
         else
         {
-            if (level == "e2e")
+            if (level is "e2e" or "rendering")
             {
                 // The image is published once for the whole level, before any test starts:
                 // the classes run concurrently and must never publish it themselves.
@@ -415,12 +419,14 @@ internal static class Program
     private static async Task<List<ImageEvidence>> InspectImagesAsync(string root, string level)
     {
         var references = ReadPinnedReferences(root);
-        if (level == "e2e")
+        if (level is "e2e" or "rendering")
         {
             var listed = await RunCaptureAsync(root, "docker", ["image", "ls", "--format", "{{.Repository}}:{{.Tag}}"]).ConfigureAwait(false);
             references.AddRange(listed.Output
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(r => r.Contains("report-service-render-worker:", StringComparison.Ordinal)
+                    || r.Contains("report-service-rendering-host:", StringComparison.Ordinal)
+                    || r.Contains("report-service-pdf-oracle:", StringComparison.Ordinal)
                     || r.Contains("report-service-pdf-base:", StringComparison.Ordinal)));
         }
 

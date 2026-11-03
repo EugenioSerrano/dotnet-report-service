@@ -1,3 +1,8 @@
+@page {
+  size: A4 portrait;
+  margin: 15mm 12mm 18mm 12mm;
+}
+
 html {
   font-family: "Liberation Sans", sans-serif;
   font-size: 9pt;
@@ -34,15 +39,17 @@ main.detail {
 }
 
 .row > span {
+  box-sizing: border-box;
   display: block;
   vertical-align: top;
 }
 
-.col-amount {
+.row > span.col-amount {
   text-align: right;
 }
 
 .description {
+  padding-right: 2mm;
   white-space: pre-line;
   overflow-wrap: break-word;
 }

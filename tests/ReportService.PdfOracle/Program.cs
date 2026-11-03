@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace ReportService.PdfOracle;
 
 /// <summary>
@@ -21,6 +23,33 @@ internal static class Program
         RunAsync(args, PopplerText.ReadAsync, Console.Out, Console.Error);
 
     /// <summary>
+    /// The reading the verdict was reached from, in the order the tool reports the
+    /// words: the pages it covers and, for every word, the page, the characters and
+    /// the four edges of its box. Two readings of the same document compare equal
+    /// word for word, and the continuation of a split row is asserted on this order.
+    /// </summary>
+    private static string ReadingJson(string file, PdfExtraction extraction)
+    {
+        var words = new JsonArray();
+        foreach (var word in extraction.Words)
+        {
+            words.Add(new JsonObject
+            {
+                ["page"] = word.Page,
+                ["text"] = word.Text,
+                ["box"] = new JsonArray(word.XMin, word.YMin, word.XMax, word.YMax),
+            });
+        }
+
+        return new JsonObject
+        {
+            ["file"] = file,
+            ["pages"] = extraction.Pages,
+            ["words"] = words,
+        }.ToJsonString();
+    }
+
+    /// <summary>
     /// Runs the command with the reading, the two writers and the caller's
     /// cancellation given: the tool the image starts is replaced by
     /// <paramref name="read"/> in the judge's own tests, which is how the option
@@ -40,7 +69,7 @@ internal static class Program
 
         if (args.Length == 0 || !string.Equals(args[0], "verdict", StringComparison.Ordinal))
         {
-            await error.WriteLineAsync("Usage: ReportService.PdfOracle verdict --pdf <file> --fixture <snapshot> --expectation <declaration> [--out <verdict>]").ConfigureAwait(false);
+            await error.WriteLineAsync("Usage: ReportService.PdfOracle verdict --pdf <file> --fixture <snapshot> --expectation <declaration> [--out <verdict>] [--reading <reading>]").ConfigureAwait(false);
             return ExitUsage;
         }
 
@@ -79,6 +108,15 @@ internal static class Program
             else
             {
                 await output.WriteLineAsync(json).ConfigureAwait(false);
+            }
+
+            if (options.TryGetValue("reading", out var readingPath))
+            {
+                await File.WriteAllTextAsync(
+                    readingPath,
+                    ReadingJson(Path.GetFileName(options["pdf"]), extraction) + "\n",
+                    new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                    cancellationToken).ConfigureAwait(false);
             }
 
             return ExitVerdict;

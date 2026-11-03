@@ -197,7 +197,12 @@ internal static class IntegrityRules
         }
     }
 
-    /// <summary>The column captions print on every page.</summary>
+    /// <summary>
+    /// The column captions print on every page that prints a detail row. A page that
+    /// holds only the document header or the text after the table prints no column,
+    /// so it needs no caption: repeating a head row is the page-elements work, not
+    /// this rule.
+    /// </summary>
     private static void HeadRows(ClassifiedDocument classified, PdfExtraction extraction, List<Failure> failures)
     {
         if (classified.HeadRowPages.Count == 0)
@@ -207,9 +212,10 @@ internal static class IntegrityRules
         }
 
         var pages = classified.HeadRowPages.ToHashSet();
+        var rowPages = classified.Rows.SelectMany(row => row.Pages).ToHashSet();
         for (var page = 1; page <= extraction.Pages; page++)
         {
-            if (!pages.Contains(page))
+            if (rowPages.Contains(page) && !pages.Contains(page))
             {
                 failures.Add(new Failure("TI-8", "structure-lost", Page: page, Detail: "the page prints no column captions"));
             }

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The rendering host: the console the rendering suite starts inside the PDF base
+    image. It composes one block of a snapshot with the product composer, prints
+    it with the product printer, and writes the PDF and a JSON result; a known-bad
+    control can be applied on the way. It is a test instrument, never shipped, and
+    it holds no product behaviour: every step it takes is a product type.
+    Container image:
+      dotnet publish -c Release -t:PublishContainer -p:PdfBaseImageDigest=sha256:<digest>
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PdfBaseImageRegistry>localhost:5055</PdfBaseImageRegistry>
+    <PdfBaseImageRepository>report-service-pdf-base</PdfBaseImageRepository>
+    <PdfBaseImageTag>1.63.0-10.0.13-noble</PdfBaseImageTag>
+    <PdfBaseImageDigest></PdfBaseImageDigest>
+    <ContainerBaseImage>$(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)@$(PdfBaseImageDigest)</ContainerBaseImage>
+    <ContainerRepository>report-service-rendering-host</ContainerRepository>
+    <ContainerImageTag>$(VersionPrefix)</ContainerImageTag>
+    <ContainerImageTag Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</ContainerImageTag>
+    <ContainerUser>app</ContainerUser>
+    <ContainerRuntimeIdentifier>linux-x64</ContainerRuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The test package's declared manifest is held to the package itself by the fixture suite. -->
+    <InternalsVisibleTo Include="ReportService.Fixtures.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+  <!-- The base image must be pinned by digest, on the tag the browser package version names. -->
+  <Target Name="CheckPdfBaseImage" BeforeTargets="ComputeContainerBaseImage">
+    <PropertyGroup>
+      <_PdfBasePlaywrightVersion>@(PackageVersion->WithMetadataValue('Identity', 'Microsoft.Playwright')->'%(Version)')</_PdfBasePlaywrightVersion>
+    </PropertyGroup>
+    <Error Condition="'$(PdfBaseImageDigest)' == ''"
+           Text="The PDF base image digest is not set. Run the rendering level, or pass -p:PdfBaseImageDigest=sha256:... with the digest of $(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)." />
+    <Error Condition="!$(PdfBaseImageTag.StartsWith('$(_PdfBasePlaywrightVersion)-'))"
+           Text="The PDF base image tag $(PdfBaseImageTag) does not match Microsoft.Playwright $(_PdfBasePlaywrightVersion); rebuild the base for this version and update PdfBaseImageTag." />
+  </Target>
+
+</Project>

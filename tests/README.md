@@ -20,6 +20,7 @@ failed.
 |-------|----------|-----------|---------|
 | **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
+| **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
@@ -46,6 +47,13 @@ failed.
   when the printing steps are not part of the build.
 - The end-to-end level prepares the render worker image once, before the tests
   start, so the classes never publish it at the same time.
+- The **rendering** level prints real documents and judges them: it publishes the
+  rendering host image on the PDF base and builds the judge image in
+  [`../eng/pdf-oracle/`](../eng/pdf-oracle/), then prints the core tier of the
+  fixture library with the product composer and printer and reads every document
+  with the judge. It needs the local development registry and the PDF base image;
+  the runner prepares both, like the end-to-end level. It takes no
+  `--without-printing`, because every document it runs is printed.
 
 ### The hermetic level's execution
 

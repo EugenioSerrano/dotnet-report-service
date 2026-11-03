@@ -30,12 +30,15 @@ dotnet-report-service/
 │   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax, the package archive and its reader, the manifest (hermetic)
 │   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the changed-version warning (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
+│   ├── ReportService.RenderingHost/      The console the rendering suite starts in its own image: composes a block, prints it and applies a known-bad control
+│   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
+│   ├── pdf-oracle/           The judge's image: the independent reader, its text tools and the accepted licence record
 │   └── test/                  The test runner: one command per test level
 ├── spikes/                    Stage 0 experiments (not part of the product)
 ├── artifacts/                 Local build and test output (git-ignored, never committed)

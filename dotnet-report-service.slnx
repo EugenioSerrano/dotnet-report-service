@@ -35,6 +35,8 @@
     <Project Path="tests/ReportService.PdfOracle/ReportService.PdfOracle.csproj" />
     <Project Path="tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj" />
     <Project Path="tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
+    <Project Path="tests/ReportService.RenderingHost/ReportService.RenderingHost.csproj" />
+    <Project Path="tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj" />
     <Project Path="tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
     <Project Path="tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj" />
     <Project Path="tests/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj" />
