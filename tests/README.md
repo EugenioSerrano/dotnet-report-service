@@ -181,9 +181,18 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   `report-service-it-`.
 - **A test host carries its own meter identity and opens a unit of work on its
   own logger factory**, so two hosts may be open in one process and each capture
-  holds only its own telemetry. The `telemetry` collection still runs those
-  classes one at a time, because the diagnostics endpoint reads and writes a
-  process-wide environment entry.
+  holds only the telemetry of the unit of work its case opened: the spans of that
+  unit's trace and the measurements recorded inside it, and nothing another case
+  produced. Every read is a snapshot, so a case running beside another one that is
+  exporting never sees a collection change under it. The `telemetry` collection
+  still runs those classes one at a time, because the diagnostics endpoint reads and
+  writes a process-wide environment entry a host's configuration sees at start-up;
+  that serialisation is not what makes a capture correct. The class that starts two
+  hosts at once to prove two captures stay apart runs with those cases for the same
+  process-wide entry. The end-to-end composition class states, in one table, the
+  state each worker reports for each of its queues — which is the work the service
+  registers — and a change that registers work on a queue updates that table in the
+  same change.
 - Test names describe behaviour.
 
 ## What goes here

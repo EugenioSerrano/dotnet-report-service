@@ -71,6 +71,7 @@ public sealed class RedactionTests
     public async Task NoPlantedValueReachesTheExportedSpanButAnEventsTagsAreNotItsToRedact()
     {
         await using var host = await HostAsync();
+        using var unit = host.BeginUnit();
         using var source = new ActivitySource(TelemetryDefaults.ActivitySourceName);
         using (var span = source.StartActivity("redacted"))
         {

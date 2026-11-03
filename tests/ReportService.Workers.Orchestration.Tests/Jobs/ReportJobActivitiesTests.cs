@@ -1,4 +1,3 @@
-using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
@@ -103,8 +102,8 @@ public sealed class ReportJobActivitiesTests
     [Fact]
     public async Task TheOutcomeOfAWaitIsCountedWithAConstantOutcome()
     {
-        using var measurements = new JobOutcomeMeasurements();
         using var rig = await Rig.CreateAsync();
+        using var measurements = new JobOutcomeCapture(rig.ReportJobId);
         await rig.Jobs.BeginInputWaitAsync(rig.ReportJobId, TestContext.Current.CancellationToken);
 
         var resolution = await rig.ResolveAsync();
@@ -120,8 +119,8 @@ public sealed class ReportJobActivitiesTests
     [Fact]
     public async Task ACheckThatIsNotPartOfAWaitIsNotCountedAsOne()
     {
-        using var measurements = new JobOutcomeMeasurements();
         using var rig = await Rig.CreateAsync();
+        using var measurements = new JobOutcomeCapture(rig.ReportJobId);
 
         var resolution = await rig.ResolveAsync();
 
@@ -185,8 +184,8 @@ public sealed class ReportJobActivitiesTests
     [Fact]
     public async Task TheJobOutcomeIsCountedWithItsStatusAndItsCode()
     {
-        using var measurements = new JobOutcomeMeasurements();
         using var rig = await Rig.CreateAsync();
+        using var measurements = new JobOutcomeCapture(rig.ReportJobId);
 
         await rig.FailAsync("INPUT_NOT_FOUND", "input-expired");
 
@@ -350,57 +349,5 @@ public sealed class ReportJobActivitiesTests
                 TaskQueue = ReportJobActivityOptions.Queue,
                 Attempt = 1,
             };
-    }
-
-    /// <summary>
-    /// The measurements the product's meter publishes while it is alive: what an
-    /// instrument received, and with which tags, so a case can say that a count carries
-    /// constant values and never an identifier.
-    /// </summary>
-    private sealed class JobOutcomeMeasurements : IDisposable
-    {
-        private readonly MeterListener _listener = new();
-        private readonly Lock _gate = new();
-        private readonly List<Measurement> _captured = [];
-
-        public JobOutcomeMeasurements()
-        {
-            _listener.InstrumentPublished = (instrument, listener) =>
-            {
-                if (string.Equals(instrument.Meter.Name, TelemetryDefaults.MeterName, StringComparison.Ordinal))
-                {
-                    listener.EnableMeasurementEvents(instrument);
-                }
-            };
-            _listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
-            {
-                // The product's meter is process-wide and other cases record on it while this one
-                // runs, on other threads: the capture is taken under a lock and read as a snapshot.
-                lock (_gate)
-                {
-                    _captured.Add(new Measurement(instrument.Name, value, tags.ToArray()));
-                }
-            });
-            _listener.Start();
-        }
-
-        public IReadOnlyList<Measurement> Captured
-        {
-            get
-            {
-                lock (_gate)
-                {
-                    return [.. _captured];
-                }
-            }
-        }
-
-        public void Dispose() => _listener.Dispose();
-
-        public sealed record Measurement(string Name, long Value, KeyValuePair<string, object?>[] Tags)
-        {
-            public object? Tag(string name) =>
-                Tags.Where(tag => string.Equals(tag.Key, name, StringComparison.Ordinal)).Select(tag => tag.Value).FirstOrDefault();
-        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using Aspire.Hosting;
@@ -15,12 +16,23 @@ namespace ReportService.EndToEndTests;
 /// API and the orchestration worker are ready only with the metadata database at
 /// the version the code expects, the PDF worker carries no database check, and
 /// every process reaches the database as the application role — the AppHost's own
-/// health checks on the server's bootstrap user excepted.
+/// health checks on the server's bootstrap user excepted. The orchestration worker
+/// runs one engine worker per queue it registers work on, and the rendering queue
+/// carries none until rendering work is registered.
 /// </summary>
 public sealed class CompositionTopologyTests
 {
     // The first run may build the PDF base image and publish the render worker image.
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
+
+    // How often a queue's reported state is read while the composition settles.
+    private static readonly TimeSpan QueueReadInterval = TimeSpan.FromMilliseconds(250);
+
+    private const string WorkerRunning = "worker running";
+
+    private const string WorkerStopped = "worker stopped";
+
+    private const string NoRegisteredWork = "no registered work";
 
     private const string ApplicationRole = "reportservice";
     private const string BootstrapRole = "postgres";
@@ -32,6 +44,28 @@ public sealed class CompositionTopologyTests
     private static readonly string[] AppliedScripts = [.. MigrationCatalog.Scripts.Select(script => script.Name)];
 
     private static readonly string[] Resources = ["postgres", "cache", "temporal", "render-worker", "orchestration-worker", "api"];
+
+    /// <summary>One queue of a worker and the state the work registered on it makes it report.</summary>
+    /// <param name="Worker">The process that declares the queue.</param>
+    /// <param name="Queue">The queue's name.</param>
+    /// <param name="State">The state the registered work makes the queue's health report.</param>
+    private sealed record QueueExpectation(string Worker, string Queue, string State);
+
+    /// <summary>
+    /// The state each worker reports for each of its queues, in one place: the
+    /// orchestration worker registers the job workflow and its metadata steps on
+    /// <c>report-orchestration</c> and the verification and partitioning activities on
+    /// <c>report-data</c>, so both report a running worker, and the rendering queue
+    /// carries no registered work yet. Stated together, a queue that stops being declared
+    /// fails by name rather than disappearing; a change that registers work on a queue
+    /// updates this table in the same change.
+    /// </summary>
+    private static readonly QueueExpectation[] QueueExpectations =
+    [
+        new("orchestration-worker", "report-orchestration", WorkerRunning),
+        new("orchestration-worker", "report-data", WorkerRunning),
+        new("render-worker", "report-pdf-rendering", NoRegisteredWork),
+    ];
 
     [Fact]
     public async Task ThreeProcessesRunAndEachWorkerIsReadyAgainstTheEngineAndTheDatabase()
@@ -67,13 +101,10 @@ public sealed class CompositionTopologyTests
         }
 
         using var orchestration = app.CreateHttpClient("orchestration-worker");
-        using (var health = JsonDocument.Parse(await orchestration.GetStringAsync(new Uri("/health", UriKind.Relative), cancellationToken)))
+        using (var health = await AwaitWorkerHealthAsync(orchestration, "orchestration-worker", cancellationToken))
         {
             var engine = Check(health, "workflow-engine");
             Assert.Equal("Healthy", engine.GetProperty("status").GetString());
-            var queues = engine.GetProperty("data").GetProperty("queues");
-            Assert.Equal("no registered work", queues.GetProperty("report-orchestration").GetString());
-            Assert.Equal("no registered work", queues.GetProperty("report-data").GetString());
 
             var database = Check(health, "metadata-database");
             Assert.Equal("Healthy", database.GetProperty("status").GetString());
@@ -82,12 +113,11 @@ public sealed class CompositionTopologyTests
         }
 
         using var renderWorker = app.CreateHttpClient("render-worker", "http");
-        using (var health = JsonDocument.Parse(await renderWorker.GetStringAsync(new Uri("/health", UriKind.Relative), cancellationToken)))
+        using (var health = await AwaitWorkerHealthAsync(renderWorker, "render-worker", cancellationToken))
         {
             Assert.Equal("Healthy", Check(health, "chromium").GetProperty("status").GetString());
             var engine = Check(health, "workflow-engine");
             Assert.Equal("Healthy", engine.GetProperty("status").GetString());
-            Assert.Equal("no registered work", engine.GetProperty("data").GetProperty("queues").GetProperty("report-pdf-rendering").GetString());
 
             // The PDF worker writes no metadata record yet, so it carries no database check.
             Assert.DoesNotContain(
@@ -143,6 +173,86 @@ public sealed class CompositionTopologyTests
             new { role = ApplicationRole },
             cancellationToken: cancellationToken));
         Assert.All(users, user => Assert.Contains(user, new[] { ApplicationRole, BootstrapRole }));
+    }
+
+    /// <summary>
+    /// Reads the worker's health until every queue it declares reports the state its
+    /// registered work makes it report, and answers with the body that was read. Readiness
+    /// is published a moment before the worker's engine worker exists, so a queue's state
+    /// is awaited within the class's deadline and then asserted, never merely awaited: the
+    /// failure names the queue, the expected value, the observed value and the elapsed
+    /// time, and a queue whose worker stopped fails by name instead of being waited out. An
+    /// answer that is not readable — the endpoint answers 503 while one of its own checks
+    /// is failing — is not ready either, so the wait goes on and keeps the last error for
+    /// the failure.
+    /// </summary>
+    private static async Task<JsonDocument> AwaitWorkerHealthAsync(
+        HttpClient worker,
+        string workerName,
+        CancellationToken cancellationToken)
+    {
+        var expected = QueueExpectations
+            .Where(row => string.Equals(row.Worker, workerName, StringComparison.Ordinal))
+            .ToArray();
+        var elapsed = Stopwatch.StartNew();
+        var lastReport = "no readable queue state";
+        string? lastError = null;
+        while (true)
+        {
+            using (var response = await worker.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+                    var queues = Check(document, "workflow-engine").GetProperty("data").GetProperty("queues");
+                    var reported = expected
+                        .Select(row => (Row: row, Observed: queues.TryGetProperty(row.Queue, out var state) ? state.GetString() : null))
+                        .ToArray();
+                    var pending = reported
+                        .Where(pair => !string.Equals(pair.Observed, pair.Row.State, StringComparison.Ordinal))
+                        .ToArray();
+
+                    if (pending.Length == 0)
+                    {
+                        // The wait returned because every queue reports what its registered work
+                        // makes it report; the assertion states that expectation here.
+                        foreach (var pair in reported)
+                        {
+                            Assert.Equal(pair.Row.State, pair.Observed);
+                        }
+
+                        return document;
+                    }
+
+                    document.Dispose();
+                    lastError = null;
+                    lastReport = string.Join(
+                        "; ",
+                        pending.Select(pair => $"'{pair.Row.Queue}' reported '{pair.Observed ?? "nothing"}' where '{pair.Row.State}' was expected"));
+
+                    var stopped = pending.Where(pair => string.Equals(pair.Observed, WorkerStopped, StringComparison.Ordinal)).ToArray();
+                    if (stopped.Length > 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"The queue '{stopped[0].Row.Queue}' of the {workerName} reported '{WorkerStopped}' after {elapsed.Elapsed.TotalSeconds:F1} s; a queue whose worker stopped is never accepted, and '{stopped[0].Row.State}' was expected.");
+                    }
+                }
+                else
+                {
+                    lastError = $"the {workerName} answered {(int)response.StatusCode} ({response.ReasonPhrase})";
+                }
+            }
+
+            if (elapsed.Elapsed >= HealthyDeadline)
+            {
+                throw new TimeoutException(
+                    $"The {workerName} did not report the queues its registered work implies, after {elapsed.Elapsed.TotalSeconds:F1} s (deadline {HealthyDeadline.TotalSeconds:F0} s): "
+                    + lastReport + "."
+                    + (lastError is null ? string.Empty : $" Last error: {lastError}."));
+            }
+
+            await Task.Delay(QueueReadInterval, cancellationToken);
+        }
     }
 
     private static async Task<bool> BoolAsync(NpgsqlConnection connection, string sql, CancellationToken cancellationToken) =>

@@ -53,6 +53,7 @@ public sealed class JobCorrelationTests
     public async Task EveryLogEntryAndSpanOfTheUnitCarriesTheIdentifierAndNothingOutsideDoes()
     {
         await using var host = await TelemetryTestHost.StartAsync();
+        using var unit = host.BeginUnit();
         var logger = host.Loggers.CreateLogger("ReportService.Unit");
         using var source = new ActivitySource(TelemetryDefaults.ActivitySourceName);
 
@@ -106,6 +107,10 @@ public sealed class JobCorrelationTests
     public async Task ASpanStartedOutsideTheUnitCarriesNoIdentifier()
     {
         await using var host = await TelemetryTestHost.StartAsync();
+
+        // The capture's unit is opened, so the span is exported at all; the job's unit of
+        // work is the one left unopened, which is what the case is about.
+        using var unit = host.BeginUnit();
         using var source = new ActivitySource(TelemetryDefaults.ActivitySourceName);
 
         using (source.StartActivity("outside"))
