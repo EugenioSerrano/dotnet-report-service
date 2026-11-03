@@ -106,6 +106,34 @@ public sealed class GitHubTemplateSourceLiveTests
     }
 
     [Fact]
+    public async Task TheListingOfARealTemplateFolderNamesItsVersionFolders()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var settings = Configured();
+        using var http = Client();
+        var source = new GitHubTemplateSource(http, settings.Options);
+
+        var commit = await source.ResolveBranchAsync(cancellationToken);
+        if (settings.PinnedCommit.Length > 0)
+        {
+            Assert.True(
+                string.Equals(settings.PinnedCommit, commit.CommitSha, StringComparison.Ordinal),
+                $"the fixtures this class reads are published at commit {settings.PinnedCommit}; the branch now answers {commit.CommitSha} — a branch that moved is a change to record, never one to read past");
+        }
+
+        var listing = await source.ListVersionsAsync(commit, settings.Template, cancellationToken);
+
+        Assert.NotNull(listing);
+        Assert.Contains(settings.Version, listing.Names);
+
+        // The listing names version folders: a file beside them is not a version.
+        Assert.DoesNotContain("template.yaml", listing.Names);
+
+        // A template the repository does not hold is absent, and never a fault.
+        Assert.Null(await source.ListVersionsAsync(commit, "invoice-energy-absent", cancellationToken));
+    }
+
+    [Fact]
     public async Task AnAbsentVersionIsAbsentAndAWrongRepositoryIsMisconfigured()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

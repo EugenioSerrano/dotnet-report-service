@@ -129,13 +129,16 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
 // the deployment, from its own configuration, and the read-only credential as a secret
 // parameter. No repository is named here — the deployment's is its own — so a
 // composition without one stops the worker naming the setting instead of reading a
-// repository nobody chose.
+// repository nobody chose. One by-name resolution is given the same bound in the
+// composition's documentation and in the process.
 var templateSourceRepository = builder.Configuration["TemplateSource:Repository"] ?? string.Empty;
 var templateSourceBranch = builder.Configuration["TemplateSource:Branch"] ?? "main";
+var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
 var templateSourceToken = builder.AddParameter("template-source-token", secret: true);
 renderWorker
     .WithEnvironment("TemplateSource__Repository", templateSourceRepository)
     .WithEnvironment("TemplateSource__Branch", templateSourceBranch)
+    .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline)
     .WithEnvironment("TemplateSource__Token", templateSourceToken);
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once

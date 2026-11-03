@@ -31,6 +31,12 @@ public sealed partial class TemplateSourceOptions : IValidatedSettings
     /// <summary>The largest read deadline, in seconds.</summary>
     public const int MaxReadDeadlineSeconds = 120;
 
+    /// <summary>The smallest resolution deadline, in seconds.</summary>
+    public const int MinResolveDeadlineSeconds = 5;
+
+    /// <summary>The largest resolution deadline, in seconds.</summary>
+    public const int MaxResolveDeadlineSeconds = 300;
+
     /// <summary>The fewest files a package may hold.</summary>
     public const int MinFiles = 1;
 
@@ -63,6 +69,13 @@ public sealed partial class TemplateSourceOptions : IValidatedSettings
 
     /// <summary>How long the whole read — commit, trees, blobs — may take.</summary>
     public TimeSpan ReadDeadline { get; set; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// How long one by-name resolution — the listing and every version it takes —
+    /// may take, measured from the step that resolves it. It fits inside the step's
+    /// own bound, and it can only shorten a take, never lengthen one.
+    /// </summary>
+    public TimeSpan ResolveDeadline { get; set; } = TimeSpan.FromSeconds(240);
 
     /// <summary>The most files a package may hold.</summary>
     public int MaxFiles { get; set; } = MaxFilesLimit;
@@ -126,6 +139,11 @@ public sealed partial class TemplateSourceOptions : IValidatedSettings
         if (ReadDeadline < TimeSpan.FromSeconds(MinReadDeadlineSeconds) || ReadDeadline > TimeSpan.FromSeconds(MaxReadDeadlineSeconds))
         {
             yield return new ConfigurationProblem(nameof(ReadDeadline), $"is not between {MinReadDeadlineSeconds} and {MaxReadDeadlineSeconds} seconds");
+        }
+
+        if (ResolveDeadline < TimeSpan.FromSeconds(MinResolveDeadlineSeconds) || ResolveDeadline > TimeSpan.FromSeconds(MaxResolveDeadlineSeconds))
+        {
+            yield return new ConfigurationProblem(nameof(ResolveDeadline), $"is not between {MinResolveDeadlineSeconds} and {MaxResolveDeadlineSeconds} seconds");
         }
 
         if (MaxFiles < MinFiles || MaxFiles > MaxFilesLimit)

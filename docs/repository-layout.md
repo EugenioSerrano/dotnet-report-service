@@ -32,7 +32,7 @@ dotnet-report-service/
 │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
-│   └── ReportService.Testing/            Support library shared by the test projects
+│   └── ReportService.Testing/            Support library shared by the test projects: the repository and image pins, the template-source and template-package fixtures, the in-memory stores and the waits
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md)
 ├── eng/                       Build and engineering assets

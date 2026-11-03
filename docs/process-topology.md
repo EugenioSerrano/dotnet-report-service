@@ -32,7 +32,7 @@ flowchart TB
 |---------|---------|------|-------------------------------|------------------------------|
 | API | `src/ReportService.Api` | The HTTP surface and the consumer registry | Yes — readiness only | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
 | Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps) and `report-data` (data verification and validation) | Yes — readiness only | Yes |
-| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time) | **Not yet** — it writes no metadata record in this version, so it has no database setting and no database check | Yes |
+| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time): the take of one named version and the by-name resolution that chooses one | Yes — a taken version is published by a record it writes | Yes |
 
 The one-shot migrator `src/ReportService.Migrations` is not a long-running
 process: it applies the database's schema and exits. The API and the
@@ -66,6 +66,7 @@ secret cannot leak through a configuration error.
 | `Consumers:File` | API | no | The consumer registry file; without it, `consumers.json` next to the API |
 | `ConnectionStrings:reportservice` | API, orchestration worker, migrator | yes | The application role's connection string for the metadata database |
 | `Database:ExpectedSchemaVersion` | API, orchestration worker | yes | The schema version the build expects — the highest migration script it embeds |
+| `TemplateSource:ResolveDeadline` | PDF worker | no (default four minutes) | How long one by-name resolution may take, from five seconds to five minutes; it fits inside the step's own bound |
 
 ## Readiness
 
@@ -164,7 +165,7 @@ never changes the database's answer. An outage does not stop the process — the
 check reports it and recovers on its own when the database returns, and it logs the
 change of state once in each direction.
 
-The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It also reads the configured template source, and its start stops naming a missing `TemplateSource:Repository` or `TemplateSource:Branch`.
+The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It also reads the configured template source, and its start stops naming a missing `TemplateSource:Repository` or `TemplateSource:Branch`. Its queue serves two steps at one activity at a time: `TakeTemplateVersion`, which reads one named version and keeps it, and `ResolveTemplateVersion`, which chooses the version of a template a job names without one by reading the branch's version folders and the versions already taken. One resolution is bounded by `TemplateSource:ResolveDeadline`, which fits inside the step's own 300 s.
 
 ## The consumer registry
 

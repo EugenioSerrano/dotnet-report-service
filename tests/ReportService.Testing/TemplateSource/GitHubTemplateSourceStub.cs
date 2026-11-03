@@ -82,6 +82,13 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
         _generation++;
     }
 
+    /// <summary>Removes a version's folder, as a version deleted from the branch: the commit moves.</summary>
+    public void RemoveVersion(string templateId, string version)
+    {
+        Remove(["templates", templateId, version]);
+        _generation++;
+    }
+
     /// <summary>Serves <paramref name="bytes"/> for a blob whatever its real hash is, as a corrupted source would.</summary>
     public void OverrideBlob(string blobSha, byte[] bytes) => _blobOverrides[blobSha] = bytes;
 

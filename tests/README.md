@@ -265,6 +265,27 @@ Three further classes of the same project:
   file to write), and committed with the change that recorded them. The case
   **fails** when no history exists — a case with nothing to check is not a result.
 
+## The template suites
+
+`ReportService.TemplateSource.Tests` holds the template source and the take: the
+settings, the client against an in-process source, the version listing, the
+by-name resolution and its take seam, the manifest reader, the take itself, and
+the adapter that presents the take to the resolution. `ReportService.Workers.Pdf.Tests`
+holds that worker's two activities as plain classes and the registration of the
+take and of the by-name resolution on `report-pdf-rendering`.
+
+The integration project carries them against real dependencies:
+`TemplateVersionStoreTests` and `TemplateVersionReadTests` (the record and its
+read on PostgreSQL), `TemplateTakeWorkerTests` (the take on its queue over a real
+engine, database, storage root and template-source double), `TemplateByNameResolutionTests`
+(the by-name resolution on the same queue, one workflow per case),
+`GitHubTemplateSourceLiveTests` (the client against the public fixture
+repository, including the listing of a real template folder) and
+`JointTemplateTakeTests` (the job-level group, on a build that carries the job
+step). The template-source double's fixture families are built by
+`ReportService.Testing`: `TemplatePackageFixtures` for the take and
+`ByNameFixtures` for the resolution, never checked in.
+
 ## The report job suite
 
 The same project holds the tests of one report job's own work: `ReportJobActivitiesTests`

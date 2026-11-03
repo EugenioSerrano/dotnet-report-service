@@ -58,6 +58,22 @@ Two further rules follow from how a value is read:
   `.inf` are refused.
 - **Quote every field path.** `header: ["$.reportTitle"]` — a path is text.
 
+## Choosing a version by name
+
+A template lives in the configured template repository with **one folder per
+version**: `templates/<templateId>/<version>/`. A job may name the template
+only, and then the service uses the highest **release** version of it — the
+versions are ordered by [Semantic Versioning 2.0.0](https://semver.org/), so
+`1.10.0` is newer than `1.2.0` and a pre-release (`2.0.0-beta.1`) sorts below
+its release. Build metadata (`1.1.0+build.7`) does not order anything: two
+builds of the same version are of equal precedence.
+
+A newer version that its own author has to fix is **logged and skipped**, and the
+job uses the newest valid version below it, so one broken version never breaks
+the jobs that name the template only. A pre-release is used only when a job names
+it exactly. A folder whose name is not a version (`v1.3.0`, `1.0`) is not a
+version.
+
 ## What a package says about itself
 
 - `owner` — the consumer the version belongs to, required. A version that names

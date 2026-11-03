@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Referencing a template by name only: a job that names no version gets the
+  highest valid **release** version of that template, ordered by Semantic
+  Versioning 2.0.0 — so `1.10.0` is newer than `1.2.0`, a pre-release sorts below
+  its release and is used only when a job names it exactly, and two builds of one
+  version are of equal precedence. A newer version its author has to fix is
+  logged with what to fix and skipped, so one broken version never breaks the
+  jobs that name the template only; when no version is usable the job ends failed
+  with `TEMPLATE_INVALID` naming the newest one, and when the template repository
+  cannot be checked it uses the newest release already taken or ends failed with
+  `TEMPLATE_SOURCE_UNAVAILABLE`. A taken version stays usable after its folder is
+  removed from the repository, and a version the requesting consumer may not use
+  is never chosen.
+- `ResolveTemplateVersion`, the activity the PDF worker serves on its queue: it
+  reads the template's version folders at one commit, orders them by precedence,
+  takes each candidate through the take, and answers the version a job is pinned
+  to with the values the take records, saying whether it was taken now or is the
+  copy already kept. A refusal ends it with the resolution's own code, retrying a
+  source that may come back and never retrying a template its author has to fix.
+- `TemplateSource:ResolveDeadline`: how long one by-name resolution — the listing
+  and every version it takes — may take, from five seconds to five minutes, four
+  minutes by default, validated at start.
+- The take's registration now shares the queue with the by-name resolution: one
+  engine worker on `report-pdf-rendering` serves both steps at one activity at a
+  time.
+- The template repository now names what a by-name reference gets, in
+  `samples/templates/README.md`, for template authors.
 - The take: the first time a job references a template version, the service reads
   it from the configured repository and branch at one commit and keeps it as an
   immutable copy — one write-once object under

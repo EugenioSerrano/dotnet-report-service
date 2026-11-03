@@ -8,10 +8,11 @@ using ReportService.Workers.Pdf.Templates;
 namespace ReportService.Workers.Pdf;
 
 /// <summary>
-/// The PDF worker's process: the rendering task queue, the browser probe and the
-/// take. The queue is declared here and served by one registration — the take's —
-/// which bounds the process to one activity at a time. The process now reaches
-/// the metadata database, because a taken version is published by a record.
+/// The PDF worker's process: the rendering task queue, the browser probe, the
+/// take and the by-name resolution. The queue is declared here and served by one
+/// engine worker over two registrations — the take's and the resolution's — which
+/// bounds the process to one activity at a time. The process now reaches the
+/// metadata database, because a taken version is published by a record.
 /// </summary>
 public sealed class PdfWorkerProgram
 {
@@ -23,7 +24,8 @@ public sealed class PdfWorkerProgram
         builder.AddServiceDefaults(ServiceNames.RenderWorker);
         builder.AddServiceConfiguration();
 
-        // The PDF rendering task queue; the take is its one registration.
+        // The PDF rendering task queue; the take and the by-name resolution are its
+        // registrations.
         builder.AddWorkflowEngine("pdf-worker", [TakeTemplateVersionActivityOptions.Queue]);
         builder.Services.AddSingleton<BrowserProbe>();
         builder.Services.AddHostedService(static services => services.GetRequiredService<BrowserProbe>());
@@ -31,6 +33,7 @@ public sealed class PdfWorkerProgram
         builder.AddObjectStorage("pdf-worker");
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();
+        builder.AddTemplateResolutionWork();
 
         var app = builder.Build();
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
