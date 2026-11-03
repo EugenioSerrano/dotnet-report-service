@@ -490,7 +490,9 @@ public sealed class UploadEndpointsTests : IDisposable
     [InlineData("7.00:00:01")]
     public void ALifetimeOutOfRangeStopsTheStartNamingTheSettingAndNeverTheValue(string lifetime)
     {
-        var error = ConfigurationErrors.Find(Record.Exception(() => Client(sessionLifetime: lifetime)));
+        using var probe = Probe(sessionLifetime: lifetime);
+
+        var error = probe.Refusal();
 
         Assert.Equal($"{UploadOptions.SectionPath}:{UploadOptions.SessionLifetimeSetting}", error.Problems[0].Setting);
         Assert.DoesNotContain(lifetime, error.Message, StringComparison.Ordinal);
@@ -499,32 +501,54 @@ public sealed class UploadEndpointsTests : IDisposable
 
     private HttpClient Client(IUploadStore? store = null, TimeProvider? clock = null, string? sessionLifetime = null)
     {
-        var registry = _directory.Write(
-            "consumers.json",
-            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true }, { "consumerId": "other-consumer", "active": true } ] }""");
+        var settings = Settings(sessionLifetime);
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);
-            builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory.Path, "storage"));
-            builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
-            builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
-            if (sessionLifetime is not null)
+            foreach (var (key, value) in settings)
             {
-                builder.UseSetting($"{UploadOptions.SectionPath}:{UploadOptions.SessionLifetimeSetting}", sessionLifetime);
+                builder.UseSetting(key, value!);
             }
 
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
-            builder.ConfigureTestServices(services =>
-            {
-                MetadataDatabaseStub.UseHealthy(services);
-                services.RemoveAll<IUploadStore>();
-                services.AddSingleton(store ?? _store);
-                services.RemoveAll<TimeProvider>();
-                services.AddSingleton<TimeProvider>(clock ?? new FixedTimeProvider(Now));
-            });
+            builder.ConfigureTestServices(services => Replace(services, store, clock));
         });
         _disposables.Add(factory);
         return factory.CreateClient();
+    }
+
+    private StartFailureProbe Probe(IUploadStore? store = null, TimeProvider? clock = null, string? sessionLifetime = null) =>
+        StartFailureProbe.Create(
+            Settings(sessionLifetime),
+            replacements: services => Replace(services, store, clock),
+            logProviders: [_logs]);
+
+    private Dictionary<string, string?> Settings(string? sessionLifetime)
+    {
+        var registry = _directory.Write(
+            "consumers.json",
+            """{ "consumers": [ { "consumerId": "dev-consumer", "active": true }, { "consumerId": "other-consumer", "active": true } ] }""");
+        var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            [ConsumerRegistryHosting.FileSetting] = registry,
+            ["Storage:Filesystem:Root"] = Path.Combine(_directory.Path, "storage"),
+            [DatabaseOptions.ConnectionStringSetting] = MetadataDatabaseStub.ConnectionString,
+            [DatabaseOptions.ExpectedSchemaVersionSetting] = MetadataDatabaseStub.ExpectedVersion,
+        };
+        if (sessionLifetime is not null)
+        {
+            settings[$"{UploadOptions.SectionPath}:{UploadOptions.SessionLifetimeSetting}"] = sessionLifetime;
+        }
+
+        return settings;
+    }
+
+    private void Replace(IServiceCollection services, IUploadStore? store, TimeProvider? clock)
+    {
+        MetadataDatabaseStub.UseHealthy(services);
+        services.RemoveAll<IUploadStore>();
+        services.AddSingleton(store ?? _store);
+        services.RemoveAll<TimeProvider>();
+        services.AddSingleton<TimeProvider>(clock ?? new FixedTimeProvider(Now));
     }
 
     private static async Task<string> CreateAsync(HttpClient client, CancellationToken cancellationToken)
