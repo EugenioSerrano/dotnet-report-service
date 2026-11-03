@@ -1,3 +1,5 @@
+using ReportService.Workers.Orchestration.Jobs;
+using Temporalio.Exceptions;
 using Temporalio.Workflows;
 
 namespace ReportService.Workers.Orchestration.Uploads;
@@ -63,8 +65,29 @@ public sealed class UploadVerificationWorkflow
     public async Task<VerifyUploadResult> RunAsync(UploadVerificationInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        return await Workflow.ExecuteActivityAsync(
+        var result = await Workflow.ExecuteActivityAsync(
             (UploadVerificationActivities activities) => activities.VerifyUploadAsync(new VerifyUploadInput(input.UploadId)),
             ActivityOptions()).ConfigureAwait(true);
+
+        // Every outcome notifies: a late attempt that lost to the deadline must still wake the
+        // jobs waiting on the upload, and a nudge that reaches nobody is harmless. The nudge is
+        // not a state write and gives up after its few attempts, so a notification that cannot
+        // be delivered is logged and the verification's own answer is returned unchanged — an
+        // upload is never turned into a failed one because a nudge failed.
+        try
+        {
+            await Workflow.ExecuteActivityAsync(
+                (InputWaitSignalActivities activities) => activities.SignalAsync(new SignalWaitingJobsInput(input.UploadId)),
+                InputWaitActivityOptions.CreateSignal()).ConfigureAwait(true);
+        }
+        catch (ActivityFailureException exception)
+        {
+            Workflow.Logger.LogWarning(
+                "Upload {UploadId}: waiting jobs were not notified ({Reason})",
+                input.UploadId,
+                exception.Message);
+        }
+
+        return result;
     }
 }

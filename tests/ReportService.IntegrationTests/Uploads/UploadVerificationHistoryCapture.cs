@@ -20,6 +20,8 @@ using UploadVerificationWorkflow = orchestration::ReportService.Workers.Orchestr
 using VerificationOptions = orchestration::ReportService.Workers.Orchestration.Uploads.VerificationOptions;
 using VerificationResult = orchestration::ReportService.Workers.Orchestration.Uploads.VerificationResult;
 using VerifyUploadResult = orchestration::ReportService.Workers.Orchestration.Uploads.VerifyUploadResult;
+using InputWaitSignalActivities = orchestration::ReportService.Workers.Orchestration.Jobs.InputWaitSignalActivities;
+using IWorkflowSignaller = orchestration::ReportService.Workers.Orchestration.Jobs.IWorkflowSignaller;
 
 namespace ReportService.IntegrationTests.Uploads;
 
@@ -115,12 +117,23 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
 
         await GivenAConfirmedUploadAsync(uploads, objects, cancellationToken);
 
+        // The verification now tells the jobs waiting on its upload that the state changed. The
+        // recording holds no waiting job, so the step finds none and answers; it is registered
+        // all the same, because a history is only replayable if every step the run schedules
+        // exists in the worker that recorded it.
+        var notification = new InputWaitSignalActivities(
+            new InMemoryJobStore(uploads),
+            new NothingToNudge(),
+            metrics,
+            NullLogger<InputWaitSignalActivities>.Instance);
+
         await StartEngineAsync(cancellationToken);
         var client = await ConnectAsync(cancellationToken);
         using var workflowWorker = new TemporalWorker(
             client,
             new TemporalWorkerOptions(UploadVerificationWorkflow.OrchestrationQueue)
-                .AddWorkflow<UploadVerificationWorkflow>());
+                .AddWorkflow<UploadVerificationWorkflow>()
+                .AddAllActivities(notification));
         using var activityWorker = new TemporalWorker(
             client,
             new TemporalWorkerOptions(UploadVerificationActivityOptions.DataQueue)
@@ -255,5 +268,12 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
         using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
         listener.Start();
         return ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+    }
+
+    /// <summary>The seam the recording uses: the capture holds no waiting job, so nothing is nudged.</summary>
+    private sealed class NothingToNudge : IWorkflowSignaller
+    {
+        public Task<bool> SignalInputChangedAsync(string workflowId, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
     }
 }

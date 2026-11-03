@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -442,13 +443,16 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(2, plan[0].Options.Workflows.Count);
-        Assert.Equal(7, plan[0].Options.Activities.Count);
+        Assert.Equal(8, plan[0].Options.Activities.Count);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == InputWaitActivities.BeginName);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == InputWaitActivities.EndName);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == InputWaitSignalActivities.Name);
         Assert.Equal("report-data", plan[1].Queue);
         Assert.Empty(plan[1].Options.Workflows);
         Assert.Equal(2, plan[1].Options.Activities.Count);
@@ -483,6 +487,10 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";
         builder.Configuration[$"{VerificationOptions.SectionPath}:{VerificationOptions.VerificationDeadlineSetting}"] = "06:00:00";
         builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
+
+        // The notification of waiting jobs goes through the engine connection the worker holds,
+        // and this container is built without the engine host: the holder is what the seam needs.
+        builder.Services.TryAddSingleton<TemporalClientHolder>();
         builder.AddUploadVerificationWork();
         builder.AddReportJobWork();
         foreach (var queue in extraQueues)

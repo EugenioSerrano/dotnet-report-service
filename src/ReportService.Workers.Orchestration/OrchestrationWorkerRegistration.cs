@@ -95,7 +95,12 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
+        builder.Services.AddSingleton<InputWaitSignalActivities>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
+
+        // The nudge a finished verification sends to the jobs of its upload goes through the
+        // engine connection the worker already holds; the seam is what the tests double.
+        builder.Services.TryAddSingleton<IWorkflowSignaller, TemporalWorkflowSignaller>();
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             ReportJobWorkflow.OrchestrationQueue,
             options =>
@@ -109,6 +114,7 @@ public static class OrchestrationWorkerRegistration
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
+                options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

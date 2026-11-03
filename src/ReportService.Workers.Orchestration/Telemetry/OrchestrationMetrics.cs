@@ -28,6 +28,15 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The counter of job outcomes.</summary>
     public const string JobOutcomesInstrumentName = "reportservice.job.outcomes";
 
+    /// <summary>The counter of the ways a wait for an upload ended.</summary>
+    public const string InputWaitOutcomesInstrumentName = "reportservice.job.input.wait.outcomes";
+
+    /// <summary>The histogram of the checks one wait performed.</summary>
+    public const string InputWaitPassesInstrumentName = "reportservice.job.input.wait.passes";
+
+    /// <summary>The counter of the notifications sent to waiting jobs.</summary>
+    public const string InputWaitNotificationsInstrumentName = "reportservice.job.input.wait.notifications";
+
     /// <summary>The status tag of a job that ended failed.</summary>
     public const string FailedJobStatus = "FAILED";
 
@@ -55,11 +64,19 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The result tag of a dispatch attempt that failed.</summary>
     public const string FailedResult = "failed";
 
+    /// <summary>The result tag of a notification that reached its execution.</summary>
+    public const string SignalledResult = "signalled";
+
+    /// <summary>The result tag of a notification whose execution does not exist or has closed.</summary>
+    public const string SkippedResult = "skipped";
+
     private readonly Meter _meter = new(TelemetryDefaults.MeterName);
     private readonly Counter<long> _outcomes;
     private readonly Histogram<double> _duration;
     private readonly Counter<long> _attempts;
     private readonly Counter<long> _jobOutcomes;
+    private readonly Counter<long> _inputWaitOutcomes;
+    private readonly Counter<long> _inputWaitNotifications;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
@@ -82,6 +99,14 @@ public sealed class OrchestrationMetrics : IDisposable
             JobOutcomesInstrumentName,
             unit: "{job}",
             description: "Report jobs that ended, by status and code.");
+        _inputWaitOutcomes = _meter.CreateCounter<long>(
+            InputWaitOutcomesInstrumentName,
+            unit: "{wait}",
+            description: "Jobs whose wait for their upload ended, by outcome.");
+        _inputWaitNotifications = _meter.CreateCounter<long>(
+            InputWaitNotificationsInstrumentName,
+            unit: "{notification}",
+            description: "Notifications of waiting jobs, by result.");
         _meter.CreateObservableGauge(
             PendingAgeInstrumentName,
             ObservePendingAge,
@@ -125,6 +150,20 @@ public sealed class OrchestrationMetrics : IDisposable
             1,
             new KeyValuePair<string, object?>("status", status),
             new KeyValuePair<string, object?>("code", code));
+
+    /// <summary>Records that one job's wait for its upload ended with <paramref name="outcome"/>.</summary>
+    /// <param name="outcome">A fixed outcome: ready, rejected or expired.</param>
+    public void InputWaitOutcome(string outcome) =>
+        _inputWaitOutcomes.Add(
+            1,
+            new KeyValuePair<string, object?>("outcome", outcome));
+
+    /// <summary>Records one notification of a waiting job.</summary>
+    /// <param name="result">A fixed result: signalled, skipped or failed.</param>
+    public void InputWaitNotification(string result) =>
+        _inputWaitNotifications.Add(
+            1,
+            new KeyValuePair<string, object?>("result", result));
 
     /// <summary>Publishes how long the oldest pending request of <paramref name="kind"/> has waited.</summary>
     /// <param name="kind">The request's kind, a fixed value.</param>
