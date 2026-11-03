@@ -155,7 +155,9 @@ public sealed class ReportJobAcceptanceEndToEndTests : IDisposable
         using var confirmed = await api.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative))
             {
-                Content = new StringContent("""{"sha256":null}""", Encoding.UTF8, "application/json"),
+                // The declared hash is optional: an empty object declares nothing, and a
+                // member whose value is null is refused as malformed.
+                Content = new StringContent("{}", Encoding.UTF8, CreateUploadRequestReader.JsonMediaType),
                 Headers = { { ConsumerIdentity.HeaderName, consumer } },
             },
             cancellationToken);
@@ -351,16 +353,25 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         var reportJobId = document.RootElement.GetProperty("reportJobId").GetString()!;
 
         string? status = null;
-        await Wait.UntilAsync(
-            $"the job {reportJobId} to reach a terminal status",
-            async token =>
-            {
-                status = await StatusAsync(connectionString, reportJobId, token);
-                return status is "SUCCEEDED" or "FAILED" or "CANCELLED";
-            },
-            TerminalDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        try
+        {
+            await Wait.UntilAsync(
+                $"the job {reportJobId} to reach a terminal status",
+                async token =>
+                {
+                    status = await StatusAsync(connectionString, reportJobId, token);
+                    return status is "SUCCEEDED" or "FAILED" or "CANCELLED";
+                },
+                TerminalDeadline,
+                TimeSpan.FromSeconds(1),
+                cancellationToken);
+        }
+        catch (TimeoutException) when (status == "QUEUED")
+        {
+            // The wait's own bound passed with the job still queued: no step of this build
+            // takes a ready input to its end. That is this case's own named failure below,
+            // never a timeout that says nothing.
+        }
 
         if (status == "QUEUED")
         {
@@ -398,7 +409,9 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         using var confirmed = await api.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative))
             {
-                Content = new StringContent("""{"sha256":null}""", Encoding.UTF8, "application/json"),
+                // The declared hash is optional: an empty object declares nothing, and a
+                // member whose value is null is refused as malformed.
+                Content = new StringContent("{}", Encoding.UTF8, CreateUploadRequestReader.JsonMediaType),
                 Headers = { { ConsumerIdentity.HeaderName, "consumer-a" } },
             },
             cancellationToken);

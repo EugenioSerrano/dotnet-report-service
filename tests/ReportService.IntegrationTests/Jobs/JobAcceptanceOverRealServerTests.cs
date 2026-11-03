@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using Dapper;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
@@ -41,6 +42,12 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromMinutes(2);
 
+    /// <summary>How long the built API may take from its start to its health check.</summary>
+    private static readonly TimeSpan ApiReadyDeadline = TimeSpan.FromSeconds(45);
+
+    /// <summary>How long the disconnected client waits for the host's answer before dropping the socket (microseconds).</summary>
+    private const int AnswerWait = 5_000_000;
+
     private static readonly TimeSpan DispatchDeadline = TimeSpan.FromSeconds(90);
 
     private readonly PostgresFixture _fixture;
@@ -49,7 +56,11 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
     private readonly int _hostPort = FreePort();
 
-    private readonly int _apiPort = FreePort();
+    // Everything the child process writes, so a start that fails names its own reason
+    // instead of leaving a health check to time out on a refused connection.
+    private readonly StringBuilder _apiOutput = new();
+
+    private Uri? _apiAddress;
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -93,17 +104,7 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
 
         _api = StartApi();
-        await Wait.UntilAsync(
-            "the built API answering its health check",
-            async token =>
-            {
-                using var probe = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{_apiPort}") };
-                using var response = await probe.GetAsync(new Uri("/health", UriKind.Relative), token);
-                return response.StatusCode == HttpStatusCode.OK;
-            },
-            ReadyDeadline,
-            TimeSpan.FromMilliseconds(500),
-            cancellationToken);
+        await WaitForApiAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -165,7 +166,17 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         // The whole request goes out, and the socket is closed without a byte of the answer read.
         SendAndClose(uploadId);
 
-        var reportJobId = await WaitForJobAsync(uploadId, cancellationToken);
+        string reportJobId;
+        try
+        {
+            reportJobId = await WaitForJobAsync(uploadId, cancellationToken);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new TimeoutException(
+                $"{exception.Message}{Environment.NewLine}The built API said:{Environment.NewLine}{ApiOutput()}",
+                exception);
+        }
         var workflowId = ReportJobWorkflow.WorkflowIdFor(reportJobId);
         await Wait.UntilAsync(
             $"the start request of {reportJobId} dispatched",
@@ -189,7 +200,10 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         Assert.Contains(history.Events, entry => entry.EventType == Temporalio.Api.Enums.V1.EventType.WorkflowExecutionCompleted);
     }
 
-    // The built API, as its own process, on the product's own settings.
+    // The built API, as its own process, on the product's own settings. It is given port
+    // zero, so the operating system assigns the port it binds: no other process can have
+    // taken it between a probe and the start, and the address it reports is the one this
+    // class dials. Its output is read as it arrives, so a start that ends early says why.
     private Process StartApi()
     {
         var registry = Path.Combine(_directory, "consumers.json");
@@ -202,24 +216,141 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
             UseShellExecute = false,
         };
         start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "ReportService.Api.dll"));
+        start.ArgumentList.Add("--contentRoot");
+        start.ArgumentList.Add(ApiContentRoot());
         start.ArgumentList.Add("--urls");
-        start.ArgumentList.Add($"http://127.0.0.1:{_apiPort}");
+        start.ArgumentList.Add("http://127.0.0.1:0");
         start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         start.Environment[DatabaseOptions.ConnectionStringSetting.Replace(":", "__", StringComparison.Ordinal)] = _connectionString!;
         start.Environment[DatabaseOptions.ExpectedSchemaVersionSetting.Replace(":", "__", StringComparison.Ordinal)] = MigrationCatalog.ExpectedVersion;
         start.Environment[$"{ConsumerRegistryHosting.FileSetting.Replace(":", "__", StringComparison.Ordinal)}"] = registry;
         start.Environment["Storage__Provider"] = "filesystem";
         start.Environment["Storage__Filesystem__Root"] = Path.Combine(_directory, "storage");
-        return Process.Start(start) ?? throw new InvalidOperationException("the built API could not be started");
+        var process = Process.Start(start) ?? throw new InvalidOperationException("the built API could not be started");
+        process.OutputDataReceived += (_, received) => Record(received.Data);
+        process.ErrorDataReceived += (_, received) => Record(received.Data);
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        return process;
+    }
+
+    // The directory the API reads its settings from. The test output holds one
+    // appsettings.json per referenced project and only the last copy survives, so the child
+    // is pointed at the API's own directory — the same one the in-process hosts use, as the
+    // content-root manifest this test's output carries states it.
+    private static string ApiContentRoot()
+    {
+        var manifest = Path.Combine(AppContext.BaseDirectory, "MvcTestingAppManifest.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+        foreach (var entry in document.RootElement.EnumerateObject())
+        {
+            if (entry.Name.StartsWith("ReportService.Api,", StringComparison.Ordinal))
+            {
+                return entry.Value.GetString()
+                    ?? throw new InvalidOperationException("the run's content-root manifest names no directory for the API.");
+            }
+        }
+
+        throw new InvalidOperationException("the run's content-root manifest holds no entry for the API, so the built API cannot read its settings.");
+    }
+
+    // Waits for the address the process says it listens on, then for its health check.
+    // Both waits are bounded, and a process that ended first is reported with what it
+    // wrote, never as a refused connection that says nothing.
+    private async Task WaitForApiAsync(CancellationToken cancellationToken)
+    {
+        var elapsed = Stopwatch.StartNew();
+        while (true)
+        {
+            if (_api!.HasExited)
+            {
+                throw new InvalidOperationException(
+                    $"the built API exited with code {_api.ExitCode.ToString(CultureInfo.InvariantCulture)} before answering its health check. Its output was:{Environment.NewLine}{ApiOutput()}");
+            }
+
+            var address = ListeningAddress();
+            if (address is not null)
+            {
+                _apiAddress = address;
+                try
+                {
+                    using var probe = new HttpClient { BaseAddress = address, Timeout = TimeSpan.FromSeconds(5) };
+                    using var response = await probe.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken).ConfigureAwait(false);
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        return;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // The address is known and the host has not answered yet.
+                }
+                catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    // The probe's own bound passed; the deadline below still governs the wait.
+                }
+            }
+
+            if (elapsed.Elapsed >= ApiReadyDeadline)
+            {
+                throw new TimeoutException(
+                    $"the built API answering its health check was not ready after {elapsed.Elapsed.TotalSeconds:F1} s (deadline {ApiReadyDeadline.TotalSeconds:F0} s). Its output was:{Environment.NewLine}{ApiOutput()}");
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    // The address the host reports once it is bound. Nothing dials the process before the
+    // line exists, so the wait never guesses a port.
+    private Uri? ListeningAddress()
+    {
+        const string marker = "Now listening on: ";
+        var output = ApiOutput();
+        var at = output.IndexOf(marker, StringComparison.Ordinal);
+        if (at < 0)
+        {
+            return null;
+        }
+
+        var start = at + marker.Length;
+        var end = output.IndexOf('\n', start);
+        var text = (end < 0 ? output[start..] : output[start..end]).Trim();
+        return Uri.TryCreate(text, UriKind.Absolute, out var address) ? address : null;
+    }
+
+    private void Record(string? line)
+    {
+        if (line is null)
+        {
+            return;
+        }
+
+        lock (_apiOutput)
+        {
+            _apiOutput.AppendLine(line);
+        }
+    }
+
+    private string ApiOutput()
+    {
+        lock (_apiOutput)
+        {
+            return _apiOutput.ToString();
+        }
     }
 
     // A raw request, written whole and followed by a close: no response is read at all.
+    // The client half-closes, waits until the host has answered — the answer stays unread —
+    // and then drops the connection. Closing the handle the instant the bytes are handed to
+    // the stack can discard them before the host reads them, which would test the transport
+    // rather than the service's promise.
     private void SendAndClose(string uploadId)
     {
         var body = $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{uploadId}}","profile":"header-items-v1"},"outputs":["pdf"]}""";
         var request = new StringBuilder()
             .Append("POST ").Append(CreateReportJobEndpoint.RoutePrefix).Append(" HTTP/1.1\r\n")
-            .Append("Host: 127.0.0.1:").Append(_apiPort.ToString(CultureInfo.InvariantCulture)).Append("\r\n")
+            .Append("Host: ").Append(_apiAddress!.Authority).Append("\r\n")
             .Append("Content-Type: application/json\r\n")
             .Append("Content-Length: ").Append(Encoding.UTF8.GetByteCount(body).ToString(CultureInfo.InvariantCulture)).Append("\r\n")
             .Append(ConsumerIdentity.HeaderName).Append(": ").Append(Consumer).Append("\r\n")
@@ -228,9 +359,11 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
             .ToString();
 
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        socket.Connect(IPAddress.Loopback, _apiPort);
+        socket.Connect(IPAddress.Loopback, _apiAddress.Port);
         socket.Send(Encoding.ASCII.GetBytes(request));
-        socket.Shutdown(SocketShutdown.Send);
+        Assert.True(
+            socket.Poll(AnswerWait, SelectMode.SelectRead),
+            "the built API answered nothing before the client dropped the connection");
         socket.Close();
     }
 
