@@ -50,22 +50,33 @@ them, and the trace context is carried from one process to the next.
 ### Metrics
 
 Metrics come from the ASP.NET Core, HTTP client and runtime instrumentation,
-plus the service's own meter `ReportService`, whose only instrument today is the
-gauge `service.build_info` (value 1, tags `version` and `runtime`). That gauge is
-how a metrics backend learns which build a process runs.
+plus the service's own instruments, which are created on the meter the host
+carries. A process that owns its host supplies `ReportService` as that identity —
+which is why the instrumentation scope name every process exports is unchanged —
+and a composition that runs several hosts in one process gives each host its own
+identity, so one host's metrics never carry a neighbour's. The instruments live
+beside the work they measure: `ServiceDefaults/Telemetry/` holds the build-info
+gauge `service.build_info` (value 1, tags `version` and `runtime`, which is how a
+metrics backend learns which build a process runs), `Api/Telemetry/` holds the
+API's instruments and `Workers.Orchestration/Telemetry/` the worker's. A new
+instrument is created through one of those factories, on the host's identity.
 
 ## The job identifier: logs and spans, never a metric
 
-A unit of work is opened with a job identifier:
+A unit of work is opened with a job identifier and the logger factory of the
+host that opens it:
 
 ```csharp
-using (JobContext.Begin(jobId))
+using (JobContext.Begin(jobId, loggers))
 {
     // every log entry written here carries the scope field job_id
     // every span started here carries the tag job.id
 }
 ```
 
+- `loggers` is the host's own logger factory — the one its composition already
+  holds — so a process that hosts several hosts writes each unit's scope on the
+  factory of the host that opened it, and no other host's capture can see it.
 - The identifier is an internal identifier, not free text: it must match
   `[a-z0-9._-]{1,128}`, and opening a unit of work with anything else throws.
 - It is **never** a metric dimension. Metric labels that vary per job make a
@@ -145,17 +156,20 @@ with no destination still has points to show.
 
 ## Adding a signal for new work
 
-1. **A metric:** create the instrument on the `ReportService` meter through the
-   shared build-info type's meter, and take its tags from constants. Never take
-   a tag from a job identifier or from anything that varies per job, and never
-   from a setting value.
+1. **A metric:** create the instrument through one of the product instrument
+   factories, which takes the host's identity from the container and creates its
+   meter from it — production's identity is `ReportService`. Take its tags from
+   constants: never from a job identifier or from anything that varies per job,
+   and never from a setting value. Never construct a meter from a constant at the
+   point of use.
 2. **A span:** start it on the `ReportService` activity source. The job tag and
    the redaction rules apply by themselves; nothing needs to be passed down.
 3. **A log entry:** use the structured logging API with named placeholders — no
    string concatenation of settings, no report content, and nothing that the
    redaction rules would have to catch.
-4. **A unit of work:** open it with `JobContext.Begin(jobId)` at the point where
-   a job starts being processed, and dispose it when the unit ends.
+4. **A unit of work:** open it with `JobContext.Begin(jobId, loggers)`, passing
+   the host's own logger factory, at the point where a job starts being
+   processed, and dispose it when the unit ends.
 5. Add the assertion to the matching test project: the hermetic suite for what
    can be checked in-process, the end-to-end suite for what needs the running
    composition.

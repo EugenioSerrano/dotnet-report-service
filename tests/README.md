@@ -179,6 +179,11 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
 - **Every integration test class owns its containers** and removes them
   through its own handles; nothing is pruned. Container names start with
   `report-service-it-`.
+- **A test host carries its own meter identity and opens a unit of work on its
+  own logger factory**, so two hosts may be open in one process and each capture
+  holds only its own telemetry. The `telemetry` collection still runs those
+  classes one at a time, because the diagnostics endpoint reads and writes a
+  process-wide environment entry.
 - Test names describe behaviour.
 
 ## What goes here

@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -48,7 +49,7 @@ public sealed class UploadVerifierDeadlineTests
     {
         using var rig = new VerifierRig();
         await rig.GivenVerifyingAsync(UploadId, Stored, UploadContentEncoding.None);
-        using var metrics = new OrchestrationMetrics();
+        using var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         var lateStore = new ExpiredBeforeCommitStore(rig.Uploads, rig.Clock.GetUtcNow().AddDays(2));
         var verifier = new UploadVerifier(
             lateStore,

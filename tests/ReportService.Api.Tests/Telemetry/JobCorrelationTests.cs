@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenTelemetry.Logs;
 using ReportService.ServiceDefaults.Telemetry;
 
@@ -27,17 +28,17 @@ public sealed class JobCorrelationTests
         Assert.False(JobContext.IsValid("with/slash"));
         Assert.False(JobContext.IsValid(string.Empty));
         Assert.False(JobContext.IsValid(null));
-        Assert.Throws<ArgumentException>(() => JobContext.Begin("Synthetic-Upper"));
+        Assert.Throws<ArgumentException>(() => JobContext.Begin("Synthetic-Upper", NullLoggerFactory.Instance));
         Assert.Null(JobContext.Current);
     }
 
     [Fact]
     public void NestingRestoresTheOuterIdentifier()
     {
-        using (JobContext.Begin("outer"))
+        using (JobContext.Begin("outer", NullLoggerFactory.Instance))
         {
             Assert.Equal("outer", JobContext.Current);
-            using (JobContext.Begin("inner"))
+            using (JobContext.Begin("inner", NullLoggerFactory.Instance))
             {
                 Assert.Equal("inner", JobContext.Current);
             }
@@ -56,7 +57,7 @@ public sealed class JobCorrelationTests
         using var source = new ActivitySource(TelemetryDefaults.ActivitySourceName);
 
         logger.LogInformation("before the unit");
-        using (JobContext.Begin(JobId))
+        using (JobContext.Begin(JobId, host.Loggers))
         {
             logger.LogInformation("inside the unit");
             using var span = source.StartActivity("unit");
@@ -81,6 +82,24 @@ public sealed class JobCorrelationTests
 
         host.CollectMetrics();
         Assert.DoesNotContain(JobContext.ScopeKey, entries[0].Attributes?.Select(attribute => attribute.Key) ?? []);
+    }
+
+    [Fact]
+    public async Task AUnitOfWorkOpenedOnADisposedFactoryOpensNoScope()
+    {
+        // A host that is already shutting down still holds its factory: opening a unit of
+        // work on it must not escape as a fault, and the entries written in that window
+        // carry no identifier.
+        var host = await TelemetryTestHost.StartAsync();
+        var loggers = host.Loggers;
+        await host.DisposeAsync();
+
+        using (JobContext.Begin(JobId, loggers))
+        {
+            Assert.Equal(JobId, JobContext.Current);
+        }
+
+        Assert.Null(JobContext.Current);
     }
 
     [Fact]

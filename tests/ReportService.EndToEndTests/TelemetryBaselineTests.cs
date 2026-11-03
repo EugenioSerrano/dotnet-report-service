@@ -194,6 +194,140 @@ public sealed class TelemetryBaselineTests
         }
     }
 
+    [Fact]
+    public async Task EveryProcessExportsItsProductMeterUnderTheScopeNameItAlwaysHad()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
+        await using var app = await appHost.BuildAsync(cancellationToken);
+        await app.StartAsync(cancellationToken);
+        await WaitForHealthyAsync(app, cancellationToken);
+
+        using var api = app.CreateHttpClient("api");
+        using var orchestration = app.CreateHttpClient("orchestration-worker");
+        using var renderWorker = app.CreateHttpClient("render-worker", "http");
+
+        foreach (var (service, client) in new[]
+        {
+            (ServiceNames.Api, api),
+            (ServiceNames.OrchestrationWorker, orchestration),
+            (ServiceNames.RenderWorker, renderWorker),
+        })
+        {
+            await Wait.UntilAsync(
+                $"a product instrument in the capture of {service}",
+                async token => InstrumentsOf(await CaptureAsync(client, token))
+                    .Any(instrument => instrument.Meter == TelemetryDefaults.MeterName),
+                EvidenceDeadline,
+                PollInterval,
+                cancellationToken);
+
+            var declared = InstrumentsOf(await CaptureAsync(client, cancellationToken));
+
+            // A closed world: whatever of the product meter this process declared is one of
+            // the ten rows with that row's unit and kind, and nothing else is. The composition
+            // decides when an instrument has a point, so a row missing from this window is not
+            // a failure of this case — an instrument outside the table is.
+            var product = declared.Where(instrument => instrument.Meter == TelemetryDefaults.MeterName).ToList();
+            Assert.NotEmpty(product);
+            Assert.All(
+                product,
+                instrument => Assert.Contains(
+                    (instrument.Name, instrument.Unit, instrument.Type),
+                    ProductInstruments));
+
+            // The scope name is a value, not a rename: a product instrument never travels
+            // under any other meter than the one a process that owns its host supplies.
+            Assert.All(
+                declared.Where(instrument => ProductInstruments.Any(row => row.Name == instrument.Name)),
+                instrument => Assert.Equal(TelemetryDefaults.MeterName, instrument.Meter));
+        }
+    }
+
+    [Fact]
+    public async Task AUnitOfWorkIsWrittenWithItsIdentifierOnTheProcessThatOpenedIt()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var jobId = "synthetic-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
+        await using var app = await appHost.BuildAsync(cancellationToken);
+        await app.StartAsync(cancellationToken);
+        await WaitForHealthyAsync(app, cancellationToken);
+
+        using var api = app.CreateHttpClient("api");
+        using var orchestration = app.CreateHttpClient("orchestration-worker");
+        using var renderWorker = app.CreateHttpClient("render-worker", "http");
+        using var dashboard = new HttpClient { BaseAddress = await app.GetDashboardUrlAsync(cancellationToken) };
+
+        var opening = new[] { ServiceNames.Api, ServiceNames.RenderWorker };
+        foreach (var client in new[] { api, renderWorker })
+        {
+            using var response = await client.PostAsJsonAsync(
+                new Uri(TelemetryDiagnostics.UnitOfWorkRoute, UriKind.Relative),
+                new { jobId },
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+        }
+
+        // One unit per process that opened it: the view receives the identifier from both of
+        // them, and from no other process.
+        await Wait.UntilAsync(
+            $"the unit of work {jobId} in the logs of the processes that opened it",
+            async token =>
+            {
+                var services = ServicesCarryingJob(await DashboardAsync(dashboard, "logs", token), jobId);
+                return opening.All(services.Contains);
+            },
+            EvidenceDeadline,
+            PollInterval,
+            cancellationToken);
+
+        var carrying = ServicesCarryingJob(await DashboardAsync(dashboard, "logs", cancellationToken), jobId);
+        Assert.All(carrying, service => Assert.Contains(service, opening));
+        Assert.All(opening, service => Assert.Contains(service, carrying));
+
+        // The identifier never becomes a metric dimension: no captured point of the three
+        // processes carries it as a value.
+        foreach (var client in new[] { api, orchestration, renderWorker })
+        {
+            var capture = await CaptureAsync(client, cancellationToken);
+            Assert.DoesNotContain(
+                capture.GetProperty("points").EnumerateArray().SelectMany(point => point.GetProperty("tags").EnumerateObject()),
+                tag => tag.Value.GetString() == jobId);
+        }
+    }
+
+    /// <summary>
+    /// The instruments the product declares, name by name with the unit and the kind each
+    /// carries: the closed table a process's own meter is checked against, as it crosses
+    /// the wire.
+    /// </summary>
+    private static readonly (string Name, string Unit, string Type)[] ProductInstruments =
+    [
+        ("service.build_info", string.Empty, "Gauge"),
+        ("reportservice.upload.outcomes", "{upload}", "Sum"),
+        ("reportservice.upload.verification.duration", "s", "Histogram"),
+        ("reportservice.intent.dispatch.attempts", "{attempt}", "Sum"),
+        ("reportservice.intent.pending.age", "s", "Gauge"),
+        ("reportservice.job.outcomes", "{job}", "Sum"),
+        ("reportservice.job.input.wait.outcomes", "{wait}", "Sum"),
+        ("reportservice.job.input.wait.notifications", "{notification}", "Sum"),
+        ("reportservice.job.acceptances", "{request}", "Sum"),
+        ("reportservice.consumer.refusals", "{request}", "Sum"),
+    ];
+
+    /// <summary>What one process's capture declared, by name, meter, unit and kind.</summary>
+    private static List<(string Name, string Meter, string Unit, string Type)> InstrumentsOf(JsonElement capture) =>
+        [.. capture.GetProperty("instruments").EnumerateArray().Select(instrument => (
+            Name: instrument.GetProperty("name").GetString() ?? string.Empty,
+            Meter: instrument.GetProperty("meter").GetString() ?? string.Empty,
+            Unit: instrument.GetProperty("unit").GetString() ?? string.Empty,
+            Type: instrument.GetProperty("type").GetString() ?? string.Empty))];
+
+    /// <summary>The processes whose log entries carry <paramref name="jobId"/>.</summary>
+    private static HashSet<string> ServicesCarryingJob(JsonElement logs, string jobId) =>
+        [.. LogRecords(logs).Where(record => CarriesJob(record.Record, jobId)).Select(record => record.Service)];
+
     private static async Task WaitForHealthyAsync(DistributedApplication app, CancellationToken cancellationToken)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

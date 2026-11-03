@@ -5,7 +5,7 @@ using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Pdf;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddServiceDefaults(ServiceNames.RenderWorker);
+builder.AddServiceDefaults(ServiceNames.RenderWorker, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
 builder.AddServiceConfiguration();
 
 // The PDF rendering task queue; render work is registered on it as the product gains it.

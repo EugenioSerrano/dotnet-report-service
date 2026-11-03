@@ -60,7 +60,7 @@ public sealed class NoDestinationTests
         {
             [TelemetryDiagnosticsSettings.EnabledSetting] = "false",
         });
-        builder.AddServiceDefaults(ServiceNames.Api);
+        builder.AddServiceDefaults(ServiceNames.Api, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
 
         using var host = builder.Build();
         await host.StartAsync(TestContext.Current.CancellationToken);

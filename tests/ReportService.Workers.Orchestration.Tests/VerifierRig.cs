@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -57,7 +58,7 @@ internal sealed class VerifierRig : IDisposable
         };
         Uploads = new InMemoryUploadStore();
         Clock = new SteppingTimeProvider(ticking);
-        _metrics = new OrchestrationMetrics();
+        _metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         Verifier = new UploadVerifier(
             Uploads,
             Objects,

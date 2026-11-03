@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -139,7 +140,7 @@ public sealed class VerifyUploadActivityTests
     /// </summary>
     private sealed class Rig : IDisposable
     {
-        private readonly OrchestrationMetrics _metrics = new();
+        private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         private ActivityEnvironment? _environment;
         private int _heartbeats;
 

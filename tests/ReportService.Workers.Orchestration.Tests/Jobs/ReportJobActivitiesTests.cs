@@ -211,14 +211,14 @@ public sealed class ReportJobActivitiesTests
     /// </summary>
     private sealed class Rig : IDisposable
     {
-        private readonly OrchestrationMetrics _metrics = new();
+        private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
 
         private Rig()
         {
             Clock = new ManualTimeProvider(Now);
             Uploads = new InMemoryUploadStore();
             Jobs = new InMemoryJobStore(Uploads);
-            Activities = new ReportJobActivities(Jobs, Clock, _metrics, NullLogger<ReportJobActivities>.Instance);
+            Activities = new ReportJobActivities(Jobs, Clock, _metrics, NullLoggerFactory.Instance, NullLogger<ReportJobActivities>.Instance);
         }
 
         public ManualTimeProvider Clock { get; }

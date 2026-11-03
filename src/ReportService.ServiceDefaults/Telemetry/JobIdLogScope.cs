@@ -12,14 +12,9 @@ internal static class JobIdLogScope
 {
     private const string Category = "ReportService.Job";
 
-    /// <summary>Opens the scope on <paramref name="loggers"/>; <see langword="null"/> when no usable factory is registered.</summary>
-    public static IDisposable? Start(ILoggerFactory? loggers, string jobId)
+    /// <summary>Opens the scope on <paramref name="loggers"/>.</summary>
+    public static IDisposable? Start(ILoggerFactory loggers, string jobId)
     {
-        if (loggers is null)
-        {
-            return null;
-        }
-
         try
         {
             ILogger logger = loggers.CreateLogger(Category);

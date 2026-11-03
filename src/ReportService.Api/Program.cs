@@ -14,7 +14,7 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddServiceDefaults(ServiceNames.Api);
+builder.AddServiceDefaults(ServiceNames.Api, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
 builder.AddServiceConfiguration();
 builder.AddMetadataDatabase();
 builder.AddConsumerRegistry();

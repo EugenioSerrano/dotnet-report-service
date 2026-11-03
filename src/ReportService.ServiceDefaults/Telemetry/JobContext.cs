@@ -6,7 +6,7 @@ namespace ReportService.ServiceDefaults.Telemetry;
 
 /// <summary>
 /// The unit of work a job identifier is attached to. While one is open, every
-/// log entry written through the process's logger factory carries the
+/// log entry written through the logger factory it was opened on carries the
 /// identifier as the scope key <c>job_id</c>, and every span started inside it
 /// carries the tag <c>job.id</c> (see <see cref="JobIdActivityProcessor"/>).
 /// The identifier is <b>never</b> a metric dimension: instruments take constant
@@ -15,6 +15,11 @@ namespace ReportService.ServiceDefaults.Telemetry;
 /// A job identifier is an internal identifier, not free text: it must match
 /// <c>[a-z0-9._-]{1,128}</c>, and <see cref="Begin"/> refuses anything else.
 /// Nesting restores the previous identifier when the inner scope ends.
+/// </para>
+/// <para>
+/// The scope belongs to the host that opens it: the logger factory travels with the
+/// call, so a process that hosts several hosts opens each unit on the factory of the
+/// one that owns the flow.
 /// </para>
 /// </summary>
 public static partial class JobContext
@@ -29,25 +34,21 @@ public static partial class JobContext
     public const int MaxLength = 128;
 
     private static readonly AsyncLocal<string?> CurrentIdentifier = new();
-    private static ILoggerFactory? loggers;
 
     /// <summary>The identifier of the open unit of work, or <see langword="null"/> outside one.</summary>
     public static string? Current => CurrentIdentifier.Value;
 
-    /// <summary>The logger factory the log scope is opened on; set at start by the registration.</summary>
-    internal static ILoggerFactory? LoggerFactory
-    {
-        get => loggers;
-        set => loggers = value;
-    }
-
     /// <summary>
     /// Opens a unit of work for <paramref name="jobId"/>: sets the current
-    /// identifier, tags the current span and opens the log scope. The returned
-    /// handle restores the previous state when it is disposed.
+    /// identifier, tags the current span and opens the log scope on
+    /// <paramref name="loggers"/>. The returned handle restores the previous state
+    /// when it is disposed.
     /// </summary>
+    /// <param name="jobId">The identifier of the job the unit of work belongs to.</param>
+    /// <param name="loggers">The logger factory of the host that opens the unit.</param>
     /// <exception cref="ArgumentException"><paramref name="jobId"/> does not match the grammar.</exception>
-    public static IDisposable Begin(string jobId)
+    /// <exception cref="ArgumentNullException"><paramref name="loggers"/> is <see langword="null"/>.</exception>
+    public static IDisposable Begin(string jobId, ILoggerFactory loggers)
     {
         if (!IsValid(jobId))
         {
@@ -55,6 +56,8 @@ public static partial class JobContext
                 $"A job identifier must be 1 to {MaxLength} characters of a-z, 0-9, '.', '_' or '-'.",
                 nameof(jobId));
         }
+
+        ArgumentNullException.ThrowIfNull(loggers);
 
         var previous = CurrentIdentifier.Value;
         CurrentIdentifier.Value = jobId;

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
+using ReportService.Api.Http;
+using ReportService.Api.Telemetry;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Testing;
@@ -21,6 +23,14 @@ namespace ReportService.Api.Tests.Telemetry;
 public sealed class TelemetryEndpointTests : IDisposable
 {
     private readonly TemporaryDirectory _storage = new();
+
+    /// <summary>The instruments the product declares, by the names it has always exported.</summary>
+    private static readonly string[] ProductInstrumentNames =
+    [
+        BuildInfoMetric.InstrumentName,
+        JobAcceptanceMetrics.InstrumentName,
+        ConsumerRefusalMetrics.InstrumentName,
+    ];
 
     public void Dispose() => _storage.Dispose();
 
@@ -66,6 +76,59 @@ public sealed class TelemetryEndpointTests : IDisposable
             body.RootElement.GetProperty("instruments").EnumerateArray(),
             instrument => instrument.GetProperty("name").GetString() == BuildInfoMetric.InstrumentName);
         Assert.True(body.RootElement.GetProperty("omittedPoints").GetInt64() >= 0);
+    }
+
+    [Fact]
+    public async Task TheProductMeterKeepsItsScopeNameItsInstrumentsTheirUnitsAndTypes()
+    {
+        await using var api = Api(diagnostics: true);
+        using var client = api.CreateClient();
+
+        api.Services.GetRequiredService<JobAcceptanceMetrics>().Accepted();
+        api.Services.GetRequiredService<ConsumerRefusalMetrics>().Refusal(
+            ErrorCodes.ConsumerUnknown,
+            ConsumerRefusalMetrics.CreateOperation,
+            "missing");
+        api.Services.GetRequiredService<MeterProvider>().ForceFlush();
+
+        using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.MetricsRoute, UriKind.Relative), Cancellation);
+        var json = await response.Content.ReadAsStringAsync(Cancellation);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(json);
+        var instruments = body.RootElement.GetProperty("instruments").EnumerateArray()
+            .Select(instrument => (
+                Name: instrument.GetProperty("name").GetString()!,
+                Meter: instrument.GetProperty("meter").GetString()!,
+                Unit: instrument.GetProperty("unit").GetString()!,
+                Type: instrument.GetProperty("type").GetString()!))
+            .ToList();
+
+        Assert.All(
+            instruments.Where(instrument => ProductInstrumentNames.Contains(instrument.Name)),
+            instrument => Assert.Equal(TelemetryDefaults.MeterName, instrument.Meter));
+
+        // The closed table of the meter that scope name names: the API's three instruments,
+        // each with the quantity it has always carried, and no fourth.
+        var expected = new (string Name, string Unit, string Type)[]
+        {
+            (BuildInfoMetric.InstrumentName, string.Empty, "Gauge"),
+            (JobAcceptanceMetrics.InstrumentName, "{request}", "Sum"),
+            (ConsumerRefusalMetrics.InstrumentName, "{request}", "Sum"),
+        };
+        Assert.Equal(
+            expected.OrderBy(row => row.Name, StringComparer.Ordinal),
+            instruments
+                .Where(instrument => instrument.Meter == TelemetryDefaults.MeterName)
+                .Select(instrument => (instrument.Name, instrument.Unit, instrument.Type))
+                .OrderBy(row => row.Name, StringComparer.Ordinal));
+
+        var gauge = Assert.Single(
+            body.RootElement.GetProperty("points").EnumerateArray(),
+            point => point.GetProperty("instrument").GetString() == BuildInfoMetric.InstrumentName);
+        Assert.Equal(
+            ["runtime", "version"],
+            gauge.GetProperty("tags").EnumerateObject().Select(tag => tag.Name).Order(StringComparer.Ordinal));
     }
 
     [Fact]

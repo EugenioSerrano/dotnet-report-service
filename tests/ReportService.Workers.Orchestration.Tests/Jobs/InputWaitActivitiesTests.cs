@@ -103,7 +103,7 @@ public sealed class InputWaitActivitiesTests
             _uploads = uploads;
             Jobs = jobs;
             ReportJobId = reportJobId;
-            Activities = new InputWaitActivities(jobs, NullLogger<InputWaitActivities>.Instance);
+            Activities = new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance);
         }
 
         public InMemoryJobStore Jobs { get; }

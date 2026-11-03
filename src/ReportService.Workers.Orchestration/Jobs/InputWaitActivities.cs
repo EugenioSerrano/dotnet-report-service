@@ -16,7 +16,7 @@ public sealed record InputWaitInput(string ReportJobId);
 /// a clear that arrives twice answers that there was nothing left to clear. Neither is
 /// a failure, and neither touches the job's state, its code or its instants.
 /// </summary>
-public sealed class InputWaitActivities(IJobStore jobs, ILogger<InputWaitActivities> logger)
+public sealed class InputWaitActivities(IJobStore jobs, ILoggerFactory loggers, ILogger<InputWaitActivities> logger)
 {
     /// <summary>The name the step that records the waiting stage is scheduled under.</summary>
     public const string BeginName = "BeginInputWait";
@@ -30,7 +30,7 @@ public sealed class InputWaitActivities(IJobStore jobs, ILogger<InputWaitActivit
     public async Task<BeginInputWaitOutcome> BeginAsync(InputWaitInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        using var context = JobContext.Begin(input.ReportJobId);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
 
         var outcome = await jobs
             .BeginInputWaitAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)
@@ -51,7 +51,7 @@ public sealed class InputWaitActivities(IJobStore jobs, ILogger<InputWaitActivit
     public async Task<EndInputWaitOutcome> EndAsync(InputWaitInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        using var context = JobContext.Begin(input.ReportJobId);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
 
         var outcome = await jobs
             .EndInputWaitAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)

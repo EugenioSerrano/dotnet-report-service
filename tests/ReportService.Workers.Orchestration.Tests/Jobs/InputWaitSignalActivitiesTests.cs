@@ -118,7 +118,7 @@ public sealed class InputWaitSignalActivitiesTests
     private sealed class Rig : IDisposable
     {
         private readonly InMemoryUploadStore _uploads;
-        private readonly OrchestrationMetrics _metrics = new();
+        private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         private readonly ILoggerFactory _loggers;
         private readonly ActivityEnvironment _environment = new();
 

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,14 +21,16 @@ namespace ReportService.Api.Tests.Telemetry;
 /// pipeline as the process's own processors, so redaction and job enrichment
 /// apply to what the test reads.
 /// <para>
-/// The subscriptions are process-wide and the suite runs several hosts at once, so a
-/// host's exporter receives whatever the process exports while the host is alive. The
-/// captured items are therefore written under a lock and read as snapshots: a case
-/// selects what it wrote instead of requiring to be the only writer.
+/// A host carries its own meter identity, so its metric capture holds exactly the
+/// instruments it created, whatever else runs in the process beside it. The captured
+/// items are added from the pipeline's own thread and read from the case's, so they are
+/// written under a lock and read as snapshots.
 /// </para>
 /// </summary>
 internal sealed class TelemetryTestHost : IAsyncDisposable
 {
+    private static int _identities;
+
     private readonly IHost _host;
     private readonly CapturedItems<LogRecord> _logs;
     private readonly CapturedItems<Activity> _activities;
@@ -35,15 +38,20 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
 
     private TelemetryTestHost(
         IHost host,
+        MeterIdentity identity,
         CapturedItems<LogRecord> logs,
         CapturedItems<Activity> activities,
         CapturedItems<Metric> metrics)
     {
         _host = host;
+        Identity = identity;
         _logs = logs;
         _activities = activities;
         _metrics = metrics;
     }
+
+    /// <summary>The identity this host's meter is created from.</summary>
+    public MeterIdentity Identity { get; }
 
     public IReadOnlyList<LogRecord> Logs => _logs.Snapshot();
 
@@ -57,9 +65,14 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
 
     public static async Task<TelemetryTestHost> StartAsync(
         string serviceName = ServiceNames.Api,
+        MeterIdentity? identity = null,
         IReadOnlyDictionary<string, string?>? settings = null,
         bool diagnostics = false)
     {
+        // A test composition shares its process, so a host that is not given a
+        // particular identity gets a fresh one: two hosts never share a meter.
+        identity ??= MeterIdentity.ForHost(
+            string.Create(CultureInfo.InvariantCulture, $"ReportService.Tests.{Interlocked.Increment(ref _identities)}"));
         var logs = new CapturedItems<LogRecord>();
         var activities = new CapturedItems<Activity>();
         var metrics = new CapturedItems<Metric>();
@@ -77,6 +90,7 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
         builder.Configuration.AddInMemoryCollection(configuration);
         builder.AddServiceDefaults(
             serviceName,
+            identity,
             telemetry => telemetry
                 .WithMetrics(metric => metric.AddInMemoryExporter(metrics))
                 .WithTracing(tracing => tracing.AddInMemoryExporter(activities)),
@@ -84,7 +98,7 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
 
         var host = builder.Build();
         await host.StartAsync(TestContext.Current.CancellationToken);
-        return new TelemetryTestHost(host, logs, activities, metrics);
+        return new TelemetryTestHost(host, identity, logs, activities, metrics);
     }
 
     /// <summary>Collects the metric readers now, so the capture and the in-memory exporter have both exported.</summary>

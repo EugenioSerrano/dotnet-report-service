@@ -38,7 +38,8 @@ public sealed class CaptureTests
         // Both readers export from the same pipeline on this one collect, and the capture's own
         // reader is registered first, so its window closes inside the in-memory exporter's.
         host.CollectMetrics();
-        var captured = host.Capture.Take(1000).Points;
+        var read = host.Capture.Take(1000);
+        var captured = read.Points;
         var exported = Read(host.Metrics);
 
         Assert.NotEmpty(captured);
@@ -70,6 +71,14 @@ public sealed class CaptureTests
         }
 
         Assert.DoesNotContain(captured, point => point.Tags.Any(tag => tag.Key.Contains("job", StringComparison.OrdinalIgnoreCase)));
+
+        // The capture is the host's own meter: the product instrument this host declares
+        // carries its identity, and no tag carries the identity itself or a job identifier.
+        var identity = host.Identity.Name;
+        Assert.All(
+            read.Instruments.Where(instrument => instrument.Name == BuildInfoMetric.InstrumentName),
+            instrument => Assert.Equal(identity, instrument.Meter));
+        Assert.DoesNotContain(captured, point => point.Tags.Any(tag => tag.Value == identity));
     }
 
     [Fact]
@@ -79,12 +88,26 @@ public sealed class CaptureTests
         host.Services.GetRequiredService<BuildInfoMetric>().Record();
 
         host.CollectMetrics();
-        var instruments = host.Capture.Take(1000).Instruments;
+        var read = host.Capture.Take(1000);
+        var instruments = read.Instruments;
 
-        var product = instruments.Where(instrument => instrument.Meter == TelemetryDefaults.MeterName).ToList();
+        var product = instruments.Where(instrument => instrument.Meter == host.Identity.Name).ToList();
         Assert.Equal([BuildInfoMetric.InstrumentName], product.Select(instrument => instrument.Name));
         Assert.All(instruments, instrument => Assert.DoesNotContain("job", instrument.Name, StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(BuildInfoMetric.Tags, tag => tag.Key.Contains("job", StringComparison.OrdinalIgnoreCase));
+
+        // No instrument of another host's meter is captured: the instrument this host
+        // declares carries its own identity as its meter.
+        Assert.All(
+            instruments.Where(instrument => instrument.Name == BuildInfoMetric.InstrumentName),
+            instrument => Assert.Equal(host.Identity.Name, instrument.Meter));
+
+        // The same in one line for the name a process that owns its host exports: no
+        // instrument carries it unless that is this host's own identity.
+        if (host.Identity.Name != TelemetryDefaults.MeterName)
+        {
+            Assert.DoesNotContain(instruments, instrument => instrument.Meter == TelemetryDefaults.MeterName);
+        }
     }
 
     [Fact]

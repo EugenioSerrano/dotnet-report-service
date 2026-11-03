@@ -3,6 +3,7 @@ extern alias orchestration;
 using System.Globalization;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReportService.Jobs;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -223,7 +224,7 @@ public sealed class ReportJobHistoryCapture
     {
         private readonly WorkflowEnvironment _environment;
         private readonly TemporalWorker _worker;
-        private readonly OrchestrationMetrics _metrics = new();
+        private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         private readonly CancellationTokenSource _stop = new();
         private readonly Task _running;
         private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
@@ -267,7 +268,7 @@ public sealed class ReportJobHistoryCapture
             var uploads = new InMemoryUploadStore();
             var jobs = new InMemoryJobStore(uploads);
             var clock = new ManualTimeProvider(Now);
-            var metrics = new OrchestrationMetrics();
+            var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
 
             // The workflow's own bounds are published per recording, before each execution
             // starts; the worker serves every recording of this rig in turn.
@@ -280,8 +281,9 @@ public sealed class ReportJobHistoryCapture
                         jobs,
                         clock,
                         metrics,
+                        NullLoggerFactory.Instance,
                         NullLogger<ReportJobActivities>.Instance))
-                    .AddAllActivities(new InputWaitActivities(jobs, NullLogger<InputWaitActivities>.Instance)));
+                    .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance)));
 
             var stop = new CancellationTokenSource();
             var running = worker.ExecuteAsync(stop.Token);
