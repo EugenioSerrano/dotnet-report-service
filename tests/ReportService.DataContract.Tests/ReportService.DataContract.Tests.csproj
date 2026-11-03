@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the template's data contract: the profile a schema document
+    must stay inside, the compiled contract's two roots, the evaluation of a
+    header and of a record, the first-violation mapping and the prepared
+    contract cache. Hermetic: no container, no network, no database. The
+    schemas and samples are the pilot templates' own repository files.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

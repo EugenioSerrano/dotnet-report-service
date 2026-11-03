@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    A package's code analyzer belongs to the assembly that compiles against the package.
+    ReportService.DataContract is the one assembly that uses the data-contract library, so
+    its analyzer runs there and nowhere else: a project that references that assembly
+    receives the library at run time — it must, the assembly loads it — but its own source
+    is never built by rules it did not ask for.
+  -->
+  <Target Name="KeepDataContractAnalyzerLocal"
+          AfterTargets="ResolvePackageDependenciesForBuild"
+          BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectName)' != 'ReportService.DataContract'">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Corvus.Text.Json'" />
+    </ItemGroup>
+  </Target>
+
+</Project>

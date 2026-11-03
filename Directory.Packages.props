@@ -13,6 +13,7 @@
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.2" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.2" />
     <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.6.2" />
+    <PackageVersion Include="Corvus.Text.Json" Version="5.6.1" />
     <PackageVersion Include="Dapper" Version="2.1.89" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.63.0" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
