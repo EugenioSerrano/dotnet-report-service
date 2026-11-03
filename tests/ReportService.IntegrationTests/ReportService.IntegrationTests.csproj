@@ -27,6 +27,8 @@
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Migrations\ReportService.Migrations.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" Aliases="orchestration" />
+    <!-- Hosted in memory by the take's worker-level class; reached through its alias like the orchestration worker's. -->
+    <ProjectReference Include="..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" Aliases="pdf" />
   </ItemGroup>
 
 </Project>

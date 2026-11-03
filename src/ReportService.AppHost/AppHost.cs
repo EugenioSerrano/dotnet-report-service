@@ -114,13 +114,29 @@ var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repos
     .WithEnvironment("Storage__Diagnostics__Enabled", "true")
     .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
     .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
+    .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
+    .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
     .WithHttpEndpoint(targetPort: 8080, name: "http")
     .WithHttpHealthCheck("/health", endpointName: "http")
-    .WaitFor(temporal);
+    .WaitFor(temporal)
+    .WaitForCompletion(migrations);
 if (renderWorkerOtlpEndpoint is { Length: > 0 })
 {
     renderWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
 }
+
+// The template source the worker reads a version from: one repository and branch for
+// the deployment, from its own configuration, and the read-only credential as a secret
+// parameter. No repository is named here — the deployment's is its own — so a
+// composition without one stops the worker naming the setting instead of reading a
+// repository nobody chose.
+var templateSourceRepository = builder.Configuration["TemplateSource:Repository"] ?? string.Empty;
+var templateSourceBranch = builder.Configuration["TemplateSource:Branch"] ?? "main";
+var templateSourceToken = builder.AddParameter("template-source-token", secret: true);
+renderWorker
+    .WithEnvironment("TemplateSource__Repository", templateSourceRepository)
+    .WithEnvironment("TemplateSource__Branch", templateSourceBranch)
+    .WithEnvironment("TemplateSource__Token", templateSourceToken);
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.

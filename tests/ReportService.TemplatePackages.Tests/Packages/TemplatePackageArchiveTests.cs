@@ -103,24 +103,28 @@ public sealed class TemplatePackageArchiveTests
     }
 
     /// <summary>
-    /// The archive format splits a long path into a prefix and a name; a path
-    /// with a slash in it is written, and a single name longer than the format's
-    /// name field is refused as an unsupported path rather than stored wrongly.
+    /// The archive format splits a long path into a prefix and a name; the path
+    /// rule's longest segment and longest path are both written, and a segment one
+    /// character past the rule is refused by the rule itself — the format never
+    /// meets a path it cannot hold.
     /// </summary>
     [Fact]
-    public async Task ALongPathWithASlashIsWrittenAndASingleLongNameIsRefused()
+    public async Task ALongPathWithASlashIsWrittenAndASingleLongNameIsWrittenAtTheLimit()
     {
-        var longButSplit = new string('a', 120) + "/" + new string('b', 100);
+        var longButSplit = new string('a', PackagePath.MaxSegmentLength) + "/" + new string('b', PackagePath.MaxSegmentLength);
         var bytes = await WriteAsync(Files((longButSplit, "content")));
         using var reader = new TarReader(new MemoryStream(bytes));
         var entry = reader.GetNextEntry();
         Assert.NotNull(entry);
         Assert.Equal(longButSplit, entry.Name);
 
-        var singleLongName = new string('c', PackagePath.MaxSegmentLength);
-        var refused = await Assert.ThrowsAsync<TemplatePackageUnsupportedPathException>(
-            () => WriteAsync(Files((singleLongName, "content"))));
-        Assert.Equal(singleLongName, refused.Path);
+        var longestName = new string('c', PackagePath.MaxSegmentLength);
+        var written = await WriteAsync(Files((longestName, "content")));
+        using var single = new TarReader(new MemoryStream(written));
+        Assert.Equal(longestName, single.GetNextEntry()?.Name);
+
+        var oneOver = new string('c', PackagePath.MaxSegmentLength + 1);
+        await Assert.ThrowsAsync<ArgumentException>(() => WriteAsync(Files((oneOver, "content"))));
     }
 
     private static IReadOnlyList<PackageFileSource> Files(params (string Path, string Content)[] files) =>

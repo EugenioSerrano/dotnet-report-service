@@ -1,6 +1,8 @@
 manifestVersion: "1.0"
 id: pilot-volume
 version: "1.0.0"
+owner: dev-consumer
+shared: false
 engine: scriban
 engineVersion: "7.5.1"
 dataContract:
@@ -9,11 +11,12 @@ dataContract:
   schema: schema.json
 outputs:
   html:
-    documentStart: html/document-start.html.sbn
-    row: html/row.html.sbn
-    groupStart: html/group-start.html.sbn
-    groupEnd: html/group-end.html.sbn
-    documentEnd: html/document-end.html.sbn
+    parts:
+      documentStart: html/document-start.html.sbn
+      row: html/row.html.sbn
+      groupStart: html/group-start.html.sbn
+      groupEnd: html/group-end.html.sbn
+      documentEnd: html/document-end.html.sbn
     styles: [html/styles.css]
   pdf:
     paper: A4
@@ -25,6 +28,24 @@ outputs:
       enabled: true
       amountField: amount
       scale: 2
+    verification:
+      anchors:
+        header:
+          - "$.reportTitle"
+          - "$.customer.name"
+          - "$.customer.id"
+          - "$.currency"
+          - "$.generatedAt"
+          - "$.totals.recordCount"
+          - "$.totals.amount"
+        item:
+          - "$.sequence"
+          - "$.groupId"
+          - "$.accountId"
+          - "$.description"
+          - "$.quantity"
+          - "$.amount"
+          - "$.reference"
   xlsx:
     fallback: raw
     columns:

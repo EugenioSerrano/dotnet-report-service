@@ -164,7 +164,7 @@ never changes the database's answer. An outage does not stop the process — the
 check reports it and recovers on its own when the database returns, and it logs the
 change of state once in each direction.
 
-The PDF worker carries no `metadata-database` check in this version.
+The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It also reads the configured template source, and its start stops naming a missing `TemplateSource:Repository` or `TemplateSource:Branch`.
 
 ## The consumer registry
 

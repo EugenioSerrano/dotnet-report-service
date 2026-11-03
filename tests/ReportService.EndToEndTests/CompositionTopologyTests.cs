@@ -87,10 +87,11 @@ public sealed class CompositionTopologyTests
             Assert.Equal("Healthy", Check(health, "chromium").GetProperty("status").GetString());
             var engine = Check(health, "workflow-engine");
             Assert.Equal("Healthy", engine.GetProperty("status").GetString());
-            Assert.Equal("no registered work", engine.GetProperty("data").GetProperty("queues").GetProperty("report-pdf-rendering").GetString());
+            Assert.Equal("worker running", engine.GetProperty("data").GetProperty("queues").GetProperty("report-pdf-rendering").GetString());
 
-            // The PDF worker writes no metadata record yet, so it carries no database check.
-            Assert.DoesNotContain(
+            // The worker serves the take, which publishes a record, so it carries the
+            // metadata database check and needs the migrations to have run.
+            Assert.Contains(
                 health.RootElement.GetProperty("checks").EnumerateArray(),
                 check => check.GetProperty("name").GetString() == "metadata-database");
         }

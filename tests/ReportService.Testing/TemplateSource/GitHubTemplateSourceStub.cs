@@ -110,6 +110,15 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
     /// <summary>The blob name of <paramref name="content"/>, as a package file carries it.</summary>
     public static string BlobSha(byte[] content) => GitBlobs.BlobSha(content);
 
+    /// <summary>
+    /// Answers one request directly, for the host that serves this double over a
+    /// socket: the handler's own dispatch, reached without a message handler.
+    /// </summary>
+    /// <param name="request">The request to answer.</param>
+    /// <param name="cancellationToken">The caller's cancellation token.</param>
+    public Task<HttpResponseMessage> AnswerAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        SendAsync(request, cancellationToken);
+
     /// <inheritdoc />
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {

@@ -1,6 +1,8 @@
 manifestVersion: "1.0"
 id: pilot-simple
 version: "1.0.0"
+owner: dev-consumer
+shared: false
 engine: scriban
 engineVersion: "7.5.1"
 dataContract:
@@ -9,9 +11,10 @@ dataContract:
   schema: schema.json
 outputs:
   html:
-    documentStart: html/document-start.html.sbn
-    row: html/row.html.sbn
-    documentEnd: html/document-end.html.sbn
+    parts:
+      documentStart: html/document-start.html.sbn
+      row: html/row.html.sbn
+      documentEnd: html/document-end.html.sbn
     styles: [html/styles.css]
   pdf:
     paper: A4
@@ -21,6 +24,22 @@ outputs:
     pageNumbering: global
     pageTotals:
       enabled: false
+    verification:
+      anchors:
+        header:
+          - "$.reportTitle"
+          - "$.customer.name"
+          - "$.customer.id"
+          - "$.currency"
+          - "$.generatedAt"
+          - "$.totals.recordCount"
+          - "$.totals.amount"
+        item:
+          - "$.sequence"
+          - "$.description"
+          - "$.quantity"
+          - "$.unitPrice"
+          - "$.amount"
   xlsx:
     fallback: raw
     columns:

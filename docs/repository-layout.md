@@ -18,7 +18,7 @@ dotnet-report-service/
 │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
 │   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
-│   ├── ReportService.TemplateSource/              The configured template source: its settings, the client that reads one commit, and the checks a version passes before it is taken
+│   ├── ReportService.TemplateSource/              The configured template source: its settings, the client that reads one commit, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
@@ -28,7 +28,8 @@ dotnet-report-service/
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.Uploads.Tests/        Unit tests of the shared upload library (hermetic)
 │   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax and precedence, the package archive and its reader, the manifest, the ownership predicate (hermetic)
-│   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the version listing, the changed-version warning, the by-name resolution (hermetic)
+│   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the version listing, the changed-version warning, the by-name resolution, the manifest reader and the take (hermetic)
+│   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects

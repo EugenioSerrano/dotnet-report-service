@@ -78,6 +78,7 @@ internal static partial class CoverageFloors
         new("ReportService.TemplatePackages", Project: "ReportService.TemplatePackages.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.TemplateSource", Project: "ReportService.TemplateSource.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Workers.Pdf", Project: "ReportService.Workers.Pdf.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
     /// <summary>
@@ -104,6 +105,7 @@ internal static partial class CoverageFloors
         // run reports them without a floor.
         ("ReportService.Fixtures.Tests", ["ReportService.Testing"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
+        ("ReportService.Workers.Pdf.Tests", ["ReportService.Workers.Pdf"]),
     ];
 
     /// <summary>The assemblies <paramref name="project"/> measures, or <see langword="null"/> when it owns none.</summary>
@@ -149,6 +151,11 @@ internal static partial class CoverageFloors
         // verified by the rendering suite and the worker-level integration tests.
         "--coverlet-exclude-by-file", "**/BrowserSession.cs",
         "--coverlet-exclude-by-file", "**/ChromiumPdfPrinter.cs",
+        // The PDF worker's browser probe launches a real Chromium and reports whether it
+        // answers: no hermetic test can run it, and the worker's readiness check verifies it
+        // in the integration test cycle.
+        "--coverlet-exclude-by-file", "**/BrowserProbe.cs",
+        "--coverlet-exclude-by-file", "**/BrowserHealthCheck.cs",
     ];
 
     /// <summary>The file name pattern of a Cobertura report written by the coverage tool.</summary>

@@ -44,6 +44,16 @@ public sealed class TemplateVersionVisibilityTests
         Assert.False(TemplateVersionVisibility.MayUse(record, "Billing-System"));
     }
 
+    [Fact]
+    public void AConsumerThatNamesNobodyIsNeverTheOwner()
+    {
+        var record = Record(owner: "billing-system", shared: false);
+
+        Assert.False(TemplateVersionVisibility.MayUse(record, string.Empty));
+        Assert.False(TemplateVersionVisibility.MayUse(record, " "));
+        Assert.False(TemplateVersionVisibility.MayUse(record, "billing-system "));
+    }
+
     private static TemplateVersionRecord Record(string owner, bool shared) =>
         new(
             TemplateId: "invoice-energy",

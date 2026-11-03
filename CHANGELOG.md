@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The take: the first time a job references a template version, the service reads
+  it from the configured repository and branch at one commit and keeps it as an
+  immutable copy — one write-once object under
+  `templates/<owner>/<templateId>/<version>/<sha256>`, made usable only by an
+  insert-once record — so a version taken once is never taken again and never
+  changes afterwards. A version already taken is answered from its record without
+  reading the source; a version a consumer may not use is answered as missing
+  before any refusal that could name a file of the package; a taken version that
+  changed in the branch is logged as `TEMPLATE_VERSION_CONFLICT` and the copy is
+  kept. A source that cannot be reached, an absent version and the refusals an
+  author has to fix are told apart by the job's own error code.
+- `TakeTemplateVersion`, the activity the PDF worker serves on its queue: it runs
+  one take at a time, answers the values a job is pinned to (commit, package hash
+  and size, engine and its version, schema path, owner and the shared flag), and
+  ends a refusal with the take's own code, retrying only a source that may come
+  back.
+- Reading `template.yaml`: one reader, through the YamlDotNet 18.1.0 event
+  parser, under a restricted subset with size, depth and node limits; the document
+  is stored once as JSON, so nothing that reads a taken version needs YAML again.
+- `THIRD-PARTY-NOTICES.md`, with YamlDotNet 18.1.0's MIT licence and the
+  copyright line the package itself records.
+- The pilot template manifests name their owning consumer and their `shared` flag,
+  declare the fields their printed PDF is verified against, and write their part
+  paths under `parts`; `samples/templates/README.md` documents the manifest subset
+  for template authors.
+- `tests/ReportService.Workers.Pdf.Tests`: the take's registration on its queue
+  and the activity as a plain class.
 - A report job created on an upload that is still being verified waits for it
   instead of stopping at `queued`: it reports the stage `waiting-for-input`, it
   starts once the upload is ready, it ends `failed` with the upload's own code
@@ -155,6 +182,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies migrations to an existing deployment.
 
 ### Changed
+
+- **The package path rule now holds what the package archive can write:** one to
+  eight segments of at most a hundred characters each and at most 240 characters
+  in total, so a path the rule accepts can never fail to be written. A segment or a
+  path over those lengths is refused by the rule itself.
 
 - The error format is stated as RFC 9457 (Problem Details for HTTP APIs), which
   supersedes the RFC 7807 reference in the README.
