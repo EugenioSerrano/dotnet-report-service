@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using ReportService.Data;
 
@@ -20,6 +21,69 @@ internal static class SnapshotBytes
     {
         var items = records.Length == 0 ? "[]" : "[" + string.Join(',', records) + "]";
         return Utf8($$"""{"contractVersion":"1.0","header":{{header}},"items":{{items}}}""");
+    }
+
+    /// <summary>
+    /// A document the caller assembles from raw property text, so a case can put the
+    /// header after the items or the version last without writing the bytes by hand.
+    /// </summary>
+    public static byte[] DocumentOf(params string[] rawProperties) =>
+        Utf8("{" + string.Join(',', rawProperties) + "}");
+
+    /// <summary>The raw records of a document of <paramref name="count"/> ordinary records.</summary>
+    public static string[] Records(int count) =>
+        [.. Enumerable.Range(1, count).Select(Record)];
+
+    /// <summary>
+    /// The same object text with <paramref name="member"/> repeated as its last member,
+    /// so a repeated member is one byte sequence per case.
+    /// </summary>
+    public static string Duplicated(string json, string member)
+    {
+        var text = json.Trim();
+        if (text.Length < 2 || text[0] != '{' || text[^1] != '}')
+        {
+            throw new ArgumentException("A repeated member is added to an object.", nameof(json));
+        }
+
+        var body = text[1..^1].TrimEnd();
+        var repeated = "\"" + member + "\":null";
+        return body.Length == 0 ? "{" + repeated + "}" : "{" + body + "," + repeated + "}";
+    }
+
+    /// <summary>The same bytes inside one complete gzip stream.</summary>
+    public static byte[] Gzip(byte[] document)
+    {
+        using var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, CompressionMode.Compress, leaveOpen: true))
+        {
+            gzip.Write(document);
+        }
+
+        return compressed.ToArray();
+    }
+
+    /// <summary>The byte index of the <paramref name="occurrence"/>-th appearance of <paramref name="marker"/>.</summary>
+    public static int OffsetOf(byte[] document, string marker, int occurrence = 0)
+    {
+        var bytes = Utf8(marker);
+        var from = 0;
+        for (var found = 0; ; found++)
+        {
+            var at = document.AsSpan(from).IndexOf(bytes);
+            if (at < 0)
+            {
+                throw new InvalidOperationException($"the document holds no occurrence {occurrence} of {marker}.");
+            }
+
+            at += from;
+            if (found == occurrence)
+            {
+                return at;
+            }
+
+            from = at + 1;
+        }
     }
 
     /// <summary>A record with an ordinary shaped body, numbered by <paramref name="ordinal"/>.</summary>
