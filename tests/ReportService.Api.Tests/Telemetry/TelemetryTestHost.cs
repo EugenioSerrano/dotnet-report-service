@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Configuration;
@@ -18,24 +19,37 @@ namespace ReportService.Api.Tests.Telemetry;
 /// exporters are added through the registration's seam and sit in the same
 /// pipeline as the process's own processors, so redaction and job enrichment
 /// apply to what the test reads.
+/// <para>
+/// The subscriptions are process-wide and the suite runs several hosts at once, so a
+/// host's exporter receives whatever the process exports while the host is alive. The
+/// captured items are therefore written under a lock and read as snapshots: a case
+/// selects what it wrote instead of requiring to be the only writer.
+/// </para>
 /// </summary>
 internal sealed class TelemetryTestHost : IAsyncDisposable
 {
     private readonly IHost _host;
+    private readonly CapturedItems<LogRecord> _logs;
+    private readonly CapturedItems<Activity> _activities;
+    private readonly CapturedItems<Metric> _metrics;
 
-    private TelemetryTestHost(IHost host, List<LogRecord> logs, List<Activity> activities, List<Metric> metrics)
+    private TelemetryTestHost(
+        IHost host,
+        CapturedItems<LogRecord> logs,
+        CapturedItems<Activity> activities,
+        CapturedItems<Metric> metrics)
     {
         _host = host;
-        Logs = logs;
-        Activities = activities;
-        Metrics = metrics;
+        _logs = logs;
+        _activities = activities;
+        _metrics = metrics;
     }
 
-    public List<LogRecord> Logs { get; }
+    public IReadOnlyList<LogRecord> Logs => _logs.Snapshot();
 
-    public List<Activity> Activities { get; }
+    public IReadOnlyList<Activity> Activities => _activities.Snapshot();
 
-    public List<Metric> Metrics { get; }
+    public IReadOnlyList<Metric> Metrics => _metrics.Snapshot();
 
     public IServiceProvider Services => _host.Services;
 
@@ -46,9 +60,9 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
         IReadOnlyDictionary<string, string?>? settings = null,
         bool diagnostics = false)
     {
-        var logs = new List<LogRecord>();
-        var activities = new List<Activity>();
-        var metrics = new List<Metric>();
+        var logs = new CapturedItems<LogRecord>();
+        var activities = new CapturedItems<Activity>();
+        var metrics = new CapturedItems<Metric>();
         var configuration = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             [TelemetryDiagnosticsSettings.EnabledSetting] = diagnostics ? "true" : "false",
@@ -83,5 +97,77 @@ internal sealed class TelemetryTestHost : IAsyncDisposable
     {
         await _host.StopAsync(TestContext.Current.CancellationToken);
         _host.Dispose();
+    }
+
+    /// <summary>What the exporters wrote, added under a lock and read as a snapshot.</summary>
+    private sealed class CapturedItems<T> : ICollection<T>
+    {
+        private readonly Lock _gate = new();
+        private readonly List<T> _items = [];
+
+        public int Count
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _items.Count;
+                }
+            }
+        }
+
+        public bool IsReadOnly => false;
+
+        public void Add(T item)
+        {
+            lock (_gate)
+            {
+                _items.Add(item);
+            }
+        }
+
+        public void Clear()
+        {
+            lock (_gate)
+            {
+                _items.Clear();
+            }
+        }
+
+        public bool Contains(T item)
+        {
+            lock (_gate)
+            {
+                return _items.Contains(item);
+            }
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            lock (_gate)
+            {
+                _items.CopyTo(array, arrayIndex);
+            }
+        }
+
+        public bool Remove(T item)
+        {
+            lock (_gate)
+            {
+                return _items.Remove(item);
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator() => Snapshot().GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public IReadOnlyList<T> Snapshot()
+        {
+            lock (_gate)
+            {
+                return [.. _items];
+            }
+        }
     }
 }
