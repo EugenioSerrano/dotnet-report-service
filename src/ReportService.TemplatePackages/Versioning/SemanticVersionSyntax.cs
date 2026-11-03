@@ -6,8 +6,9 @@ namespace ReportService.TemplatePackages.Versioning;
 /// Whether a string is a semantic version's <em>syntax</em>: three numeric
 /// parts without leading zeros, an optional pre-release of dot-separated
 /// identifiers and an optional build of dot-separated identifiers, all ASCII
-/// and at most 128 characters. Precedence — which version is newer, and which
-/// pre-release is excluded from a by-name reference — is not decided here.
+/// and at most 128 characters. This check is syntax only;
+/// <see cref="SemanticVersion"/> decides precedence and is what a resolution
+/// orders versions with.
 /// </summary>
 public static partial class SemanticVersionSyntax
 {

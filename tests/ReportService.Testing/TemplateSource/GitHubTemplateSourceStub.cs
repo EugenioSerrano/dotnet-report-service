@@ -32,6 +32,7 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
     private readonly StubDirectory _root = new(parent: null);
     private readonly List<StubRequest> _requests = [];
     private readonly Dictionary<string, byte[]> _blobOverrides = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _truncatedTemplates = new(StringComparer.Ordinal);
 
     /// <summary>Blobs a replaced package no longer lists; a real repository keeps them reachable by hash.</summary>
     private readonly Dictionary<string, byte[]> _retiredBlobs = new(StringComparer.Ordinal);
@@ -57,6 +58,21 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
     /// <summary>Records a package under <c>templates/&lt;templateId&gt;/&lt;version&gt;/</c>.</summary>
     public void SeedPackage(string templateId, string version, IReadOnlyDictionary<string, byte[]> files) =>
         Add(["templates", templateId, version], files);
+
+    /// <summary>Records a version folder that holds no file, under <c>templates/&lt;templateId&gt;/&lt;version&gt;/</c>.</summary>
+    public void SeedVersionFolder(string templateId, string version) =>
+        Add(["templates", templateId, version], new Dictionary<string, byte[]>());
+
+    /// <summary>Records a template folder that holds no version folder.</summary>
+    public void SeedTemplateFolder(string templateId) =>
+        Add(["templates", templateId], new Dictionary<string, byte[]>());
+
+    /// <summary>Records a file directly under the template folder, beside the version folders.</summary>
+    public void SeedTemplateFile(string templateId, string name) =>
+        Add(["templates", templateId], new Dictionary<string, byte[]> { [name] = Encoding.UTF8.GetBytes(name) });
+
+    /// <summary>Answers the named template folder's tree as truncated.</summary>
+    public void SetTemplateFolderTruncated(string templateId) => _truncatedTemplates.Add(templateId);
 
     /// <summary>Replaces a package's files, as a change in the branch: the commit moves, the version does not.</summary>
     public void ReplacePackage(string templateId, string version, IReadOnlyDictionary<string, byte[]> files)
@@ -190,7 +206,20 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
             AppendEntries(directory, string.Empty, recursive, entries);
         }
 
-        return JsonSerializer.Serialize(new { sha = treeSha, tree = entries, truncated = _truncated });
+        var truncated = _truncated
+            || _truncatedTemplates.Any(templateId => string.Equals(TemplateFolderSha(templateId), treeSha, StringComparison.Ordinal));
+        return JsonSerializer.Serialize(new { sha = treeSha, tree = entries, truncated });
+    }
+
+    private string? TemplateFolderSha(string templateId)
+    {
+        if (!_root.TryGetDirectory("templates", out var templates)
+            || !templates.TryGetDirectory(templateId, out var folder))
+        {
+            return null;
+        }
+
+        return folder.Sha;
     }
 
     private static void AppendEntries(StubDirectory directory, string prefix, bool recursive, List<TreeEntry> entries)

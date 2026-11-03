@@ -27,8 +27,8 @@ dotnet-report-service/
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.Uploads.Tests/        Unit tests of the shared upload library (hermetic)
-│   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax, the package archive and its reader, the manifest (hermetic)
-│   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the changed-version warning (hermetic)
+│   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax and precedence, the package archive and its reader, the manifest, the ownership predicate (hermetic)
+│   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the version listing, the changed-version warning, the by-name resolution (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   └── ReportService.Testing/            Support library shared by the test projects

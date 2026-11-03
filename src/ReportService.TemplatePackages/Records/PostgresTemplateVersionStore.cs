@@ -45,6 +45,12 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
         WHERE template_id = @TemplateId AND version = @Version
         """;
 
+    private const string ListByTemplateSql = SelectColumns + """
+
+        WHERE template_id = @TemplateId
+        ORDER BY version COLLATE "C"
+        """;
+
     private const string InsertSql = """
         INSERT INTO report_service.template_versions
             (template_id, version, owner_consumer_id, shared, manifest_version, engine, engine_version,
@@ -86,6 +92,26 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             throw new TemplateStoreUnavailableException("the taken version could not be read", exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(templateId);
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var rows = await connection.QueryAsync<TemplateVersionRow>(new CommandDefinition(
+                ListByTemplateSql,
+                new { TemplateId = templateId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return [.. rows.Select(ToRecord)];
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            throw new TemplateStoreUnavailableException("the taken versions of the template could not be read", exception);
         }
     }
 

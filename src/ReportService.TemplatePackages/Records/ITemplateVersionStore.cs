@@ -15,6 +15,12 @@ public interface ITemplateVersionStore
     /// <returns>The record, or <see langword="null"/> when the version was never taken.</returns>
     Task<TemplateVersionRecord?> FindAsync(string templateId, string version, CancellationToken cancellationToken);
 
+    /// <summary>The records of every version of one template that was ever taken.</summary>
+    /// <param name="templateId">The template's identifier.</param>
+    /// <param name="cancellationToken">The caller's cancellation token.</param>
+    /// <returns>Every record of the template, ordered by the version string in byte order.</returns>
+    Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Records a version, unless an identical identity is already recorded.
     /// </summary>

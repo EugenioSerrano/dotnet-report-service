@@ -15,9 +15,13 @@ public sealed class InMemoryTemplateVersionStore : ITemplateVersionStore
     private readonly Dictionary<(string TemplateId, string Version), TemplateVersionRecord> _records = [];
     private int _findCalls;
     private int _insertCalls;
+    private int _listCalls;
 
     /// <summary>How many find calls this store received.</summary>
     public int FindCalls => Volatile.Read(ref _findCalls);
+
+    /// <summary>How many list calls this store received.</summary>
+    public int ListCalls => Volatile.Read(ref _listCalls);
 
     /// <summary>How many insert calls this store received.</summary>
     public int InsertCalls => Volatile.Read(ref _insertCalls);
@@ -54,6 +58,23 @@ public sealed class InMemoryTemplateVersionStore : ITemplateVersionStore
         lock (_gate)
         {
             return Task.FromResult(_records.GetValueOrDefault((templateId, version)));
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(templateId);
+        Interlocked.Increment(ref _listCalls);
+        lock (_gate)
+        {
+            IReadOnlyList<TemplateVersionRecord> records =
+            [
+                .. _records.Values
+                    .Where(record => string.Equals(record.TemplateId, templateId, StringComparison.Ordinal))
+                    .OrderBy(record => record.Version, StringComparer.Ordinal),
+            ];
+            return Task.FromResult(records);
         }
     }
 
