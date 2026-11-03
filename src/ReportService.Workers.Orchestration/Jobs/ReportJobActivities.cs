@@ -73,7 +73,7 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
             return new ResolveInputResult(InputOutcome.Terminal, null);
         }
 
-        return state.UploadStatus switch
+        var result = state.UploadStatus switch
         {
             UploadStatus.Ready => new ResolveInputResult(InputOutcome.Ready, null),
             UploadStatus.Rejected => new ResolveInputResult(InputOutcome.Rejected, state.RejectionCode),
@@ -89,6 +89,23 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
                 ? new ResolveInputResult(InputOutcome.Expired, null)
                 : new ResolveInputResult(InputOutcome.Verifying, null),
         };
+
+        // A read that ends a wait is the one that sees its outcome: the stage is still the
+        // waiting one, because the wait clears it after this answer. A read of a job that is
+        // not waiting — one that never waited, or the first check of a job accepted on a
+        // confirming upload — is not a wait's outcome and is not counted as one.
+        if (result.Outcome is InputOutcome.Ready or InputOutcome.Rejected or InputOutcome.Expired
+            && string.Equals(state.Job.Stage, InputWaitStage.WaitingForInput, StringComparison.Ordinal))
+        {
+            metrics.InputWaitOutcome(result.Outcome switch
+            {
+                InputOutcome.Ready => OrchestrationMetrics.ReadyOutcome,
+                InputOutcome.Rejected => OrchestrationMetrics.RejectedOutcome,
+                _ => OrchestrationMetrics.ExpiredOutcome,
+            });
+        }
+
+        return result;
     }
 
     /// <summary>

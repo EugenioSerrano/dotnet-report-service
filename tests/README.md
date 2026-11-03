@@ -18,12 +18,15 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
-  is run with every change.
+  is run with every change. Its mechanics — one build, the invocations without
+  building, the bounded degree, the coverage role of a pair and the sequential
+  fallback — are described under
+  [*The hermetic level's execution*](#the-hermetic-levels-execution) below.
 - The **integration** and **end-to-end** levels need a container runtime
   (Docker); the end-to-end level also needs what the composition needs (the
   local development registry and BuildKit, see the
@@ -44,23 +47,81 @@ failed.
 - The end-to-end level prepares the render worker image once, before the tests
   start, so the classes never publish it at the same time.
 
+### The hermetic level's execution
+
+The command takes one level and, for the hermetic level only, three options:
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `--degree <n>` | `4` | How many project invocations may overlap: an integer from 2 to the number of projects in the level. |
+| `--sequential --reason "<text>"` | absent | Runs one invocation at a time, in the level's order, and records the reason. The reason is required and is recorded verbatim; the option cannot be combined with `--degree`. |
+| `--coverage-role <measure\|verification>` | `measure` | `measure` collects coverage and checks the floors; `verification` collects none. |
+
+A run with no option is a `measure` run: it still collects coverage and still
+checks the floors.
+
+- **One build first.** Before any test starts, the level builds the level's
+  projects and their project references in one Release build: an MSBuild
+  traversal generated into the run directory from the level's own list
+  (`hermetic-build.proj`), built with `Restore;Build` so a tree without restore
+  output builds too. A compile error fails the run before a test starts, names
+  the project the error belongs to, and exits **4**; the run directory then
+  carries a `run.json` with no projects and the build's log.
+- **Then the projects run without building.** Every invocation carries
+  `--no-build`, its own `--results-directory`, its own `<project>.log` and — in
+  a `measure` run — the coverage options and the include of the assembly that
+  project owns. Each project appears once in the run, so one project is never
+  invoked twice at the same time.
+- **Bounded parallel.** The invocations overlap up to the recorded degree — 4 by
+  default, lower on a smaller machine — and the degree never changes a result:
+  nothing in the runner, in the tests or in the coverage options reads it. The
+  command prints one start line and one finish line per project, so its console
+  output interleaves; the per-project logs and `run.json` are the evidence.
+- **One aggregation afterwards.** When the last invocation has ended, the floors
+  are evaluated once from the measure run's reports and `coverage-summary.txt`
+  is written — both in the level's fixed project order, never in completion
+  order. `run.json` lists the projects in that same order.
+- **The pair.** A run that measures coverage and floors is a `measure` run; the
+  repeat that only checks the suite is `--coverage-role verification`, which
+  passes no coverage option, writes no report and evaluates no floor. The two
+  are compared on each project's counts and verdict, never on timings, run
+  directory names or console interleaving.
+- **The fallback.** `--sequential --reason "<text>"` runs the same work set one
+  invocation at a time, with the same build and the same per-project evidence,
+  and records that reason in `run.json`. It is for a machine or a project that
+  cannot run in parallel. A run is never half-parallel: either it ran in
+  parallel at a recorded degree or it ran sequentially with a reason, and
+  misusing the options is a configuration error (exit code 3), never a silent
+  change of mode.
+- **Memory and throughput figures are never taken from a level run.** They come
+  from a dedicated single-project run on the reference environment: the projects
+  of a level run compete for the processor, so a figure measured beside them is
+  not comparable with one measured alone.
+
 ### Run evidence
 
 Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
 (git-ignored; a second run in the same minute gets `-2`, `-3`, …):
 
 - `<project>.log` — the full console output of each test project;
+- `hermetic-build.log` — the full output of the hermetic level's one build, and
+  `hermetic-build.proj`, the list of projects it built; both are written by the
+  run and are never part of the repository;
 - `render-worker-image.log` — the console output of the end-to-end level's one
   image-preparation step, which runs before the tests start;
 - `run.json` — the level, start and finish times, the product commit and
   whether the working tree was clean, the reference-environment revision, each
   project with its arguments and result (the end-to-end level lists its
-  image-preparation step first), and — for the hermetic level — the
-  coverage options and results; for the integration and end-to-end levels, the
+  image-preparation step first), and — for the hermetic level — the coverage
+  options and results and an `execution` block: the mode with its degree or its
+  sequential reason, the coverage role of the run, and the build that preceded
+  the invocations (command, log, exit code, duration, and the projects a failed
+  build named), each project also carrying its own duration; for the integration
+  and end-to-end levels, the
   identities (digests) of the images used and, for integration, the suite's
   containers before and after the run;
 - hermetic level only: `<project>/coverage.cobertura.<timestamp>.xml` (one
-  Cobertura report per project) and `coverage-summary.txt`.
+  Cobertura report per project, in a `measure` run) and `coverage-summary.txt`.
 
 ## Coverage
 

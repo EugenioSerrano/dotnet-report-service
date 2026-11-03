@@ -67,6 +67,33 @@ made it unusable; until the steps that print a report are part of the deployment
 an accepted job whose data is ready stays `queued` after its execution has
 checked the data.
 
+A job may also be created on an upload that is **still being verified**. It is
+accepted the same way — `202`, `status: "queued"`, its `reportJobId` and its
+status URL — and its stored `stage` then reports `WAITING_FOR_INPUT` while it
+waits. The stage appears within a second of the answer (the request to start the
+job is claimed by the worker on its next poll), so a read taken immediately after
+the `202` may see `queued` with no stage at all. While it waits, nothing is
+rendered, validated or published: the job holds no page and no artifact.
+
+The wait ends in one of three ways, and the job reports which:
+
+- the upload becomes ready → the wait ends, the stage is cleared, and the job
+  continues at the step that takes its data — in a deployment without the steps
+  that print, it stays `queued`;
+- the upload is rejected → the job and its output end `failed` with the upload's
+  **own** code (for example `DATA_INVALID`), the job's reason is
+  `input-rejected`, and no page is rendered and nothing is published;
+- the upload's verification deadline passes → the upload ends `expired` and the
+  job and its output end `failed` with `INPUT_NOT_FOUND`, reason
+  `input-expired`.
+
+The wait is bounded by the upload's own verification deadline and never by the
+time a consumer had to send its data: an upload whose session window has closed
+while it is still verifying is still verifying, so its jobs keep waiting until the
+verification deadline. A verification tells the jobs waiting on its upload that
+the state changed; a job also re-checks on its own timer, so a lost notification
+costs at most half a minute.
+
 ## Refusals
 
 Every refusal is a Problem Details document with a stable `code`; the same code

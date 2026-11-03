@@ -45,4 +45,19 @@ public sealed class InputWaitActivityOptionsTests
         Assert.NotSame(first, second);
         Assert.NotSame(first.RetryPolicy, second.RetryPolicy);
     }
+
+    [Fact]
+    public void TheNotificationKeepsTheMetadataRetryClassAndGivesUpAfterThreeAttempts()
+    {
+        var options = InputWaitActivityOptions.CreateSignal();
+
+        Assert.Equal("report-orchestration", options.TaskQueue);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.StartToCloseTimeout);
+        Assert.NotNull(options.RetryPolicy);
+        Assert.Equal(TimeSpan.FromSeconds(1), options.RetryPolicy!.InitialInterval);
+        Assert.Equal(2f, options.RetryPolicy.BackoffCoefficient);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.RetryPolicy.MaximumInterval);
+        Assert.Equal(3, options.RetryPolicy.MaximumAttempts);
+        Assert.Empty(options.RetryPolicy.NonRetryableErrorTypes ?? []);
+    }
 }

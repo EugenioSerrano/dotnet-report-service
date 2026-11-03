@@ -81,10 +81,20 @@ public sealed class OrchestrationWorkerCompositionTests
             var activities = orchestration.Options.Activities.Select(activity => activity.Name).ToList();
             Assert.Contains(InputWaitActivities.BeginName, activities);
             Assert.Contains(InputWaitActivities.EndName, activities);
+            Assert.Contains(InputWaitSignalActivities.Name, activities);
             Assert.Contains(ReportJobActivities.ResolveInputName, activities);
             Assert.Contains(
                 orchestration.Options.Workflows,
                 workflow => workflow.Name == ReportJobWorkflow.WorkflowType);
+            Assert.Contains(
+                orchestration.Options.Workflows,
+                workflow => workflow.Name == UploadVerificationWorkflow.WorkflowType);
+
+            // The step that tells the waiting jobs their upload changed is served by the same
+            // worker that runs the job and the verification: nothing is added to the data queue.
+            Assert.DoesNotContain(
+                plan.Where(worker => worker.Queue != ReportJobWorkflow.OrchestrationQueue),
+                worker => worker.Options.Activities.Any(activity => activity.Name == InputWaitSignalActivities.Name));
 
             // The settings the wait runs under are published and valid as the process starts.
             var options = host.Services.GetRequiredService<IOptions<InputWaitOptions>>().Value;

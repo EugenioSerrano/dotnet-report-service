@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A report job created on an upload that is still being verified waits for it
+  instead of stopping at `queued`: it reports the stage `waiting-for-input`, it
+  starts once the upload is ready, it ends `failed` with the upload's own code
+  when the upload is rejected, and it ends `failed` with `INPUT_NOT_FOUND` when
+  the upload's verification deadline passes. The wait re-checks the upload on a
+  notification a finished verification sends to the jobs of its upload and on a
+  durable timer of its own, so a lost notification costs at most half a minute,
+  and a wait that outlasts the checks one run may take continues as a new run of
+  the same execution. `Jobs__InputWait__Backstop` and
+  `Jobs__InputWait__ContinueAsNewAfter` set the two bounds; a pass limit the
+  history of one run cannot carry stops the worker at start.
 - The taken template version: a version read from the configured template
   repository and branch at one commit, kept as one write-once object under
   `templates/<owner>/<templateId>/<version>/<sha256>` and made usable by an

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ReportService.Jobs;
 using ReportService.Uploads;
+using ReportService.Workers.Orchestration.Telemetry;
 using Temporalio.Workflows;
 
 namespace ReportService.Workers.Orchestration.Jobs;
@@ -142,6 +143,14 @@ public sealed class ReportJobWorkflow
             return false;
         }
 
+        // How many checks one wait took, for the operator: the signal says a timer is tuned too
+        // long or too short. It is recorded when the wait ends and carries no tag at all, so it
+        // can never carry an identifier.
+        var performed = Workflow.MetricMeter.CreateHistogram<long>(
+            OrchestrationMetrics.InputWaitPassesInstrumentName,
+            unit: "{check}",
+            description: "Checks one wait for an upload performed.");
+
         var checks = 0;
         while (true)
         {
@@ -167,21 +176,25 @@ public sealed class ReportJobWorkflow
                 case InputOutcome.Terminal:
                     // The job ended elsewhere while it waited: the stage it left behind is
                     // cleared, and the run ends here without a step of its own.
+                    performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     return false;
 
                 case InputOutcome.Ready:
+                    performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input ready after {Checks} checks", reportJobId, checks);
                     return true;
 
                 case InputOutcome.Rejected:
+                    performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input rejected after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
                     return false;
 
                 case InputOutcome.Expired:
+                    performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input expired after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, ReportJobActivities.InputNotFound, "input-expired", options).ConfigureAwait(true);

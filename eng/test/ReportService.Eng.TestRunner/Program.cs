@@ -64,27 +64,33 @@ internal static class Program
     /// <summary>Options of every <c>dotnet test</c> call.</summary>
     private static readonly string[] TestOptions = ["-c", "Release", "--no-ansi", "--no-progress"];
 
+    /// <summary>
+    /// The same options for a hermetic project, plus the switch that runs the test
+    /// application the level's build already produced instead of building it again.
+    /// </summary>
+    private static readonly string[] HermeticTestOptions = ["-c", "Release", "--no-build", "--no-ansi", "--no-progress"];
+
     private const int ExitPassed = 0;
     private const int ExitTestsFailed = 1;
     private const int ExitCoverageFloor = 2;
     private const int ExitConfiguration = 3;
 
+    /// <summary>The hermetic level's one build failed: no test started, and the build named the project.</summary>
+    private const int ExitBuildFailed = 4;
+
     public static async Task<int> Main(string[] args)
     {
-        var levels = args.Where(argument => !string.Equals(argument, WithoutPrintingArgument, StringComparison.Ordinal)).ToList();
-        var withoutPrinting = args.Contains(WithoutPrintingArgument, StringComparer.Ordinal);
-        if (levels.Count != 1 || levels[0] is not ("hermetic" or "integration" or "e2e"))
+        if (!HermeticExecution.TryParse(args, HermeticProjects.Length, out var command, out var error))
         {
-            await Console.Error.WriteLineAsync($"Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|e2e [{WithoutPrintingArgument}]").ConfigureAwait(false);
+            await Console.Error.WriteLineAsync(error).ConfigureAwait(false);
+            await Console.Error.WriteLineAsync(HermeticExecution.UsageLine).ConfigureAwait(false);
+            await Console.Error.WriteLineAsync(HermeticExecution.UsageOptions).ConfigureAwait(false);
             return ExitConfiguration;
         }
 
-        var level = levels[0];
-        if (withoutPrinting && level == "hermetic")
-        {
-            await Console.Error.WriteLineAsync($"{WithoutPrintingArgument} selects the group of the integration and end-to-end levels that needs the printing steps; the hermetic level has none.").ConfigureAwait(false);
-            return ExitConfiguration;
-        }
+        var level = command!.Level;
+        var withoutPrinting = command.WithoutPrinting;
+        var execution = command.Execution;
 
         var root = RunEvidence.FindRepositoryRoot();
         var startedAt = DateTimeOffset.Now;
@@ -132,25 +138,56 @@ internal static class Program
         var usesContainers = level != "hermetic";
         var containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
 
-        var runs = new List<ProjectRun>();
-        if (level == "e2e")
-        {
-            // The image is published once for the whole level, before any test starts:
-            // the classes run concurrently and must never publish it themselves.
-            runs.Add(await PrepareRenderWorkerImageAsync(root, runDirectory).ConfigureAwait(false));
-        }
+        // The hermetic level builds once, before anything else runs; the integration
+        // and end-to-end levels keep their own per-invocation builds.
+        BuildRecord? build = level == "hermetic"
+            ? await HermeticExecution.BuildAsync(root, runDirectory, projects).ConfigureAwait(false)
+            : null;
+        var buildFailed = build is { ExitCode: not ExitPassed };
 
-        if (runs.All(run => run.Passed))
+        var runs = new List<ProjectRun>();
+        if (buildFailed)
         {
-            foreach (var project in projects)
+            var named = build!.FailedProjects.Count > 0
+                ? string.Join(", ", build.FailedProjects)
+                : "no project could be attributed from the build log";
+            await Console.Error.WriteLineAsync(
+                $"The hermetic level's build failed (exit code {build.ExitCode.ToString(CultureInfo.InvariantCulture)}): {named}. No test starts; the build log is {build.Log}.").ConfigureAwait(false);
+        }
+        else
+        {
+            if (level == "e2e")
             {
-                runs.Add(await RunProjectAsync(root, runDirectory, project, level, withoutPrinting).ConfigureAwait(false));
+                // The image is published once for the whole level, before any test starts:
+                // the classes run concurrently and must never publish it themselves.
+                runs.Add(await PrepareRenderWorkerImageAsync(root, runDirectory).ConfigureAwait(false));
+            }
+
+            if (runs.All(run => run.Passed))
+            {
+                if (level == "hermetic")
+                {
+                    var results = await HermeticExecution
+                        .RunAsync(projects, execution!, project => RunProjectAsync(root, runDirectory, project, level, withoutPrinting, execution))
+                        .ConfigureAwait(false);
+                    runs.AddRange(results);
+                    HermeticExecution.PrintSummary(root, results);
+                }
+                else
+                {
+                    foreach (var project in projects)
+                    {
+                        runs.Add(await RunProjectAsync(root, runDirectory, project, level, withoutPrinting, null).ConfigureAwait(false));
+                    }
+                }
             }
         }
 
-        var exitCode = runs.All(r => r.Passed) ? ExitPassed : ExitTestsFailed;
+        var exitCode = buildFailed
+            ? ExitBuildFailed
+            : runs.All(r => r.Passed) ? ExitPassed : ExitTestsFailed;
         IReadOnlyList<CoverageResult>? coverage = null;
-        if (level == "hermetic" && exitCode == ExitPassed)
+        if (level == "hermetic" && exitCode == ExitPassed && execution!.CollectsCoverage)
         {
             coverage = EvaluateCoverage(root, runs);
             await WriteCoverageSummaryAsync(root, runDirectory, coverage).ConfigureAwait(false);
@@ -176,11 +213,12 @@ internal static class Program
             exitCode == ExitPassed,
             exitCode,
             runs,
-            level == "hermetic" ? CoverageFloors.Options : null,
+            level == "hermetic" && execution!.CollectsCoverage ? CoverageFloors.Options : null,
             coverage,
             images,
             containersBefore,
-            containersAfter));
+            containersAfter,
+            level == "hermetic" ? new ExecutionRecord(execution!.Mode, execution.Degree, execution.Reason, execution.CoverageRole, build!) : null));
 
         foreach (var failed in runs.Where(r => !r.Passed))
         {
@@ -228,17 +266,18 @@ internal static class Program
             exitCode == 0 ? null : "the render worker image preparation failed; the end-to-end project was not run");
     }
 
-    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level, bool withoutPrinting)
+    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level, bool withoutPrinting, HermeticOptions? execution)
     {
         var name = Path.GetFileNameWithoutExtension(project);
         var resultsDirectory = Path.Combine(runDirectory, name);
         Directory.CreateDirectory(resultsDirectory);
         var log = Path.Combine(runDirectory, name + ".log");
+        var hermetic = execution is not null;
 
         var arguments = new List<string> { "test", "--project", Path.GetFullPath(Path.Combine(root, project)) };
-        arguments.AddRange(TestOptions);
+        arguments.AddRange(hermetic ? HermeticTestOptions : TestOptions);
         arguments.AddRange(["--results-directory", resultsDirectory]);
-        if (level == "hermetic")
+        if (hermetic && execution!.CollectsCoverage)
         {
             arguments.AddRange(CoverageFloors.Options);
             arguments.AddRange(CoverageFloors.ProjectIncludes(name));
@@ -259,17 +298,39 @@ internal static class Program
             _ => new Dictionary<string, string>(),
         };
 
-        Console.WriteLine($"> dotnet {string.Join(' ', arguments.Select(Quote))}");
-        int exitCode;
-        await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+        var line = $"> dotnet {string.Join(' ', arguments.Select(Quote))}";
+        Console.WriteLine(line);
+        var stopwatch = Stopwatch.StartNew();
+
+        // A project that cannot start, or whose log cannot be written, is one failed
+        // entry with its problem: the record stays complete and the other projects run.
+        var exitCode = -1;
+        string? problem = null;
+        try
         {
-            await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
-            exitCode = await RunStreamingAsync(root, "dotnet", arguments, environment, writer).ConfigureAwait(false);
+            await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+            {
+                await writer.WriteLineAsync(line).ConfigureAwait(false);
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, environment, writer).ConfigureAwait(false);
+            }
+        }
+        catch (Win32Exception exception)
+        {
+            problem = $"the invocation could not start: {exception.Message}";
+        }
+        catch (InvalidOperationException exception)
+        {
+            problem = $"the invocation could not start: {exception.Message}";
+        }
+        catch (IOException exception)
+        {
+            problem = $"the invocation's log could not be written: {exception.Message}";
         }
 
+        stopwatch.Stop();
+
         string? report = null;
-        string? problem = null;
-        if (level == "hermetic" && exitCode == 0)
+        if (hermetic && execution!.CollectsCoverage && exitCode == 0 && problem is null)
         {
             var reports = Directory.GetFiles(resultsDirectory, CoverageFloors.ReportPattern, SearchOption.TopDirectoryOnly);
             if (reports.Length == 1)
@@ -292,7 +353,8 @@ internal static class Program
             exitCode == 0 && problem is null,
             Path.GetRelativePath(root, log),
             report is null ? null : Path.GetRelativePath(root, report),
-            problem);
+            problem,
+            hermetic ? Math.Round(stopwatch.Elapsed.TotalSeconds, 1) : null);
     }
 
     private static List<CoverageResult> EvaluateCoverage(string root, IEnumerable<ProjectRun> runs)
@@ -387,10 +449,10 @@ internal static class Program
             .Select(entry => $"{entry.Value.GetProperty("image").GetString()}:{entry.Value.GetProperty("tag").GetString()}")];
     }
 
-    private static string Quote(string argument) =>
+    internal static string Quote(string argument) =>
         argument.Length > 0 && !argument.Any(c => char.IsWhiteSpace(c) || c is '"' or '*' or '[' or ']') ? argument : $"\"{argument}\"";
 
-    private static async Task<int> RunStreamingAsync(
+    internal static async Task<int> RunStreamingAsync(
         string workingDirectory,
         string fileName,
         IReadOnlyList<string> arguments,
@@ -449,7 +511,7 @@ internal static class Program
         }
     }
 
-    private static ProcessStartInfo CreateStartInfo(string workingDirectory, string fileName, IReadOnlyList<string> arguments)
+    internal static ProcessStartInfo CreateStartInfo(string workingDirectory, string fileName, IReadOnlyList<string> arguments)
     {
         var startInfo = new ProcessStartInfo(fileName)
         {

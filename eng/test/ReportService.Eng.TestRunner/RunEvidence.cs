@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace ReportService.Eng.TestRunner;
@@ -14,7 +15,24 @@ internal sealed record ProjectRun(
     bool Passed,
     string Log,
     string? CoverageReport,
-    string? Problem);
+    string? Problem,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? DurationSeconds = null);
+
+/// <summary>The one build that preceded the hermetic level's invocations.</summary>
+internal sealed record BuildRecord(
+    IReadOnlyList<string> Command,
+    string Log,
+    int ExitCode,
+    double DurationSeconds,
+    IReadOnlyList<string> FailedProjects);
+
+/// <summary>How a hermetic run executed its projects: the mode, its degree or its reason, the coverage role and the build before it.</summary>
+internal sealed record ExecutionRecord(
+    string Mode,
+    int? Degree,
+    string? Reason,
+    string CoverageRole,
+    BuildRecord Build);
 
 /// <summary>A container image the run used, with the identity the container runtime reports for it.</summary>
 internal sealed record ImageEvidence(string Reference, string? Digest, string? Id);
@@ -34,7 +52,8 @@ internal sealed record RunRecord(
     IReadOnlyList<CoverageResult>? Coverage,
     IReadOnlyList<ImageEvidence>? Images,
     IReadOnlyList<string>? ContainersBefore,
-    IReadOnlyList<string>? ContainersAfter);
+    IReadOnlyList<string>? ContainersAfter,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExecutionRecord? Execution = null);
 
 /// <summary>Where a run writes its evidence, and how the header is written.</summary>
 internal static partial class RunEvidence
