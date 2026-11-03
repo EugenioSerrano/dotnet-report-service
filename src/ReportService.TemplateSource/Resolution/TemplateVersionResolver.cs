@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplatePackages.Versioning;

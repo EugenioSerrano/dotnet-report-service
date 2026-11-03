@@ -1,4 +1,4 @@
-﻿using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Keys;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 
@@ -6,7 +6,7 @@ namespace ReportService.TemplatePackages.Tests.Visibility;
 
 /// <summary>
 /// The one ownership predicate: a version is usable when it is shared or when it
-/// belongs to the consumer asking, and by nothing else â€” the comparison is
+/// belongs to the consumer asking, and by nothing else — the comparison is
 /// ordinal, so an identifier that differs only by case is another consumer.
 /// </summary>
 public sealed class TemplateVersionVisibilityTests

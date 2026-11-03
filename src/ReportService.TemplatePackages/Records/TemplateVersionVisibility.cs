@@ -3,7 +3,7 @@ namespace ReportService.TemplatePackages.Records;
 /// <summary>
 /// Whether a consumer may use a taken version. The whole rule is two clauses:
 /// the version is shared, or it belongs to the consumer asking. Nothing else is
-/// folded in â€” no case folding, no prefix, no registry lookup â€” because the
+/// folded in — no case folding, no prefix, no registry lookup — because the
 /// identifiers are the registry's exact ones and the owner is the value the
 /// take read from the manifest. The by-name resolution and the metadata read
 /// both call this predicate, so the two can never drift apart.
