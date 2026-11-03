@@ -41,6 +41,36 @@ the whole content has been read and measured.
    attempt's object is removed. The upload's staged object is removed once the
    upload has ended.
 
+## The jobs waiting on an upload
+
+A report job may be created on an upload that is still being verified. When a
+verification ends — ready or rejected, and also when it found the upload gone or
+no longer waiting — it tells the jobs of that upload that its state changed: one
+small step reads the queued jobs of the upload that carry the waiting stage or no
+stage yet, in the order they were accepted, and nudges each of them. The nudge
+carries nothing: a job re-reads its upload and decides from what it reads, so a
+late, repeated or stale nudge cannot change an outcome by itself.
+
+The nudge is a courtesy, never the guarantee. A job also re-checks its upload on a
+durable timer of its own (`Jobs__InputWait__Backstop`, thirty seconds by default),
+so a nudge that is lost, late or impossible costs at most one interval. A nudge
+addressed to a job whose execution does not exist yet, or that has already
+finished, is logged and skipped; the other jobs of the upload are still nudged.
+The step gives up after three attempts and the verification's own answer is never
+changed by it: an upload is never turned into a failed or an expired one because a
+nudge could not be delivered.
+
+What ends a wait: the upload becomes ready, the upload is rejected (the job ends
+with the upload's own code), or the upload's verification deadline passes and the
+upload expires (the job ends with `INPUT_NOT_FOUND`). An upload whose session
+window has closed while it is still verifying is still verifying, so its jobs keep
+waiting until the verification deadline — the deadline is what bounds this state,
+never the session.
+
+A wait that outlasts the checks one run of the job's workflow may take
+(`Jobs__InputWait__ContinueAsNewAfter`) continues as a new run of the same
+execution, so no run's history grows without limit.
+
 ## Compressed content: exactly one unit of content
 
 `Content-Encoding: gzip` declares **exactly one** gzip member — one complete unit
@@ -136,10 +166,13 @@ process, naming the setting and the rule and never the value.
 | Instrument | Kind | Tags |
 |------------|------|------|
 | `reportservice.upload.outcomes` | counter | `outcome`, `code`, `stage` |
-| `reportservice.upload.verification.duration` | histogram (s) | `outcome` |
+| `reportservice.upload.verification.duration` | histogram | `outcome` |
 | `reportservice.intent.dispatch.attempts` | counter | `kind`, `result` |
 | `reportservice.intent.pending.age` | observable gauge (s) | `kind` |
 | `reportservice.job.outcomes` | counter | `status`, `code` |
+| `reportservice.job.input.wait.outcomes` | counter | `outcome` |
+| `reportservice.job.input.wait.passes` | histogram | none |
+| `reportservice.job.input.wait.notifications` | counter | `result` |
 
 Tags are fixed values only: an upload's identifier, a job's identifier, a key or a
 size is never a tag. Identifiers appear on logs and on spans.
