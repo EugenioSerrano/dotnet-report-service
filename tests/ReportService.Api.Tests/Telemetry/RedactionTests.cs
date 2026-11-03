@@ -87,7 +87,9 @@ public sealed class RedactionTests
                 }));
         }
 
-        var exported = Assert.Single(host.Activities);
+        // The provider's exporter is shared by every host the suite starts in this process, so the
+        // case selects the span it started by name rather than requiring to be the only one.
+        var exported = Assert.Single(host.Activities, activity => string.Equals(activity.DisplayName, "redacted", StringComparison.Ordinal));
         var tags = exported.TagObjects.ToList();
         Assert.Equal(RedactionOptions.Replacement, tags.Single(tag => tag.Key == "secret").Value);
         Assert.DoesNotContain(PlantedContent, tags.Single(tag => tag.Key == "note").Value as string, StringComparison.Ordinal);

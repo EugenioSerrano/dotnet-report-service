@@ -31,6 +31,13 @@ public static class InputWaitActivityOptions
     /// <summary>No attempt limit: the steps are retried until they succeed.</summary>
     public const int MaximumAttempts = ReportJobActivityOptions.MaximumAttempts;
 
+    /// <summary>
+    /// How many attempts the notification of waiting jobs is given. Unlike the two stage
+    /// steps, it gives up: the nudge is not a state write, the wait has its own timer, and a
+    /// retry loop would outlive the verification it serves.
+    /// </summary>
+    public const int SignalMaximumAttempts = 3;
+
     /// <summary>Builds the execution settings of one of the two steps.</summary>
     public static ActivityOptions Create() => new()
     {
@@ -42,6 +49,20 @@ public static class InputWaitActivityOptions
             BackoffCoefficient = BackoffCoefficient,
             MaximumInterval = MaximumInterval,
             MaximumAttempts = MaximumAttempts,
+        },
+    };
+
+    /// <summary>Builds the execution settings of the notification, which gives up after three attempts.</summary>
+    public static ActivityOptions CreateSignal() => new()
+    {
+        TaskQueue = Queue,
+        StartToCloseTimeout = StartToClose,
+        RetryPolicy = new RetryPolicy
+        {
+            InitialInterval = InitialInterval,
+            BackoffCoefficient = BackoffCoefficient,
+            MaximumInterval = MaximumInterval,
+            MaximumAttempts = SignalMaximumAttempts,
         },
     };
 }
