@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Migrations;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -62,7 +63,7 @@ public sealed class UploadVerificationOverTheRealStoreTests : IClassFixture<Post
             _root,
             TimeProvider.System,
             LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning)).CreateLogger<FilesystemObjectStore>());
-        _metrics = new OrchestrationMetrics();
+        _metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         _verifier = new UploadVerifier(
             new PostgresUploadStore(_dataSource),
             _objects,

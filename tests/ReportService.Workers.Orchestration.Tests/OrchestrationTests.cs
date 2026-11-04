@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
 using ReportService.Storage;
@@ -124,7 +125,7 @@ public sealed class IntentDispatcherTests : IDisposable
     private readonly ScriptedWorkflowStarter _starter = new();
     private readonly TemporalClientHolder _holder = new();
     private readonly ManualTimeProvider _clock = new(Now);
-    private readonly OrchestrationMetrics _metrics = new();
+    private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
     private readonly LogCapture _logs = new();
     private readonly LoggerFactory _loggerFactory;
 
@@ -482,6 +483,7 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         builder.Services.AddSingleton<IJobStore>(new InMemoryJobStore(_rig.Uploads));
         builder.Services.AddSingleton<IUploadStore>(_rig.Uploads);
         builder.Services.AddSingleton<IObjectStore>(_rig.Objects);
+        builder.Services.AddSingleton(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         builder.Services.AddSingleton<OrchestrationMetrics>();
         builder.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";
         builder.Configuration[$"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}"] = "00:30:00";

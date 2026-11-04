@@ -245,3 +245,10 @@ choices of taste:
 - `src/ReportService.Api/Jobs/` - the creation operation, the strict reader of its document and the answer it gives.
 - `docs/api/report-jobs.md` - the request, the answer and every refusal.
 - `tests/ReportService.Jobs.Tests/` and `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suites of the records and of the workflow's steps.
+
+## Where telemetry lives
+
+- `src/ReportService.ServiceDefaults/Telemetry/` - the meter identity a host carries, the registration every process calls, the product instrument factories, the development-only metric capture and the diagnostics endpoints.
+- `src/ReportService.Api/Telemetry/` and `src/ReportService.Workers.Orchestration/Telemetry/` - the instruments of those processes, each created on the identity of its host.
+- `docs/observability.md` - what each process emits, where it goes and the rule a new signal follows.
+- `tests/ReportService.Api.Tests/Telemetry/` - the telemetry test support: one host helper that carries its own identity and opens a unit of work on its own logger factory, and the suites that read a host's capture.

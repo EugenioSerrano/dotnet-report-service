@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -188,7 +189,7 @@ public sealed class UploadExpirySweeperTests
             objects,
             Options.Create(new UploadExpiryOptions { SweepInterval = TimeSpan.FromMinutes(1), BatchSize = batchSize }),
             clock,
-            new OrchestrationMetrics(),
+            new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             new LoggerFactory([logs]).CreateLogger<UploadExpirySweeper>());
         return (sweeper, store, objects);
     }
@@ -204,7 +205,7 @@ public sealed class UploadExpirySweeperTests
             objects,
             Options.Create(new UploadExpiryOptions { SweepInterval = TimeSpan.FromMinutes(1), BatchSize = 500 }),
             clock,
-            new OrchestrationMetrics(),
+            new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             new LoggerFactory([new LogCapture()]).CreateLogger<UploadExpirySweeper>());
         return (sweeper, store, objects, clock);
     }
@@ -232,7 +233,7 @@ public sealed class UploadExpirySweeperTests
     {
         var clock = new ManualTimeProvider(Now);
         using var stopping = new CancellationTokenSource();
-        using var metrics = new OrchestrationMetrics();
+        using var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         var sweeper = new UploadExpirySweeper(
             new StoppingStore(stopping),
             new RecordingObjectStore(),

@@ -20,15 +20,20 @@ public sealed class JobAcceptanceMetrics : IDisposable
     /// <summary>The result of a request that was refused and stored nothing.</summary>
     public const string RefusedResult = "refused";
 
-    private readonly Meter _meter = new(TelemetryDefaults.MeterName);
+    private readonly Meter _meter;
     private readonly Counter<long> _acceptances;
 
-    /// <summary>Creates the API's job instruments.</summary>
-    public JobAcceptanceMetrics() =>
+    /// <summary>Creates the API's job instruments on the identity the host carries.</summary>
+    /// <param name="identity">The identity of the host that owns the instruments.</param>
+    public JobAcceptanceMetrics(MeterIdentity identity)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        _meter = new Meter(identity.Name);
         _acceptances = _meter.CreateCounter<long>(
             InstrumentName,
             unit: "{request}",
             description: "Report job requests, by result and, for a refusal, by code.");
+    }
 
     /// <summary>Records one accepted job.</summary>
     public void Accepted() =>

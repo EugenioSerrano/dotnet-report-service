@@ -26,7 +26,7 @@ public sealed record FailJobInput(string ReportJobId, string ErrorCode, string R
 /// waits, and nothing here decides anything twice: a repeated attempt reads the same
 /// records and reaches the same answer.
 /// </summary>
-public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, OrchestrationMetrics metrics, ILogger<ReportJobActivities> logger)
+public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, OrchestrationMetrics metrics, ILoggerFactory loggers, ILogger<ReportJobActivities> logger)
 {
     /// <summary>The name the input check is registered and scheduled under.</summary>
     public const string ResolveInputName = "ResolveInput";
@@ -55,7 +55,7 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
     public async Task<ResolveInputResult> ResolveInputAsync(ResolveInputInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        using var context = JobContext.Begin(input.ReportJobId);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
 
         var state = await jobs
             .FindForWorkflowAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)
@@ -118,7 +118,7 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
     public async Task FailJobAsync(FailJobInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        using var context = JobContext.Begin(input.ReportJobId);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
 
         var outcome = await jobs
             .FailJobAsync(

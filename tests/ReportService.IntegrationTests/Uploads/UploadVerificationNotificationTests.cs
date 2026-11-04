@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Jobs;
 using ReportService.Migrations;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -168,7 +169,7 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
         IWorkflowSignaller signaller,
         CancellationToken cancellationToken)
     {
-        using var metrics = new OrchestrationMetrics();
+        using var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         var objects = FilesystemObjectStore.Open(
             new FilesystemStorageOptions { Root = _root, CreateIfMissing = true },
             _root,

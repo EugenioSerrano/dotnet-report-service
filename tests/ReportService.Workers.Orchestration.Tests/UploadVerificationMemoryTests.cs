@@ -5,6 +5,7 @@ using System.IO.Pipelines;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -102,7 +103,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
         Directory.CreateDirectory(root);
         _roots.Add(root);
 
-        using var metrics = new OrchestrationMetrics();
+        using var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         var filesystem = FilesystemObjectStore.Open(
             new FilesystemStorageOptions { Root = root },
             root,

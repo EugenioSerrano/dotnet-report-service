@@ -34,15 +34,20 @@ public sealed class ConsumerRefusalMetrics : IDisposable
     public static readonly IReadOnlyList<string> Operations =
         [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation];
 
-    private readonly Meter _meter = new(TelemetryDefaults.MeterName);
+    private readonly Meter _meter;
     private readonly Counter<long> _refusals;
 
-    /// <summary>Creates the API's instruments.</summary>
-    public ConsumerRefusalMetrics() =>
+    /// <summary>Creates the API's instruments on the identity the host carries.</summary>
+    /// <param name="identity">The identity of the host that owns the instruments.</param>
+    public ConsumerRefusalMetrics(MeterIdentity identity)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        _meter = new Meter(identity.Name);
         _refusals = _meter.CreateCounter<long>(
             InstrumentName,
             unit: "{request}",
             description: "Requests refused at the consumer gate, by code, operation and identity state.");
+    }
 
     /// <summary>Records one refused request.</summary>
     /// <param name="code">The refusal's code, a fixed value.</param>

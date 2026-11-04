@@ -4,6 +4,7 @@ using System.Globalization;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -93,7 +94,7 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
             Assert.Skip($"the capture runs once, when {OutputVariable} names the file to write.");
         }
 
-        using var metrics = new OrchestrationMetrics();
+        using var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         var uploads = new InMemoryUploadStore();
         _root = Path.Combine(
             Path.GetTempPath(),

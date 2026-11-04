@@ -96,11 +96,7 @@ internal sealed record CapturedMetrics(
         writer.WriteString("instrument", point.Instrument);
         writer.WriteString("type", point.Type);
         writer.WriteString("unit", point.Unit);
-        if (point.Value is { } value)
-        {
-            writer.WriteNumber("value", value);
-        }
-
+        WriteMeasurement(writer, "value", point.Value);
         if (point.Monotonic is { } monotonic)
         {
             writer.WriteBoolean("monotonic", monotonic);
@@ -111,21 +107,9 @@ internal sealed record CapturedMetrics(
             writer.WriteNumber("count", count);
         }
 
-        if (point.Sum is { } sum)
-        {
-            writer.WriteNumber("sum", sum);
-        }
-
-        if (point.Min is { } min)
-        {
-            writer.WriteNumber("min", min);
-        }
-
-        if (point.Max is { } max)
-        {
-            writer.WriteNumber("max", max);
-        }
-
+        WriteMeasurement(writer, "sum", point.Sum);
+        WriteMeasurement(writer, "min", point.Min);
+        WriteMeasurement(writer, "max", point.Max);
         writer.WriteString("startTime", point.StartTime.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
         writer.WriteString("endTime", point.EndTime.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
         writer.WriteStartObject("tags");
@@ -136,6 +120,26 @@ internal sealed record CapturedMetrics(
 
         writer.WriteEndObject();
         writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// Writes one measurement, or says it carries no finite number: a value JSON cannot
+    /// represent is written as null rather than asked of the writer, which refuses it.
+    /// </summary>
+    private static void WriteMeasurement(Utf8JsonWriter writer, string name, double? measurement)
+    {
+        if (measurement is not { } value)
+        {
+            return;
+        }
+
+        if (double.IsFinite(value))
+        {
+            writer.WriteNumber(name, value);
+            return;
+        }
+
+        writer.WriteNull(name);
     }
 }
 

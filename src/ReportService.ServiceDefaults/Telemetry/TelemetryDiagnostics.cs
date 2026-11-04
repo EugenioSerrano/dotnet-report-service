@@ -135,9 +135,10 @@ public static class TelemetryDiagnostics
             return;
         }
 
-        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ReportService.Job");
+        var loggers = context.RequestServices.GetRequiredService<ILoggerFactory>();
+        var logger = loggers.CreateLogger("ReportService.Job");
         var buildInfo = context.RequestServices.GetRequiredService<BuildInfoMetric>();
-        using (JobContext.Begin(jobId))
+        using (JobContext.Begin(jobId, loggers))
         {
             logger.LogInformation("unit of work started");
             using var span = TelemetryDefaults.ActivitySource.StartActivity(UnitOfWorkSpanName);

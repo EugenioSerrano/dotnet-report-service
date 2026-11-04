@@ -25,7 +25,7 @@ public sealed record FailOutputInput(string OutputId, string ErrorCode);
 /// end one output. Their instants come from the process's clock, and a step that
 /// arrives twice answers what the record already says instead of writing again.
 /// </summary>
-public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, ILogger<JobTransitionActivities> logger)
+public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, ILoggerFactory loggers, ILogger<JobTransitionActivities> logger)
 {
     /// <summary>The name the job transition is registered and scheduled under.</summary>
     public const string TransitionJobName = "TransitionJob";
@@ -56,7 +56,7 @@ public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, 
     public async Task<TransitionOutcome> TransitionJobAsync(TransitionJobInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        using var context = JobContext.Begin(input.ReportJobId);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
 
         var outcome = await jobs.TransitionJobAsync(
             input.ReportJobId,

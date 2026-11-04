@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The health body's allowed data keys gain `expected`, `applied` and `error`.
 - `Npgsql` becomes a product package and `Dapper` joins it; the composition and
   the processes that use the database connect as the application role only.
+- A host's telemetry is now its own: its instruments are created on a meter
+  identity the host carries, its metric provider subscribes to that identity, and
+  a unit of work opens its `job_id` log scope on the logger factory of the host
+  that opens it. A process that owns its host exports the same instrumentation
+  scope name (`ReportService`), the same instruments and the same `job_id` scope
+  as before; a process that hosts more than one host no longer mixes their
+  telemetry.
 
 ## [0.1.0] - 2026-10-22
 

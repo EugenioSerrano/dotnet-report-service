@@ -70,7 +70,7 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The result tag of a notification whose execution does not exist or has closed.</summary>
     public const string SkippedResult = "skipped";
 
-    private readonly Meter _meter = new(TelemetryDefaults.MeterName);
+    private readonly Meter _meter;
     private readonly Counter<long> _outcomes;
     private readonly Histogram<double> _duration;
     private readonly Counter<long> _attempts;
@@ -80,9 +80,12 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
-    /// <summary>Creates the process's instruments.</summary>
-    public OrchestrationMetrics()
+    /// <summary>Creates the host's instruments on the identity it carries.</summary>
+    /// <param name="identity">The identity of the host that owns the instruments.</param>
+    public OrchestrationMetrics(MeterIdentity identity)
     {
+        ArgumentNullException.ThrowIfNull(identity);
+        _meter = new Meter(identity.Name);
         _outcomes = _meter.CreateCounter<long>(
             OutcomesInstrumentName,
             unit: "{upload}",

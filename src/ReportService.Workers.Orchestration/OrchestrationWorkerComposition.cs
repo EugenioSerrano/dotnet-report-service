@@ -29,7 +29,7 @@ public static class OrchestrationWorkerComposition
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.AddServiceDefaults(ServiceNames.OrchestrationWorker);
+        builder.AddServiceDefaults(ServiceNames.OrchestrationWorker, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         builder.AddServiceConfiguration();
         builder.AddMetadataDatabase();
 

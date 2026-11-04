@@ -22,7 +22,12 @@ namespace ReportService.ServiceDefaults.Telemetry;
 /// </summary>
 public static class TelemetryDefaults
 {
-    /// <summary>The meter the product's own instruments are created on.</summary>
+    /// <summary>
+    /// The identity a process that owns its host supplies for its meter. It is the
+    /// instrumentation scope name such a process exports, so it is read by the
+    /// process's composition and by the tests that assert the exported name — never
+    /// by an instrument factory, which takes the identity its host carries.
+    /// </summary>
     public const string MeterName = "ReportService";
 
     /// <summary>The activity source the product's own spans are started from.</summary>
@@ -56,6 +61,14 @@ public static class TelemetryDefaults
     /// </summary>
     /// <param name="builder">The process's host builder.</param>
     /// <param name="serviceName">The <c>service.name</c> this process reports.</param>
+    /// <param name="meterIdentity">
+    /// The identity this host's meter is created from and its metric provider
+    /// subscribes to. A process that owns its host supplies
+    /// <see cref="MeterName"/>; a composition that shares a process supplies a
+    /// distinct identity per host, so one host's provider never enables another
+    /// host's instruments. It is registered on the host's container for every
+    /// instrument factory the host owns.
+    /// </param>
     /// <param name="configureTelemetry">
     /// The one seam a test uses: it runs on the same metric and trace pipeline the
     /// process registers, so a test can add an in-memory exporter. No environment
@@ -65,11 +78,13 @@ public static class TelemetryDefaults
     public static IHostApplicationBuilder AddServiceDefaults(
         this IHostApplicationBuilder builder,
         string serviceName,
+        MeterIdentity meterIdentity,
         Action<IOpenTelemetryBuilder>? configureTelemetry = null,
         Action<OpenTelemetryLoggerOptions>? configureLogging = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+        ArgumentNullException.ThrowIfNull(meterIdentity);
 
         var resource = ResourceBuilder.CreateDefault()
             .AddService(serviceName, serviceVersion: ProductVersion.Informational)
@@ -94,7 +109,7 @@ public static class TelemetryDefaults
                 metrics.AddAspNetCoreInstrumentation();
                 metrics.AddHttpClientInstrumentation();
                 metrics.AddRuntimeInstrumentation();
-                metrics.AddMeter(MeterName);
+                metrics.AddMeter(meterIdentity.Name);
                 if (diagnostics.Enabled)
                 {
                     // The capture sits beside the destination exporter on its own reader: it sees
@@ -127,7 +142,10 @@ public static class TelemetryDefaults
             builder.Services.AddSingleton(capture);
         }
 
-        builder.Services.AddSingleton(new BuildInfoMetric());
+        // The host's identity is on its container, so an instrument factory takes the
+        // identity by constructor injection and the registration never grows a parameter.
+        builder.Services.AddSingleton(meterIdentity);
+        builder.Services.AddSingleton(new BuildInfoMetric(meterIdentity));
         builder.Services.AddHostedService(services => new TelemetryStartup(
             serviceName,
             ProductVersion.Informational,
