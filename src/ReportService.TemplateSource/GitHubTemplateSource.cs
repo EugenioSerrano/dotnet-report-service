@@ -90,6 +90,58 @@ public sealed class GitHubTemplateSource : ITemplateSource
     }
 
     /// <inheritdoc />
+    public async Task<SourceTemplateVersions?> ListVersionsAsync(
+        SourceCommit commit,
+        string templateId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(commit);
+        ArgumentException.ThrowIfNullOrEmpty(templateId);
+
+        var templates = await FindTreeEntryAsync(commit.RootTreeSha, "templates", cancellationToken).ConfigureAwait(false);
+        if (templates is null)
+        {
+            return null;
+        }
+
+        var template = await FindTreeEntryAsync(templates, templateId, cancellationToken).ConfigureAwait(false);
+        if (template is null)
+        {
+            return null;
+        }
+
+        var uri = new Uri(_baseUri, "repos/" + _options.Owner + "/" + _options.RepositoryName + "/git/trees/" + template);
+        using var document = await GetJsonAsync(uri, commitRequest: false, cancellationToken).ConfigureAwait(false);
+        var root = document.RootElement;
+        if (IsTruncated(root))
+        {
+            throw TooLarge($"the template folder 'templates/{templateId}/' holds more entries than the source will list in one answer");
+        }
+
+        if (!root.TryGetProperty("tree", out var tree) || tree.ValueKind != JsonValueKind.Array)
+        {
+            throw Malformed();
+        }
+
+        var names = new List<string>();
+        foreach (var entry in tree.EnumerateArray())
+        {
+            // Only folders are versions. A file, a symbolic link or a
+            // submodule beside them is not an error and not a version.
+            if (string.Equals(ReadString(entry, "type"), "tree", StringComparison.Ordinal))
+            {
+                var name = ReadString(entry, "path");
+                if (name.Length > 0)
+                {
+                    names.Add(name);
+                }
+            }
+        }
+
+        return new SourceTemplateVersions(names);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<SourceFile>> ListFilesAsync(SourceFolder folder, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(folder);

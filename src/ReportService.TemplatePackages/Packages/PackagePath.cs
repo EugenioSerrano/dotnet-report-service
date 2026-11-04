@@ -7,16 +7,17 @@ namespace ReportService.TemplatePackages.Packages;
 /// the only thing a package says about where its files are, so it is checked
 /// before anything is stored and again before anything is extracted: one to
 /// eight segments of ASCII letters, digits, <c>.</c>, <c>_</c> and <c>-</c>,
-/// none of them <c>.</c> or <c>..</c>, never absolute and never longer than the
-/// archive can hold.
+/// none of them <c>.</c> or <c>..</c>, never absolute, each segment at most a
+/// hundred characters and the whole path at most 240 — the lengths the archive
+/// format's own name and prefix fields hold, so every accepted path is writable.
 /// </summary>
 public static partial class PackagePath
 {
     /// <summary>The most segments a package path may have.</summary>
     public const int MaxSegments = 8;
 
-    /// <summary>The longest segment, in characters.</summary>
-    public const int MaxSegmentLength = 128;
+    /// <summary>The longest segment, in characters: what the archive format's name field holds.</summary>
+    public const int MaxSegmentLength = 100;
 
     /// <summary>The longest package path, in characters.</summary>
     public const int MaxLength = 240;
@@ -68,7 +69,7 @@ public static partial class PackagePath
 
             if (segment.Length is 0 or > MaxSegmentLength || !Segment().IsMatch(segment))
             {
-                reason = "a segment is empty, too long or holds a character other than A-Z, a-z, 0-9, '.', '_' and '-'";
+                reason = "a segment is empty, longer than 100 characters or holds a character other than A-Z, a-z, 0-9, '.', '_' and '-'";
                 return false;
             }
         }

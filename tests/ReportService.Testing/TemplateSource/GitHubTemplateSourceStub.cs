@@ -32,6 +32,7 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
     private readonly StubDirectory _root = new(parent: null);
     private readonly List<StubRequest> _requests = [];
     private readonly Dictionary<string, byte[]> _blobOverrides = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _truncatedTemplates = new(StringComparer.Ordinal);
 
     /// <summary>Blobs a replaced package no longer lists; a real repository keeps them reachable by hash.</summary>
     private readonly Dictionary<string, byte[]> _retiredBlobs = new(StringComparer.Ordinal);
@@ -58,11 +59,33 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
     public void SeedPackage(string templateId, string version, IReadOnlyDictionary<string, byte[]> files) =>
         Add(["templates", templateId, version], files);
 
+    /// <summary>Records a version folder that holds no file, under <c>templates/&lt;templateId&gt;/&lt;version&gt;/</c>.</summary>
+    public void SeedVersionFolder(string templateId, string version) =>
+        Add(["templates", templateId, version], new Dictionary<string, byte[]>());
+
+    /// <summary>Records a template folder that holds no version folder.</summary>
+    public void SeedTemplateFolder(string templateId) =>
+        Add(["templates", templateId], new Dictionary<string, byte[]>());
+
+    /// <summary>Records a file directly under the template folder, beside the version folders.</summary>
+    public void SeedTemplateFile(string templateId, string name) =>
+        Add(["templates", templateId], new Dictionary<string, byte[]> { [name] = Encoding.UTF8.GetBytes(name) });
+
+    /// <summary>Answers the named template folder's tree as truncated.</summary>
+    public void SetTemplateFolderTruncated(string templateId) => _truncatedTemplates.Add(templateId);
+
     /// <summary>Replaces a package's files, as a change in the branch: the commit moves, the version does not.</summary>
     public void ReplacePackage(string templateId, string version, IReadOnlyDictionary<string, byte[]> files)
     {
         Remove(["templates", templateId, version]);
         Add(["templates", templateId, version], files);
+        _generation++;
+    }
+
+    /// <summary>Removes a version's folder, as a version deleted from the branch: the commit moves.</summary>
+    public void RemoveVersion(string templateId, string version)
+    {
+        Remove(["templates", templateId, version]);
         _generation++;
     }
 
@@ -93,6 +116,15 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
 
     /// <summary>The blob name of <paramref name="content"/>, as a package file carries it.</summary>
     public static string BlobSha(byte[] content) => GitBlobs.BlobSha(content);
+
+    /// <summary>
+    /// Answers one request directly, for the host that serves this double over a
+    /// socket: the handler's own dispatch, reached without a message handler.
+    /// </summary>
+    /// <param name="request">The request to answer.</param>
+    /// <param name="cancellationToken">The caller's cancellation token.</param>
+    public Task<HttpResponseMessage> AnswerAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        SendAsync(request, cancellationToken);
 
     /// <inheritdoc />
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -190,7 +222,20 @@ public sealed class GitHubTemplateSourceStub : HttpMessageHandler
             AppendEntries(directory, string.Empty, recursive, entries);
         }
 
-        return JsonSerializer.Serialize(new { sha = treeSha, tree = entries, truncated = _truncated });
+        var truncated = _truncated
+            || _truncatedTemplates.Any(templateId => string.Equals(TemplateFolderSha(templateId), treeSha, StringComparison.Ordinal));
+        return JsonSerializer.Serialize(new { sha = treeSha, tree = entries, truncated });
+    }
+
+    private string? TemplateFolderSha(string templateId)
+    {
+        if (!_root.TryGetDirectory("templates", out var templates)
+            || !templates.TryGetDirectory(templateId, out var folder))
+        {
+            return null;
+        }
+
+        return folder.Sha;
     }
 
     private static void AppendEntries(StubDirectory directory, string prefix, bool recursive, List<TreeEntry> entries)

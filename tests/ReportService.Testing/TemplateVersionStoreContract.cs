@@ -8,7 +8,9 @@ namespace ReportService.Testing;
 /// version that was never written is not found; what was written is found with the
 /// values it was written with; and a second insert of one identity answers the
 /// record that is already there instead of replacing it, which is the rule the
-/// whole immutability of a taken version rests on.
+/// whole immutability of a taken version rests on. The list read answers one
+/// template's versions and nothing else, in the order the table's byte collation
+/// gives them.
 /// </summary>
 public abstract class TemplateVersionStoreContract
 {
@@ -71,5 +73,48 @@ public abstract class TemplateVersionStoreContract
         var found = await Store.FindAsync(first.TemplateId, first.Version, TestContext.Current.CancellationToken);
         Assert.NotNull(found);
         Assert.Equal(first.PackageSha256, found.PackageSha256);
+    }
+
+    [Fact]
+    public async Task ATemplateWithNoTakenVersionAnswersNoRecords()
+    {
+        var records = await Store.ListByTemplateAsync("invoice-energy", TestContext.Current.CancellationToken);
+
+        Assert.Empty(records);
+    }
+
+    [Fact]
+    public async Task TheTakenVersionsOfOneTemplateComeBackAndNothingElse()
+    {
+        var one = TemplateVersionRecords.Sample(version: "1.0.0");
+        var two = TemplateVersionRecords.Sample(version: "1.1.0");
+        var another = TemplateVersionRecords.Sample(templateId: "invoice-other", version: "1.0.0");
+        await Store.TryInsertAsync(one, TestContext.Current.CancellationToken);
+        await Store.TryInsertAsync(two, TestContext.Current.CancellationToken);
+        await Store.TryInsertAsync(another, TestContext.Current.CancellationToken);
+
+        var records = await Store.ListByTemplateAsync(one.TemplateId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, records.Count);
+        Assert.Equal(["1.0.0", "1.1.0"], records.Select(record => record.Version));
+        Assert.All(records, record => Assert.Equal(one.TemplateId, record.TemplateId));
+        Assert.Equal(one.PackageSha256, records[0].PackageSha256);
+        Assert.Equal(one.Engine, records[0].Engine);
+        Assert.Equal(one.ManifestJson, records[0].ManifestJson);
+    }
+
+    [Fact]
+    public async Task SeveralVersionsComeBackInByteOrder()
+    {
+        foreach (var version in new[] { "1.2.0", "1.10.0", "1.1.0", "1.0.0" })
+        {
+            await Store.TryInsertAsync(
+                TemplateVersionRecords.Sample(version: version),
+                TestContext.Current.CancellationToken);
+        }
+
+        var records = await Store.ListByTemplateAsync("invoice-energy", TestContext.Current.CancellationToken);
+
+        Assert.Equal(["1.0.0", "1.1.0", "1.10.0", "1.2.0"], records.Select(record => record.Version));
     }
 }

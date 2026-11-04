@@ -2,7 +2,12 @@ using ReportService.TemplatePackages.Packages;
 
 namespace ReportService.TemplatePackages.Tests.Packages;
 
-/// <summary>The rule every file of a package must satisfy before it is stored or extracted.</summary>
+/// <summary>
+/// The rule every file of a package must satisfy before it is stored or
+/// extracted, held at its own boundaries: the longest segment and the longest
+/// path the archive format can hold are accepted and one character past each is
+/// refused, so no path the rule accepts can fail to be written.
+/// </summary>
 public sealed class PackagePathTests
 {
     [Theory]
@@ -38,17 +43,47 @@ public sealed class PackagePathTests
     }
 
     [Fact]
-    public void APathLongerThanTheLimitIsRefused()
+    public void TheCapsAreTheArchiveFormatsOwnLengths()
     {
-        var path = "assets/" + new string('a', 240);
-
-        Assert.False(PackagePath.IsValid(path));
+        Assert.Equal(100, PackagePath.MaxSegmentLength);
+        Assert.Equal(240, PackagePath.MaxLength);
+        Assert.Equal(8, PackagePath.MaxSegments);
     }
 
     [Fact]
-    public void ASingleSegmentLongerThanTheLimitIsRefused()
+    public void ASegmentOfExactlyTheLimitIsAcceptedAndOneCharacterMoreIsRefused()
     {
-        Assert.False(PackagePath.IsValid(new string('a', PackagePath.MaxSegmentLength + 1)));
+        var atLimit = new string('a', PackagePath.MaxSegmentLength);
+
+        Assert.True(PackagePath.IsValid(atLimit));
+        Assert.False(PackagePath.IsValid(atLimit + "a"));
+        Assert.False(PackagePath.IsValid("html/" + atLimit + "a"));
+    }
+
+    [Fact]
+    public void APathOfExactlyTheLimitIsAcceptedAndOneCharacterMoreIsRefused()
+    {
+        // Three segments of at most the segment limit, adding up to exactly the path limit.
+        var atLimit = new string('a', PackagePath.MaxSegmentLength)
+            + "/"
+            + new string('b', PackagePath.MaxSegmentLength)
+            + "/"
+            + new string('c', PackagePath.MaxLength - (2 * PackagePath.MaxSegmentLength) - 2);
+
+        Assert.Equal(PackagePath.MaxLength, atLimit.Length);
+        Assert.True(PackagePath.IsValid(atLimit));
+        Assert.False(PackagePath.IsValid(atLimit + "c"));
+        Assert.False(PackagePath.IsValid("assets/" + new string('d', PackagePath.MaxLength)));
+    }
+
+    [Fact]
+    public void TheSegmentsOfAPathAreCountedAtTheirLimit()
+    {
+        var eight = string.Join('/', Enumerable.Repeat("a", PackagePath.MaxSegments));
+        var nine = string.Join('/', Enumerable.Repeat("a", PackagePath.MaxSegments + 1));
+
+        Assert.True(PackagePath.IsValid(eight));
+        Assert.False(PackagePath.IsValid(nine));
     }
 
     [Fact]

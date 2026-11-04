@@ -43,5 +43,6 @@
     <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
     <Project Path="tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
+    <Project Path="tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
   </Folder>
 </Solution>

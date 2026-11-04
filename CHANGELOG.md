@@ -28,7 +28,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names is looked up in the taken versions: a reference that names no version, or
   one that was never taken, ends the job `TEMPLATE_INVALID rule=pin` in one
   attempt, with no exception and no retry.
-
+- Referencing a template by name only: a job that names no version gets the
+  highest valid **release** version of that template, ordered by Semantic
+  Versioning 2.0.0 — so `1.10.0` is newer than `1.2.0`, a pre-release sorts below
+  its release and is used only when a job names it exactly, and two builds of one
+  version are of equal precedence. A newer version its author has to fix is
+  logged with what to fix and skipped, so one broken version never breaks the
+  jobs that name the template only; when no version is usable the job ends failed
+  with `TEMPLATE_INVALID` naming the newest one, and when the template repository
+  cannot be checked it uses the newest release already taken or ends failed with
+  `TEMPLATE_SOURCE_UNAVAILABLE`. A taken version stays usable after its folder is
+  removed from the repository, and a version the requesting consumer may not use
+  is never chosen.
+- `ResolveTemplateVersion`, the activity the PDF worker serves on its queue: it
+  reads the template's version folders at one commit, orders them by precedence,
+  takes each candidate through the take, and answers the version a job is pinned
+  to with the values the take records, saying whether it was taken now or is the
+  copy already kept. A refusal ends it with the resolution's own code, retrying a
+  source that may come back and never retrying a template its author has to fix.
+- `TemplateSource:ResolveDeadline`: how long one by-name resolution — the listing
+  and every version it takes — may take, from five seconds to five minutes, four
+  minutes by default, validated at start.
+- The take's registration now shares the queue with the by-name resolution: one
+  engine worker on `report-pdf-rendering` serves both steps at one activity at a
+  time.
+- The template repository now names what a by-name reference gets, in
+  `samples/templates/README.md`, for template authors.
+- The take: the first time a job references a template version, the service reads
+  it from the configured repository and branch at one commit and keeps it as an
+  immutable copy — one write-once object under
+  `templates/<owner>/<templateId>/<version>/<sha256>`, made usable only by an
+  insert-once record — so a version taken once is never taken again and never
+  changes afterwards. A version already taken is answered from its record without
+  reading the source; a version a consumer may not use is answered as missing
+  before any refusal that could name a file of the package; a taken version that
+  changed in the branch is logged as `TEMPLATE_VERSION_CONFLICT` and the copy is
+  kept. A source that cannot be reached, an absent version and the refusals an
+  author has to fix are told apart by the job's own error code.
+- `TakeTemplateVersion`, the activity the PDF worker serves on its queue: it runs
+  one take at a time, answers the values a job is pinned to (commit, package hash
+  and size, engine and its version, schema path, owner and the shared flag), and
+  ends a refusal with the take's own code, retrying only a source that may come
+  back.
+- Reading `template.yaml`: one reader, through the YamlDotNet 18.1.0 event
+  parser, under a restricted subset with size, depth and node limits; the document
+  is stored once as JSON, so nothing that reads a taken version needs YAML again.
+- `THIRD-PARTY-NOTICES.md`, with YamlDotNet 18.1.0's MIT licence and the
+  copyright line the package itself records.
+- The pilot template manifests name their owning consumer and their `shared` flag,
+  declare the fields their printed PDF is verified against, and write their part
+  paths under `parts`; `samples/templates/README.md` documents the manifest subset
+  for template authors.
+- `tests/ReportService.Workers.Pdf.Tests`: the take's registration on its queue
+  and the activity as a plain class.
 - A report job created on an upload that is still being verified waits for it
   instead of stopping at `queued`: it reports the stage `waiting-for-input`, it
   starts once the upload is ready, it ends `failed` with the upload's own code
@@ -175,6 +227,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applies migrations to an existing deployment.
 
 ### Changed
+
+- **The package path rule now holds what the package archive can write:** one to
+  eight segments of at most a hundred characters each and at most 240 characters
+  in total, so a path the rule accepts can never fail to be written. A segment or a
+  path over those lengths is refused by the rule itself.
 
 - The error format is stated as RFC 9457 (Problem Details for HTTP APIs), which
   supersedes the RFC 7807 reference in the README.

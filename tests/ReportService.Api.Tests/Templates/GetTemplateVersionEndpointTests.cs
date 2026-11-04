@@ -240,6 +240,9 @@ public sealed class GetTemplateVersionEndpointTests
             throw new TemplateStoreUnavailableException(new InvalidOperationException("the server is not there"));
         }
 
+        public Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken) =>
+            throw new TemplateStoreUnavailableException(new InvalidOperationException("the server is not there"));
+
         public Task<TemplateVersionInsert> TryInsertAsync(TemplateVersionRecord record, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("this store is only read");
     }

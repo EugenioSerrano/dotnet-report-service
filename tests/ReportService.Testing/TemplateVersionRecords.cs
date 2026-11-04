@@ -41,7 +41,8 @@ public static class TemplateVersionRecords
         string engineVersion = "7.5.1",
         string schemaRef = "schema/data.schema.json",
         string packageSha256 = PackageSha256,
-        DateTimeOffset? takenAt = null)
+        DateTimeOffset? takenAt = null,
+        string commitSha = CommitSha)
     {
         var manifest = new TemplateManifest
         {
@@ -86,7 +87,7 @@ public static class TemplateVersionRecords
             engine,
             engineVersion,
             schemaRef,
-            CommitSha,
+            commitSha,
             SourceTreeSha,
             packageSha256,
             PackageSize: 4_096,

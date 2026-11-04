@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
@@ -278,6 +278,27 @@ Three further classes of the same project:
   case of the integration suite (`REPORTSERVICE_CAPTURE_WORKFLOW_HISTORY` names the
   file to write), and committed with the change that recorded them. The case
   **fails** when no history exists — a case with nothing to check is not a result.
+
+## The template suites
+
+`ReportService.TemplateSource.Tests` holds the template source and the take: the
+settings, the client against an in-process source, the version listing, the
+by-name resolution and its take seam, the manifest reader, the take itself, and
+the adapter that presents the take to the resolution. `ReportService.Workers.Pdf.Tests`
+holds that worker's two activities as plain classes and the registration of the
+take and of the by-name resolution on `report-pdf-rendering`.
+
+The integration project carries them against real dependencies:
+`TemplateVersionStoreTests` and `TemplateVersionReadTests` (the record and its
+read on PostgreSQL), `TemplateTakeWorkerTests` (the take on its queue over a real
+engine, database, storage root and template-source double), `TemplateByNameResolutionTests`
+(the by-name resolution on the same queue, one workflow per case),
+`GitHubTemplateSourceLiveTests` (the client against the public fixture
+repository, including the listing of a real template folder) and
+`JointTemplateTakeTests` (the job-level group, on a build that carries the job
+step). The template-source double's fixture families are built by
+`ReportService.Testing`: `TemplatePackageFixtures` for the take and
+`ByNameFixtures` for the resolution, never checked in.
 
 ## The report job suite
 
