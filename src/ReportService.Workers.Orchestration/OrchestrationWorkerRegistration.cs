@@ -6,7 +6,6 @@ using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
-using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
@@ -102,10 +101,9 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<InputWaitSignalActivities>();
 
         // The data step reads the contract of the version a job is pinned to: the taken
-        // versions, the files of a taken copy, and the contracts this worker prepared.
+        // versions and the contracts this worker prepared. The step opens a taken copy
+        // through the reader it builds from the object store it already holds.
         builder.Services.TryAddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
-        builder.Services.TryAddSingleton(provider => new TakenTemplatePackageReader(
-            provider.GetRequiredService<IObjectStore>()));
         builder.Services.TryAddSingleton<PreparedDataContractCache>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
 

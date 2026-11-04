@@ -299,8 +299,18 @@ public sealed class ValidateAndPartitionActivity(
                 .OpenAsync(record, ScratchRoot, cancellationToken)
                 .ConfigureAwait(false);
         }
-        catch (TemplatePackageUnavailableException)
+        catch (TemplatePackageUnavailableException unavailable)
         {
+            // The store could not deliver the copy. A fault that may not happen again keeps
+            // the port's own exception, so the engine's retry policy decides exactly as it
+            // does for a transient read of the snapshot; any other answer is final — the
+            // object is not there, the store refuses for good, or the bytes do not verify —
+            // and the template cannot be used.
+            if (unavailable.Outcome == StorageOutcome.Transient)
+            {
+                throw;
+            }
+
             throw TakenCopyUnreadable(reportJobId);
         }
         catch (TemplatePackageCorruptException)

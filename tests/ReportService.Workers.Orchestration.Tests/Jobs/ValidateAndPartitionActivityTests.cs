@@ -250,6 +250,50 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
     }
 
     [Fact]
+    public async Task ATemporaryStorageFaultOnTheTemplatesPackageKeepsThePortsExceptionSoItIsRetried()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(2), cancellationToken);
+        Objects.ReadFailure = StorageOutcome.Transient;
+        Objects.ReadFailureWhen = PackageKey;
+
+        // The package is read on every job and before the snapshot: a fault that may not
+        // happen again keeps the port's own exception, so the engine retries the step
+        // instead of ending the job in one attempt.
+        var failure = await Assert.ThrowsAsync<TemplatePackageUnavailableException>(RunAsync);
+
+        Assert.Equal(StorageOutcome.Transient, failure.Outcome);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Theory]
+    [InlineData(StorageOutcome.Permanent)]
+    [InlineData(StorageOutcome.NotFound)]
+    [InlineData(StorageOutcome.IntegrityFailure)]
+    public async Task APackageTheStoreCannotDeliverForGoodEndsWithThePackageRefusal(StorageOutcome outcome)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(1), cancellationToken);
+        Objects.ReadFailure = outcome;
+        Objects.ReadFailureWhen = PackageKey;
+
+        // A store that answers for good is not retried: the template cannot be used, and
+        // the job ends with the refusal of the taken copy.
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+
+        Assert.Equal("TEMPLATE_INVALID", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Equal("TEMPLATE_INVALID rule=package", failure.Message);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        Assert.Contains(
+            Logs.Lines,
+            line => line.Contains("the taken copy of its template version could not be read", StringComparison.Ordinal));
+    }
+
+    private static bool PackageKey(ObjectKey key) =>
+        key.ToString().StartsWith(TemplatePackageKeys.ClassPrefix + "/", StringComparison.Ordinal);
+
+    [Fact]
     public async Task AnIndexPageThatNoLongerMatchesItsRecordEndsTheStepWithoutBeingRetried()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
