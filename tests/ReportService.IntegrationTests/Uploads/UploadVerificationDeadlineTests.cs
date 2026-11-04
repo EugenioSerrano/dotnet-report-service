@@ -374,11 +374,14 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         });
 
     // A process creates one engine worker per declared queue that has work. This case needs the two
-    // halves of that process at two moments, so it keeps only the wanted queue's registration and
-    // each host starts exactly the engine worker its moment calls for; the product keeps no test
-    // switch. The work is registered by the product's own factories, which build the registration
-    // and only then state its queue, so the wanted one is picked after it is built - and a queue
-    // with no work at all fails here instead of silently leaving a second worker of this process.
+    // halves of that process at two moments, so it keeps every registration of the wanted queue and
+    // serves them all from the one engine worker it starts at each moment; the product keeps no test
+    // switch. That is how the product plans a queue - one worker for it, with the work of each of its
+    // registrations added in registration order - so a queue that carries several kinds of work is
+    // served whole rather than in part. The work is registered by the product's own factories, which
+    // build the registration and only then state its queue, so the wanted ones are picked after they
+    // are built - and a queue with no work at all fails here instead of silently leaving a second
+    // worker of this process.
     private static void KeepOnlyQueueWork(IServiceCollection services, string queue)
     {
         var registrations = services
@@ -389,16 +392,28 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         services.RemoveAll<TaskQueueWork>();
         services.AddSingleton(provider =>
         {
+            var wanted = new List<TaskQueueWork>();
             foreach (var registration in registrations)
             {
                 if (registration(provider) is TaskQueueWork work
                     && string.Equals(work.Queue, queue, StringComparison.Ordinal))
                 {
-                    return work;
+                    wanted.Add(work);
                 }
             }
 
-            throw new InvalidOperationException($"No work is registered on the task queue '{queue}'.");
+            if (wanted.Count == 0)
+            {
+                throw new InvalidOperationException($"No work is registered on the task queue '{queue}'.");
+            }
+
+            return new TaskQueueWork(queue, options =>
+            {
+                foreach (var work in wanted)
+                {
+                    work.Configure(options);
+                }
+            });
         });
     }
 
