@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A report job can be followed: `GET /api/v1/report-jobs/{reportJobId}` answers the
+  job's owner with its state, the step it is in, the counters `recordsRead`,
+  `blocksCompleted` and `pagesGenerated` — each of which only rises, across retries
+  and restarts — and the totals `recordsTotal` and `blocksTotal`, `null` until the
+  job has counted them and never a guess (a total of `0` is a counted, empty
+  report). Each requested output carries its own state and, once published, the
+  identifier of its file; a failed job and its failed output carry the stable code
+  of the condition. No percentage is given anywhere. The answer is never cached and
+  one read is one indexed query.
+- A job's run now ends by closing the job from the outcome of its outputs: the last
+  step of the run finalises the job idempotently — every output succeeded makes it
+  `succeeded`, a failed output makes it `failed` with that output's code, and a job
+  whose outputs have not ended is left as its steps left it. The step and the job's
+  first transition are gated by one patch, so every history recorded before them
+  still replays unchanged.
+- A job's stage is written with its status and never moves back: the first
+  transition records `validating-data`, and the rendering transition records
+  `rendering-pdf`. The step a finished job last entered is kept in storage and
+  hidden from the answer, because a finished job is in no step.
+
 - A job's snapshot is checked against the data contract of the template version it
   is pinned to before anything is rendered: the header and every record are
   validated against the template's `schema.json`, in the same single pass that
