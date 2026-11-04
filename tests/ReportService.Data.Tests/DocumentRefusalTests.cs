@@ -33,14 +33,15 @@ public sealed class DocumentRefusalTests
     }
 
     [Fact]
-    public async Task ItemsBeforeTheHeaderFailAsProfileViolation()
+    public async Task ItemsBeforeTheHeaderFailAsHeaderNotFirst()
     {
         var violation = await Assert.ThrowsAsync<DataContractViolation>(
             () => SnapshotBytes.ReadAllAsync(
                 SnapshotBytes.Utf8("""{"contractVersion":"1.0","items":[],"header":{}}"""),
                 TestContext.Current.CancellationToken));
 
-        Assert.Equal("profile-violation", violation.Reason);
+        Assert.Equal(DataContractViolation.DataInvalid, violation.Code);
+        Assert.Equal("header-not-first", violation.Reason);
     }
 
     [Fact]
@@ -55,14 +56,15 @@ public sealed class DocumentRefusalTests
     }
 
     [Fact]
-    public async Task AHeaderThatIsNotAnObjectFailsAsProfileViolation()
+    public async Task AHeaderThatIsNotAnObjectFailsAsTypeMismatch()
     {
         var violation = await Assert.ThrowsAsync<DataContractViolation>(
             () => SnapshotBytes.ReadAllAsync(
                 SnapshotBytes.Utf8("""{"contractVersion":"1.0","header":[],"items":[]}"""),
                 TestContext.Current.CancellationToken));
 
-        Assert.Equal("profile-violation", violation.Reason);
+        Assert.Equal(DataContractViolation.DataInvalid, violation.Code);
+        Assert.Equal("type-mismatch", violation.Reason);
     }
 
     [Fact]

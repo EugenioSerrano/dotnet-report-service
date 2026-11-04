@@ -66,6 +66,14 @@ public static class HeaderItemsReader
         private JsonReaderState _state = new(new JsonReaderOptions { MaxDepth = DataContractLimits.Depth * 4 });
         private static ReadOnlySpan<byte> ByteOrderMark => [0xEF, 0xBB, 0xBF];
 
+        // The names already read in each object open inside the value being captured:
+        // one frame per object, and one byte buffer per captured value, so a name is
+        // copied once as the value it has and a repeated one is met by its own bytes.
+        private readonly NameFrame[] _frames = new NameFrame[DataContractLimits.Depth + 2];
+        private byte[] _names = [];
+        private int _namesLength;
+        private int _frameTop;
+
         private RawRecord? _staged;
         private int _ordinal;
 
@@ -92,6 +100,17 @@ public static class HeaderItemsReader
             Header,
             Items,
             Done,
+        }
+
+        // One object of the value being captured: the depth it opened at, and the names it
+        // has read so far. The ranges and the lookup are kept between values and reused.
+        private struct NameFrame
+        {
+            public int Depth;
+            public int Count;
+            public int[]? Ranges;
+            public int[]? Slots;
+            public int Mask;
         }
 
         public bool Finished => _finished;
@@ -242,7 +261,7 @@ public static class HeaderItemsReader
                 case Phase.Header:
                     if (reader.TokenType != JsonTokenType.StartObject)
                     {
-                        throw Refuse(DataContractViolation.DataInvalid, "profile-violation", null, 0, Absolute(reader.TokenStartIndex));
+                        throw Refuse(DataContractViolation.DataInvalid, "type-mismatch", null, 0, Absolute(reader.TokenStartIndex));
                     }
 
                     BeginCapture(header: true, ref reader);
@@ -299,7 +318,15 @@ public static class HeaderItemsReader
                     throw Duplicate(reader);
                 }
 
-                if (!_versionSeen || _itemsSeen)
+                // An items already opened the record array: the header, whenever it arrives,
+                // is the order fault the profile names, and the refusal never depends on
+                // whether it arrives at all.
+                if (_itemsSeen)
+                {
+                    throw Refuse(DataContractViolation.DataInvalid, "header-not-first", null, 0, Absolute(reader.TokenStartIndex));
+                }
+
+                if (!_versionSeen)
                 {
                     throw Refuse(DataContractViolation.DataInvalid, "profile-violation", null, 0, Absolute(reader.TokenStartIndex));
                 }
@@ -315,9 +342,12 @@ public static class HeaderItemsReader
                     throw Duplicate(reader);
                 }
 
+                // The records come after the header and never before it: a pass that meets
+                // this name without a header refuses at the name, before the array is entered,
+                // and cannot read on to learn whether a header would have followed.
                 if (!_headerSeen)
                 {
-                    throw Refuse(DataContractViolation.DataInvalid, "profile-violation", null, 0, Absolute(reader.TokenStartIndex));
+                    throw Refuse(DataContractViolation.DataInvalid, "header-not-first", null, 0, Absolute(reader.TokenStartIndex));
                 }
 
                 _phase = Phase.Items;
@@ -340,8 +370,16 @@ public static class HeaderItemsReader
 
         private void Item(ref Utf8JsonReader reader)
         {
-            if (reader.TokenType == JsonTokenType.StartArray && !_itemsStarted)
+            // The records array has not started yet: the only value the profile admits here
+            // is an array, and anything else is refused before an element is captured, so no
+            // object is ever delivered as if it were a record.
+            if (!_itemsStarted)
             {
+                if (reader.TokenType != JsonTokenType.StartArray)
+                {
+                    throw Refuse(DataContractViolation.DataInvalid, "type-mismatch", null, 0, Absolute(reader.TokenStartIndex));
+                }
+
                 _itemsStarted = true;
                 return;
             }
@@ -373,6 +411,12 @@ public static class HeaderItemsReader
             _previousValueEnd = false;
             _captured.ResetWrittenCount();
             Append('{');
+
+            // The names of the value being captured are its own: the index starts empty and
+            // the objects of the previous value give their frames back.
+            _namesLength = 0;
+            _frameTop = 0;
+            PushFrame(_captureDepth);
         }
 
         private void Capture(ref Utf8JsonReader reader)
@@ -394,11 +438,17 @@ public static class HeaderItemsReader
                 case JsonTokenType.StartObject:
                     Append('{');
                     _previousValueEnd = false;
+                    PushFrame(reader.CurrentDepth);
                     break;
 
                 case JsonTokenType.EndObject:
                     Append('}');
                     _previousValueEnd = true;
+                    if (_frameTop > 0 && _frames[_frameTop - 1].Depth == reader.CurrentDepth)
+                    {
+                        _frameTop--;
+                    }
+
                     break;
 
                 case JsonTokenType.StartArray:
@@ -412,6 +462,10 @@ public static class HeaderItemsReader
                     break;
 
                 case JsonTokenType.PropertyName:
+                    // Before the name is written and before the limit of this token is
+                    // checked: a repeated member is earlier in reading order than a limit
+                    // the same token would cross, and nothing of the value is kept.
+                    CheckDuplicate(ref reader);
                     AppendQuoted(reader.ValueSpan);
                     Append(':');
                     _previousValueEnd = false;
@@ -519,6 +573,183 @@ public static class HeaderItemsReader
         {
             raw.CopyTo(_captured.GetSpan(raw.Length));
             _captured.Advance(raw.Length);
+        }
+
+        // The objects of the value being captured, one frame per open object: the depth it
+        // opened at and the names it has read so far, as ranges of the pass's name buffer
+        // and a hash lookup over them.
+        private void PushFrame(int depth)
+        {
+            if (_frameTop == _frames.Length)
+            {
+                return;
+            }
+
+            // A frame the previous value used keeps its buffers and gives its names back.
+            if (_frames[_frameTop].Count > 0)
+            {
+                Array.Clear(_frames[_frameTop].Slots!);
+                _frames[_frameTop].Count = 0;
+            }
+
+            _frames[_frameTop].Depth = depth;
+            _frameTop++;
+        }
+
+        private void CheckDuplicate(ref Utf8JsonReader reader)
+        {
+            if (_frameTop == 0 || _frames[_frameTop - 1].Depth != reader.CurrentDepth - 1)
+            {
+                return;
+            }
+
+            // Unescaping yields no more bytes than the token's own text, so the destination is
+            // sized by that text and the name is copied exactly once, as the value it has.
+            var length = reader.HasValueSequence ? checked((int)reader.ValueSequence.Length) : reader.ValueSpan.Length;
+            var start = ReserveName(length);
+            var destination = _names.AsSpan(start, length);
+            int written;
+            try
+            {
+                written = reader.CopyString(destination);
+            }
+            catch (InvalidOperationException)
+            {
+                // An escape that is not a Unicode scalar sequence leaves the name read as its
+                // own text, exactly as the value keeps it, so two equal texts are one member.
+                CopyRaw(ref reader, destination);
+                written = length;
+            }
+
+            var frame = _frameTop - 1;
+            var hash = Hash(_names.AsSpan(start, written));
+            if (Contains(frame, hash, start, written))
+            {
+                // Nothing of this value is kept: the bytes of the name just read are left
+                // where they are and the pass stops at the name it refuses.
+                throw Refuse(
+                    DataContractViolation.DataInvalid,
+                    "duplicate-property",
+                    null,
+                    OrdinalOfCapture,
+                    Absolute(reader.TokenStartIndex));
+            }
+
+            Index(frame, hash, start, written);
+            _namesLength = start + written;
+        }
+
+        private int ReserveName(int length)
+        {
+            var start = _namesLength;
+            if (start + length > _names.Length)
+            {
+                var grown = new byte[Math.Max(_names.Length * 2, start + length)];
+                Buffer.BlockCopy(_names, 0, grown, 0, start);
+                _names = grown;
+            }
+
+            return start;
+        }
+
+        private bool Contains(int frame, ulong hash, int offset, int length)
+        {
+            var slots = _frames[frame].Slots;
+            if (slots is null || slots.Length == 0)
+            {
+                return false;
+            }
+
+            var ranges = _frames[frame].Ranges!;
+            var mask = _frames[frame].Mask;
+            var candidate = _names.AsSpan(offset, length);
+            var slot = (int)(hash & (ulong)mask);
+            while (slots[slot] != 0)
+            {
+                var entry = slots[slot] - 1;
+                if (_names.AsSpan(ranges[entry * 2], ranges[entry * 2 + 1]).SequenceEqual(candidate))
+                {
+                    return true;
+                }
+
+                slot = (slot + 1) & mask;
+            }
+
+            return false;
+        }
+
+        private void Index(int frame, ulong hash, int offset, int length)
+        {
+            ref var names = ref _frames[frame];
+            var needed = (names.Count + 1) * 2;
+            if (names.Ranges is null || needed > names.Ranges.Length)
+            {
+                Array.Resize(ref names.Ranges, names.Ranges is null ? 8 : names.Ranges.Length * 2);
+            }
+
+            // The lookup is kept at most half full, so a name is found in constant time in
+            // the number of names the object holds, whatever that number is.
+            if (names.Slots is null || needed > names.Slots.Length)
+            {
+                Rehash(ref names);
+            }
+
+            var ranges = names.Ranges!;
+            ranges[names.Count * 2] = offset;
+            ranges[names.Count * 2 + 1] = length;
+            var slot = (int)(hash & (ulong)names.Mask);
+            var slots = names.Slots!;
+            while (slots[slot] != 0)
+            {
+                slot = (slot + 1) & names.Mask;
+            }
+
+            slots[slot] = names.Count + 1;
+            names.Count++;
+        }
+
+        private void Rehash(ref NameFrame frame)
+        {
+            var slots = new int[frame.Slots is null ? 8 : frame.Slots.Length * 2];
+            var mask = slots.Length - 1;
+            for (var entry = 0; entry < frame.Count; entry++)
+            {
+                var hash = Hash(_names.AsSpan(frame.Ranges![entry * 2], frame.Ranges[entry * 2 + 1]));
+                var slot = (int)(hash & (ulong)mask);
+                while (slots[slot] != 0)
+                {
+                    slot = (slot + 1) & mask;
+                }
+
+                slots[slot] = entry + 1;
+            }
+
+            frame.Slots = slots;
+            frame.Mask = mask;
+        }
+
+        private static ulong Hash(ReadOnlySpan<byte> name)
+        {
+            var hash = 14695981039346656037UL;
+            foreach (var value in name)
+            {
+                hash ^= value;
+                hash *= 1099511628211UL;
+            }
+
+            return hash;
+        }
+
+        private static void CopyRaw(ref Utf8JsonReader reader, Span<byte> destination)
+        {
+            if (reader.HasValueSequence)
+            {
+                reader.ValueSequence.CopyTo(destination);
+            }
+            else
+            {
+                reader.ValueSpan.CopyTo(destination);
+            }
         }
 
         private void Compact()
