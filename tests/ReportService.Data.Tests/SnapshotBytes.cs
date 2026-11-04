@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using ReportService.Data;
 
@@ -25,6 +26,64 @@ internal static class SnapshotBytes
     /// <summary>A record with an ordinary shaped body, numbered by <paramref name="ordinal"/>.</summary>
     public static string Record(int ordinal) =>
         $$"""{"sequence":{{ordinal}},"description":"row {{ordinal}}","amount":{{ordinal}}.25}""";
+
+    /// <summary>The raw records of a document of <paramref name="count"/> ordinary records.</summary>
+    public static string[] Records(int count) => [.. Enumerable.Range(1, count).Select(Record)];
+
+    /// <summary>
+    /// A document assembled from raw property text, in the order the cases hand them in, so
+    /// a case can put the header after the items or the version last without writing bytes
+    /// by hand in the middle of an assertion.
+    /// </summary>
+    public static byte[] DocumentOf(params string[] rawProperties) =>
+        Utf8("{" + string.Join(',', rawProperties) + "}");
+
+    /// <summary>
+    /// The object text with <paramref name="member"/> repeated as its last member, carrying
+    /// <paramref name="rawValue"/>, so the case holds one byte sequence of its own.
+    /// </summary>
+    public static string Duplicated(string json, string member, string rawValue) =>
+        json[..^1] + ",\"" + member + "\":" + rawValue + "}";
+
+    /// <summary>The same bytes inside one complete gzip stream, as an upload may hold them.</summary>
+    public static byte[] Gzip(byte[] document)
+    {
+        using var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, CompressionMode.Compress, leaveOpen: true))
+        {
+            gzip.Write(document);
+        }
+
+        return compressed.ToArray();
+    }
+
+    /// <summary>
+    /// The byte index of the <paramref name="occurrence"/>-th occurrence of
+    /// <paramref name="marker"/> in <paramref name="document"/>, so a case computes the
+    /// offset it expects from its own bytes instead of writing a constant by hand.
+    /// </summary>
+    public static long OffsetOf(byte[] document, string marker, int occurrence = 1)
+    {
+        var needle = Utf8(marker);
+        var search = 0;
+        for (var found = 1; ; found++)
+        {
+            var at = document.AsSpan(search).IndexOf(needle);
+            if (at < 0)
+            {
+                throw new InvalidOperationException(
+                    $"the document holds no occurrence {occurrence} of '{marker}'");
+            }
+
+            var index = search + at;
+            if (found == occurrence)
+            {
+                return index;
+            }
+
+            search = index + needle.Length;
+        }
+    }
 
     /// <summary>A record whose description is <paramref name="bytes"/> ASCII bytes long.</summary>
     public static string TallRecord(int ordinal, int bytes) =>
@@ -69,4 +128,7 @@ internal static class SnapshotBytes
 
     /// <summary>The text of <paramref name="record"/>, for assertions about copied bytes.</summary>
     public static string Text(RawRecord record) => Encoding.UTF8.GetString(record.Json.Span);
+
+    /// <summary>The text of <paramref name="document"/>, for cases that cut or extend it.</summary>
+    public static string Text(byte[] document) => Encoding.UTF8.GetString(document);
 }
