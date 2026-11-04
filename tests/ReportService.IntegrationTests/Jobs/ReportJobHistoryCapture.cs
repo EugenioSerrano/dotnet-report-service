@@ -1,10 +1,17 @@
 extern alias orchestration;
 
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
+using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
+using ReportService.Storage.Filesystem;
+using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Packages;
+using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Api.Enums.V1;
@@ -18,6 +25,8 @@ using OrchestrationMetrics = orchestration::ReportService.Workers.Orchestration.
 using ReportJobActivities = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobActivities;
 using ReportJobInput = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobInput;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
+using ValidateAndPartitionActivity = orchestration::ReportService.Workers.Orchestration.Jobs.ValidateAndPartitionActivity;
+using PdfOutputActivityOptions = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputActivityOptions;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -26,9 +35,11 @@ namespace ReportService.IntegrationTests.Jobs;
 /// to check. It is opt-in: it runs only when the environment variable names the directory
 /// to write, so the integration command never runs it, and the ordinary cases of this suite
 /// are untouched by it. It needs one engine and nothing else — the jobs it runs live in the
-/// in-memory record stores — so every history it writes is the outcome of a real execution
-/// of the workflow and its steps, taken under the very settings the case that replays it
-/// replays it under.
+/// in-memory record stores and a storage root of its own — so every history it writes is the
+/// outcome of a real execution of the workflow and its steps, taken under the very settings
+/// the case that replays it replays it under. The data step runs for real: the records name
+/// a taken version whose package and schema are written behind them, and every snapshot
+/// document is written before the record that carries its size and SHA-256.
 /// </summary>
 public sealed class ReportJobHistoryCapture
 {
@@ -43,6 +54,18 @@ public sealed class ReportJobHistoryCapture
 
     /// <summary>The consumer every recorded job is accepted for.</summary>
     private const string Consumer = "dev-consumer";
+
+    /// <summary>The template every recorded job names, at the version whose package the rig holds.</summary>
+    private const string TemplateId = "pilot-grouped";
+
+    /// <summary>The version whose package and schema the rig holds: the pilot's own.</summary>
+    private const string Version = "1.0.0";
+
+    /// <summary>The version whose package carries a schema outside the profile.</summary>
+    private const string RefusedVersion = "1.1.0";
+
+    /// <summary>The path of the schema inside every package the rig writes.</summary>
+    private const string SchemaPath = "schema.json";
 
     /// <summary>The states a recorded job's upload is in when its execution starts.</summary>
     private enum UploadState
@@ -85,6 +108,49 @@ public sealed class ReportJobHistoryCapture
 
         await RecordTheRunThatContinuedAsync(rig, JobHistoryFixtures.ContinuedAsNew, target);
         await RecordTheRunAfterTheContinuationAsync(rig, JobHistoryFixtures.ContinuedAfterANotification, target);
+
+        await RecordTheRefusedSnapshotAsync(rig, target);
+        await RecordTheTemplateThatCannotBeUsedAsync(rig, target);
+    }
+
+    // The data step's own refusal, recorded from a real execution: a snapshot the reader
+    // refuses — a record cut short — ends the job with the profile's diagnostic, after one
+    // attempt of the step and with no rendering step after it.
+    private static async Task RecordTheRefusedSnapshotAsync(Rig rig, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            JobHistoryFixtures.RefusedSnapshot, UploadState.Ready, cancellationToken, rig.RefusedDocument());
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(
+            directory,
+            JobHistoryFixtures.RefusedSnapshot,
+            await rig.HistoryAsync(reportJobId, runId, cancellationToken),
+            cancellationToken);
+    }
+
+    // A job whose template version carries a schema outside the profile: the pin is
+    // sourced, the schema is refused, and the job ends with the code of a template that
+    // cannot be used — again in one attempt, with nothing rendered.
+    private static async Task RecordTheTemplateThatCannotBeUsedAsync(Rig rig, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            JobHistoryFixtures.TemplateThatCannotBeUsed,
+            UploadState.Ready,
+            cancellationToken,
+            rig.SampleDocument(),
+            RefusedVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(
+            directory,
+            JobHistoryFixtures.TemplateThatCannotBeUsed,
+            await rig.HistoryAsync(reportJobId, runId, cancellationToken),
+            cancellationToken);
     }
 
     private static string Target()
@@ -216,36 +282,56 @@ public sealed class ReportJobHistoryCapture
         await File.WriteAllTextAsync(Path.Combine(directory, fixture.File), history.ToJson(), cancellationToken);
 
     /// <summary>
-    /// One engine, one worker on its queue, one clock, and the records every recording runs
-    /// over. The engine allows one worker per queue, so the recordings share it and differ
-    /// in the settings the workflow publishes before each execution starts.
+    /// One engine, two workers — one per queue — one clock, one storage root and the
+    /// records every recording runs over. The engine allows one worker per queue, so the
+    /// recordings share it and differ in the settings the workflow publishes before each
+    /// execution starts; the data step is served from the queue C.0 schedules it on.
     /// </summary>
     private sealed class Rig : IAsyncDisposable
     {
         private readonly WorkflowEnvironment _environment;
         private readonly TemporalWorker _worker;
+        private readonly TemporalWorker _dataWorker;
         private readonly OrchestrationMetrics _metrics = new(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         private readonly CancellationTokenSource _stop = new();
         private readonly Task _running;
+        private readonly Task _dataRunning;
         private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (ObjectKey Key, ObjectWrite Written, long Size)> _snapshotOf = new(StringComparer.Ordinal);
         private int _sequence;
 
         private Rig(
             WorkflowEnvironment environment,
             TemporalWorker worker,
+            TemporalWorker dataWorker,
             OrchestrationMetrics metrics,
             Task running,
+            Task dataRunning,
             InMemoryUploadStore uploads,
             InMemoryJobStore jobs,
-            ManualTimeProvider clock)
+            InMemoryTemplateVersionStore versions,
+            PreparedDataContractCache contracts,
+            IObjectStore objects,
+            string storageRoot,
+            ManualTimeProvider clock,
+            byte[] sample,
+            byte[] refused)
         {
             _environment = environment;
             _worker = worker;
+            _dataWorker = dataWorker;
             _metrics = metrics;
             _running = running;
+            _dataRunning = dataRunning;
             Uploads = uploads;
             Jobs = jobs;
+            Versions = versions;
+            Contracts = contracts;
+            Objects = objects;
+            StorageRoot = storageRoot;
             Clock = clock;
+            SampleDocumentBytes = sample;
+            RefusedDocumentBytes = refused;
         }
 
         public ITemporalClient Client => _environment.Client;
@@ -253,6 +339,24 @@ public sealed class ReportJobHistoryCapture
         public InMemoryUploadStore Uploads { get; }
 
         public InMemoryJobStore Jobs { get; }
+
+        /// <summary>The taken versions the recorded jobs are pinned to.</summary>
+        public InMemoryTemplateVersionStore Versions { get; }
+
+        /// <summary>The contracts this rig prepared while the recordings ran.</summary>
+        public PreparedDataContractCache Contracts { get; }
+
+        /// <summary>The storage root the snapshots and the taken packages are written to.</summary>
+        public IObjectStore Objects { get; }
+
+        /// <summary>The root of this rig's storage, removed when the rig ends.</summary>
+        public string StorageRoot { get; }
+
+        /// <summary>The pilot's own sample document, which every re-taken job's snapshot holds.</summary>
+        private byte[] SampleDocumentBytes { get; }
+
+        /// <summary>The document whose second record is cut short: the reader refuses it.</summary>
+        private byte[] RefusedDocumentBytes { get; }
 
         /// <summary>
         /// The instant the recording being taken writes its records with. It never follows
@@ -263,12 +367,48 @@ public sealed class ReportJobHistoryCapture
 
         public static string WorkflowIdOf(string reportJobId) => ReportJobWorkflow.WorkflowIdFor(reportJobId);
 
+        /// <summary>The pilot's own sample document, copied for a job's snapshot.</summary>
+        public byte[] SampleDocument() => [.. SampleDocumentBytes];
+
+        /// <summary>The document the reader refuses: two records, the second cut short.</summary>
+        public byte[] RefusedDocument() => [.. RefusedDocumentBytes];
+
         public static async Task<Rig> StartAsync()
         {
             var uploads = new InMemoryUploadStore();
             var jobs = new InMemoryJobStore(uploads);
+            var versions = new InMemoryTemplateVersionStore();
+            var contracts = new PreparedDataContractCache();
             var clock = new ManualTimeProvider(Now);
             var metrics = new OrchestrationMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
+
+            // The storage the data step reads: the snapshots of the recorded jobs and the
+            // packages of the versions they are pinned to, under a root of this rig's own.
+            var storageRoot = Path.Combine(
+                Path.GetTempPath(),
+                "report-service-capture",
+                Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+            Directory.CreateDirectory(storageRoot);
+            var objects = FilesystemObjectStore.Open(
+                new FilesystemStorageOptions { Root = storageRoot, CreateIfMissing = true },
+                storageRoot,
+                TimeProvider.System,
+                NullLogger<FilesystemObjectStore>.Instance);
+
+            var sample = await ReadRepositoryFileAsync("samples/templates/pilot-grouped/sample.json");
+            var refused = RefusedDocumentOf(sample);
+            await SeedVersionAsync(objects, versions, Version, await ReadRepositoryFileAsync("samples/templates/pilot-grouped/schema.json"), Consumer);
+            await SeedVersionAsync(objects, versions, RefusedVersion, RefusedSchema(), Consumer);
+
+            var activity = new ValidateAndPartitionActivity(
+                jobs,
+                uploads,
+                objects,
+                versions,
+                contracts,
+                clock,
+                NullLogger<ValidateAndPartitionActivity>.Instance,
+                Path.Combine(storageRoot, "scratch"));
 
             // The workflow's own bounds are published per recording, before each execution
             // starts; the worker serves every recording of this rig in turn.
@@ -284,10 +424,30 @@ public sealed class ReportJobHistoryCapture
                         NullLoggerFactory.Instance,
                         NullLogger<ReportJobActivities>.Instance))
                     .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance)));
+            var dataWorker = new TemporalWorker(
+                environment.Client,
+                new TemporalWorkerOptions(PdfOutputActivityOptions.DataQueue)
+                    .AddAllActivities(activity));
 
             var stop = new CancellationTokenSource();
             var running = worker.ExecuteAsync(stop.Token);
-            return new Rig(environment, worker, metrics, running, uploads, jobs, clock);
+            var dataRunning = dataWorker.ExecuteAsync(stop.Token);
+            return new Rig(
+                environment,
+                worker,
+                dataWorker,
+                metrics,
+                running,
+                dataRunning,
+                uploads,
+                jobs,
+                versions,
+                contracts,
+                objects,
+                storageRoot,
+                clock,
+                sample,
+                refused);
         }
 
         public string UploadOf(string reportJobId) => _uploadOf[reportJobId];
@@ -298,13 +458,28 @@ public sealed class ReportJobHistoryCapture
         public async Task<string> GivenJobAsync(
             JobHistoryFixture fixture,
             UploadState state,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            byte[]? document = null,
+            string version = Version)
         {
             ReportJobWorkflow.Configure(fixture.Backstop, fixture.ContinueAsNewAfter);
             var now = Clock.GetUtcNow();
+            document ??= SampleDocument();
 
             var uploadId = UploadIdentifier.Prefix + (++_sequence).ToString("x32", CultureInfo.InvariantCulture);
             var stagingKey = ObjectKey.FromSegments("staging", uploadId, "content");
+
+            // The document is written first, and the record that describes it carries that
+            // document's own size and SHA-256 in both pairs: a record never names bytes that
+            // were not written.
+            var snapshotKey = ObjectKey.FromSegments("snapshots", uploadId, "a");
+            using var content = new MemoryStream(document, writable: false);
+            var written = await Objects.WriteAsync(snapshotKey, content, cancellationToken);
+            if (!written.Succeeded)
+            {
+                throw new InvalidOperationException("the capture's snapshot had to be written");
+            }
+
             await Uploads.CreateAsync(
                 new UploadRecord(
                     uploadId,
@@ -318,23 +493,31 @@ public sealed class ReportJobHistoryCapture
                 cancellationToken);
             await Uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now.AddMinutes(-30), cancellationToken);
             await Uploads.RecordTransferAsync(
-                uploadId, UploadContentOutcome.Complete, 900, 900, new string('a', 64), now.AddMinutes(-30), cancellationToken);
+                uploadId,
+                UploadContentOutcome.Complete,
+                written.Value!.Size,
+                written.Value.Size,
+                written.Value.Sha256,
+                now.AddMinutes(-30),
+                cancellationToken);
             await Uploads.ConfirmAsync(
                 uploadId, Consumer, null, now.AddMinutes(-30), now.AddMinutes(-30), now.AddHours(5), cancellationToken);
 
             if (state is UploadState.Ready)
             {
-                await MakeReadyAsync(uploadId, cancellationToken);
+                await CommitSnapshotAsync(uploadId, snapshotKey, written.Value, document.LongLength, cancellationToken);
             }
+
+            _snapshotOf[uploadId] = (snapshotKey, written.Value, document.LongLength);
 
             var acceptance = new JobAcceptance(
                 JobIdentifier.Create(),
                 JobIdentifier.CreateOutput(),
                 Consumer,
                 uploadId,
-                "pilot-grouped",
+                TemplateId,
                 TemplateReferenceForm.Exact,
-                "1.0.0");
+                version);
             if (await Jobs.AcceptAsync(acceptance, now, cancellationToken) is not JobAcceptanceResult.Accepted)
             {
                 throw new InvalidOperationException(
@@ -445,18 +628,31 @@ public sealed class ReportJobHistoryCapture
             Client.GetWorkflowHandle<ReportJobWorkflow>(WorkflowIdOf(reportJobId))
                 .SignalAsync((ReportJobWorkflow workflow) => workflow.OnInputChangedAsync());
 
-        public async Task MakeReadyAsync(string uploadId, CancellationToken cancellationToken) =>
+        // The snapshot record is committed from the document that was written: its own byte
+        // count and SHA-256 in both pairs, because nothing compressed it on the way in.
+        public Task MakeReadyAsync(string uploadId, CancellationToken cancellationToken)
+        {
+            var (key, written, size) = _snapshotOf[uploadId];
+            return CommitSnapshotAsync(uploadId, key, written, size, cancellationToken);
+        }
+
+        private async Task CommitSnapshotAsync(
+            string uploadId,
+            ObjectKey snapshotKey,
+            ObjectWrite written,
+            long sizeUncompressed,
+            CancellationToken cancellationToken) =>
             await Uploads.CommitReadyAsync(
                 new SnapshotRecord(
                     uploadId,
                     Consumer,
-                    ObjectKey.FromSegments("snapshots", uploadId, "a"),
+                    snapshotKey,
                     UploadContentEncoding.None,
                     DataProfile.HeaderItemsV1,
-                    new string('a', 64),
-                    900,
-                    new string('a', 64),
-                    900,
+                    written.Sha256,
+                    sizeUncompressed,
+                    written.Sha256,
+                    written.Size,
                     Clock.GetUtcNow().AddMinutes(-20)),
                 Clock.GetUtcNow().AddMinutes(-20),
                 cancellationToken);
@@ -468,6 +664,82 @@ public sealed class ReportJobHistoryCapture
         /// <summary>Moves the clock past the verification deadline of the upload being recorded.</summary>
         public void AgePastTheVerificationDeadline() => Clock.Advance(TimeSpan.FromHours(6));
 
+        // A file of the repository, read from its real place: the pilot's own sample and
+        // the schema of the version the recorded jobs are pinned to.
+        private static Task<byte[]> ReadRepositoryFileAsync(string relativePath) =>
+            File.ReadAllBytesAsync(Path.Combine(
+                RepositoryPaths.Root,
+                relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+        // The pilot's own sample, cut inside its second record: the reader reports the cut
+        // where it stopped and never the values it had read.
+        private static byte[] RefusedDocumentOf(byte[] sample)
+        {
+            var text = Encoding.UTF8.GetString(sample);
+            var first = text.IndexOf("\"sequence\"", StringComparison.Ordinal);
+            var second = text.IndexOf("\"sequence\"", first + 1, StringComparison.Ordinal);
+            return Encoding.UTF8.GetBytes(text[..(second + 48)]);
+        }
+
+        // A schema outside the profile: an identifier of its own, which the profile refuses
+        // before the library ever sees it. The version is taken, the pin is sourced, and the
+        // job ends because its template cannot be used.
+        private static byte[] RefusedSchema() =>
+            Encoding.UTF8.GetBytes(
+                """
+                {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "https://templates.invalid/data/refused",
+                  "properties": {
+                    "header": { "type": "object" },
+                    "items": { "items": { "type": "object" } }
+                  }
+                }
+                """);
+
+        // The taken version the recorded jobs are pinned to: its package written through the
+        // archive the take uses, stored under its own hash, with its schema at the path the
+        // record names, and the record of that version in the store the step reads.
+        private static async Task SeedVersionAsync(
+            IObjectStore objects,
+            InMemoryTemplateVersionStore versions,
+            string version,
+            byte[] schema,
+            string owner)
+        {
+            var files = new List<PackageFileSource>
+            {
+                new(SchemaPath, _ => Task.FromResult<Stream>(new MemoryStream(schema, writable: false))),
+                new("template.yaml", _ => Task.FromResult<Stream>(new MemoryStream(
+                    Encoding.UTF8.GetBytes("engine: scriban\n"), writable: false))),
+            };
+
+            using var sink = new MemoryStream();
+            await TemplatePackageArchive.WriteAsync(files, sink, CancellationToken.None);
+            var bytes = sink.ToArray();
+            var packageSha256 = Convert.ToHexStringLower(SHA256.HashData(bytes));
+            var key = TemplatePackageKeys.ForVersion(owner, TemplateId, version, packageSha256);
+            using var content = new MemoryStream(bytes, writable: false);
+            var written = await objects.WriteAsync(key, content, CancellationToken.None);
+            if (!written.Succeeded)
+            {
+                throw new InvalidOperationException("the capture's package had to be written");
+            }
+
+            versions.Seed(TemplateVersionRecords.Sample(
+                TemplateId,
+                version,
+                owner,
+                shared: true,
+                schemaRef: SchemaPath,
+                packageSha256: packageSha256) with
+            {
+                PackageSize = bytes.Length,
+                FileCount = files.Count,
+                ObjectKey = key,
+            });
+        }
+
         public async ValueTask DisposeAsync()
         {
             await _stop.CancelAsync();
@@ -476,22 +748,33 @@ public sealed class ReportJobHistoryCapture
             // that it has finished, so it is given a moment and then left to the process
             // rather than holding the capture open for a task that never completes.
             _worker.Dispose();
+            _dataWorker.Dispose();
             try
             {
-                await _running.WaitAsync(TimeSpan.FromSeconds(5));
+                await Task.WhenAll(_running, _dataRunning).WaitAsync(TimeSpan.FromSeconds(5));
             }
             catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
             {
-                // The worker is stopped; only its task's report is missing.
+                // The workers are stopped; only their tasks' report is missing.
             }
 
             _stop.Dispose();
             await _environment.DisposeAsync();
             _metrics.Dispose();
+            Contracts.Dispose();
+            try
+            {
+                Directory.Delete(StorageRoot, recursive: true);
+            }
+            catch (IOException)
+            {
+                // A storage root left on disk costs disk, never correctness.
+            }
+
+            await Task.CompletedTask;
         }
 
-        private static DescribeWorkflowExecutionRequest Describe(string workflowId) => new()
-        {
+        private static DescribeWorkflowExecutionRequest Describe(string workflowId) => new()        {
             Namespace = "default",
             Execution = new Temporalio.Api.Common.V1.WorkflowExecution
             {

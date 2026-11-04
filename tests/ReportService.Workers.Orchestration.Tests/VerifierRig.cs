@@ -240,6 +240,9 @@ internal sealed class RecordingObjectStore : IObjectStore
     /// <summary>When set, a read answers this outcome instead of reading.</summary>
     public StorageOutcome? ReadFailure { get; set; }
 
+    /// <summary>When set beside <see cref="ReadFailure"/>, only a key it selects fails.</summary>
+    public Func<ObjectKey, bool>? ReadFailureWhen { get; set; }
+
     /// <summary>When set, a write answers this outcome instead of writing.</summary>
     public StorageOutcome? WriteFailure { get; set; }
 
@@ -279,7 +282,7 @@ internal sealed class RecordingObjectStore : IObjectStore
         CancellationToken cancellationToken)
     {
         Opens++;
-        return ReadFailure is { } outcome
+        return ReadFailure is { } outcome && (ReadFailureWhen is null || ReadFailureWhen(key))
             ? Task.FromResult(StorageResult.Failure<VerifiedRead>(outcome, new StorageError("storage.test", "refused by the test")))
             : _inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
     }

@@ -12,6 +12,8 @@ dotnet-report-service/
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
 │   ├── ReportService.Jobs/                        The report job records: acceptance, outputs, template references, shared by the API and the orchestration worker
+│   ├── ReportService.Data/                        The data-contract reader: the header-items-v1 profile and one sequential pass
+│   ├── ReportService.DataContract/                The template's data contract: the profile check, the compiled schema and its two roots, the first-violation mapping
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
 │   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
 │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
@@ -23,6 +25,8 @@ dotnet-report-service/
 │   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
+│   ├── ReportService.Data.Tests/         Unit tests of the data-contract reader: the hostile-input matrix, plain and gzip (hermetic)
+│   ├── ReportService.DataContract.Tests/ Unit tests of the template data contract: profile, compilation, evaluation, cache (hermetic)
 │   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
@@ -31,6 +35,7 @@ dotnet-report-service/
 │   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the changed-version warning (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
+│   ├── ReportService.PerformanceTests/   Memory and throughput measurements over the generated datasets (reference environment)
 │   └── ReportService.Testing/            Support library shared by the test projects
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md)
@@ -60,7 +65,7 @@ dotnet-report-service/
 | Product project | `src/ReportService.<Area>/ReportService.<Area>.csproj` | `src/ReportService.Workers.Pdf/` |
 | Root namespace | Same as the project name | `ReportService.Workers.Pdf` |
 | Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project; a provider project is tested in its port's project | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Storage.Tests/` (the port and its Filesystem provider) |
-| Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/`, `tests/ReportService.EndToEndTests/` |
+| Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/`, `tests/ReportService.EndToEndTests/`, `tests/ReportService.PerformanceTests/` |
 | Shared test support (library, referenced by test projects only) | `tests/ReportService.Testing/` | `tests/ReportService.Testing/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |
 | Sample tool | `samples/<area>/ReportService.Samples.<Tool>/` | `samples/datasets/ReportService.Samples.DatasetGenerator/` |

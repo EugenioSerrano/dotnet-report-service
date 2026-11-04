@@ -181,6 +181,17 @@ public sealed partial class InMemoryJobStore : IJobStore
     }
 
     /// <inheritdoc />
+    public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            return Task.FromResult(_references.GetValueOrDefault(reportJobId));
+        }
+    }
+
+    /// <inheritdoc />
     public Task<JobFailureOutcome> FailJobAsync(
         string reportJobId,
         string code,

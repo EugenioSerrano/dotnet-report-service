@@ -34,6 +34,17 @@ public interface IJobStore
     Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Reads the template reference the job was accepted with: the template it asked
+    /// for, the form of the reference and, when it named one, the version. The reference
+    /// is written with the job, so a job that exists has one, and a job that is not
+    /// recorded answers <see langword="null"/>.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <returns>The reference, or <see langword="null"/> when no such job exists.</returns>
+    Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Fails a job and every output of it that has not ended, in one transaction: the
     /// outputs are marked failed with <paramref name="code"/> and the job is marked
     /// failed with the code and the reason. A job that already ended is left exactly

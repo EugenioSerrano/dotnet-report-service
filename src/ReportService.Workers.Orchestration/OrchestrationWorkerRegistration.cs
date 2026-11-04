@@ -1,9 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
+using ReportService.Storage;
+using ReportService.TemplatePackages.Packages;
+using ReportService.TemplatePackages.Records;
 using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
@@ -96,6 +100,13 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<JobTransitionActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<InputWaitSignalActivities>();
+
+        // The data step reads the contract of the version a job is pinned to: the taken
+        // versions, the files of a taken copy, and the contracts this worker prepared.
+        builder.Services.TryAddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
+        builder.Services.TryAddSingleton(provider => new TakenTemplatePackageReader(
+            provider.GetRequiredService<IObjectStore>()));
+        builder.Services.TryAddSingleton<PreparedDataContractCache>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
 
         // The nudge a finished verification sends to the jobs of its upload goes through the

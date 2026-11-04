@@ -100,6 +100,15 @@ public sealed partial class PostgresJobStore : IJobStore
         ORDER BY output_id
         """;
 
+    private const string SelectReferenceSql = """
+        SELECT report_job_id    AS "ReportJobId",
+               template_id      AS "TemplateId",
+               reference_form   AS "ReferenceForm",
+               requested_version AS "RequestedVersion"
+        FROM report_service.template_references
+        WHERE report_job_id = @ReportJobId
+        """;
+
     private const string FailOutputsSql = """
         UPDATE report_service.report_outputs
            SET status = 'FAILED', error_code = @Code, finished_at = @Now
@@ -262,6 +271,27 @@ public sealed partial class PostgresJobStore : IJobStore
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
 
             return row.ToState([.. outputs.Select(output => output.ToRecord())]);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var row = await connection.QuerySingleOrDefaultAsync<ReferenceRow>(new CommandDefinition(
+                SelectReferenceSql,
+                new { ReportJobId = reportJobId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return row?.ToRecord();
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -467,6 +497,26 @@ public sealed partial class PostgresJobStore : IJobStore
             VerificationDeadline is { } deadline ? Utc(deadline) : null,
             RejectionCode is null ? null : UploadWireValues.ParseStoredCode(RejectionCode),
             RejectionReason is null ? null : UploadWireValues.ParseStoredReason(RejectionReason));
+    }
+
+    // The reference row: the form is kept in its domain text and read back strictly.
+    private sealed class ReferenceRow
+    {
+        public string ReportJobId { get; set; } = string.Empty;
+
+        public string TemplateId { get; set; } = string.Empty;
+
+        public string ReferenceForm { get; set; } = string.Empty;
+
+        public string? RequestedVersion { get; set; }
+
+        public TemplateReferenceRecord ToRecord() => new(
+            ReportJobId,
+            TemplateId,
+            JobWireValues.ParseStoredForm(ReferenceForm))
+        {
+            RequestedVersion = RequestedVersion,
+        };
     }
 
     private sealed class OutputRow

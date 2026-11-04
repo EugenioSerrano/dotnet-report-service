@@ -34,23 +34,40 @@ public sealed class DataContractViolation : Exception
     /// <summary>The offset, in bytes of the uncompressed document, the pass stopped at.</summary>
     public long Offset { get; }
 
+    /// <summary>The field's path relative to the value, when a check of the template's schema refused it.</summary>
+    public string? Path { get; }
+
+    /// <summary>The rule of the template's schema that refused the value, when one did.</summary>
+    public string? Keyword { get; }
+
     /// <summary>Describes a refusal of the document.</summary>
     /// <param name="code">One of <see cref="DataInvalid"/>, <see cref="RecordTooLarge"/> or <see cref="QuotaExceeded"/>.</param>
     /// <param name="reason">Why it is invalid, or <see langword="null"/> when the code names no reason.</param>
     /// <param name="limit">The limit that was reached, or <see langword="null"/> when no limit was.</param>
     /// <param name="ordinal">The ordinal of the record the pass stopped at.</param>
     /// <param name="offset">The offset of the uncompressed document the pass stopped at.</param>
-    public DataContractViolation(string code, string? reason, string? limit, int ordinal, long offset)
-        : base(Describe(code, reason, limit, ordinal, offset))
+    /// <param name="path">The field's path relative to the value, when a check of the template's schema refused it.</param>
+    /// <param name="keyword">The rule of the template's schema that refused the value, when one did.</param>
+    public DataContractViolation(
+        string code,
+        string? reason,
+        string? limit,
+        int ordinal,
+        long offset,
+        string? path = null,
+        string? keyword = null)
+        : base(Describe(code, reason, limit, ordinal, offset, path, keyword))
     {
         Code = code;
         Reason = reason;
         Limit = limit;
         Ordinal = ordinal;
         Offset = offset;
+        Path = path;
+        Keyword = keyword;
     }
 
-    private static string Describe(string code, string? reason, string? limit, int ordinal, long offset)
+    private static string Describe(string code, string? reason, string? limit, int ordinal, long offset, string? path, string? keyword)
     {
         var text = $"the document cannot be used: code={code}";
         if (reason is not null)
@@ -63,8 +80,22 @@ public sealed class DataContractViolation : Exception
             text += " limit=" + limit;
         }
 
-        return text
+        text = text
             + " ordinal=" + ordinal.ToString(CultureInfo.InvariantCulture)
             + " offset=" + offset.ToString(CultureInfo.InvariantCulture);
+
+        // A value the template's schema refused names the field's path and the rule, and
+        // nothing else: never the value the producer wrote.
+        if (path is not null)
+        {
+            text += " path=" + path;
+        }
+
+        if (keyword is not null)
+        {
+            text += " keyword=" + keyword;
+        }
+
+        return text;
     }
 }

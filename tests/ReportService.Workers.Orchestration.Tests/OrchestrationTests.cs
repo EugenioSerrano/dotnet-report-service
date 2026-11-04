@@ -9,6 +9,7 @@ using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Testing;
 using ReportService.Storage;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration;
 using ReportService.Workers.Orchestration.Dispatch;
@@ -483,6 +484,7 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         builder.Services.AddSingleton<IJobStore>(new InMemoryJobStore(_rig.Uploads));
         builder.Services.AddSingleton<IUploadStore>(_rig.Uploads);
         builder.Services.AddSingleton<IObjectStore>(_rig.Objects);
+        builder.Services.AddSingleton<ITemplateVersionStore>(new InMemoryTemplateVersionStore());
         builder.Services.AddSingleton(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         builder.Services.AddSingleton<OrchestrationMetrics>();
         builder.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";

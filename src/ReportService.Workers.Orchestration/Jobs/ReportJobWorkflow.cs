@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using ReportService.Jobs;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Telemetry;
+using Temporalio.Exceptions;
 using Temporalio.Workflows;
 
 namespace ReportService.Workers.Orchestration.Jobs;
@@ -112,10 +113,36 @@ public sealed class ReportJobWorkflow
                 throw new InvalidOperationException("the input check answered an outcome this workflow does not know.");
         }
 
-        // The point where the steps that take a usable input to its end are added; until
-        // they exist the run completes and the job stays as the acceptance left it. A run
-        // that has reached this point never continues as a new run: the check count belongs
-        // to the wait behind it.
+        // The first step that takes a usable input to its end: the job's snapshot is read,
+        // checked against the template it is pinned to and partitioned before anything is
+        // rendered or published, and a refusal ends the job here. A run that has reached
+        // this point never continues as a new run: the check count belongs to the wait
+        // behind it.
+        try
+        {
+            await Workflow.ExecuteActivityAsync(
+                (ValidateAndPartitionActivity activities) => activities.RunAsync(new ValidateAndPartitionInput(input.ReportJobId)),
+                PdfOutputActivityOptions.Create()).ConfigureAwait(true);
+        }
+        catch (ActivityFailureException failure)
+            when (failure.InnerException is ApplicationFailureException refusal
+                && refusal.NonRetryable
+                && !string.IsNullOrEmpty(refusal.ErrorType))
+        {
+            // The step refused the job's input or could not use its template: the job ends
+            // with the code the step named and the diagnostic it carried, through the same
+            // helper the wait's own failures use. Any other outcome is left to the engine's
+            // own policy, so a transient fault is still retried.
+            await FailAsync(
+                input.ReportJobId,
+                refusal.ErrorType!,
+                refusal.Message,
+                ReportJobActivityOptions.Create()).ConfigureAwait(true);
+            return;
+        }
+
+        // The point where the steps that follow the data step are added; until they exist
+        // the run completes and the job stays as the acceptance left it.
         Workflow.Logger.LogInformation("Job {ReportJobId} input ready", input.ReportJobId);
     }
 

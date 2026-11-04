@@ -32,6 +32,7 @@
     <Project Path="tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />
     <Project Path="tests/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj" />
     <Project Path="tests/ReportService.IntegrationTests/ReportService.IntegrationTests.csproj" />
+    <Project Path="tests/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj" />
     <Project Path="tests/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj" />
     <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />

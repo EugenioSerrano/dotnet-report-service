@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
@@ -204,8 +204,8 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   - `ReportService.EndToEndTests` — starts the whole local composition.
   - `ReportService.RenderingTests` (planned) — renders templates and compares
     the resulting documents (HTML, PDF, XLSX, Markdown).
-  - `ReportService.PerformanceTests` (planned) — memory and throughput
-    measurements.
+  - `ReportService.PerformanceTests` — memory and throughput measurements over
+    the generated pilot datasets; run on the reference environment.
 - **`ReportService.Testing`** — a support library shared by the test
   projects (repository paths, the composition's pinned images, a bounded wait,
   in-memory log capture, the container helper, a directory made unwritable for

@@ -352,6 +352,9 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.FindForWorkflowAsync(reportJobId, cancellationToken);
 
+        public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) =>
+            inner.FindTemplateReferenceAsync(reportJobId, cancellationToken);
+
         public Task<JobFailureOutcome> FailJobAsync(
             string reportJobId,
             string code,
@@ -412,6 +415,9 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
 
         public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
+            throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
 
         public Task<JobFailureOutcome> FailJobAsync(

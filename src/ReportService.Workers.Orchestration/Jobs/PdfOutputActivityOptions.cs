@@ -47,6 +47,7 @@ public static class PdfOutputActivityOptions
         "RECORD_TOO_LARGE",
         "QUOTA_EXCEEDED",
         "EXECUTION_FAILED",
+        "TEMPLATE_INVALID",
     ];
 
     /// <summary>Builds the execution settings of one data step.</summary>

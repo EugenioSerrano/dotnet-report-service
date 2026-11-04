@@ -44,6 +44,12 @@ public static class JobHistoryFixtures
     /// <summary>The run that followed the continuation, ended by a notification of a ready upload.</summary>
     public const string ContinuedAfterANotificationFile = "report-job-continued-after-a-notification.json";
 
+    /// <summary>A job whose snapshot the reader refuses: a record cut short.</summary>
+    public const string DataRefusedFile = "report-job-data-refused.json";
+
+    /// <summary>A job whose pinned template version carries a schema the profile refuses.</summary>
+    public const string TemplateInvalidFile = "report-job-template-invalid.json";
+
     /// <summary>A job whose upload was ready at its first check: it never waits.</summary>
     public static readonly JobHistoryFixture Ready = new(
         ReadyFile,
@@ -105,6 +111,26 @@ public static class JobHistoryFixtures
         TimeSpan.FromSeconds(2),
         2);
 
+    /// <summary>
+    /// A job whose snapshot the reader refuses: a document cut inside a record. The data
+    /// step ends the job with the profile's diagnostic, in one attempt, and nothing of it
+    /// is rendered.
+    /// </summary>
+    public static readonly JobHistoryFixture RefusedSnapshot = new(
+        DataRefusedFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
+    /// <summary>
+    /// A job whose pinned version carries a schema outside the profile: the pin is sourced,
+    /// the schema is refused, and the job ends with the code of a template that cannot be
+    /// used, in one attempt.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateThatCannotBeUsed = new(
+        TemplateInvalidFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
     /// <summary>Every committed recording, in the order the cases name them.</summary>
     public static readonly JobHistoryFixture[] All =
     [
@@ -116,6 +142,8 @@ public static class JobHistoryFixtures
         WaitingThenExpired,
         ContinuedAsNew,
         ContinuedAfterANotification,
+        RefusedSnapshot,
+        TemplateThatCannotBeUsed,
     ];
 
     /// <summary>The recordings of a job whose first check already answered: no wait was taken.</summary>

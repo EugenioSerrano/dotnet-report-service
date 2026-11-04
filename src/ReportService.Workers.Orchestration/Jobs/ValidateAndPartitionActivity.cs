@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
 using ReportService.Data;
+using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.Storage;
+using ReportService.TemplatePackages.Packages;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 using Temporalio.Activities;
 using Temporalio.Exceptions;
@@ -13,26 +16,60 @@ namespace ReportService.Workers.Orchestration.Jobs;
 public sealed record ValidateAndPartitionInput(string ReportJobId);
 
 /// <summary>
-/// The data step of one job: it reads the job's snapshot once through the verifying
-/// reader, admits its records into one block, writes the block and its index page
-/// under keys of this attempt, and records the partition. It first looks for the
-/// partition it may already have committed, so an attempt that arrives again reads
-/// what exists instead of writing a second one. A snapshot the profile refuses ends
-/// the step with a failure that is never retried; the objects of a losing attempt
+/// The data step of one job: it sources the data contract of the template the job is
+/// pinned to, reads the job's snapshot once through the verifying reader, checks the
+/// header and every record against that contract while it reads, admits the records into
+/// one block, writes the block and its index page under keys of this attempt, and records
+/// the partition. It first looks for the partition it may already have committed, so an
+/// attempt that arrives again reads what exists instead of writing a second one. A
+/// snapshot the profile refuses, or a value the template's schema refuses, ends the step
+/// with a failure that is never retried; a template whose pin or schema cannot be used
+/// ends it with a failure of its own, also never retried; the objects of a losing attempt
 /// are left where they are.
 /// </summary>
 public sealed class ValidateAndPartitionActivity(
     IJobStore jobs,
     IUploadStore uploads,
     IObjectStore objects,
+    ITemplateVersionStore versions,
+    PreparedDataContractCache contracts,
     TimeProvider clock,
-    ILogger<ValidateAndPartitionActivity> logger)
+    ILogger<ValidateAndPartitionActivity> logger,
+    string? scratchRoot = null)
 {
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "ValidateAndPartition";
 
     /// <summary>The code a failure on the service's side ends a job with.</summary>
     private const string ExecutionFailed = "EXECUTION_FAILED";
+
+    /// <summary>The code the template's own contract ends a job with.</summary>
+    private const string TemplateInvalid = "TEMPLATE_INVALID";
+
+    /// <summary>The code a job whose records cannot be read ends with.</summary>
+    private const string InputNotFound = "INPUT_NOT_FOUND";
+
+    /// <summary>The reason word a value the template's schema refuses carries.</summary>
+    private const string SchemaViolation = "schema-violation";
+
+    /// <summary>The file of the taken package the contract is read from.</summary>
+    private const string SchemaFile = "schema.json";
+
+    /// <summary>The span tag of the code a job ended with.</summary>
+    private const string ErrorCodeTag = "error.code";
+
+    /// <summary>The span tag of the reason word the pass stopped at.</summary>
+    private const string ViolationReasonTag = "data.violation.reason";
+
+    /// <summary>The span tag of the ordinal of the value the pass stopped at.</summary>
+    private const string ViolationOrdinalTag = "data.violation.ordinal";
+
+    /// <summary>The directory a taken copy is extracted under, when the caller names none.</summary>
+    public static readonly string DefaultScratchRoot =
+        Path.Combine(Path.GetTempPath(), "report-service-data-contract");
+
+    /// <summary>The directory a taken copy of the version being checked is extracted under.</summary>
+    public string ScratchRoot { get; } = scratchRoot ?? DefaultScratchRoot;
 
     /// <summary>Reads one job's snapshot and records its partition.</summary>
     /// <param name="input">The job to partition.</param>
@@ -55,6 +92,13 @@ public sealed class ValidateAndPartitionActivity(
             ?? throw Refuse("INPUT_NOT_FOUND", "the upload of the job is not recorded");
         var snapshot = upload.Snapshot
             ?? throw Refuse("INPUT_NOT_FOUND", "the upload of the job has no snapshot");
+
+        // The template's data contract is sourced before the snapshot is read: the pin names
+        // the schema the data is checked against, and a pin that cannot be sourced leaves
+        // nothing to check it with.
+        using var lease = await LeaseTheContractAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false);
+        var contract = lease.Compilation.Contract
+            ?? throw SchemaRefused(input.ReportJobId, lease.Compilation.Profile.Rule, ordinal: null, keyword: null);
 
         var read = await objects
             .OpenReadAsync(snapshot.ObjectKey, snapshot.SizeStored, snapshot.Sha256Stored, cancellationToken)
@@ -94,7 +138,7 @@ public sealed class ValidateAndPartitionActivity(
         {
             summary = await SingleBlockPartitioner
                 .PartitionAsync(
-                    HeaderItemsReader.ReadAsync(content, cancellationToken),
+                    CheckedAsync(contract, HeaderItemsReader.ReadAsync(content, cancellationToken), input.ReportJobId, cancellationToken),
                     block,
                     cancellationToken,
                     count => Interlocked.Exchange(ref recordsRead, count))
@@ -103,6 +147,20 @@ public sealed class ValidateAndPartitionActivity(
         catch (DataContractViolation violation)
         {
             // The profile's own diagnostic: the rule, the position, and no value of the document.
+            // The span carries the code, the reason and the ordinal, and the log line the same
+            // with the offset — never a value, a key or a path of the storage.
+            System.Diagnostics.Activity.Current?.SetTag(ErrorCodeTag, violation.Code);
+            System.Diagnostics.Activity.Current?.SetTag(ViolationReasonTag, violation.Reason ?? violation.Limit);
+            System.Diagnostics.Activity.Current?.SetTag(ViolationOrdinalTag, violation.Ordinal);
+            logger.LogInformation(
+                "Job {ReportJobId} snapshot refused: code={Code} reason={Reason} ordinal={Ordinal} offset={Offset} path={Path} keyword={Keyword}",
+                input.ReportJobId,
+                violation.Code,
+                violation.Reason ?? violation.Limit,
+                violation.Ordinal,
+                violation.Offset,
+                violation.Path,
+                violation.Keyword);
             throw new ApplicationFailureException(violation.Message, errorType: violation.Code, nonRetryable: true);
         }
         catch (StorageIntegrityException)
@@ -177,6 +235,210 @@ public sealed class ValidateAndPartitionActivity(
 
     private static ObjectWrite Written(ObjectWrite? write, string what) =>
         write ?? throw new InvalidOperationException($"the storage provider reported success without {what}");
+
+    // The job's own reference, the taken version it names and the contract of that version,
+    // leased from the worker's cache. The version is read off the reference and the version
+    // store is reached only when one is there: a reference by name carries none, and a store
+    // refuses a null version by throwing rather than answering nothing.
+    private async Task<PreparedDataContractLease> LeaseTheContractAsync(
+        string reportJobId,
+        CancellationToken cancellationToken)
+    {
+        var reference = await jobs.FindTemplateReferenceAsync(reportJobId, cancellationToken).ConfigureAwait(false)
+            ?? throw Refuse(InputNotFound, "the job is not recorded");
+
+        var version = reference.RequestedVersion;
+        if (version is null)
+        {
+            // A reference by name has no version to read: nothing in the product resolves a
+            // name, and this step never invents one. It says so, once, and the job ends.
+            throw PinNoVersion(reportJobId);
+        }
+
+        var record = await versions.FindAsync(reference.TemplateId, version, cancellationToken).ConfigureAwait(false);
+        if (record is null)
+        {
+            throw PinNotTaken(reportJobId);
+        }
+
+        var pin = TemplatePin.From(record, clock.GetUtcNow());
+        var schema = await ReadSchemaAsync(record, pin, reportJobId, cancellationToken).ConfigureAwait(false);
+
+        // A contract prepared by this lease is one the worker did not hold: the one debug
+        // line of a compilation names the package's hash and how long it took, and nothing
+        // of any document.
+        var compilationsBefore = contracts.CompilationCount;
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        var lease = contracts.Lease(pin.PackageSha256, pin.SchemaRef, schema);
+        if (contracts.CompilationCount > compilationsBefore)
+        {
+            logger.LogDebug(
+                "Job {ReportJobId}: the data contract of package {PackageSha256} was compiled in {ElapsedMilliseconds} ms",
+                reportJobId,
+                pin.PackageSha256,
+                System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        }
+
+        return lease;
+    }
+
+    // The schema of the pinned version, read from the taken copy at the path the version's
+    // record names: the copy is opened with the record's own size and SHA-256, so the bytes
+    // the contract is compiled from are the bytes the take fixed.
+    private async Task<ReadOnlyMemory<byte>> ReadSchemaAsync(
+        TemplateVersionRecord record,
+        TemplatePin pin,
+        string reportJobId,
+        CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(ScratchRoot);
+        TakenTemplatePackage package;
+        try
+        {
+            package = await new TakenTemplatePackageReader(objects)
+                .OpenAsync(record, ScratchRoot, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (TemplatePackageUnavailableException)
+        {
+            throw TakenCopyUnreadable(reportJobId);
+        }
+        catch (TemplatePackageCorruptException)
+        {
+            throw TakenCopyCorrupt(reportJobId);
+        }
+
+        await using (package.ConfigureAwait(false))
+        {
+            if (!package.Files.Contains(pin.SchemaRef, StringComparer.Ordinal))
+            {
+                throw SchemaAbsent(reportJobId);
+            }
+
+            var path = Path.Combine(package.Root, pin.SchemaRef.Replace('/', Path.DirectorySeparatorChar));
+            return await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    // The two roots of the contract are evaluated in the same pass that reads the document,
+    // each value as soon as the reader yields it and before the partitioner appends it: the
+    // header at the header root, every record at the record root. The first value the
+    // contract refuses stops the pass.
+    private async IAsyncEnumerable<RawRecord> CheckedAsync(
+        PreparedDataContract contract,
+        IAsyncEnumerable<RawRecord> values,
+        string reportJobId,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (var value in values.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            ContractCheck check;
+            try
+            {
+                check = value.Ordinal == 0 ? contract.CheckHeader(value.Json) : contract.CheckRecord(value.Json);
+            }
+            catch (ContractEvaluationFailed failure)
+            {
+                throw SchemaCannotBeDecided(reportJobId, failure.Kind, value.Ordinal, failure.Keyword);
+            }
+
+            if (!check.IsValid)
+            {
+                // The schema's own diagnostic: the reason, the value's ordinal and position,
+                // the field's path relative to the value and the rule — never the value.
+                throw new DataContractViolation(
+                    DataContractViolation.DataInvalid,
+                    SchemaViolation,
+                    limit: null,
+                    value.Ordinal,
+                    value.Offset,
+                    check.Path,
+                    check.Keyword);
+            }
+
+            yield return value;
+        }
+    }
+
+    // The pin cannot be sourced: the reference names no version, or it names one no record
+    // holds. The message is exactly the code and the rule, because the pin path reads no
+    // schema file and has no keyword to name.
+    private ApplicationFailureException PinNoVersion(string reportJobId)
+    {
+        logger.LogWarning("Job {ReportJobId}: its template version was never resolved", reportJobId);
+        return RefusedTemplate("pin");
+    }
+
+    private ApplicationFailureException PinNotTaken(string reportJobId)
+    {
+        logger.LogWarning("Job {ReportJobId}: its template version was never taken", reportJobId);
+        return RefusedTemplate("pin");
+    }
+
+    private ApplicationFailureException TakenCopyUnreadable(string reportJobId)
+    {
+        logger.LogWarning("Job {ReportJobId}: the taken copy of its template version could not be read", reportJobId);
+        return RefusedTemplate("package");
+    }
+
+    private ApplicationFailureException TakenCopyCorrupt(string reportJobId)
+    {
+        logger.LogWarning("Job {ReportJobId}: the taken copy of its template version does not read back intact", reportJobId);
+        return RefusedTemplate("package");
+    }
+
+    private ApplicationFailureException SchemaAbsent(string reportJobId)
+    {
+        logger.LogWarning("Job {ReportJobId}: the taken copy of its template version carries no schema", reportJobId);
+        return SchemaRefused(reportJobId, "absent", ordinal: null, keyword: null);
+    }
+
+    // A value the contract could not decide at all: the rule that stopped it, the ordinal of
+    // the value and the keyword it reached, never a value.
+    private ApplicationFailureException SchemaCannotBeDecided(
+        string reportJobId,
+        string kind,
+        int ordinal,
+        string? keyword) => SchemaRefused(reportJobId, kind, ordinal, keyword);
+
+    // The pin's own refusal: the code and the rule, and nothing else.
+    private ApplicationFailureException RefusedTemplate(string rule)
+    {
+        System.Diagnostics.Activity.Current?.SetTag(ErrorCodeTag, TemplateInvalid);
+        logger.LogWarning("Template data cannot be used for a job: {Rule}", rule);
+        return new ApplicationFailureException($"{TemplateInvalid} rule={rule}", errorType: TemplateInvalid, nonRetryable: true);
+    }
+
+    // The schema cannot be used: it is absent from the taken copy, the copy cannot be read,
+    // the profile refuses it, it does not compile, or a value cannot be decided against it.
+    private ApplicationFailureException SchemaRefused(
+        string reportJobId,
+        string? rule,
+        int? ordinal,
+        string? keyword)
+    {
+        System.Diagnostics.Activity.Current?.SetTag(ErrorCodeTag, TemplateInvalid);
+        logger.LogWarning(
+            "Job {ReportJobId}: {File} cannot be used (rule={Rule}, ordinal={Ordinal}, keyword={Keyword})",
+            reportJobId,
+            SchemaFile,
+            rule ?? "schema",
+            ordinal,
+            keyword);
+
+        var message = $"{TemplateInvalid} file={SchemaFile} rule={rule ?? "schema"}";
+        if (ordinal is { } position)
+        {
+            message += " ordinal=" + position.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (keyword is not null)
+        {
+            message += " keyword=" + keyword;
+        }
+
+        return new ApplicationFailureException(message, errorType: TemplateInvalid, nonRetryable: true);
+    }
 
     private async Task<PartitionResult> ResultOfAsync(PartitionRecord partition, CancellationToken cancellationToken)
     {

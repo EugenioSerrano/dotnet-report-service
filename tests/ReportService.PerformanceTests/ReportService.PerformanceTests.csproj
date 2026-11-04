@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Measurements of the data path: the reading-and-validation pass over the
+    deterministic volume datasets, with the template's schema evaluated on, and
+    the per-record cost of that validation. Not a hermetic project and not part
+    of the integration suite: it runs on the reference environment, over the
+    datasets the repository's generator produces.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

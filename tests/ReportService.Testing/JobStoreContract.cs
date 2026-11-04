@@ -442,6 +442,36 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Empty(await Store.FindInputWaitingJobIdsAsync("upload-ffffffffffffffffffffffffffffffff", cancellationToken));
     }
 
+    [Fact]
+    public async Task TheReferenceAJobWasAcceptedWithIsReadBackAndAnUnknownJobHasNone()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var exact = Acceptance(uploadId);
+        var byName = Acceptance(uploadId, version: null);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(exact, Now, cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(byName, Now, cancellationToken));
+
+        var named = await Store.FindTemplateReferenceAsync(exact.ReportJobId, cancellationToken);
+
+        Assert.NotNull(named);
+        Assert.Equal(exact.ReportJobId, named!.ReportJobId);
+        Assert.Equal("pilot-grouped", named.TemplateId);
+        Assert.Equal(TemplateReferenceForm.Exact, named.ReferenceForm);
+        Assert.Equal("1.0.0", named.RequestedVersion);
+
+        // A reference by name carries no version: the value a store answers is the one the
+        // request wrote, and the migration's check ties a version to an exact reference.
+        var unresolved = await Store.FindTemplateReferenceAsync(byName.ReportJobId, cancellationToken);
+        Assert.NotNull(unresolved);
+        Assert.Equal(TemplateReferenceForm.ByName, unresolved!.ReferenceForm);
+        Assert.Null(unresolved.RequestedVersion);
+
+        Assert.Null(await Store.FindTemplateReferenceAsync(
+            "job-ffffffffffffffffffffffffffffffff",
+            cancellationToken));
+    }
+
     /// <summary>A partition of <paramref name="reportJobId"/>, holding one record.</summary>
     /// <param name="reportJobId">The job it belongs to.</param>
     protected static PartitionRecord Partition(string reportJobId) => new(

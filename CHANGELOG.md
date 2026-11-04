@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A job's snapshot is checked against the data contract of the template version it
+  is pinned to before anything is rendered: the header and every record are
+  validated against the template's `schema.json`, in the same single pass that
+  reads the snapshot, and a value that breaks the schema ends the job `failed`
+  with `DATA_INVALID` and a diagnostic naming the ordinal, the byte offset, the
+  field's path and the rule — never the value. A violation anywhere in the
+  snapshot, the last record of a full block included, ends the job before the
+  first page is rendered, and nothing of it is published. The schema is read
+  from the taken copy of the pinned version through a verifying read, compiled
+  once per package per worker and kept in a bounded cache; the validator is
+  `Corvus.Text.Json` 5.6.1, pinned exactly, with its licence recorded in
+  `THIRD-PARTY-NOTICES.md`.
+- A template whose schema cannot be used — absent from the taken copy, outside
+  the admitted profile, not compilable, or too slow or too deep to decide a
+  value — ends the job `failed` with `TEMPLATE_INVALID` in one attempt instead.
+- A job's own template reference is read before its snapshot, and the version it
+  names is looked up in the taken versions: a reference that names no version, or
+  one that was never taken, ends the job `TEMPLATE_INVALID rule=pin` in one
+  attempt, with no exception and no retry.
+
 - A report job created on an upload that is still being verified waits for it
   instead of stopping at `queued`: it reports the stage `waiting-for-input`, it
   starts once the upload is ready, it ends `failed` with the upload's own code
