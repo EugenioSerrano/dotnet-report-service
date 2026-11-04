@@ -1,9 +1,11 @@
 extern alias orchestration;
+extern alias pdf;
 
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
@@ -12,7 +14,13 @@ using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Keys;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource;
+using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Resolution;
+using ReportService.TemplateSource.Take;
 using ReportService.Testing;
+using ReportService.Testing.TemplatePackages;
+using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 using Temporalio.Api.Enums.V1;
 using Temporalio.Api.WorkflowService.V1;
@@ -26,8 +34,12 @@ using OrchestrationMetrics = orchestration::ReportService.Workers.Orchestration.
 using ReportJobActivities = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobActivities;
 using ReportJobInput = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobInput;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
+using TemplateResolutionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.TemplateResolutionActivities;
 using ValidateAndPartitionActivity = orchestration::ReportService.Workers.Orchestration.Jobs.ValidateAndPartitionActivity;
 using PdfOutputActivityOptions = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputActivityOptions;
+using ResolveTemplateVersionActivity = pdf::ReportService.Workers.Pdf.Templates.ResolveTemplateVersionActivity;
+using TakeTemplateVersionActivity = pdf::ReportService.Workers.Pdf.Templates.TakeTemplateVersionActivity;
+using TemplateResolutionActivityOptions = pdf::ReportService.Workers.Pdf.Templates.TemplateResolutionActivityOptions;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -113,6 +125,102 @@ public sealed class ReportJobHistoryCapture
         await RecordTheRefusedSnapshotAsync(rig, target);
         await RecordTheTemplateThatCannotBeUsedAsync(rig, target);
         await RecordTheFinalizedPathAsync(rig, target);
+    }
+
+    /// <summary>
+    /// Records the five histories of the job's template step: a version already taken and
+    /// bound without the source, a version taken and pinned, a by-name resolution pinned to
+    /// the release it chose, a take that refuses the version it was given, and a by-name job
+    /// whose source could not be checked and was fixed to the version recorded at acceptance.
+    /// It is opt-in like the whole capture, and it runs a rig that serves the template step's
+    /// three metadata activities on the orchestration queue and the take and the resolution on
+    /// the PDF worker's queue, over the template source served on a loopback port.
+    /// <para>
+    /// The recordings the earlier changes captured are <b>not</b> re-captured here: they were
+    /// taken before the step existed and replay with its patch inactive, so a fresh execution
+    /// of the current workflow could not reproduce them.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task TheTemplateStepHistoriesAreRecorded()
+    {
+        var target = Target();
+        await using var rig = await Rig.StartAsync(withTemplateStep: true);
+
+        await RecordTheBoundVersionAsync(rig, JobHistoryFixtures.TemplateBound, target);
+        await RecordTheTakenVersionAsync(rig, JobHistoryFixtures.TemplateTaken, target);
+        await RecordTheVersionChosenByNameAsync(rig, JobHistoryFixtures.TemplateByName, target);
+        await RecordTheVersionTheTakeRefusesAsync(rig, JobHistoryFixtures.TemplateTakeRefused, target);
+
+        // The source is stopped for the last recording, so every case that reads it ran first.
+        rig.StopTheSource();
+        await RecordTheBaselineOfAnUnreachableSourceAsync(rig, JobHistoryFixtures.TemplateBaseline, target);
+    }
+
+    // A job that named a version already taken: the step binds it, the source is never read,
+    // and the run continues through the data step and the finalising step as it always does.
+    private static async Task RecordTheBoundVersionAsync(Rig rig, JobHistoryFixture fixture, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            fixture, UploadState.Ready, cancellationToken, version: Rig.SeededVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(directory, fixture, await rig.HistoryAsync(reportJobId, runId, cancellationToken), cancellationToken);
+    }
+
+    // A job that named a version not taken: the take reads it on the PDF worker's queue and
+    // the step pins what the take answered.
+    private static async Task RecordTheTakenVersionAsync(Rig rig, JobHistoryFixture fixture, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            fixture, UploadState.Ready, cancellationToken, version: Rig.SmallestUntakenVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(directory, fixture, await rig.HistoryAsync(reportJobId, runId, cancellationToken), cancellationToken);
+    }
+
+    // A job that named only its template: the resolution chooses the highest release the
+    // source holds, and that version is pinned.
+    private static async Task RecordTheVersionChosenByNameAsync(Rig rig, JobHistoryFixture fixture, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            fixture, UploadState.Ready, cancellationToken, version: null, baseline: Rig.SeededVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(directory, fixture, await rig.HistoryAsync(reportJobId, runId, cancellationToken), cancellationToken);
+    }
+
+    // A job whose take refuses the version it named: the step fails the job with the take's
+    // own code and message, nothing is pinned, and no later step of the run starts.
+    private static async Task RecordTheVersionTheTakeRefusesAsync(Rig rig, JobHistoryFixture fixture, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            fixture, UploadState.Ready, cancellationToken, version: Rig.RefusedByTheTakeVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(directory, fixture, await rig.HistoryAsync(reportJobId, runId, cancellationToken), cancellationToken);
+    }
+
+    // A job that named only its template while the source is unreachable: the resolution
+    // answers from the versions already taken, and the step pins the version recorded when the
+    // job was accepted — never the newer one a later job took.
+    private static async Task RecordTheBaselineOfAnUnreachableSourceAsync(Rig rig, JobHistoryFixture fixture, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            fixture, UploadState.Ready, cancellationToken, version: null, baseline: Rig.SeededVersion);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(directory, fixture, await rig.HistoryAsync(reportJobId, runId, cancellationToken), cancellationToken);
     }
 
     // A job whose input is ready at its first check and whose data step commits: the run
@@ -316,6 +424,10 @@ public sealed class ReportJobHistoryCapture
         private readonly CancellationTokenSource _stop = new();
         private readonly Task _running;
         private readonly Task _dataRunning;
+        private readonly TemplateSourceHost? _source;
+        private readonly HttpClient? _sourceClient;
+        private readonly TemporalWorker? _templateWorker;
+        private readonly Task? _templateRunning;
         private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
         private readonly Dictionary<string, (ObjectKey Key, ObjectWrite Written, long Size)> _snapshotOf = new(StringComparer.Ordinal);
         private int _sequence;
@@ -335,7 +447,11 @@ public sealed class ReportJobHistoryCapture
             string storageRoot,
             ManualTimeProvider clock,
             byte[] sample,
-            byte[] refused)
+            byte[] refused,
+            TemplateSourceHost? source,
+            HttpClient? sourceClient,
+            TemporalWorker? templateWorker,
+            Task? templateRunning)
         {
             _environment = environment;
             _worker = worker;
@@ -352,7 +468,23 @@ public sealed class ReportJobHistoryCapture
             Clock = clock;
             SampleDocumentBytes = sample;
             RefusedDocumentBytes = refused;
+            _source = source;
+            _sourceClient = sourceClient;
+            _templateWorker = templateWorker;
+            _templateRunning = templateRunning;
         }
+
+        /// <summary>The version the rig already holds as taken when a recording starts.</summary>
+        public const string SeededVersion = Version;
+
+        /// <summary>The smallest version the source holds and the rig has not taken: the exact take reads it.</summary>
+        public const string SmallestUntakenVersion = "1.2.0";
+
+        /// <summary>The version whose package the take refuses: its manifest declares another version.</summary>
+        public const string RefusedByTheTakeVersion = "1.3.0";
+
+        /// <summary>The highest release the source holds: the by-name resolution chooses it.</summary>
+        public const string HighestReleaseVersion = "1.4.0";
 
         public ITemporalClient Client => _environment.Client;
 
@@ -393,7 +525,7 @@ public sealed class ReportJobHistoryCapture
         /// <summary>The document the reader refuses: two records, the second cut short.</summary>
         public byte[] RefusedDocument() => [.. RefusedDocumentBytes];
 
-        public static async Task<Rig> StartAsync()
+        public static async Task<Rig> StartAsync(bool withTemplateStep = false)
         {
             var uploads = new InMemoryUploadStore();
             var jobs = new InMemoryJobStore(uploads);
@@ -433,23 +565,91 @@ public sealed class ReportJobHistoryCapture
             // The workflow's own bounds are published per recording, before each execution
             // starts; the worker serves every recording of this rig in turn.
             var environment = await WorkflowEnvironment.StartLocalAsync(new WorkflowEnvironmentStartLocalOptions());
-            var worker = new TemporalWorker(
-                environment.Client,
-                new TemporalWorkerOptions(ReportJobWorkflow.OrchestrationQueue)
-                    .AddWorkflow<ReportJobWorkflow>()
-                    .AddAllActivities(new ReportJobActivities(
-                        jobs,
-                        clock,
-                        metrics,
-                        NullLoggerFactory.Instance,
-                        NullLogger<ReportJobActivities>.Instance))
-                    .AddAllActivities(new JobTransitionActivities(
-                        jobs,
-                        clock,
-                        metrics,
-                        NullLoggerFactory.Instance,
-                        NullLogger<JobTransitionActivities>.Instance))
-                    .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance)));
+            var workerOptions = new TemporalWorkerOptions(ReportJobWorkflow.OrchestrationQueue)
+                .AddWorkflow<ReportJobWorkflow>()
+                .AddAllActivities(new ReportJobActivities(
+                    jobs,
+                    clock,
+                    metrics,
+                    NullLoggerFactory.Instance,
+                    NullLogger<ReportJobActivities>.Instance))
+                .AddAllActivities(new JobTransitionActivities(
+                    jobs,
+                    clock,
+                    metrics,
+                    NullLoggerFactory.Instance,
+                    NullLogger<JobTransitionActivities>.Instance))
+                .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance));
+
+            // The template step and the two activities it calls on the PDF worker's queue: they
+            // are registered only for the recordings of the step, so the earlier recordings keep
+            // replaying the runs they were captured from.
+            TemplateSourceHost? source = null;
+            HttpClient? sourceClient = null;
+            TemporalWorker? templateWorker = null;
+            Task? templateRunning = null;
+            if (withTemplateStep)
+            {
+                // The versions the step takes carry the pilot's own schema, so the data step
+                // that follows reads the same contract the bound version's record does.
+                var pilotSchema = await ReadRepositoryFileAsync("samples/templates/pilot-grouped/schema.json");
+                Dictionary<string, byte[]> PackageWithThePilotSchema(string version)
+                {
+                    var package = TemplatePackageFixtures.Valid(TemplateId, version, owner: Consumer, shared: true);
+                    package["schema.json"] = pilotSchema;
+                    return package;
+                }
+
+                var stub = new GitHubTemplateSourceStub();
+                foreach (var version in new[] { SmallestUntakenVersion, HighestReleaseVersion })
+                {
+                    stub.SeedPackage(TemplateId, version, PackageWithThePilotSchema(version));
+                }
+
+                stub.SeedPackage(
+                    TemplateId,
+                    RefusedByTheTakeVersion,
+                    TemplatePackageFixtures.FolderDoesNotMatchTheVersion(TemplateId, RefusedByTheTakeVersion, RefusedByTheTakeVersion + ".1"));
+                source = await TemplateSourceHost.StartAsync(stub, CancellationToken.None);
+
+                var sourceOptions = source.Options();
+                sourceClient = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+                var client = new GitHubTemplateSource(sourceClient, sourceOptions);
+                var take = new TemplateTake(
+                    client,
+                    versions,
+                    objects,
+                    new TemplateManifestReader(),
+                    new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
+                    [],
+                    new TemplateTakeMetrics(),
+                    clock,
+                    Options.Create(sourceOptions),
+                    NullLogger<TemplateTake>.Instance);
+                var resolver = new TemplateVersionResolver(
+                    client,
+                    versions,
+                    new TemplateTakeAdapter(take),
+                    new TemplateByNameMetrics(),
+                    clock,
+                    NullLogger<TemplateVersionResolver>.Instance,
+                    sourceOptions.ResolveDeadline);
+
+                workerOptions.AddAllActivities(new TemplateResolutionActivities(
+                    jobs,
+                    versions,
+                    clock,
+                    metrics,
+                    NullLoggerFactory.Instance,
+                    NullLogger<TemplateResolutionActivities>.Instance));
+                templateWorker = new TemporalWorker(
+                    environment.Client,
+                    new TemporalWorkerOptions(TemplateResolutionActivityOptions.Queue)
+                        .AddAllActivities(new TakeTemplateVersionActivity(take))
+                        .AddAllActivities(new ResolveTemplateVersionActivity(resolver)));
+            }
+
+            var worker = new TemporalWorker(environment.Client, workerOptions);
             var dataWorker = new TemporalWorker(
                 environment.Client,
                 new TemporalWorkerOptions(PdfOutputActivityOptions.DataQueue)
@@ -458,6 +658,7 @@ public sealed class ReportJobHistoryCapture
             var stop = new CancellationTokenSource();
             var running = worker.ExecuteAsync(stop.Token);
             var dataRunning = dataWorker.ExecuteAsync(stop.Token);
+            templateRunning = templateWorker?.ExecuteAsync(stop.Token);
             return new Rig(
                 environment,
                 worker,
@@ -473,8 +674,15 @@ public sealed class ReportJobHistoryCapture
                 storageRoot,
                 clock,
                 sample,
-                refused);
+                refused,
+                source,
+                sourceClient,
+                templateWorker,
+                templateRunning);
         }
+
+        /// <summary>Stops answering the template source: the next resolution finds it unreachable.</summary>
+        public void StopTheSource() => _source!.Stub.Stop();
 
         public string UploadOf(string reportJobId) => _uploadOf[reportJobId];
 
@@ -486,7 +694,8 @@ public sealed class ReportJobHistoryCapture
             UploadState state,
             CancellationToken cancellationToken,
             byte[]? document = null,
-            string version = Version)
+            string? version = Version,
+            string? baseline = null)
         {
             ReportJobWorkflow.Configure(fixture.Backstop, fixture.ContinueAsNewAfter);
             var now = Clock.GetUtcNow();
@@ -542,8 +751,13 @@ public sealed class ReportJobHistoryCapture
                 Consumer,
                 uploadId,
                 TemplateId,
-                TemplateReferenceForm.Exact,
-                version);
+                version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
+                version) with
+            {
+                // A by-name job records the version it may fall back to when the source cannot
+                // be checked; an exact one has no baseline.
+                BaselineVersion = baseline,
+            };
             if (await Jobs.AcceptAsync(acceptance, now, cancellationToken) is not JobAcceptanceResult.Accepted)
             {
                 throw new InvalidOperationException(
@@ -775,9 +989,14 @@ public sealed class ReportJobHistoryCapture
             // rather than holding the capture open for a task that never completes.
             _worker.Dispose();
             _dataWorker.Dispose();
+            _templateWorker?.Dispose();
             try
             {
                 await Task.WhenAll(_running, _dataRunning).WaitAsync(TimeSpan.FromSeconds(5));
+                if (_templateRunning is not null)
+                {
+                    await _templateRunning.WaitAsync(TimeSpan.FromSeconds(5));
+                }
             }
             catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
             {
@@ -788,6 +1007,12 @@ public sealed class ReportJobHistoryCapture
             await _environment.DisposeAsync();
             _metrics.Dispose();
             Contracts.Dispose();
+            if (_source is not null)
+            {
+                await _source.DisposeAsync();
+            }
+
+            _sourceClient?.Dispose();
             try
             {
                 Directory.Delete(StorageRoot, recursive: true);

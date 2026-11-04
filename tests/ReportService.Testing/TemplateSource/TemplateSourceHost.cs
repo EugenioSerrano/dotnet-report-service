@@ -65,8 +65,16 @@ public sealed class TemplateSourceHost : IAsyncDisposable
 
     private static async Task ForwardAsync(HttpContext context, GitHubTemplateSourceStub stub)
     {
-        var target = context.Request.Path.ToUriComponent() + context.Request.QueryString.ToUriComponent();
-        using var request = new HttpRequestMessage(new HttpMethod(context.Request.Method), new Uri(target, UriKind.Relative));
+        // The double reads the request as the client sent it: an absolute address, whose path
+        // and query are what it routes on. Forwarding a relative one would hand it an address
+        // no HTTP request ever carries.
+        var target = string.Concat(
+            context.Request.Scheme,
+            "://",
+            context.Request.Host.ToUriComponent(),
+            context.Request.Path.ToUriComponent(),
+            context.Request.QueryString.ToUriComponent());
+        using var request = new HttpRequestMessage(new HttpMethod(context.Request.Method), new Uri(target, UriKind.Absolute));
         foreach (var header in context.Request.Headers)
         {
             if (!request.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray()))

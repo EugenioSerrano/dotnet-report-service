@@ -311,11 +311,15 @@ public sealed class ValidateAndPartitionActivity(
         var reference = await jobs.FindTemplateReferenceAsync(reportJobId, cancellationToken).ConfigureAwait(false)
             ?? throw Refuse(InputNotFound, "the job is not recorded");
 
-        var version = reference.RequestedVersion;
+        // The version the job reads is the one it was pinned to: an exact reference is pinned
+        // to the version it named, and a reference by name is pinned by the step that resolved
+        // it. Only a reference the step has not resolved carries no pin, and an exact one of
+        // those still names its version.
+        var version = reference.Pin?.ResolvedVersion ?? reference.RequestedVersion;
         if (version is null)
         {
-            // A reference by name has no version to read: nothing in the product resolves a
-            // name, and this step never invents one. It says so, once, and the job ends.
+            // Nothing fixed this job's version: the step that resolves a reference by name has
+            // not run for it, and this step never invents one. It says so, once, and the job ends.
             throw PinNoVersion(reportJobId);
         }
 

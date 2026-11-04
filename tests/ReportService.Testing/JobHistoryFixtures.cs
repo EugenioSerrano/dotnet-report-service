@@ -11,7 +11,16 @@ namespace ReportService.Testing;
 /// <param name="File">The name the committed history is read by.</param>
 /// <param name="Backstop">How long the recorded run waited between two checks of its upload.</param>
 /// <param name="ContinueAsNewAfter">The checks the recorded run was allowed to take before it continued as a new run.</param>
-public sealed record JobHistoryFixture(string File, TimeSpan Backstop, int ContinueAsNewAfter);
+/// <param name="MeasuredEvents">
+/// The event count measured when the recording was captured, for the recordings whose bound is
+/// asserted against their own measurement; null for a recording whose bound a delivered case
+/// states as a constant of its own.
+/// </param>
+public sealed record JobHistoryFixture(
+    string File,
+    TimeSpan Backstop,
+    int ContinueAsNewAfter,
+    int? MeasuredEvents = null);
 
 /// <summary>
 /// The job histories the hermetic suite replays. Each is the outcome of one real execution
@@ -52,6 +61,21 @@ public static class JobHistoryFixtures
 
     /// <summary>A job whose input is ready at its first check and whose run reaches the finalising step.</summary>
     public const string FinalizedFile = "report-job-finalized.json";
+
+    /// <summary>A job whose reference named a version already taken: the step binds it without the source.</summary>
+    public const string TemplateBoundFile = "report-job-template-bound.json";
+
+    /// <summary>A job whose reference named a version that was not taken: the step takes it and pins it.</summary>
+    public const string TemplateTakenFile = "report-job-template-taken.json";
+
+    /// <summary>A job that named only its template: the by-name resolution chooses the version it is pinned to.</summary>
+    public const string TemplateByNameFile = "report-job-template-by-name.json";
+
+    /// <summary>A job whose take refuses the version it named, which ends the job with the take's code.</summary>
+    public const string TemplateTakeRefusedFile = "report-job-template-take-refused.json";
+
+    /// <summary>A job whose template source could not be checked: the version recorded at acceptance is pinned.</summary>
+    public const string TemplateBaselineFile = "report-job-template-baseline.json";
 
     /// <summary>A job whose upload was ready at its first check: it never waits.</summary>
     public static readonly JobHistoryFixture Ready = new(
@@ -143,6 +167,58 @@ public static class JobHistoryFixtures
         InputWaitOptions.DefaultBackstop,
         InputWaitOptions.DefaultContinueAsNewAfter);
 
+    /// <summary>
+    /// A job whose reference named a version already taken at its first check: the step binds
+    /// that version with one read, the source is never read, and the run continues through the
+    /// data step and the finalising step under the settings of a job that did not wait.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateBound = new(
+        TemplateBoundFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 39);
+
+    /// <summary>
+    /// A job whose reference named a version that was not taken: the take reads it on the PDF
+    /// worker's queue, the step pins what the take answered, and the run continues through the
+    /// data step and the finalising step.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateTaken = new(
+        TemplateTakenFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 51);
+
+    /// <summary>
+    /// A job that named only its template: the by-name resolution chooses the highest release
+    /// of the source, the step pins it, and the run continues through the delivered steps.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateByName = new(
+        TemplateByNameFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 51);
+
+    /// <summary>
+    /// A job whose take refuses the version it named: the step fails the job with the take's own
+    /// code and message, nothing is pinned, and no later step of the run starts.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateTakeRefused = new(
+        TemplateTakeRefusedFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 31);
+
+    /// <summary>
+    /// A job that named only its template and whose source could not be checked: the version
+    /// recorded when the job was accepted is pinned, never the one a later job took.
+    /// </summary>
+    public static readonly JobHistoryFixture TemplateBaseline = new(
+        TemplateBaselineFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 51);
+
     /// <summary>Every committed recording, in the order the cases name them.</summary>
     public static readonly JobHistoryFixture[] All =
     [
@@ -157,6 +233,24 @@ public static class JobHistoryFixtures
         RefusedSnapshot,
         TemplateThatCannotBeUsed,
         Finalized,
+        TemplateBound,
+        TemplateTaken,
+        TemplateByName,
+        TemplateTakeRefused,
+        TemplateBaseline,
+    ];
+
+    /// <summary>
+    /// The recordings of the template step, each captured with the step active and each
+    /// carrying the count measured when it was captured.
+    /// </summary>
+    public static readonly JobHistoryFixture[] OfTheTemplateStep =
+    [
+        TemplateBound,
+        TemplateTaken,
+        TemplateByName,
+        TemplateTakeRefused,
+        TemplateBaseline,
     ];
 
     /// <summary>The recordings of a job whose first check already answered: no wait was taken.</summary>

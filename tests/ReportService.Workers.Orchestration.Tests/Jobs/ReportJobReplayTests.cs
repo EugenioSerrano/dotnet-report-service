@@ -108,6 +108,16 @@ public sealed class ReportJobHistoryBoundTests
     /// <summary>The events one rescheduled workflow task adds.</summary>
     public const int EventsPerLostWorkflowTask = 2;
 
+    /// <summary>
+    /// The longest history a run that carries the template step may write; a recording of the
+    /// step whose measured count is above it is a stop, never a bound to widen.
+    /// </summary>
+    public const int TemplateStepHistoryCeiling = 64;
+
+    /// <summary>The recordings of the template step, each with the count measured when it was captured.</summary>
+    public static TheoryData<string> OfTheTemplateStep { get; } =
+        new(JobHistoryFixtures.OfTheTemplateStep.Select(fixture => fixture.File));
+
     /// <summary>The recordings of a job whose first check of its upload already answered.</summary>
     public static TheoryData<string> OfAJobThatDidNotWait { get; } =
         new(JobHistoryFixtures.OfAJobThatDidNotWait.Select(fixture => fixture.File));
@@ -333,6 +343,66 @@ public sealed class ReportJobHistoryBoundTests
             $"{JobHistoryFixtures.FinalizedFile} holds {history.Events.Count} events, and the patched path allows {allowed} ({LongestPathEventsOfTheFinalizedPath} plus {EventsPerLostWorkflowTask} per rescheduled workflow task, of which it records {rescheduled}).");
     }
 
+    [Theory]
+    [MemberData(nameof(OfTheTemplateStep))]
+    public async Task ARecordingOfTheTemplateStepCarriesTheCountMeasuredWhenItWasCaptured(string file)
+    {
+        var fixture = JobHistoryFixtures.ByFile(file);
+        var history = await JobHistoryFiles.ReadAsync(file);
+
+        Assert.True(
+            fixture.MeasuredEvents is { } measured,
+            $"{file} is a recording of the template step and carries the event count measured when it was captured.");
+        Assert.Equal(fixture.MeasuredEvents!.Value, history.Events.Count);
+        Assert.True(
+            history.Events.Count <= TemplateStepHistoryCeiling,
+            $"{file} holds {history.Events.Count} events, and a run that carries the template step keeps at most {TemplateStepHistoryCeiling}.");
+
+        // A recording of a job whose first check already answered: no wait, one check of the
+        // input, one preparation of the template and never more than one take.
+        Assert.DoesNotContain(history.Events, entry => entry.EventType == EventType.TimerStarted);
+        Assert.Equal(1, Scheduled(history, ReportJobActivities.ResolveInputName));
+        Assert.Equal(1, Scheduled(history, TemplateResolutionActivities.PrepareTemplateName));
+        Assert.InRange(Scheduled(history, TemplateStepContracts.TakeTemplateVersion), 0, 1);
+        Assert.Equal(EventType.WorkflowExecutionCompleted, history.Events.Last().EventType);
+    }
+
+    [Theory]
+    [InlineData(JobHistoryFixtures.TemplateBoundFile, 0, 0, 0, 0, 0)]
+    [InlineData(JobHistoryFixtures.TemplateTakenFile, 1, 0, 1, 0, 0)]
+    [InlineData(JobHistoryFixtures.TemplateByNameFile, 0, 1, 1, 0, 0)]
+    [InlineData(JobHistoryFixtures.TemplateTakeRefusedFile, 1, 0, 0, 0, 1)]
+    [InlineData(JobHistoryFixtures.TemplateBaselineFile, 0, 1, 0, 1, 0)]
+    public async Task EveryRecordingOfTheTemplateStepShowsThePathItWasTakenOf(
+        string file,
+        int takes,
+        int resolutions,
+        int pins,
+        int baselinePins,
+        int failures)
+    {
+        var history = await JobHistoryFiles.ReadAsync(file);
+
+        Assert.Equal(takes, Scheduled(history, TemplateStepContracts.TakeTemplateVersion));
+        Assert.Equal(resolutions, Scheduled(history, TemplateStepContracts.ResolveTemplateVersion));
+        Assert.Equal(pins, Scheduled(history, TemplateResolutionActivities.PinTemplateName));
+        Assert.Equal(baselinePins, Scheduled(history, TemplateResolutionActivities.PinBaselineName));
+        Assert.Equal(failures, Scheduled(history, ReportJobActivities.FailJobName));
+
+        // A refused take ends the run before any of the steps that follow a pin, and a pinned one
+        // carries the two delivered steps of the successful path.
+        if (failures > 0)
+        {
+            Assert.Equal(0, Scheduled(history, JobTransitionActivities.TransitionJobName));
+            Assert.Equal(0, Scheduled(history, ValidateAndPartitionActivity.Name));
+        }
+        else
+        {
+            Assert.Equal(1, Scheduled(history, JobTransitionActivities.TransitionJobName));
+            Assert.Equal(1, Scheduled(history, ValidateAndPartitionActivity.Name));
+        }
+    }
+
     private static int Scheduled(WorkflowHistory history, string activityName) =>
         history.Events.Count(entry =>
             entry.EventType == EventType.ActivityTaskScheduled
@@ -340,7 +410,6 @@ public sealed class ReportJobHistoryBoundTests
                 entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
                 activityName,
                 StringComparison.Ordinal));
-
     private static long? EventId(WorkflowHistory history, string activityName) =>
         history.Events
             .Where(entry => entry.EventType == EventType.ActivityTaskScheduled

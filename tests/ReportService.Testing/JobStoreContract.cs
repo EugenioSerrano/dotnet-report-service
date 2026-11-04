@@ -627,7 +627,7 @@ public abstract class JobStoreContract : IAsyncLifetime
 
         Assert.Equal(
             PartCommitOutcome.Committed,
-            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { BlockIndex = 1, PageCount = 2 }, cancellationToken)).Outcome);
+            (await Store.CommitPartAsync(Commit(acceptance.OutputId, blockIndex: 1) with { PageCount = 2 }, cancellationToken)).Outcome);
         var second = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(2, second!.BlocksCompleted);
         Assert.Equal(5, second.PagesGenerated);
@@ -789,7 +789,10 @@ public abstract class JobStoreContract : IAsyncLifetime
     public async Task TheFirstPinIsTheOneTheJobKeeps()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var version = await TakenAsync("1.1.0", cancellationToken);
+
+        // The job names the version it is pinned to: an exact reference is pinned to exactly
+        // the version it asked for, which the database's own check enforces.
+        var version = await TakenAsync("1.0.0", cancellationToken);
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
 
@@ -916,6 +919,22 @@ public abstract class JobStoreContract : IAsyncLifetime
         outputId,
         0,
         $"block/{outputId}/0/attempt",
+        Hash,
+        1_024,
+        3,
+        Hash,
+        Now);
+
+    /// <summary>
+    /// A commit of one block of <paramref name="outputId"/>: each block's bytes are stored
+    /// under a key of their own, so two blocks of one output never share one.
+    /// </summary>
+    /// <param name="outputId">The output it belongs to.</param>
+    /// <param name="blockIndex">The block's index.</param>
+    protected static PartCommit Commit(string outputId, int blockIndex) => new(
+        outputId,
+        blockIndex,
+        $"block/{outputId}/{blockIndex}/attempt",
         Hash,
         1_024,
         3,
