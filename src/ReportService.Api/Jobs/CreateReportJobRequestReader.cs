@@ -354,23 +354,9 @@ public static class CreateReportJobRequestReader
             return new Result.Rejected(InvalidRequestBody.InvalidFormat(OutputsMember, RepeatedOutputDetail));
         }
 
-        // The template reference's syntax rule is temporary and sits in one place of its own.
-        if (!ProvisionalTemplateReferenceSyntax.IsIdentifier(values[TemplateIdPath]))
-        {
-            return new Result.Rejected(InvalidRequestBody.InvalidFormat(
-                TemplateIdPath, ProvisionalTemplateReferenceSyntax.IdentifierDetail));
-        }
-
-        if (values.TryGetValue(TemplateVersionPath, out var version)
-            && !ProvisionalTemplateReferenceSyntax.IsVersion(version))
-        {
-            return new Result.Rejected(InvalidRequestBody.InvalidFormat(
-                TemplateVersionPath, ProvisionalTemplateReferenceSyntax.VersionDetail));
-        }
-
         return new Result.Accepted(new CreateReportJobRequest(
             values[TemplateIdPath],
-            version,
+            values.TryGetValue(TemplateVersionPath, out var version) ? version : null,
             values[UploadIdPath],
             values[ProfilePath],
             outputs));

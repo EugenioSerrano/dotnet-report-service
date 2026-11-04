@@ -20,4 +20,12 @@ public sealed record JobAcceptance(
     string UploadId,
     string TemplateId,
     TemplateReferenceForm ReferenceForm,
-    string? RequestedVersion);
+    string? RequestedVersion)
+{
+    /// <summary>
+    /// The release version a by-name reference may fall back to when the template source
+    /// cannot be checked, chosen at acceptance from the versions already taken; null for an
+    /// exact reference and for a by-name one whose template has no usable release taken.
+    /// </summary>
+    public string? BaselineVersion { get; init; }
+}

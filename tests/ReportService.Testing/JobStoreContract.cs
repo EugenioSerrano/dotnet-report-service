@@ -1,5 +1,8 @@
 using ReportService.Jobs;
 using ReportService.Storage;
+using ReportService.Testing;
+using ReportService.TemplatePackages.Manifest;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.Testing;
@@ -739,6 +742,144 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(0, status.BlocksCompleted);
         Assert.Null(status.BlocksTotal);
         Assert.Null(status.Stage);
+    }
+
+    /// <summary>
+    /// The taken versions a pin must point at. The in-memory store holds its pins itself;
+    /// the database one makes the pin a foreign key, so a case that pins must record the
+    /// version first. A store that enforces nothing answers null and needs no seed.
+    /// </summary>
+    protected virtual ITemplateVersionStore? Versions => null;
+
+    [Fact]
+    public async Task AnAcceptedReferenceKeepsTheBaselineItWasGiven()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, version: null) with { BaselineVersion = "1.4.0" };
+
+        var result = await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(result);
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(reference);
+        Assert.Equal(TemplateReferenceForm.ByName, reference!.ReferenceForm);
+        Assert.Null(reference.RequestedVersion);
+        Assert.Equal("1.4.0", reference.BaselineVersion);
+        Assert.Null(reference.Pin);
+    }
+
+    [Fact]
+    public async Task AnExactReferenceIsAcceptedWithNoBaselineAndNoPin()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.NotNull(reference);
+        Assert.Equal(TemplateReferenceForm.Exact, reference!.ReferenceForm);
+        Assert.Equal("1.0.0", reference.RequestedVersion);
+        Assert.Null(reference.BaselineVersion);
+        Assert.Null(reference.Pin);
+    }
+
+    [Fact]
+    public async Task TheFirstPinIsTheOneTheJobKeeps()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.1.0", cancellationToken);
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var first = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var second = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version, hash: new string('b', 64)), Now.AddSeconds(2), cancellationToken);
+
+        Assert.True(first.WasWrittenByThisCall);
+        Assert.Equal(version, first.Pin!.ResolvedVersion);
+        Assert.False(second.WasWrittenByThisCall);
+        Assert.Equal(Hash, second.Pin!.PackageSha256);
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(Hash, reference!.Pin!.PackageSha256);
+        Assert.Equal(Now.AddSeconds(1), reference.Pin!.ResolvedAt);
+    }
+
+    [Fact]
+    public async Task APinOnAJobThatEndedIsRefusedAndWritesNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.1.0", cancellationToken);
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.FailJobAsync(acceptance.ReportJobId, "TEMPLATE_NOT_FOUND", "template-not-found", "The template or template version was not found.", Now, cancellationToken);
+
+        var state = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+
+        Assert.True(state.JobTerminal);
+        Assert.Null(state.Pin);
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(reference!.Pin);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("The template source could not be reached. The request may be submitted again later.")]
+    public async Task AFailureKeepsTheMessageItWasGiven(string? message)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        await Store.FailJobAsync(acceptance.ReportJobId, "TEMPLATE_SOURCE_UNAVAILABLE", "template-source-unavailable", message, Now, cancellationToken);
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(ReportJobStatus.Failed, state!.Job.Status);
+        Assert.Equal("template-source-unavailable", state.Job.ErrorReason);
+        Assert.Equal(message, state.Job.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task AFailureMessageOfTheLongestLengthIsStoredWhole()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        var message = new string('m', 1_000);
+
+        await Store.FailJobAsync(acceptance.ReportJobId, "TEMPLATE_INVALID", "template-invalid", message, Now, cancellationToken);
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(message, state!.Job.ErrorMessage);
+    }
+
+    /// <summary>A pin of one version of the pilot template, with the values every case uses.</summary>
+    /// <param name="version">The version the pin fixes.</param>
+    /// <param name="hash">The package hash, when a case needs a second one.</param>
+    protected static TemplatePin PinOf(string version, string? hash = null) => new(
+        "pilot-grouped",
+        version,
+        "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        hash ?? Hash,
+        TemplateEngine.Scriban,
+        "7.5.1",
+        "schema.json",
+        Now.AddSeconds(1));
+
+    /// <summary>Records a taken version when the store makes the pin point at one, and answers its version.</summary>
+    /// <param name="version">The version to record.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected async Task<string> TakenAsync(string version, CancellationToken cancellationToken)
+    {
+        if (Versions is not null)
+        {
+            await Versions.TryInsertAsync(
+                TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: version, owner: Consumer, packageSha256: Hash),
+                cancellationToken);
+        }
+
+        return version;
     }
 
     /// <summary>A partition of <paramref name="reportJobId"/>, holding one record.</summary>

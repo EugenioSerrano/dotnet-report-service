@@ -40,6 +40,9 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The histogram of how long a job waited between acceptance and its first stage.</summary>
     public const string QueueToFirstStageDurationInstrumentName = "reportservice.job.queue_to_first_stage.duration";
 
+    /// <summary>The counter of a job's template resolutions, by form, path and code.</summary>
+    public const string TemplateResolutionsInstrumentName = "reportservice.template.resolutions";
+
     /// <summary>The status tag of a job that ended failed.</summary>
     public const string FailedJobStatus = "FAILED";
 
@@ -73,6 +76,12 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The result tag of a notification whose execution does not exist or has closed.</summary>
     public const string SkippedResult = "skipped";
 
+    /// <summary>The form tag of a reference that named one version.</summary>
+    public const string TemplateFormExact = "exact";
+
+    /// <summary>The form tag of a reference that named only the template.</summary>
+    public const string TemplateFormByName = "by-name";
+
     private readonly Meter _meter;
     private readonly Counter<long> _outcomes;
     private readonly Histogram<double> _duration;
@@ -81,6 +90,7 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Counter<long> _inputWaitOutcomes;
     private readonly Counter<long> _inputWaitNotifications;
     private readonly Histogram<double> _queueToFirstStageDuration;
+    private readonly Counter<long> _templateResolutions;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
@@ -118,6 +128,10 @@ public sealed class OrchestrationMetrics : IDisposable
             QueueToFirstStageDurationInstrumentName,
             unit: "s",
             description: "How long a job waited between its acceptance and its first stage.");
+        _templateResolutions = _meter.CreateCounter<long>(
+            TemplateResolutionsInstrumentName,
+            unit: "{resolution}",
+            description: "Resolutions of a job's template, by form, path and code.");
         _meter.CreateObservableGauge(
             PendingAgeInstrumentName,
             ObservePendingAge,
@@ -180,6 +194,17 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <param name="elapsed">The elapsed time; it is recorded with no tag at all, so it can never carry an identifier.</param>
     public void RecordQueueToFirstStageDuration(TimeSpan elapsed) =>
         _queueToFirstStageDuration.Record(elapsed.TotalSeconds);
+
+    /// <summary>Records how one job's template was fixed, or which code failed it.</summary>
+    /// <param name="form">A fixed form: exact or by-name.</param>
+    /// <param name="path">A fixed path: taken, took, baseline or failed.</param>
+    /// <param name="code">A fixed code, or none when the job was fixed.</param>
+    public void TemplateResolution(string form, string path, string code) =>
+        _templateResolutions.Add(
+            1,
+            new KeyValuePair<string, object?>("form", form),
+            new KeyValuePair<string, object?>("path", path),
+            new KeyValuePair<string, object?>("code", code));
 
     /// <summary>Publishes how long the oldest pending request of <paramref name="kind"/> has waited.</summary>
     /// <param name="kind">The request's kind, a fixed value.</param>

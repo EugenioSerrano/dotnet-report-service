@@ -1,4 +1,5 @@
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.Testing;
@@ -96,6 +97,26 @@ public sealed partial class InMemoryJobStore : IJobStore
         }
     }
 
+    /// <summary>
+    /// Records the baseline of an accepted reference, exactly as an acceptance that chose one
+    /// would have written it. It exists for the cases of a by-name job whose source is
+    /// unreachable: the baseline is decided by the request, long before the step runs.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="baselineVersion">The baseline the acceptance recorded, or null for none.</param>
+    public void SetBaseline(string reportJobId, string? baselineVersion)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            if (_references.TryGetValue(reportJobId, out var reference))
+            {
+                _references[reportJobId] = reference with { BaselineVersion = baselineVersion };
+            }
+        }
+    }
+
     /// <summary>The outputs of a job, in output identifier order.</summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     public IReadOnlyList<ReportOutputRecord> OutputsOf(string reportJobId)
@@ -152,6 +173,7 @@ public sealed partial class InMemoryJobStore : IJobStore
                 job.ReportJobId, acceptance.TemplateId, acceptance.ReferenceForm)
             {
                 RequestedVersion = acceptance.RequestedVersion,
+                BaselineVersion = acceptance.BaselineVersion,
             });
             _intents.Add(new RecordedJobIntent(StartJobKind, job.ReportJobId, instant));
             return new JobAcceptanceResult.Accepted(job);
@@ -209,6 +231,16 @@ public sealed partial class InMemoryJobStore : IJobStore
         string code,
         string reason,
         DateTimeOffset now,
+        CancellationToken cancellationToken) =>
+        FailJobAsync(reportJobId, code, reason, null, now, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<JobFailureOutcome> FailJobAsync(
+        string reportJobId,
+        string code,
+        string reason,
+        string? message,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(reportJobId);
@@ -241,9 +273,44 @@ public sealed partial class InMemoryJobStore : IJobStore
                 Status = ReportJobStatus.Failed,
                 ErrorCode = code,
                 ErrorReason = reason,
+                ErrorMessage = message,
                 FinishedAt = now,
             };
             return Task.FromResult(JobFailureOutcome.Applied);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<TemplatePinState> PinTemplateAsync(
+        string reportJobId,
+        TemplatePin pin,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(pin);
+
+        lock (_gate)
+        {
+            if (!_jobs.TryGetValue(reportJobId, out var job) || job.IsTerminal)
+            {
+                return Task.FromResult(TemplatePinState.JobEnded());
+            }
+
+            if (!_references.TryGetValue(reportJobId, out var reference))
+            {
+                // A job without a reference is not a state the service can reach; the real
+                // store's foreign key answers the same way, by writing nothing.
+                return Task.FromResult(TemplatePinState.JobEnded());
+            }
+
+            if (reference.Pin is { } existing)
+            {
+                return Task.FromResult(TemplatePinState.AlreadyPinned(existing));
+            }
+
+            _references[reportJobId] = reference with { Pin = pin };
+            return Task.FromResult(TemplatePinState.Pinned(pin));
         }
     }
 

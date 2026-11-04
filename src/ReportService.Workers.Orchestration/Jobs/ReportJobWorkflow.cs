@@ -76,6 +76,13 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string JobStatusPathPatch = "job-status-path-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the job's template step. A run recorded
+    /// before it carries no marker for it, so it replays with the patch inactive and
+    /// never schedules the step; every run recorded after it carries the step's commands.
+    /// </summary>
+    public const string TemplateResolvePatch = "template-resolve-v1";
+
     /// <summary>Runs one job up to its continuation point.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -118,6 +125,15 @@ public sealed class ReportJobWorkflow
 
             default:
                 throw new InvalidOperationException("the input check answered an outcome this workflow does not know.");
+        }
+
+        // The job's template is fixed here, once: right after its input is ready and before
+        // any step that would need the version. The reference is resolved by the job's own
+        // path - a version already taken is bound, one that is not is taken, a name is
+        // resolved - and what the answer says is pinned to the job and never read again.
+        if (await ResolveTemplateAsync(input.ReportJobId).ConfigureAwait(true))
+        {
+            return;
         }
 
         // The first step that takes a usable input to its end: the job's snapshot is read,
@@ -272,9 +288,131 @@ public sealed class ReportJobWorkflow
             (InputWaitActivities activities) => activities.EndAsync(new InputWaitInput(reportJobId)),
             InputWaitActivityOptions.Create());
 
-    private static Task FailAsync(string reportJobId, string errorCode, string reason, Temporalio.Workflows.ActivityOptions options) =>
+    /// <summary>
+    /// Fixes the job's template, once, and answers whether the job has ended. A version
+    /// already taken is bound without reading the source; one that is not is taken, and a
+    /// reference by name is resolved - and when the source cannot be checked, the version
+    /// recorded at acceptance is used, never the one the resolution fell back to. Every
+    /// refusal of the take ends the job with the code it carries and the text it brought;
+    /// any other failure of a step ends it as the step's own failure.
+    /// </summary>
+    /// <param name="reportJobId">The job whose template is fixed.</param>
+    private static async Task<bool> ResolveTemplateAsync(string reportJobId)
+    {
+        if (!Workflow.Patched(TemplateResolvePatch))
+        {
+            return false;
+        }
+
+        var metadata = TemplateStepActivityOptions.Create();
+        try
+        {
+            var prepared = await Workflow.ExecuteActivityAsync(
+                (TemplateResolutionActivities activities) => activities.PrepareTemplateAsync(new PrepareTemplateInput(reportJobId)),
+                metadata).ConfigureAwait(true);
+
+            TemplatePinResult? pinned;
+            switch (prepared.Outcome)
+            {
+                case PrepareTemplateOutcome.Terminal:
+                    return true;
+
+                case PrepareTemplateOutcome.Pinned:
+                    return false;
+
+                case PrepareTemplateOutcome.NeedsTake:
+                    var taken = await Workflow.ExecuteActivityAsync(
+                        (ITakeTemplateVersionStep step) => step.RunAsync(new TakeTemplateVersionStepInput(
+                            prepared.TemplateId!,
+                            prepared.RequestedVersion!,
+                            prepared.RequestingConsumerId!,
+                            reportJobId)),
+                        TakeTemplateStepOptions.Create()).ConfigureAwait(true);
+                    pinned = await PinTemplateAsync(reportJobId, prepared.TemplateId!, taken.Version, metadata).ConfigureAwait(true);
+                    break;
+
+                case PrepareTemplateOutcome.NeedsByName:
+                    // The nested try is load-bearing: only the by-name path turns an
+                    // unreachable source into the acceptance baseline. A source that cannot be
+                    // reached for an exact version is the job's failure, below.
+                    try
+                    {
+                        var resolved = await Workflow.ExecuteActivityAsync(
+                            (IResolveTemplateVersionStep step) => step.RunAsync(new ResolveTemplateVersionStepInput(
+                                prepared.TemplateId!,
+                                prepared.RequestingConsumerId!,
+                                reportJobId)),
+                            ResolveTemplateStepOptions.Create()).ConfigureAwait(true);
+                        pinned = string.Equals(
+                                resolved.Outcome,
+                                TemplateStepContracts.ResolutionOutcomes.ResolvedFromTakenCopy,
+                                StringComparison.Ordinal)
+                            ? await PinBaselineAsync(reportJobId, metadata).ConfigureAwait(true)
+                            : await PinTemplateAsync(reportJobId, prepared.TemplateId!, resolved.Version, metadata).ConfigureAwait(true);
+                    }
+                    catch (ActivityFailureException failure) when (TemplateStepFailures.IsSourceUnavailable(failure.InnerException))
+                    {
+                        pinned = await PinBaselineAsync(reportJobId, metadata).ConfigureAwait(true);
+                    }
+
+                    break;
+
+                default:
+                    throw new InvalidOperationException("the template step answered an outcome this workflow does not know.");
+            }
+
+            return pinned.Outcome is PrepareTemplateOutcome.Terminal;
+        }
+        catch (ActivityFailureException failure) when (TemplateStepFailures.TryMap(failure.InnerException, out var mapped))
+        {
+            if (mapped.WasCut(failure.InnerException is ApplicationFailureException application ? application.Message : string.Empty))
+            {
+                Workflow.Logger.LogWarning(
+                    "Job {ReportJobId} template message cut to {Length} characters ({ErrorCode})",
+                    reportJobId,
+                    TemplateFailureCodes.MessageLimit,
+                    mapped.Code);
+            }
+
+            await FailAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
+            return true;
+        }
+        catch (ActivityFailureException)
+        {
+            // Attempts exhausted without a code of their own, or a step that did not answer:
+            // the job ends with the code that says the step itself could not finish.
+            var mapped = TemplateStepFailures.StepFailed();
+            await FailAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
+            return true;
+        }
+    }
+
+    private static Task<TemplatePinResult> PinTemplateAsync(
+        string reportJobId,
+        string templateId,
+        string version,
+        ActivityOptions options) =>
         Workflow.ExecuteActivityAsync(
-            (ReportJobActivities activities) => activities.FailJobAsync(new FailJobInput(reportJobId, errorCode, reason)),
+            (TemplateResolutionActivities activities) => activities.PinTemplateAsync(new PinTemplateInput(reportJobId, templateId, version)),
+            options);
+
+    private static Task<TemplatePinResult> PinBaselineAsync(string reportJobId, ActivityOptions options) =>
+        Workflow.ExecuteActivityAsync(
+            (TemplateResolutionActivities activities) => activities.PinBaselineAsync(new PinBaselineInput(reportJobId)),
+            options);
+
+
+    private static Task FailAsync(string reportJobId, string errorCode, string reason, Temporalio.Workflows.ActivityOptions options) =>
+        FailAsync(reportJobId, errorCode, reason, null, options);
+
+    private static Task FailAsync(
+        string reportJobId,
+        string errorCode,
+        string reason,
+        string? message,
+        Temporalio.Workflows.ActivityOptions options) =>
+        Workflow.ExecuteActivityAsync(
+            (ReportJobActivities activities) => activities.FailJobAsync(new FailJobInput(reportJobId, errorCode, reason, message)),
             options);
 
     /// <summary>

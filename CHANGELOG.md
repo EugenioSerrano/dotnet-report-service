@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A job's template version is fixed once, right after the request is accepted, and never
+  again: a version already taken is bound with one read of the service's records without
+  reading the source at all, one that is not taken is taken from the configured repository
+  and branch, and a reference by name resolves the highest release version. The version, the
+  commit, the package hash, the engine, the engine's version, the schema and the instant it
+  was resolved are recorded on the job and never re-resolved — not on a retry, not when a
+  worker restarts, not when a newer version is taken later.
+- A template that cannot be used fails the job and its PDF output after the `202` with a
+  code that says what to do: `TEMPLATE_NOT_FOUND` (it does not exist, or it is another
+  consumer's and is not shared — one identical answer), `TEMPLATE_INVALID` (the message
+  names what its author has to fix), `TEMPLATE_SOURCE_UNAVAILABLE` (the source could not be
+  read; submit again later) and `UNSUPPORTED_CAPABILITY` (the engine is not one this
+  deployment renders). The message travels to the job and is kept with it.
+- A template reference is refused at acceptance with `404 TEMPLATE_NOT_FOUND` when it can
+  never name a template: an identifier outside the lower-case template grammar, or a version
+  that is not a semantic version — a range, a branch name or a partial version. A version
+  already taken that belongs to another consumer and is not `shared` receives the same
+  answer, exactly as if it did not exist.
+- A reference by name records, when the job is accepted, the highest release version already
+  taken that its consumer may use; if the template source cannot be checked later, the job
+  uses that version and logs that the source could not be checked.
+
+### Changed
+
+- `report_jobs` gains `error_message` (at most 1 000 characters), and
+  `template_references` gains the by-name baseline and the pin: the resolved version, the
+  commit, the package hash, the engine and its version, the schema reference and the instant
+  of resolution. The database refuses any change to the reference as written and any second
+  write of a pin, so the first committed pin is the version the job keeps.
+- A job whose template step runs is fixed before its data is read: a run recorded before this
+  step replays unchanged and never schedules it, and the step itself is bounded well inside
+  the workflow's history budget.
+
 - A report job can be followed: `GET /api/v1/report-jobs/{reportJobId}` answers the
   job's owner with its state, the step it is in, the counters `recordsRead`,
   `blocksCompleted` and `pagesGenerated` — each of which only rises, across retries

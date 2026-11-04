@@ -2,6 +2,7 @@ using System.Net;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
 
@@ -245,7 +246,7 @@ public sealed class CreateReportJobEndpointTests : IDisposable
     public async Task AMalformedRequestIsRefusedWithTheFieldPathAndTheReason()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var body = $$"""{"template":{"id":".{{Planted}}"},"data":{"uploadId":"upload-0123456789abcdef0123456789abcdef","profile":"header-items-v1"},"outputs":["pdf"]}""";
+        var body = $$"""{"template":{"id":17},"data":{"uploadId":"upload-0123456789abcdef0123456789abcdef","profile":"header-items-v1"},"outputs":["pdf"]}""";
 
         using var response = await _host.Client.SendAsync(
             JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
@@ -255,7 +256,7 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Equal(ErrorCodes.RequestInvalid, problem.GetProperty("code").GetString());
         Assert.Equal("Invalid request", problem.GetProperty("title").GetString());
         Assert.Equal("template.id", problem.GetProperty("field").GetString());
-        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.GetProperty("reason").GetString());
+        Assert.Equal(RequestInvalidDetails.WrongTypeReason, problem.GetProperty("reason").GetString());
         Assert.DoesNotContain(Planted, problem.GetRawText(), StringComparison.Ordinal);
         Assert.Equal(0, _host.Jobs.AcceptCalls);
     }
@@ -336,6 +337,199 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Empty(host.Jobs.Jobs);
     }
 
+    [Theory]
+    [InlineData("Pilot-Grouped", "1.0.0")]
+    [InlineData("pilot grouped", "1.0.0")]
+    [InlineData("pilot/grouped", "1.0.0")]
+    [InlineData("invoice-energy", "1.0")]
+    [InlineData("invoice-energy", "v1.0.0")]
+    [InlineData("invoice-energy", "01.0.0")]
+    [InlineData("invoice-energy", "^1.0.0")]
+    [InlineData("invoice-energy", "1.x")]
+    [InlineData("invoice-energy", "main")]
+    [InlineData("invoice-energy", "latest")]
+    public async Task AReferenceOutsideTheSyntaxIsRefusedAsNotFoundWithoutReadingAnyStore(
+        string templateId,
+        string version)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var planted = "planted-secret-3f8a21";
+        var body = $"{{\"template\":{{\"id\":\"{templateId}-{planted}\",\"version\":\"{version}\"}},"
+            + $"\"data\":{{\"uploadId\":\"{uploadId}\",\"profile\":\"header-items-v1\"}},\"outputs\":[\"pdf\"]}}";
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
+        var problem = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(ErrorCodes.TemplateNotFound, problem.GetProperty("code").GetString());
+        Assert.Equal(TemplateReferenceSyntax.NotFoundTitle, problem.GetProperty("title").GetString());
+        Assert.Equal(TemplateReferenceSyntax.NotFoundDetail, problem.GetProperty("detail").GetString());
+        Assert.Empty(_host.Jobs.Jobs);
+        Assert.Empty(_host.Jobs.Intents);
+        Assert.Equal(0, _host.Versions.FindCalls);
+        Assert.Equal(0, _host.Versions.ListCalls);
+        Assert.DoesNotContain(_host.Logs.Lines, line => line.Contains(planted, StringComparison.Ordinal) || line.Contains(version, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AForeignTakenVersionIsRefusedWithTheSameProblemAsAReferenceThatCannotBeUsed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "1.1.0", owner: "another-consumer", shared: false));
+
+        using var foreign = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: "1.1.0")), cancellationToken);
+        using var syntax = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: "^1.0.0")), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        Assert.Equal(await JobApiHost.ProblemAsync(syntax), await JobApiHost.ProblemAsync(foreign));
+        var answer = await JobApiHost.AnswerAsync(foreign);
+        Assert.Equal(ErrorCodes.TemplateNotFound, answer.GetProperty("code").GetString());
+        Assert.Empty(_host.Jobs.Jobs);
+        Assert.Empty(_host.Jobs.Intents);
+    }
+
+    [Fact]
+    public async Task AnUntakenExactVersionIsAcceptedEvenWhenAnotherConsumerOwnsNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: "9.9.9")), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Single(_host.Jobs.Jobs);
+    }
+
+    [Fact]
+    public async Task ASharedTwinOfAForeignTakenVersionIsAccepted()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "1.2.0", owner: "another-consumer", shared: true));
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: "1.2.0")), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Single(_host.Jobs.Jobs);
+    }
+
+    [Theory]
+    [InlineData("another-consumer")]
+    [InlineData("dev-consumer")]
+    public async Task AnUntakenExactVersionIsAcceptedForTheTakeToDecide(string owner)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        // A record this consumer may not use, of another version: it says nothing about this one.
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "0.9.0", owner: owner, shared: false));
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: "1.1.0")), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var reference = _host.Jobs.ReferenceOf(Assert.Single(_host.Jobs.Jobs).ReportJobId);
+        Assert.Equal(TemplateReferenceForm.Exact, reference!.ReferenceForm);
+        Assert.Null(reference.BaselineVersion);
+    }
+
+    [Fact]
+    public async Task AReferenceByNameRecordsTheHighestUsableReleaseAsItsBaseline()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "1.0.0", owner: JobApiHost.Consumer));
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "1.1.0", owner: JobApiHost.Consumer));
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "1.10.0", owner: JobApiHost.Consumer));
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "2.0.0-beta.1", owner: JobApiHost.Consumer));
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: null)), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var reference = _host.Jobs.ReferenceOf(Assert.Single(_host.Jobs.Jobs).ReportJobId);
+        Assert.NotNull(reference);
+        Assert.Equal(TemplateReferenceForm.ByName, reference!.ReferenceForm);
+        Assert.Null(reference.RequestedVersion);
+        Assert.Equal("1.10.0", reference.BaselineVersion);
+    }
+
+    [Fact]
+    public async Task AReferenceByNameWithNothingUsableTakenRecordsNoBaseline()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        _host.Versions.Seed(TemplateVersionRecords.Sample(templateId: "pilot-grouped", version: "2.0.0-beta.1", owner: JobApiHost.Consumer));
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, version: null)), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Null(_host.Jobs.ReferenceOf(Assert.Single(_host.Jobs.Jobs).ReportJobId)!.BaselineVersion);
+    }
+
+    [Fact]
+    public async Task TheTakenVersionReadThatCannotBeReachedAnswersServiceUnavailableAndStoresNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var host = new JobApiHost(versions: _ => new UnavailableTakenVersionStore());
+        var uploadId = await host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var problem = await JobApiHost.AnswerAsync(response);
+        Assert.Equal(ErrorCodes.ServiceUnavailable, problem.GetProperty("code").GetString());
+        Assert.Empty(host.Jobs.Jobs);
+        Assert.Equal(0, host.Jobs.AcceptCalls);
+    }
+
+    [Fact]
+    public async Task TheReferenceSyntaxIsDecidedBeforeTheDataReferenceAndTheCapabilityBeforeEither()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var absentUpload = "upload-ffffffffffffffffffffffffffffffff";
+        var foreignVersion = $"{{\"template\":{{\"id\":\"invoice-energy\",\"version\":\"^1.0.0\"}},"
+            + $"\"data\":{{\"uploadId\":\"{absentUpload}\",\"profile\":\"header-items-v1\"}},\"outputs\":[\"pdf\"]}}";
+        var unsupported = $"{{\"template\":{{\"id\":\"invoice-energy\",\"version\":\"^1.0.0\"}},"
+            + $"\"data\":{{\"uploadId\":\"{absentUpload}\",\"profile\":\"header-items-v1\"}},\"outputs\":[\"xlsx\"]}}";
+
+        using var reference = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, foreignVersion), cancellationToken);
+        using var capability = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, unsupported), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, reference.StatusCode);
+        Assert.Equal(ErrorCodes.TemplateNotFound, (await JobApiHost.AnswerAsync(reference)).GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, capability.StatusCode);
+        Assert.Equal(ErrorCodes.UnsupportedCapability, (await JobApiHost.AnswerAsync(capability)).GetProperty("code").GetString());
+        Assert.Empty(_host.Jobs.Jobs);
+    }
+
+    [Theory]
+    [InlineData("""{"template":{"version":"1.0.0"},"data":{"uploadId":"upload-00000000000000000000000000000001","profile":"header-items-v1"},"outputs":["pdf"]}""")]
+    [InlineData("""{"template":{"id":"invoice-energy","version":null},"data":{"uploadId":"upload-00000000000000000000000000000001","profile":"header-items-v1"},"outputs":["pdf"]}""")]
+    [InlineData("""{"template":{"id":"invoice-energy","version":1},"data":{"uploadId":"upload-00000000000000000000000000000001","profile":"header-items-v1"},"outputs":["pdf"]}""")]
+    public async Task AStructuralFaultIsStillAMalformedRequest(string body)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestInvalid, (await JobApiHost.AnswerAsync(response)).GetProperty("code").GetString());
+        Assert.Empty(_host.Jobs.Jobs);
+    }
+
     // Cancels the client's request from inside the acceptance, after the job is durable.
     private sealed class CancellingJobStore(IJobStore inner, CancellationTokenSource cancellation) : IJobStore
     {
@@ -359,9 +553,17 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             string reportJobId,
             string code,
             string reason,
+            string? message,
             DateTimeOffset now,
             CancellationToken cancellationToken) =>
-            inner.FailJobAsync(reportJobId, code, reason, now, cancellationToken);
+            inner.FailJobAsync(reportJobId, code, reason, message, now, cancellationToken);
+
+        public Task<TemplatePinState> PinTemplateAsync(
+            string reportJobId,
+            TemplatePin pin,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
 
         public Task<TransitionJobResult> TransitionJobAsync(
             string reportJobId,
@@ -411,6 +613,19 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             inner.FinalizeJobAsync(reportJobId, now, cancellationToken);
     }
 
+    // Stands in for the taken versions when the store cannot be reached at all.
+    private sealed class UnavailableTakenVersionStore : ITemplateVersionStore
+    {
+        public Task<TemplateVersionRecord?> FindAsync(string templateId, string version, CancellationToken cancellationToken) =>
+            throw new TemplateStoreUnavailableException(new TimeoutException("the store did not answer"));
+
+        public Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken) =>
+            throw new TemplateStoreUnavailableException(new TimeoutException("the store did not answer"));
+
+        public Task<TemplateVersionInsert> TryInsertAsync(TemplateVersionRecord record, CancellationToken cancellationToken) =>
+            throw new TemplateStoreUnavailableException(new TimeoutException("the store did not answer"));
+    }
+
     // Stands in for records that cannot be reached at all.
     private sealed class UnavailableJobStore : IJobStore
     {
@@ -430,6 +645,14 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             string reportJobId,
             string code,
             string reason,
+            string? message,
+            DateTimeOffset now,
+            CancellationToken cancellationToken) =>
+            throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<TemplatePinState> PinTemplateAsync(
+            string reportJobId,
+            TemplatePin pin,
             DateTimeOffset now,
             CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));

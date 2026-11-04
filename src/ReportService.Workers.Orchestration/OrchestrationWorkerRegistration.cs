@@ -99,6 +99,7 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<JobTransitionActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<InputWaitSignalActivities>();
+        builder.Services.AddSingleton<TemplateResolutionActivities>();
 
         // The data step reads the contract of the version a job is pinned to: the taken
         // versions and the contracts this worker prepared. The step opens a taken copy
@@ -124,6 +125,7 @@ public static class OrchestrationWorkerRegistration
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
+                options.AddAllActivities(provider.GetRequiredService<TemplateResolutionActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

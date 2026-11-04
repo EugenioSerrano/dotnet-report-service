@@ -15,7 +15,8 @@ public sealed record ResolveInputInput(string ReportJobId);
 /// <param name="ReportJobId">The identifier of the job.</param>
 /// <param name="ErrorCode">The code of the condition that ended the job.</param>
 /// <param name="Reason">The fixed reason recorded beside the code.</param>
-public sealed record FailJobInput(string ReportJobId, string ErrorCode, string Reason);
+/// <param name="Message">The message the job carries, when the failing step has one.</param>
+public sealed record FailJobInput(string ReportJobId, string ErrorCode, string Reason, string? Message = null);
 
 /// <summary>
 /// The two steps a job runs today, each one small metadata activity on the
@@ -125,6 +126,7 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
                 input.ReportJobId,
                 input.ErrorCode,
                 input.Reason,
+                input.Message,
                 clock.GetUtcNow(),
                 ActivityExecutionContext.Current.CancellationToken)
             .ConfigureAwait(false);

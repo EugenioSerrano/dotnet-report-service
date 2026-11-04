@@ -445,7 +445,7 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(2, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(2, plan[0].Options.Workflows.Count);
-        Assert.Equal(9, plan[0].Options.Activities.Count);
+        Assert.Equal(12, plan[0].Options.Activities.Count);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == InputWaitActivities.BeginName);
@@ -564,5 +564,60 @@ public sealed class OrchestrationWorkerOptionsTests
         Assert.Empty(options.Validate());
         Assert.NotEmpty(new DispatcherOptions { PollInterval = TimeSpan.FromMilliseconds(50) }.Validate());
         Assert.NotEmpty(new DispatcherOptions { PollInterval = TimeSpan.FromMinutes(2) }.Validate());
+    }
+}
+
+/// <summary>
+/// The template step's registration and the graph it leaves: its three metadata activities
+/// run inside the one <c>report-orchestration</c> registration, nothing new is registered on
+/// the PDF worker's queue, and neither the orchestration worker nor the job library can
+/// reach the template source - the version that is not taken is the PDF worker's take, and
+/// this process only ever writes what that answer said.
+/// </summary>
+public sealed class TemplateStepRegistrationTests
+{
+    [Fact]
+    public void TheThreeMetadataStepsAreInsideTheOneOrchestrationRegistration()
+    {
+        var host = Host.CreateApplicationBuilder();
+        host.Services.AddSingleton<IJobStore>(new InMemoryJobStore(new InMemoryUploadStore()));
+        host.Services.AddSingleton<IUploadStore>(new InMemoryUploadStore());
+        host.Services.AddSingleton<ITemplateVersionStore>(new InMemoryTemplateVersionStore());
+        host.Services.AddSingleton(TimeProvider.System);
+        host.Services.AddSingleton(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
+        host.Services.AddSingleton<OrchestrationMetrics>();
+        host.Configuration[$"{WorkerOptions.SectionPath}:{WorkerOptions.DataActivitySlotsSetting}"] = "3";
+        host.Services.TryAddSingleton<TemporalClientHolder>();
+        host.AddReportJobWork();
+
+        using var built = host.Build();
+        var registrations = built.Services.GetRequiredService<IEnumerable<TaskQueueWork>>().ToArray();
+        var orchestration = registrations.Single(registration =>
+            string.Equals(registration.Queue, ReportJobWorkflow.OrchestrationQueue, StringComparison.Ordinal));
+        var options = new Temporalio.Worker.TemporalWorkerOptions(orchestration.Queue);
+        orchestration.Configure(options);
+
+        var names = options.Activities.Select(activity => activity.Name).ToArray();
+        Assert.Contains(TemplateResolutionActivities.PrepareTemplateName, names);
+        Assert.Contains(TemplateResolutionActivities.PinTemplateName, names);
+        Assert.Contains(TemplateResolutionActivities.PinBaselineName, names);
+
+        // The template step registers nothing on the PDF worker's queue: the take and the
+        // resolution are that worker's own work, and this one only calls them by name.
+        Assert.DoesNotContain(
+            registrations,
+            registration => string.Equals(registration.Queue, TakeTemplateStepOptions.Queue, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheJobLibraryAndTheOrchestrationWorkerReachNoSourceClientAndNoEngineOfAnotherProcess()
+    {
+        var jobLibrary = typeof(IJobStore).Assembly.GetReferencedAssemblies().Select(reference => reference.Name).ToArray();
+        var orchestration = typeof(TemplateResolutionActivities).Assembly.GetReferencedAssemblies().Select(reference => reference.Name).ToArray();
+
+        Assert.Contains("ReportService.TemplatePackages", jobLibrary);
+        Assert.DoesNotContain("ReportService.TemplateSource", jobLibrary);
+        Assert.DoesNotContain("ReportService.TemplateSource", orchestration);
+        Assert.DoesNotContain("ReportService.Workers.Pdf", orchestration);
     }
 }

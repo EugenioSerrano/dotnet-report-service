@@ -1,6 +1,7 @@
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Testing;
@@ -221,7 +222,9 @@ public sealed class InputWaitSignalActivitiesTests
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

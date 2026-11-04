@@ -31,7 +31,7 @@ flowchart TB
 | Process | Project | Owns | Talks to the metadata database | Talks to the workflow engine |
 |---------|---------|------|-------------------------------|------------------------------|
 | API | `src/ReportService.Api` | The HTTP surface and the consumer registry | Yes — readiness only | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
-| Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps) and `report-data` (data verification and validation) | Yes — readiness only | Yes |
+| Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps, the job's template step among them) and `report-data` (data verification and validation) | Yes - readiness only | Yes |
 | PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time): the take of one named version and the by-name resolution that chooses one | Yes — a taken version is published by a record it writes | Yes |
 
 The one-shot migrator `src/ReportService.Migrations` is not a long-running
@@ -166,6 +166,26 @@ check reports it and recovers on its own when the database returns, and it logs 
 change of state once in each direction.
 
 The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It also reads the configured template source, and its start stops naming a missing `TemplateSource:Repository` or `TemplateSource:Branch`. Its queue serves two steps at one activity at a time: `TakeTemplateVersion`, which reads one named version and keeps it, and `ResolveTemplateVersion`, which chooses the version of a template a job names without one by reading the branch's version folders and the versions already taken. One resolution is bounded by `TemplateSource:ResolveDeadline`, which fits inside the step's own 300 s.
+
+### The template step of a job
+
+The job's template is fixed by three short metadata steps on the orchestration
+worker's own queue, right after the job's input is ready and before its data is
+read: `PrepareTemplate` binds an exact version that is already taken and usable,
+with one read of the service's records and no source; `PinTemplate` writes the
+version the take or the resolution answered; and `PinBaseline` writes the release
+version the job recorded when it was accepted, for a reference by name whose source
+cannot be checked. The pin is written once and the first one wins, so a retry, a
+restart or a newer version taken later never moves a job to another version.
+
+The take and the by-name resolution stay the PDF worker's work: the orchestration
+worker calls them on `report-pdf-rendering` **by name**, with the settings the PDF
+worker publishes, so binding a version that is already taken never occupies the
+PDF worker's single activity slot and the orchestration worker never loads the
+renderer's dependencies. A refusal of either - not found, invalid, source
+unavailable, unsupported engine - ends the job and its output with that code, the
+reason the step records and the text a consumer has to act on.
+
 
 ## The consumer registry
 

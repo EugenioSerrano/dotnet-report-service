@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using Npgsql;
+using ReportService.TemplatePackages.Manifest;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.Jobs;
@@ -55,9 +57,9 @@ public sealed partial class PostgresJobStore : IJobStore
 
     private const string InsertReferenceSql = """
         INSERT INTO report_service.template_references
-            (report_job_id, template_id, reference_form, requested_version)
+            (report_job_id, template_id, reference_form, requested_version, baseline_version)
         VALUES
-            (@ReportJobId, @TemplateId, @ReferenceForm, @RequestedVersion)
+            (@ReportJobId, @TemplateId, @ReferenceForm, @RequestedVersion, @BaselineVersion)
         """;
 
     private const string InsertIntentSql = """
@@ -74,6 +76,7 @@ public sealed partial class PostgresJobStore : IJobStore
                j.report_clock     AS "ReportClock",
                j.error_code       AS "ErrorCode",
                j.error_reason     AS "ErrorReason",
+               j.error_message    AS "ErrorMessage",
                j.created_at       AS "CreatedAt",
                j.started_at       AS "StartedAt",
                j.finished_at      AS "FinishedAt",
@@ -101,12 +104,36 @@ public sealed partial class PostgresJobStore : IJobStore
         """;
 
     private const string SelectReferenceSql = """
-        SELECT report_job_id    AS "ReportJobId",
-               template_id      AS "TemplateId",
-               reference_form   AS "ReferenceForm",
-               requested_version AS "RequestedVersion"
+        SELECT report_job_id     AS "ReportJobId",
+               template_id       AS "TemplateId",
+               reference_form    AS "ReferenceForm",
+               requested_version AS "RequestedVersion",
+               baseline_version  AS "BaselineVersion",
+               resolved_version  AS "ResolvedVersion",
+               commit_sha        AS "CommitSha",
+               package_sha256    AS "PackageSha256",
+               engine            AS "Engine",
+               engine_version    AS "EngineVersion",
+               schema_ref        AS "SchemaRef",
+               resolved_at       AS "ResolvedAt"
         FROM report_service.template_references
         WHERE report_job_id = @ReportJobId
+        """;
+
+    private const string PinTemplateSql = """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version,
+               commit_sha       = @CommitSha,
+               package_sha256   = @PackageSha256,
+               engine           = @Engine,
+               engine_version   = @EngineVersion,
+               schema_ref       = @SchemaRef,
+               resolved_at      = @ResolvedAt
+         WHERE report_job_id = @ReportJobId
+           AND resolved_at IS NULL
+           AND EXISTS (SELECT 1 FROM report_service.report_jobs
+                        WHERE report_job_id = @ReportJobId
+                          AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED'))
         """;
 
     private const string FailOutputsSql = """
@@ -117,7 +144,8 @@ public sealed partial class PostgresJobStore : IJobStore
 
     private const string FailJobSql = """
         UPDATE report_service.report_jobs
-           SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
+           SET status = 'FAILED', error_code = @Code, error_reason = @Reason,
+               error_message = @Message, finished_at = @Now
          WHERE report_job_id = @ReportJobId AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
         """;
 
@@ -170,6 +198,7 @@ public sealed partial class PostgresJobStore : IJobStore
             acceptance.TemplateId,
             ReferenceForm = JobWireValues.ToStoredText(acceptance.ReferenceForm),
             acceptance.RequestedVersion,
+            acceptance.BaselineVersion,
             Now = UtcInstant(now),
         };
 
@@ -300,10 +329,72 @@ public sealed partial class PostgresJobStore : IJobStore
     }
 
     /// <inheritdoc />
+    public async Task<TemplatePinState> PinTemplateAsync(
+        string reportJobId,
+        TemplatePin pin,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(pin);
+
+        var parameters = new
+        {
+            ReportJobId = reportJobId,
+            Version = pin.ResolvedVersion,
+            pin.CommitSha,
+            pin.PackageSha256,
+            Engine = TemplateEngineNames.ToStoredText(pin.Engine),
+            pin.EngineVersion,
+            pin.SchemaRef,
+            ResolvedAt = UtcInstant(now),
+        };
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var written = await connection.ExecuteAsync(new CommandDefinition(
+                PinTemplateSql,
+                parameters,
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            if (written == 1)
+            {
+                return TemplatePinState.Pinned(pin);
+            }
+
+            // Nothing was written: an earlier attempt committed a pin first, or the job ended
+            // before this one could. The record itself answers which, and never this attempt.
+            var row = await connection.QuerySingleOrDefaultAsync<ReferenceRow>(new CommandDefinition(
+                SelectReferenceSql,
+                new { ReportJobId = reportJobId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return row?.ToRecord().Pin is { } existing
+                ? TemplatePinState.AlreadyPinned(existing)
+                : TemplatePinState.JobEnded();
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<JobFailureOutcome> FailJobAsync(
+        string reportJobId,
+        string code,
+        string reason,
+        DateTimeOffset now,
+        CancellationToken cancellationToken) =>
+        FailJobAsync(reportJobId, code, reason, null, now, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<JobFailureOutcome> FailJobAsync(
         string reportJobId,
         string code,
         string reason,
+        string? message,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -311,7 +402,14 @@ public sealed partial class PostgresJobStore : IJobStore
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(reason);
 
-        var parameters = new { ReportJobId = reportJobId, Code = code, Reason = reason, Now = UtcInstant(now) };
+        var parameters = new
+        {
+            ReportJobId = reportJobId,
+            Code = code,
+            Reason = reason,
+            Message = message,
+            Now = UtcInstant(now),
+        };
         try
         {
             await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
@@ -420,6 +518,12 @@ public sealed partial class PostgresJobStore : IJobStore
     // The server returns timestamptz as a UTC DateTime; the record keeps the same instant with an offset of zero.
     private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
 
+    // The stored engine text of a pin is read strictly: a value this build does not know is a fault.
+    private static TemplateEngine StoredEngine(string? storedText) =>
+        TemplateEngineNames.TryParseStoredText(storedText, out var engine)
+            ? engine.Value
+            : throw new InvalidOperationException("the stored template reference carries an engine this build does not know");
+
     // Every instant travels to the server as the UTCDateTime of the instant it names.
     private static DateTime UtcInstant(DateTimeOffset value) => value.ToUniversalTime().UtcDateTime;
 
@@ -460,6 +564,8 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? ErrorReason { get; set; }
 
+        public string? ErrorMessage { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? StartedAt { get; set; }
@@ -488,6 +594,7 @@ public sealed partial class PostgresJobStore : IJobStore
                 Stage = Stage,
                 ErrorCode = ErrorCode,
                 ErrorReason = ErrorReason,
+                ErrorMessage = ErrorMessage,
                 StartedAt = StartedAt is { } started ? Utc(started) : null,
                 FinishedAt = FinishedAt is { } finished ? Utc(finished) : null,
             },
@@ -499,7 +606,8 @@ public sealed partial class PostgresJobStore : IJobStore
             RejectionReason is null ? null : UploadWireValues.ParseStoredReason(RejectionReason));
     }
 
-    // The reference row: the form is kept in its domain text and read back strictly.
+    // The reference row: the form is kept in its domain text and read back strictly, and
+    // the baseline and the pin are read as stored - the pin only when it is complete.
     private sealed class ReferenceRow
     {
         public string ReportJobId { get; set; } = string.Empty;
@@ -510,12 +618,40 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? RequestedVersion { get; set; }
 
+        public string? BaselineVersion { get; set; }
+
+        public string? ResolvedVersion { get; set; }
+
+        public string? CommitSha { get; set; }
+
+        public string? PackageSha256 { get; set; }
+
+        public string? Engine { get; set; }
+
+        public string? EngineVersion { get; set; }
+
+        public string? SchemaRef { get; set; }
+
+        public DateTime? ResolvedAt { get; set; }
+
         public TemplateReferenceRecord ToRecord() => new(
             ReportJobId,
             TemplateId,
             JobWireValues.ParseStoredForm(ReferenceForm))
         {
             RequestedVersion = RequestedVersion,
+            BaselineVersion = BaselineVersion,
+            Pin = ResolvedAt is { } resolvedAt && ResolvedVersion is not null
+                ? new TemplatePin(
+                    TemplateId,
+                    ResolvedVersion,
+                    CommitSha ?? string.Empty,
+                    PackageSha256 ?? string.Empty,
+                    StoredEngine(Engine),
+                    EngineVersion ?? string.Empty,
+                    SchemaRef ?? string.Empty,
+                    Utc(resolvedAt))
+                : null,
         };
     }
 

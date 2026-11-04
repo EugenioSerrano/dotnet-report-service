@@ -5,6 +5,7 @@ using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
 
@@ -435,8 +436,11 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.FindTemplateReferenceAsync(reportJobId, cancellationToken);
 
-        public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.FailJobAsync(reportJobId, code, reason, now, cancellationToken);
+        public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailJobAsync(reportJobId, code, reason, message, now, cancellationToken);
+
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.BeginInputWaitAsync(reportJobId, cancellationToken);

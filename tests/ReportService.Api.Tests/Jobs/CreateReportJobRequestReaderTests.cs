@@ -220,23 +220,6 @@ public sealed class CreateReportJobRequestReaderTests
         Assert.DoesNotContain(Planted, problem.Detail, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("Pilot-Grouped")]
-    [InlineData(".pilot")]
-    [InlineData("pilot.")]
-    [InlineData("pilot grouped")]
-    [InlineData("-pilot")]
-    [InlineData("pilot/grouped")]
-    [InlineData("")]
-    public async Task ATemplateIdentifierOutsideTheRuleIsRefusedWithAConstantDetail(string templateId)
-    {
-        var problem = await RejectedAsync($$"""{"template":{"id":"{{templateId}}"},"data":{"uploadId":"upload-0123456789abcdef0123456789abcdef","profile":"header-items-v1"},"outputs":["pdf"]}""");
-
-        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.Reason);
-        Assert.Equal(CreateReportJobRequestReader.TemplateIdPath, problem.Field);
-        Assert.Equal(ProvisionalTemplateReferenceSyntax.IdentifierDetail, problem.Detail);
-    }
-
     [Fact]
     public async Task ATemplateIdentifierOfTheLongestLengthIsAccepted()
     {
@@ -249,30 +232,6 @@ public sealed class CreateReportJobRequestReaderTests
     }
 
     [Fact]
-    public async Task ATemplateIdentifierOneCharacterTooLongIsRefused()
-    {
-        var identifier = "a" + new string('b', 127) + "9";
-
-        var problem = await RejectedAsync($$"""{"template":{"id":"{{identifier}}"},"data":{"uploadId":"upload-0123456789abcdef0123456789abcdef","profile":"header-items-v1"},"outputs":["pdf"]}""");
-
-        Assert.Equal(ProvisionalTemplateReferenceSyntax.IdentifierDetail, problem.Detail);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("1.0 0")]
-    [InlineData("1.0.0 ")]
-    [InlineData("1.0.0é")]
-    public async Task ATemplateVersionOutsideTheRuleIsRefusedWithAConstantDetail(string version)
-    {
-        var problem = await RejectedAsync(Valid(version));
-
-        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.Reason);
-        Assert.Equal(CreateReportJobRequestReader.TemplateVersionPath, problem.Field);
-        Assert.Equal(ProvisionalTemplateReferenceSyntax.VersionDetail, problem.Detail);
-    }
-
-    [Fact]
     public async Task ATemplateVersionOfTheLongestLengthIsAccepted()
     {
         var version = new string('v', 128);
@@ -280,14 +239,6 @@ public sealed class CreateReportJobRequestReaderTests
         var accepted = Assert.IsType<CreateReportJobRequestReader.Result.Accepted>(await ReadAsync(Valid(version)));
 
         Assert.Equal(version, accepted.Request.TemplateVersion);
-    }
-
-    [Fact]
-    public async Task ATemplateVersionOneCharacterTooLongIsRefused()
-    {
-        var problem = await RejectedAsync(Valid(new string('v', 129)));
-
-        Assert.Equal(ProvisionalTemplateReferenceSyntax.VersionDetail, problem.Detail);
     }
 
     [Fact]

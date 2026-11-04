@@ -4,6 +4,7 @@ using ReportService.Api.Http;
 using ReportService.Api.Telemetry;
 using ReportService.Api.Uploads;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.Api.Jobs;
@@ -62,6 +63,7 @@ public static class CreateReportJobEndpoint
     private static async Task<IResult> CreateAsync(
         HttpContext context,
         IJobStore store,
+        ITemplateVersionStore versions,
         ConsumerRegistry registry,
         JobAcceptanceMetrics metrics,
         TimeProvider clock,
@@ -120,9 +122,27 @@ public static class CreateReportJobEndpoint
                         capability.Reason);
                 }
 
+                // The reference's syntax is decided before the database is touched, and a
+                // value that cannot name a template this service could ever take is answered
+                // with the one problem of a template that was not found.
+                if (TemplateReferenceSyntax.Check(accepted.Request.TemplateId, accepted.Request.TemplateVersion)
+                    is TemplateReferenceSyntax.ReferenceKind.NotFound)
+                {
+                    return Refuse(
+                        context,
+                        metrics,
+                        logger,
+                        ErrorCodes.TemplateNotFound,
+                        StatusCodes.Status404NotFound,
+                        TemplateReferenceSyntax.NotFoundTitle,
+                        TemplateReferenceSyntax.NotFoundDetail,
+                        TemplateReferenceSyntax.SyntaxReason);
+                }
+
                 return await AcceptedAsync(
                     context,
                     store,
+                    versions,
                     metrics,
                     clock,
                     logger,
@@ -137,6 +157,7 @@ public static class CreateReportJobEndpoint
     private static async Task<IResult> AcceptedAsync(
         HttpContext context,
         IJobStore store,
+        ITemplateVersionStore versions,
         JobAcceptanceMetrics metrics,
         TimeProvider clock,
         ILogger logger,
@@ -150,6 +171,45 @@ public static class CreateReportJobEndpoint
             return NotFound(context, metrics, logger);
         }
 
+        // The versions already taken are read once, after every free check: a version this
+        // consumer may not use is refused with the same problem as one that does not exist,
+        // and a reference by name leaves with the release version it may fall back to. From
+        // here the client's connection is not observed, so a request that is accepted is
+        // accepted whatever the client does next.
+        TakenTemplateVersionCheck.Answer availability;
+        try
+        {
+            availability = await new TakenTemplateVersionCheck(versions)
+                .CheckAsync(request.TemplateId, request.TemplateVersion, consumerId, CancellationToken.None)
+                .ConfigureAwait(false);
+        }
+        catch (TemplateStoreUnavailableException exception)
+        {
+            logger.LogWarning("The taken template versions could not be read ({ExceptionType})", exception.GetType().Name);
+            return Refuse(
+                context,
+                metrics,
+                logger,
+                ErrorCodes.ServiceUnavailable,
+                StatusCodes.Status503ServiceUnavailable,
+                ServiceUnavailableTitle,
+                ServiceUnavailableDetail,
+                RefusalReasons.StoreUnavailable);
+        }
+
+        if (!availability.Usable)
+        {
+            return Refuse(
+                context,
+                metrics,
+                logger,
+                ErrorCodes.TemplateNotFound,
+                StatusCodes.Status404NotFound,
+                TemplateReferenceSyntax.NotFoundTitle,
+                TemplateReferenceSyntax.NotFoundDetail,
+                TemplateReferenceSyntax.NotUsableReason);
+        }
+
         var now = JobWireValues.TruncateToMillisecond(clock.GetUtcNow());
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
@@ -158,7 +218,10 @@ public static class CreateReportJobEndpoint
             request.UploadId,
             request.TemplateId,
             request.TemplateVersion is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-            request.TemplateVersion);
+            request.TemplateVersion)
+        {
+            BaselineVersion = availability.BaselineVersion,
+        };
 
         JobAcceptanceResult result;
         try
@@ -190,11 +253,13 @@ public static class CreateReportJobEndpoint
         var statusUrl = $"{RoutePrefix}/{job.ReportJobId}";
         Activity.Current?.SetTag(JobIdTag, job.ReportJobId);
         metrics.Accepted();
+        // The reference's form is the log's, never a sent value: the syntax check has
+        // already decided the request may name it.
         logger.LogInformation(
             "Job {ReportJobId} accepted for upload {UploadId} ({ReferenceForm})",
             job.ReportJobId,
             job.UploadId,
-            ProvisionalTemplateReferenceSyntax.FormOf(request.TemplateVersion));
+            TemplateReferenceSyntax.FormOf(request.TemplateVersion));
         return Results.Accepted(statusUrl, ReportJobAcceptedResponse.From(job, statusUrl));
     }
 

@@ -3,6 +3,7 @@ using Npgsql;
 using ReportService.Jobs;
 using ReportService.Migrations;
 using ReportService.Testing;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.IntegrationTests.Jobs;
@@ -19,11 +20,15 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
 {
     private readonly PostgresFixture _fixture;
     private NpgsqlDataSource? _dataSource;
+    private PostgresTemplateVersionStore? _versions;
     private string? _database;
 
     /// <summary>Runs against the class's server.</summary>
     /// <param name="fixture">The container this class owns.</param>
     public PostgresJobStoreContractTests(PostgresFixture fixture) => _fixture = fixture;
+
+    /// <summary>The taken versions a pinned case records: the database makes a pin point at one.</summary>
+    protected override ITemplateVersionStore? Versions => _versions;
 
     /// <summary>Creates a database of its own, brings it to the expected version and opens both stores on it.</summary>
     protected override async Task<(IJobStore Jobs, IUploadStore Uploads)> CreateStoresAsync(CancellationToken cancellationToken)
@@ -39,6 +44,7 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
 
         _dataSource = NpgsqlDataSource.Create(connectionString);
+        _versions = new PostgresTemplateVersionStore(_dataSource);
         return (new PostgresJobStore(_dataSource), new PostgresUploadStore(_dataSource));
     }
 

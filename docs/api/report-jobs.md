@@ -112,8 +112,21 @@ Content-Type: application/json
 
 | Member | Rule |
 |--------|------|
-| `template.id` | Required string, 1 to 128 characters: a lower-case identifier (`a-z`, `0-9`, `.`, `_`, `-`, beginning and ending with a letter or a digit). It becomes part of a storage key, so anything else is refused as a malformed request. The identifier must name a template this service can take: a name it cannot find is answered as a missing template once the reference is resolved. **The form of this answer is still provisional** and may change when the template reference is resolved at acceptance. |
-| `template.version` | Optional string of 1 to 128 printable ASCII characters without spaces. When present the job names exactly that version; when absent it names the template by name and takes the latest valid version. |
+| `template.id` | Required string, 1 to 128 characters: a lower-case identifier (`a-z`, `0-9`, `.`, `_`, `-`, beginning and ending with a letter or a digit). It becomes part of a storage key and the folder the template is read from, so a value outside the rule can never name a template: the request is refused with `404 TEMPLATE_NOT_FOUND` before anything is read. |
+| `template.version` | Optional. When present it must be a semantic version (`MAJOR.MINOR.PATCH`, with an optional pre-release and build metadata, at most 128 characters): a range (`^1.0.0`, `~1.2`, `1.x`), a branch name (`main`) and a partial version (`1.0`, `v1.0.0`) are refused with `404 TEMPLATE_NOT_FOUND`, because no folder can carry one. When absent the job names the template only and the version is chosen for it. |
+
+A version **already taken** that belongs to another consumer and is not `shared` is
+refused with the same `404 TEMPLATE_NOT_FOUND`, exactly as if it did not exist: the
+answer never says that someone else holds it. A version that was never taken, or one
+you may use, is accepted, and the take step decides whether it exists.
+
+The checks run in this order: the consumer, the body, the requested format and
+profile, the reference's syntax, the data reference, and the versions already taken.
+
+A reference by name is never refused at acceptance. The highest **release** version
+already taken that this consumer may use is recorded with the job as the version it
+falls back to if the template source cannot be checked; a pre-release is never chosen
+by name, though a pre-release named exactly is used if the take accepts it.
 | `data.uploadId` | Required string. The upload must be yours, confirmed and not past its deadline; anything else is answered as an upload that does not exist. |
 | `data.profile` | Required string. Only `header-items-v1` is produced. |
 | `outputs` | Required, non-empty array of distinct strings. Only `pdf` is produced. |
@@ -173,8 +186,9 @@ costs at most half a minute.
 
 Every refusal is a Problem Details document with a stable `code`; the same code
 always means the same condition. The checks run in this order: the consumer, the
-body, the requested format and profile, the reference's form, and finally the data
-reference itself inside the transaction that accepts the job.
+body, the requested format and profile, the reference's syntax, the versions
+already taken, and finally the data reference itself inside the transaction that
+accepts the job.
 
 | Case | HTTP | `code` |
 |------|------|--------|
@@ -183,12 +197,43 @@ reference itself inside the transaction that accepts the job.
 | A format other than `pdf`, a profile other than `header-items-v1` | 422 | `UNSUPPORTED_CAPABILITY` |
 | A body over 16 384 bytes | 413 | `QUOTA_EXCEEDED` |
 | A malformed body, an unknown member, a value out of its rule | 400 | `REQUEST_INVALID` |
+| A template identifier outside the rule, a version that is not a semantic version, or a version of another consumer's that is not `shared` | 404 | `TEMPLATE_NOT_FOUND` |
 | An upload that does not exist for you, is not confirmed, was refused, or ran out of time | 404 | `INPUT_NOT_FOUND` |
 | The service cannot reach its own database | 503 | `SERVICE_UNAVAILABLE` |
 
 A refusal never creates a job, and an unusable data reference is answered the
 same way whatever makes it unusable — an upload that is not yours is
-indistinguishable from one that does not exist.
+indistinguishable from one that does not exist. The template answer carries one
+constant problem for every reference it refuses and never repeats the value that
+was sent.
+
+## What happens to the template after the `202`
+
+The job's template is fixed once, right after the request is accepted, and never
+changes again: not on a retry, not when a worker restarts, and not when a newer
+version is taken.
+
+- A version **already taken** and usable is bound with one read of the service's own
+  records, and the template source is not read at all — a job naming such a version
+  runs even while the source is unreachable.
+- A version that is **not taken** is taken by the PDF worker from the configured
+  repository and branch, and the version it read is recorded on the job with the
+  commit, the package hash, the engine, the engine's version, the schema the records
+  are checked against and the instant it was resolved.
+- A reference **by name** resolves the highest release version the source holds. If the
+  source cannot be checked, the job uses the release version recorded when it was
+  accepted and logs that the source could not be checked; a by-name job accepted while
+  no release version had been taken fails with `TEMPLATE_SOURCE_UNAVAILABLE`.
+
+A template the take refuses fails the job and its output after the `202`, with the
+code and the message a consumer needs:
+
+| Code | What it means |
+|------|---------------|
+| `TEMPLATE_NOT_FOUND` | The template or its version does not exist, or it is another consumer's and is not `shared` — the two answers are identical. |
+| `TEMPLATE_INVALID` | The template cannot be used as it stands; the message names what its author has to fix. |
+| `TEMPLATE_SOURCE_UNAVAILABLE` | The source could not be read. Nothing was taken; the request may be submitted again later. |
+| `UNSUPPORTED_CAPABILITY` | The template's engine is not one this deployment renders. |
 
 ## Logs and instruments
 

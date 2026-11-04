@@ -8,6 +8,7 @@
     workflow-engine type enters this library.
   -->
   <ItemGroup>
+    <ProjectReference Include="..\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
     <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
   </ItemGroup>
 

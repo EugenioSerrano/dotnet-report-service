@@ -13,6 +13,7 @@ using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
 using ReportService.Testing;
+using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
 namespace ReportService.Api.Tests.Jobs;
@@ -57,7 +58,10 @@ internal sealed class JobApiHost : IDisposable
 
     /// <summary>Starts the service over a registry carrying an active and an inactive consumer.</summary>
     /// <param name="store">Wraps the job records the service is given, so a case can place an event inside one call.</param>
-    public JobApiHost(Func<IJobStore, IJobStore>? store = null)
+    /// <param name="versions">Wraps the taken template versions the service reads, so a case can make the read fail.</param>
+    public JobApiHost(
+        Func<IJobStore, IJobStore>? store = null,
+        Func<ITemplateVersionStore, ITemplateVersionStore>? versions = null)
     {
         _registryPath = _directory.Write(
             "consumers.json",
@@ -80,6 +84,8 @@ internal sealed class JobApiHost : IDisposable
                 services.AddSingleton<IUploadStore>(Uploads);
                 services.RemoveAll<IJobStore>();
                 services.AddSingleton(store is null ? Jobs : store(Jobs));
+                services.RemoveAll<ITemplateVersionStore>();
+                services.AddSingleton<ITemplateVersionStore>(versions is null ? Versions : versions(Versions));
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(Clock);
             });
@@ -92,6 +98,9 @@ internal sealed class JobApiHost : IDisposable
 
     /// <summary>The job records the service writes.</summary>
     public InMemoryJobStore Jobs { get; }
+
+    /// <summary>The taken template versions the service reads when a job is created.</summary>
+    public InMemoryTemplateVersionStore Versions { get; } = new();
 
     /// <summary>The clock the service reads.</summary>
     public FixedTimeProvider Clock { get; } = new(Now);

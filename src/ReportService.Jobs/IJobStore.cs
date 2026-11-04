@@ -1,3 +1,5 @@
+using ReportService.TemplatePackages.Records;
+
 namespace ReportService.Jobs;
 
 /// <summary>
@@ -47,15 +49,41 @@ public interface IJobStore
     /// <summary>
     /// Fails a job and every output of it that has not ended, in one transaction: the
     /// outputs are marked failed with <paramref name="code"/> and the job is marked
-    /// failed with the code and the reason. A job that already ended is left exactly
-    /// as it is, and the call says so.
+    /// failed with the code, the reason and the message. A job that already ended is left
+    /// exactly as it is, and the call says so.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="code">The code of the condition that ended the job.</param>
+    /// <param name="reason">The fixed reason recorded beside the code.</param>
+    /// <param name="message">The message the job carries, or <see langword="null"/> for none.</param>
+    /// <param name="now">The instant the failure is decided at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Fails a job with no message. The delivered callers end a job from a condition the
+    /// service raises itself, and the message is the template step's own addition.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="code">The code of the condition that ended the job.</param>
     /// <param name="reason">The fixed reason recorded beside the code.</param>
     /// <param name="now">The instant the failure is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken);
+    Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+        FailJobAsync(reportJobId, code, reason, null, now, cancellationToken);
+
+    /// <summary>
+    /// Writes the version a job's template is fixed to, once. The write is conditional on
+    /// the job not having ended and on no pin being recorded yet, so the first committed
+    /// pin wins: an attempt that arrives second receives the pin that is already there,
+    /// whatever it computed itself.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="pin">The values the job is fixed to.</param>
+    /// <param name="now">The instant the pin is written at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <returns>The pin the record holds, or that the job had already ended.</returns>
+    Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
     /// Records that a queued job is waiting for its upload to be verified. The write is

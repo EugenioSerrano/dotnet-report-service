@@ -31,6 +31,9 @@ public sealed record ReportJobRecord(
     /// <summary>The fixed reason recorded beside <see cref="ErrorCode"/>.</summary>
     public string? ErrorReason { get; init; }
 
+    /// <summary>The message the job carries for a consumer: the failing step's own text; null when it carried none.</summary>
+    public string? ErrorMessage { get; init; }
+
     /// <summary>When the job's work began, in UTC; null until then.</summary>
     public DateTimeOffset? StartedAt { get; init; }
 
