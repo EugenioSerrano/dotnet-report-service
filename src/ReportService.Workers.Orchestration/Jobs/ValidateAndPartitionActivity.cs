@@ -133,6 +133,12 @@ public sealed class ValidateAndPartitionActivity(
             count => ActivityExecutionContext.Current.Heartbeat(new PartitionHeartbeat(count)),
             passEnds.Token);
 
+        // The progress the consumer polls is written by a task of the pass's own: it awaits
+        // each store write, reports the count only when it changed, and a write that fails
+        // never fails the step. Keeping it beside the beat is also what keeps a slow write
+        // from delaying a beat.
+        var progress = WriteProgressAsync(jobId, () => Interlocked.Read(ref recordsRead), passEnds.Token);
+
         PartitionSummary summary;
         try
         {
@@ -146,6 +152,10 @@ public sealed class ValidateAndPartitionActivity(
         }
         catch (DataContractViolation violation)
         {
+            // The records the pass admitted before it stopped are the last honest count the
+            // consumer can be given; the write is best effort, as every progress write is.
+            await RecordProgressAsync(input.ReportJobId, Interlocked.Read(ref recordsRead), cancellationToken).ConfigureAwait(false);
+
             // The profile's own diagnostic: the rule, the position, and no value of the document.
             // The span carries the code, the reason and the ordinal, and the log line the same
             // with the offset — never a value, a key or a path of the storage.
@@ -172,6 +182,7 @@ public sealed class ValidateAndPartitionActivity(
         {
             await passEnds.CancelAsync().ConfigureAwait(false);
             await beat.ConfigureAwait(false);
+            await progress.ConfigureAwait(false);
         }
 
         var blockKey = ObjectKey.FromSegments("block", jobId, "0", attemptId);
@@ -235,6 +246,59 @@ public sealed class ValidateAndPartitionActivity(
 
     private static ObjectWrite Written(ObjectWrite? write, string what) =>
         write ?? throw new InvalidOperationException($"the storage provider reported success without {what}");
+
+    // The progress writer of the pass: it ticks on the beat's own interval, awaits each
+    // store write, and reports the count only when it changed since the last write. A
+    // write that fails is logged with its type and retried on the next tick; progress
+    // never fails the step.
+    private async Task WriteProgressAsync(string reportJobId, Func<long> progress, CancellationToken cancellationToken)
+    {
+        long lastWritten = -1;
+        using var timer = new PeriodicTimer(PdfOutputActivityOptions.HeartbeatEvery);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var count = progress();
+                if (count == lastWritten)
+                {
+                    continue;
+                }
+
+                if (await RecordProgressAsync(reportJobId, count, cancellationToken).ConfigureAwait(false))
+                {
+                    lastWritten = count;
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The pass has ended: there is nothing left to write.
+        }
+    }
+
+    // One progress write, best effort: false when it did not reach the store, which is
+    // logged with the exception's type only and never raised to the step.
+    private async Task<bool> RecordProgressAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await jobs.RecordRecordsReadAsync(reportJobId, recordsRead, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(
+                "Progress of job {ReportJobId} not recorded ({ExceptionType})",
+                reportJobId,
+                exception.GetType().Name);
+            return false;
+        }
+    }
 
     // The job's own reference, the taken version it names and the contract of that version,
     // leased from the worker's cache. The version is read off the reference and the version

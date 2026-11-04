@@ -21,6 +21,7 @@ using Temporalio.Common;
 using Temporalio.Testing;
 using Temporalio.Worker;
 using InputWaitActivities = orchestration::ReportService.Workers.Orchestration.Jobs.InputWaitActivities;
+using JobTransitionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.JobTransitionActivities;
 using OrchestrationMetrics = orchestration::ReportService.Workers.Orchestration.Telemetry.OrchestrationMetrics;
 using ReportJobActivities = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobActivities;
 using ReportJobInput = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobInput;
@@ -111,6 +112,25 @@ public sealed class ReportJobHistoryCapture
 
         await RecordTheRefusedSnapshotAsync(rig, target);
         await RecordTheTemplateThatCannotBeUsedAsync(rig, target);
+        await RecordTheFinalizedPathAsync(rig, target);
+    }
+
+    // A job whose input is ready at its first check and whose data step commits: the run
+    // moves the job to its first stage, partitions, and reaches its finalising step. The
+    // job's PDF output has not started, so the step writes nothing — the recording is of
+    // the path, not of a terminal status.
+    private static async Task RecordTheFinalizedPathAsync(Rig rig, string directory)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(JobHistoryFixtures.Finalized, UploadState.Ready, cancellationToken);
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(
+            directory,
+            JobHistoryFixtures.Finalized,
+            await rig.HistoryAsync(reportJobId, runId, cancellationToken),
+            cancellationToken);
     }
 
     // The data step's own refusal, recorded from a real execution: a snapshot the reader
@@ -423,6 +443,12 @@ public sealed class ReportJobHistoryCapture
                         metrics,
                         NullLoggerFactory.Instance,
                         NullLogger<ReportJobActivities>.Instance))
+                    .AddAllActivities(new JobTransitionActivities(
+                        jobs,
+                        clock,
+                        metrics,
+                        NullLoggerFactory.Instance,
+                        NullLogger<JobTransitionActivities>.Instance))
                     .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance)));
             var dataWorker = new TemporalWorker(
                 environment.Client,

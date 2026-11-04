@@ -69,6 +69,13 @@ public sealed class ReportJobWorkflow
         return $"{WorkflowIdPrefix}/{reportJobId}";
     }
 
+    /// <summary>
+    /// The identifier of the patch that gates the two steps this change adds. A run
+    /// recorded before it carries no marker for it, so it replays with the patch
+    /// inactive and schedules neither step.
+    /// </summary>
+    public const string JobStatusPathPatch = "job-status-path-v1";
+
     /// <summary>Runs one job up to its continuation point.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -117,7 +124,17 @@ public sealed class ReportJobWorkflow
         // checked against the template it is pinned to and partitioned before anything is
         // rendered or published, and a refusal ends the job here. A run that has reached
         // this point never continues as a new run: the check count belongs to the wait
-        // behind it.
+        // behind it. The first stage and the finalising step are gated by one patch, so a
+        // recorded run that carries no marker for it reproduces its own commands exactly.
+        var patched = Workflow.Patched(JobStatusPathPatch);
+        if (patched)
+        {
+            await Workflow.ExecuteActivityAsync(
+                (JobTransitionActivities activities) => activities.TransitionJobAsync(
+                    new TransitionJobInput(input.ReportJobId, ReportJobStatus.Validating)),
+                options).ConfigureAwait(true);
+        }
+
         try
         {
             await Workflow.ExecuteActivityAsync(
@@ -139,6 +156,15 @@ public sealed class ReportJobWorkflow
                 refusal.Message,
                 ReportJobActivityOptions.Create()).ConfigureAwait(true);
             return;
+        }
+
+        // The last step of the run: the job is closed from the outcome of its outputs, and
+        // a job whose outputs have not ended is left exactly as its steps left it.
+        if (patched)
+        {
+            await Workflow.ExecuteActivityAsync(
+                (JobTransitionActivities activities) => activities.FinalizeJobAsync(new FinalizeJobInput(input.ReportJobId)),
+                options).ConfigureAwait(true);
         }
 
         // The point where the steps that follow the data step are added; until they exist

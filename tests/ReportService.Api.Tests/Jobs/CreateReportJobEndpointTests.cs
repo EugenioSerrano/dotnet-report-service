@@ -363,13 +363,19 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             CancellationToken cancellationToken) =>
             inner.FailJobAsync(reportJobId, code, reason, now, cancellationToken);
 
-        public Task<TransitionOutcome> TransitionJobAsync(
+        public Task<TransitionJobResult> TransitionJobAsync(
             string reportJobId,
             IReadOnlyList<ReportJobStatus> from,
             ReportJobStatus to,
             DateTimeOffset now,
             CancellationToken cancellationToken) =>
             inner.TransitionJobAsync(reportJobId, from, to, now, cancellationToken);
+
+        public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) =>
+            inner.FindStatusAsync(reportJobId, consumerId, cancellationToken);
+
+        public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) =>
+            inner.RecordRecordsReadAsync(reportJobId, recordsRead, cancellationToken);
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.TransitionOutputAsync(outputId, now, cancellationToken);
@@ -428,12 +434,16 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
 
-        public Task<TransitionOutcome> TransitionJobAsync(
+        public Task<TransitionJobResult> TransitionJobAsync(
             string reportJobId,
             IReadOnlyList<ReportJobStatus> from,
             ReportJobStatus to,
             DateTimeOffset now,
             CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
 

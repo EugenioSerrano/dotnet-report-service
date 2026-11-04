@@ -37,7 +37,7 @@ public sealed partial class InMemoryJobStore
     }
 
     /// <inheritdoc />
-    public Task<TransitionOutcome> TransitionJobAsync(
+    public Task<TransitionJobResult> TransitionJobAsync(
         string reportJobId,
         IReadOnlyList<ReportJobStatus> from,
         ReportJobStatus to,
@@ -46,30 +46,32 @@ public sealed partial class InMemoryJobStore
     {
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(from);
+        var stage = JobWireValues.ToStoredText(JobStages.StageFor(to));
 
         lock (_gate)
         {
             if (!_jobs.TryGetValue(reportJobId, out var job))
             {
-                return Task.FromResult(TransitionOutcome.NotApplicable);
+                return Task.FromResult(new TransitionJobResult(TransitionOutcome.NotApplicable, null));
             }
 
             if (job.Status == to)
             {
-                return Task.FromResult(TransitionOutcome.AlreadyApplied);
+                return Task.FromResult(new TransitionJobResult(TransitionOutcome.AlreadyApplied, null));
             }
 
             if (!from.Contains(job.Status))
             {
-                return Task.FromResult(TransitionOutcome.NotApplicable);
+                return Task.FromResult(new TransitionJobResult(TransitionOutcome.NotApplicable, null));
             }
 
             _jobs[reportJobId] = job with
             {
                 Status = to,
+                Stage = stage,
                 StartedAt = job.StartedAt ?? now.ToUniversalTime(),
             };
-            return Task.FromResult(TransitionOutcome.Applied);
+            return Task.FromResult(new TransitionJobResult(TransitionOutcome.Applied, job.CreatedAt));
         }
     }
 
@@ -118,6 +120,21 @@ public sealed partial class InMemoryJobStore
             }
 
             _partitions.Add(partition.ReportJobId, partition);
+
+            // The totals are set once, in the same act that makes the partition durable,
+            // and the read count rises to the count that was counted.
+            if (_jobs.TryGetValue(partition.ReportJobId, out var job) && !job.IsTerminal)
+            {
+                var progress = ProgressOf(partition.ReportJobId);
+                var raised = progress with
+                {
+                    RecordsRead = Math.Max(progress.RecordsRead, partition.RecordCount),
+                    RecordsTotal = progress.RecordsTotal ?? partition.RecordCount,
+                    BlocksTotal = progress.BlocksTotal ?? partition.BlockCount,
+                };
+                RaiseProgress(partition.ReportJobId, raised);
+            }
+
             return Task.FromResult(new PartitionCommitResult(PartitionCommitOutcome.Committed, partition));
         }
     }
@@ -152,6 +169,25 @@ public sealed partial class InMemoryJobStore
             }
 
             _parts.Add(key, commit);
+
+            // The counters are recomputed from the insert-once commits and applied with the
+            // higher value: a repeated or racing commit cannot count a block or a page twice.
+            var output = _outputs[commit.OutputId];
+            if (_jobs.TryGetValue(output.ReportJobId, out var job) && !job.IsTerminal)
+            {
+                var jobParts = _parts.Values
+                    .Where(part => _outputs.TryGetValue(part.OutputId, out var partOutput)
+                        && string.Equals(partOutput.ReportJobId, output.ReportJobId, StringComparison.Ordinal)
+                        && partOutput.Format == OutputFormat.Pdf)
+                    .ToList();
+                var progress = ProgressOf(output.ReportJobId);
+                RaiseProgress(output.ReportJobId, progress with
+                {
+                    BlocksCompleted = Math.Max(progress.BlocksCompleted, jobParts.Count),
+                    PagesGenerated = Math.Max(progress.PagesGenerated, jobParts.Sum(part => (long)part.PageCount)),
+                });
+            }
+
             return Task.FromResult(new PartCommitResult(PartCommitOutcome.Committed, commit));
         }
     }
@@ -272,6 +308,23 @@ public sealed partial class InMemoryJobStore
         return job is not null
             && job.Status is not (ReportJobStatus.Cancelling or ReportJobStatus.Cancelled)
             && output.Status == OutputStatus.Running;
+    }
+
+    // Stores a raised progress value, refusing exactly the rows the database's checks
+    // refuse: a read count above a known total, or a completed block above a known count.
+    private void RaiseProgress(string reportJobId, JobProgress raised)
+    {
+        if (raised.RecordsTotal is { } total && raised.RecordsRead > total)
+        {
+            throw new InvalidOperationException("the read count would exceed the record total");
+        }
+
+        if (raised.BlocksTotal is { } blocks && raised.BlocksCompleted > blocks)
+        {
+            throw new InvalidOperationException("the completed block count would exceed the block total");
+        }
+
+        _progress[reportJobId] = raised;
     }
 
     private static string KeyOf(string outputId, int blockIndex) => $"{outputId}/{blockIndex}";

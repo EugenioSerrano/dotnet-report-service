@@ -52,5 +52,6 @@ app.MapUploadEndpoints();
 app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
 app.MapCreateReportJobEndpoint();
+app.MapReportJobStatusEndpoint();
 app.MapGetTemplateVersionEndpoint();
 app.Run();

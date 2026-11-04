@@ -30,9 +30,12 @@ public sealed class ConsumerRefusalMetrics : IDisposable
     /// <summary>The operation that reads a taken template version's metadata.</summary>
     public const string TemplateVersionOperation = "template-version";
 
+    /// <summary>The operation that reads one report job's status.</summary>
+    public const string JobStatusOperation = "job-status";
+
     /// <summary>Every operation the gate protects.</summary>
     public static readonly IReadOnlyList<string> Operations =
-        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation];
+        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation, JobStatusOperation];
 
     private readonly Meter _meter;
     private readonly Counter<long> _refusals;

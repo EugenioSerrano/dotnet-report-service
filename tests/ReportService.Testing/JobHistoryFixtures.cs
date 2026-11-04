@@ -50,6 +50,9 @@ public static class JobHistoryFixtures
     /// <summary>A job whose pinned template version carries a schema the profile refuses.</summary>
     public const string TemplateInvalidFile = "report-job-template-invalid.json";
 
+    /// <summary>A job whose input is ready at its first check and whose run reaches the finalising step.</summary>
+    public const string FinalizedFile = "report-job-finalized.json";
+
     /// <summary>A job whose upload was ready at its first check: it never waits.</summary>
     public static readonly JobHistoryFixture Ready = new(
         ReadyFile,
@@ -131,6 +134,15 @@ public static class JobHistoryFixtures
         InputWaitOptions.DefaultBackstop,
         InputWaitOptions.DefaultContinueAsNewAfter);
 
+    /// <summary>
+    /// A job whose input is ready at its first check: the run moves it to its first stage,
+    /// partitions, and reaches the finalising step, which leaves the job as its steps left it.
+    /// </summary>
+    public static readonly JobHistoryFixture Finalized = new(
+        FinalizedFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
     /// <summary>Every committed recording, in the order the cases name them.</summary>
     public static readonly JobHistoryFixture[] All =
     [
@@ -144,6 +156,7 @@ public static class JobHistoryFixtures
         ContinuedAfterANotification,
         RefusedSnapshot,
         TemplateThatCannotBeUsed,
+        Finalized,
     ];
 
     /// <summary>The recordings of a job whose first check already answered: no wait was taken.</summary>

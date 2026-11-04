@@ -245,16 +245,16 @@ public abstract class JobStoreContract : IAsyncLifetime
 
         Assert.Equal(
             TransitionOutcome.NotApplicable,
-            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Running], ReportJobStatus.Validating, Now, cancellationToken));
+            (await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Running], ReportJobStatus.Validating, Now, cancellationToken)).Outcome);
         Assert.Equal(
             TransitionOutcome.Applied,
-            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken));
+            (await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken)).Outcome);
         Assert.Equal(
             TransitionOutcome.AlreadyApplied,
-            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken));
+            (await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken)).Outcome);
         Assert.Equal(
             TransitionOutcome.Applied,
-            await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken));
+            (await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken)).Outcome);
 
         var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.Equal(ReportJobStatus.Running, state!.Job.Status);
@@ -472,6 +472,275 @@ public abstract class JobStoreContract : IAsyncLifetime
             cancellationToken));
     }
 
+    [Fact]
+    public async Task AStatusReadAnswersTheOwnerAQueuedJobWithNoStageAndNoTotals()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        Assert.NotNull(status);
+        Assert.Equal(acceptance.ReportJobId, status!.ReportJobId);
+        Assert.Equal(ReportJobStatus.Queued, status.Status);
+        Assert.Null(status.Stage);
+        Assert.Equal(0, status.RecordsRead);
+        Assert.Null(status.RecordsTotal);
+        Assert.Equal(0, status.BlocksCompleted);
+        Assert.Null(status.BlocksTotal);
+        Assert.Equal(0, status.PagesGenerated);
+        Assert.Null(status.ErrorCode);
+        Assert.Equal(Now, status.CreatedAt);
+        Assert.Null(status.StartedAt);
+        Assert.Null(status.FinishedAt);
+        var output = Assert.Single(status.Outputs);
+        Assert.Equal(OutputFormat.Pdf, output.Format);
+        Assert.Equal(OutputStatus.Pending, output.Status);
+        Assert.Null(output.ErrorCode);
+        Assert.Null(output.ArtifactId);
+    }
+
+    [Fact]
+    public async Task AStatusReadAnswersNothingForAnotherConsumerOrAnAbsentJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Null(await Store.FindStatusAsync(acceptance.ReportJobId, "another-consumer", cancellationToken));
+        Assert.Null(await Store.FindStatusAsync("job-ffffffffffffffffffffffffffffffff", Consumer, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AStatusReadShowsTheArtifactOfAPublishedOutput()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        var output = Assert.Single(status!.Outputs);
+        Assert.Equal(OutputStatus.Succeeded, output.Status);
+        Assert.Equal(ArtifactId, output.ArtifactId);
+        Assert.Null(output.ErrorCode);
+    }
+
+    [Fact]
+    public async Task AProgressWriteOnlyEverRaisesTheReadCount()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        Assert.Equal(ProgressWriteOutcome.Raised, await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 10, cancellationToken));
+        Assert.Equal(ProgressWriteOutcome.Raised, await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 40, cancellationToken));
+        Assert.Equal(40, (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.RecordsRead);
+        Assert.Equal(ProgressWriteOutcome.Unchanged, await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 25, cancellationToken));
+        Assert.Equal(40, (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.RecordsRead);
+
+        // A write above a total already known is ignored, never an error: progress must
+        // not fail the step that reports it, and the row stays exactly as it was. The
+        // commit itself raises the count to the count it carries.
+        await Store.CommitPartitionAsync(Partition(acceptance.ReportJobId, recordCount: 100, blockCount: 2), cancellationToken);
+        Assert.Equal(ProgressWriteOutcome.Unchanged, await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 101, cancellationToken));
+        var known = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(100, known!.RecordsRead);
+        Assert.Equal(100, known.RecordsTotal);
+
+        // A job that ended is frozen: a later write from a stale attempt changes nothing.
+        await Store.FailJobAsync(acceptance.ReportJobId, "INPUT_NOT_FOUND", "input-expired", Now, cancellationToken);
+        Assert.Equal(ProgressWriteOutcome.Unchanged, await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 99, cancellationToken));
+        Assert.Equal(100, (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.RecordsRead);
+    }
+
+    [Fact]
+    public async Task ACommitSetsTheTotalsOnceAndRaisesTheReadCountToItsCount()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 600, cancellationToken);
+
+        var committed = await Store.CommitPartitionAsync(
+            Partition(acceptance.ReportJobId, recordCount: 800, blockCount: 3),
+            cancellationToken);
+
+        Assert.Equal(PartitionCommitOutcome.Committed, committed.Outcome);
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(800, status!.RecordsRead);
+        Assert.Equal(800, status.RecordsTotal);
+        Assert.Equal(3, status.BlocksTotal);
+
+        // A second commit of the same job is a conflict: it changes neither the partition
+        // nor the totals the first one wrote.
+        var repeated = await Store.CommitPartitionAsync(
+            Partition(acceptance.ReportJobId, recordCount: 999, blockCount: 9),
+            cancellationToken);
+        Assert.Equal(PartitionCommitOutcome.AlreadyCommitted, repeated.Outcome);
+        var unchanged = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(800, unchanged!.RecordsTotal);
+        Assert.Equal(3, unchanged.BlocksTotal);
+    }
+
+    [Fact]
+    public async Task ACommitAtTheStoredCountKeepsTheCountAndStillSetsTheTotalsOnce()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.RecordRecordsReadAsync(acceptance.ReportJobId, 800, cancellationToken);
+
+        await Store.CommitPartitionAsync(Partition(acceptance.ReportJobId, recordCount: 800, blockCount: 1), cancellationToken);
+
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(800, status!.RecordsRead);
+        Assert.Equal(800, status.RecordsTotal);
+        Assert.Equal(1, status.BlocksTotal);
+    }
+
+    [Fact]
+    public async Task ABlockCommitCountsItsBlockAndItsPagesOnlyOnce()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.Committed, (await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken)).Outcome);
+        var first = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(1, first!.BlocksCompleted);
+        Assert.Equal(3, first.PagesGenerated);
+
+        Assert.Equal(
+            PartCommitOutcome.AlreadyCommitted,
+            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 9 }, cancellationToken)).Outcome);
+        var repeated = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(1, repeated!.BlocksCompleted);
+        Assert.Equal(3, repeated.PagesGenerated);
+
+        Assert.Equal(
+            PartCommitOutcome.Committed,
+            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { BlockIndex = 1, PageCount = 2 }, cancellationToken)).Outcome);
+        var second = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(2, second!.BlocksCompleted);
+        Assert.Equal(5, second.PagesGenerated);
+    }
+
+    [Fact]
+    public async Task ATransitionWritesTheStageOfItsTargetAndAnswersTheCreationInstant()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var applied = await Store.TransitionJobAsync(
+            acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken);
+        Assert.Equal(TransitionOutcome.Applied, applied.Outcome);
+        Assert.Equal(Now, applied.CreatedAt);
+        Assert.Equal(
+            ReportJobStage.ValidatingData,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Stage);
+
+        var running = await Store.TransitionJobAsync(
+            acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken);
+        Assert.Equal(TransitionOutcome.Applied, running.Outcome);
+        Assert.Equal(
+            ReportJobStage.RenderingPdf,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Stage);
+
+        // A repeated transition wrote nothing, carries no instant and leaves the stage.
+        var repeated = await Store.TransitionJobAsync(
+            acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken);
+        Assert.Equal(TransitionOutcome.AlreadyApplied, repeated.Outcome);
+        Assert.Null(repeated.CreatedAt);
+        Assert.Equal(
+            ReportJobStage.RenderingPdf,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Stage);
+
+        // A transition from a state the job is not in changes neither the state nor the stage.
+        var notApplicable = await Store.TransitionJobAsync(
+            acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken);
+        Assert.Equal(TransitionOutcome.NotApplicable, notApplicable.Outcome);
+        var unchanged = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(ReportJobStatus.Running, unchanged!.Status);
+        Assert.Equal(ReportJobStage.RenderingPdf, unchanged.Stage);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobStages.StageFor(ReportJobStatus.Succeeded));
+    }
+
+    [Fact]
+    public async Task ARepeatedFinalisationLeavesTheFirstOutcomeExactlyAsItWas()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        var endedAt = Now.AddMinutes(1);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, (await Store.FinalizeJobAsync(acceptance.ReportJobId, endedAt, cancellationToken)).Outcome);
+        var first = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(ReportJobStatus.Succeeded, first!.Status);
+        Assert.Equal(endedAt, first.FinishedAt);
+        Assert.Null(first.ErrorCode);
+        Assert.Null(first.Stage);
+
+        Assert.Equal(
+            JobFinalizationOutcome.AlreadyTerminal,
+            (await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(2), cancellationToken)).Outcome);
+        var repeated = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(ReportJobStatus.Succeeded, repeated!.Status);
+        Assert.Equal(endedAt, repeated.FinishedAt);
+        Assert.Null(repeated.ErrorCode);
+    }
+
+    [Fact]
+    public async Task AnEmptyPartitionCommitsAKnownZeroTotalAndItsBlock()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        await Store.CommitPartitionAsync(Partition(acceptance.ReportJobId, recordCount: 0, blockCount: 1), cancellationToken);
+
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(0, status!.RecordsRead);
+        Assert.NotNull(status.RecordsTotal);
+        Assert.Equal(0, status.RecordsTotal);
+        Assert.Equal(1, status.BlocksTotal);
+
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PartCommitOutcome.Committed,
+            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 1 }, cancellationToken)).Outcome);
+        var committed = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(1, committed!.BlocksCompleted);
+        Assert.Equal(1, committed.PagesGenerated);
+    }
+
+    [Fact]
+    public async Task AJobRefusedBeforeItsPartitionKeepsZeroCountersAndNoTotals()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        await Store.FailJobAsync(acceptance.ReportJobId, "QUOTA_EXCEEDED", "block", Now, cancellationToken);
+
+        var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.Equal(ReportJobStatus.Failed, status!.Status);
+        Assert.Equal("QUOTA_EXCEEDED", status.ErrorCode);
+        Assert.Equal(0, status.RecordsRead);
+        Assert.Null(status.RecordsTotal);
+        Assert.Equal(0, status.BlocksCompleted);
+        Assert.Null(status.BlocksTotal);
+        Assert.Null(status.Stage);
+    }
+
     /// <summary>A partition of <paramref name="reportJobId"/>, holding one record.</summary>
     /// <param name="reportJobId">The job it belongs to.</param>
     protected static PartitionRecord Partition(string reportJobId) => new(
@@ -479,6 +748,21 @@ public abstract class JobStoreContract : IAsyncLifetime
         1,
         1,
         1,
+        24,
+        $"index/{reportJobId}/0/attempt",
+        Hash,
+        120,
+        Now);
+
+    /// <summary>A partition of <paramref name="reportJobId"/> with the counts a commit carries.</summary>
+    /// <param name="reportJobId">The job it belongs to.</param>
+    /// <param name="recordCount">How many records the partition holds.</param>
+    /// <param name="blockCount">How many blocks the partition holds.</param>
+    protected static PartitionRecord Partition(string reportJobId, long recordCount, int blockCount) => new(
+        reportJobId,
+        1,
+        blockCount,
+        recordCount,
         24,
         $"index/{reportJobId}/0/attempt",
         Hash,

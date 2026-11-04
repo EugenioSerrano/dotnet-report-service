@@ -50,6 +50,47 @@ public sealed class JobWireValuesTests
     public void AnAnswerNamesTheQueuedStateInLowerCase() => Assert.Equal("queued", JobWireValues.ToWire(ReportJobStatus.Queued));
 
     [Fact]
+    public void EveryStageRoundTripsThroughItsStoredTextAndTheWaitingStageIsTheInputWaitStage()
+    {
+        foreach (var stage in Enum.GetValues<ReportJobStage>())
+        {
+            Assert.Equal(stage, JobWireValues.ParseStoredStage(JobWireValues.ToStoredText(stage)));
+        }
+
+        // The waiting stage the delivered input wait writes is one value of the stage set,
+        // so a row it wrote reads back as the same step.
+        Assert.Equal(InputWaitStage.WaitingForInput, JobWireValues.ToStoredText(ReportJobStage.WaitingForInput));
+        Assert.Equal(ReportJobStage.WaitingForInput, JobWireValues.ParseStoredStage(InputWaitStage.WaitingForInput));
+    }
+
+    [Fact]
+    public void EveryStageOutputStatusAndFormatHasAnAnswerTextOfItsOwn()
+    {
+        var stageTexts = Enum.GetValues<ReportJobStage>().Select(JobWireValues.ToWire).ToList();
+        Assert.Equal(Enum.GetValues<ReportJobStage>().Length, stageTexts.Distinct(StringComparer.Ordinal).Count());
+        Assert.All(stageTexts, text => Assert.Equal(text.ToLowerInvariant(), text));
+        Assert.Equal("validating-data", JobWireValues.ToWire(ReportJobStage.ValidatingData));
+        Assert.Equal("rendering-pdf", JobWireValues.ToWire(ReportJobStage.RenderingPdf));
+
+        Assert.Equal(
+            ["pending", "running", "succeeded", "failed", "cancelled"],
+            Enum.GetValues<OutputStatus>().Select(JobWireValues.ToWire).ToArray());
+        Assert.Equal(
+            ["pdf", "html", "xlsx", "markdown"],
+            Enum.GetValues<OutputFormat>().Select(JobWireValues.ToWire).ToArray());
+    }
+
+    [Fact]
+    public void AValueOutsideTheEnumerationsHasNoAnswerTextAndNoStoredTextIsDefaulted()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobWireValues.ToWire((ReportJobStage)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobWireValues.ToStoredText((ReportJobStage)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobWireValues.ToWire((OutputStatus)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobWireValues.ToWire((OutputFormat)99));
+        Assert.Throws<InvalidOperationException>(() => JobWireValues.ParseStoredStage("validating-data"));
+    }
+
+    [Fact]
     public void EveryJobStatusHasAnAnswerTextOfItsOwn()
     {
         var texts = Enum.GetValues<ReportJobStatus>().Select(JobWireValues.ToWire).ToList();

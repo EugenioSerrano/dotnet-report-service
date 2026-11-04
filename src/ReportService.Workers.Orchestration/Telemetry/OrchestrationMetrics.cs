@@ -37,6 +37,9 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The counter of the notifications sent to waiting jobs.</summary>
     public const string InputWaitNotificationsInstrumentName = "reportservice.job.input.wait.notifications";
 
+    /// <summary>The histogram of how long a job waited between acceptance and its first stage.</summary>
+    public const string QueueToFirstStageDurationInstrumentName = "reportservice.job.queue_to_first_stage.duration";
+
     /// <summary>The status tag of a job that ended failed.</summary>
     public const string FailedJobStatus = "FAILED";
 
@@ -77,6 +80,7 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Counter<long> _jobOutcomes;
     private readonly Counter<long> _inputWaitOutcomes;
     private readonly Counter<long> _inputWaitNotifications;
+    private readonly Histogram<double> _queueToFirstStageDuration;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
@@ -110,6 +114,10 @@ public sealed class OrchestrationMetrics : IDisposable
             InputWaitNotificationsInstrumentName,
             unit: "{notification}",
             description: "Notifications of waiting jobs, by result.");
+        _queueToFirstStageDuration = _meter.CreateHistogram<double>(
+            QueueToFirstStageDurationInstrumentName,
+            unit: "s",
+            description: "How long a job waited between its acceptance and its first stage.");
         _meter.CreateObservableGauge(
             PendingAgeInstrumentName,
             ObservePendingAge,
@@ -167,6 +175,11 @@ public sealed class OrchestrationMetrics : IDisposable
         _inputWaitNotifications.Add(
             1,
             new KeyValuePair<string, object?>("result", result));
+
+    /// <summary>Records how long a job waited between its acceptance and its first stage.</summary>
+    /// <param name="elapsed">The elapsed time; it is recorded with no tag at all, so it can never carry an identifier.</param>
+    public void RecordQueueToFirstStageDuration(TimeSpan elapsed) =>
+        _queueToFirstStageDuration.Record(elapsed.TotalSeconds);
 
     /// <summary>Publishes how long the oldest pending request of <paramref name="kind"/> has waited.</summary>
     /// <param name="kind">The request's kind, a fixed value.</param>

@@ -23,8 +23,9 @@ public sealed partial class PostgresJobStore
 
     private const string TransitionJobSql = """
         UPDATE report_service.report_jobs
-           SET status = @To, started_at = COALESCE(started_at, @Now)
+           SET status = @To, stage = @Stage, started_at = COALESCE(started_at, @Now)
          WHERE report_job_id = @ReportJobId AND status = ANY(@From)
+        RETURNING created_at
         """;
 
     private const string TransitionOutputSql = """
@@ -58,7 +59,7 @@ public sealed partial class PostgresJobStore
         """;
 
     private const string GuardSql = """
-        SELECT j.status AS "JobStatus", o.status AS "OutputStatus"
+        SELECT j.report_job_id AS "ReportJobId", j.status AS "JobStatus", o.status AS "OutputStatus"
         FROM report_service.report_outputs o
         JOIN report_service.report_jobs j ON j.report_job_id = o.report_job_id
         WHERE o.output_id = @OutputId
@@ -128,8 +129,29 @@ public sealed partial class PostgresJobStore
            AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
         """;
 
+    private const string RaisePartitionProgressSql = """
+        UPDATE report_service.report_jobs
+           SET records_read  = GREATEST(records_read, @RecordCount),
+               records_total = COALESCE(records_total, @RecordCount),
+               blocks_total  = COALESCE(blocks_total, @BlockCount)
+         WHERE report_job_id = @ReportJobId
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+        """;
+
+    private const string RaisePartProgressSql = """
+        UPDATE report_service.report_jobs j
+           SET blocks_completed = GREATEST(j.blocks_completed, c.n),
+               pages_generated  = GREATEST(j.pages_generated, c.p)
+          FROM (SELECT count(*)::int AS n, coalesce(sum(pc.page_count), 0)::bigint AS p
+                  FROM report_service.pdf_part_commits pc
+                  JOIN report_service.report_outputs o ON o.output_id = pc.output_id
+                 WHERE o.report_job_id = @ReportJobId AND o.format = 'PDF') c
+         WHERE j.report_job_id = @ReportJobId
+           AND j.status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+        """;
+
     /// <inheritdoc />
-    public async Task<TransitionOutcome> TransitionJobAsync(
+    public async Task<TransitionJobResult> TransitionJobAsync(
         string reportJobId,
         IReadOnlyList<ReportJobStatus> from,
         ReportJobStatus to,
@@ -139,31 +161,34 @@ public sealed partial class PostgresJobStore
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(from);
 
+        // The stage is decided before the store is reached: a target no step of this
+        // increment enters is a programming error, never a default stage.
         var parameters = new
         {
             ReportJobId = reportJobId,
             From = from.Select(JobWireValues.ToStoredText).ToArray(),
             To = JobWireValues.ToStoredText(to),
+            Stage = JobWireValues.ToStoredText(JobStages.StageFor(to)),
             Now = UtcInstant(now),
         };
 
         try
         {
             await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-            var changed = await connection.ExecuteAsync(new CommandDefinition(
+            var createdAt = await connection.ExecuteScalarAsync<DateTime?>(new CommandDefinition(
                 TransitionJobSql, parameters, commandTimeout: CommandTimeoutSeconds, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
-            if (changed > 0)
+            if (createdAt is { } accepted)
             {
-                return TransitionOutcome.Applied;
+                return new TransitionJobResult(TransitionOutcome.Applied, Utc(accepted));
             }
 
             var current = await connection.ExecuteScalarAsync<string?>(new CommandDefinition(
                 SelectJobStatusSql, parameters, commandTimeout: CommandTimeoutSeconds, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
             return current is not null && JobWireValues.ParseStoredStatus(current) == to
-                ? TransitionOutcome.AlreadyApplied
-                : TransitionOutcome.NotApplicable;
+                ? new TransitionJobResult(TransitionOutcome.AlreadyApplied, null)
+                : new TransitionJobResult(TransitionOutcome.NotApplicable, null);
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -230,6 +255,17 @@ public sealed partial class PostgresJobStore
             var written = await connection.ExecuteAsync(new CommandDefinition(
                 InsertPartitionSql, parameters, transaction, CommandTimeoutSeconds, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
+            if (written > 0)
+            {
+                // The totals are set once, inside the same transaction that made the
+                // partition durable, and the read count rises to the count that was counted.
+                await connection.ExecuteAsync(new CommandDefinition(
+                    RaisePartitionProgressSql,
+                    new { partition.ReportJobId, partition.RecordCount, partition.BlockCount },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+            }
 
             var row = await connection.QuerySingleOrDefaultAsync<PartitionRow>(new CommandDefinition(
                 SelectPartitionSql,
@@ -291,7 +327,8 @@ public sealed partial class PostgresJobStore
         {
             await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            if (!await GuardAllowsAsync(connection, transaction, commit.OutputId, cancellationToken).ConfigureAwait(false))
+            var guard = await GuardAsync(connection, transaction, commit.OutputId, cancellationToken).ConfigureAwait(false);
+            if (guard is null || !AllowsCommit(guard))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return new PartCommitResult(PartCommitOutcome.GuardRefused, null);
@@ -300,6 +337,18 @@ public sealed partial class PostgresJobStore
             var written = await connection.ExecuteAsync(new CommandDefinition(
                 InsertPartCommitSql, parameters, transaction, CommandTimeoutSeconds, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
+            if (written > 0)
+            {
+                // The counters are recomputed from the insert-once commits and applied with
+                // GREATEST: a repeated or racing commit cannot count a block or a page twice.
+                await connection.ExecuteAsync(new CommandDefinition(
+                    RaisePartProgressSql,
+                    new { guard.ReportJobId },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+            }
+
             var row = await connection.QuerySingleOrDefaultAsync<PartCommitRow>(new CommandDefinition(
                 SelectPartCommitSql,
                 new { commit.OutputId, commit.BlockIndex },
@@ -376,7 +425,8 @@ public sealed partial class PostgresJobStore
                 return new PublishResult(PublishOutcome.AlreadyPublished, existing);
             }
 
-            if (!await GuardAllowsAsync(connection, transaction, artifact.OutputId, cancellationToken).ConfigureAwait(false))
+            var guard = await GuardAsync(connection, transaction, artifact.OutputId, cancellationToken).ConfigureAwait(false);
+            if (guard is null || !AllowsCommit(guard))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return new PublishResult(PublishOutcome.GuardRefused, null);
@@ -499,23 +549,20 @@ public sealed partial class PostgresJobStore
 
     // The guard of every commit that makes a result visible: a job that is ending or has
     // ended publishes nothing, and neither does an output that is no longer running.
-    private static async Task<bool> GuardAllowsAsync(
+    private static async Task<GuardRow?> GuardAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string outputId,
-        CancellationToken cancellationToken)
-    {
-        var guard = await connection.QuerySingleOrDefaultAsync<GuardRow>(new CommandDefinition(
+        CancellationToken cancellationToken) =>
+        await connection.QuerySingleOrDefaultAsync<GuardRow>(new CommandDefinition(
             GuardSql,
             new { OutputId = outputId },
             transaction,
             CommandTimeoutSeconds,
             cancellationToken: cancellationToken)).ConfigureAwait(false);
-        if (guard is null)
-        {
-            return false;
-        }
 
+    private static bool AllowsCommit(GuardRow guard)
+    {
         var job = JobWireValues.ParseStoredStatus(guard.JobStatus);
         var output = JobWireValues.ParseStoredOutputStatus(guard.OutputStatus);
         return job is not (ReportJobStatus.Cancelling or ReportJobStatus.Cancelled) && output == OutputStatus.Running;
@@ -523,6 +570,8 @@ public sealed partial class PostgresJobStore
 
     private sealed class GuardRow
     {
+        public string ReportJobId { get; set; } = string.Empty;
+
         public string JobStatus { get; set; } = string.Empty;
 
         public string OutputStatus { get; set; } = string.Empty;

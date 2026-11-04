@@ -7,7 +7,7 @@ namespace ReportService.Workers.Orchestration.Tests.Telemetry;
 /// <summary>
 /// The worker's product meter as a listener subscribes to it: the closed table of the
 /// instruments it declares, each with the name, the unit and the kind it has always had,
-/// and no eighth. The factory under test is given an identity nothing else in the process
+/// and no ninth. The factory under test is given an identity nothing else in the process
 /// uses, so the table the case reads is its own and not a neighbour's.
 /// </summary>
 public sealed class ProductMeterInstrumentsTests
@@ -15,7 +15,7 @@ public sealed class ProductMeterInstrumentsTests
     private static readonly MeterIdentity Identity = MeterIdentity.ForHost("ReportService.Tests.ProductMeter");
 
     [Fact]
-    public void TheWorkerMeterDeclaresItsSevenInstrumentsAndNoEighth()
+    public void TheWorkerMeterDeclaresItsEightInstrumentsAndNoNinth()
     {
         List<(string Name, string Unit, string Kind)> declared = [];
         using var listener = new MeterListener
@@ -41,6 +41,7 @@ public sealed class ProductMeterInstrumentsTests
             (OrchestrationMetrics.JobOutcomesInstrumentName, "{job}", "Counter"),
             (OrchestrationMetrics.InputWaitOutcomesInstrumentName, "{wait}", "Counter"),
             (OrchestrationMetrics.InputWaitNotificationsInstrumentName, "{notification}", "Counter"),
+            (OrchestrationMetrics.QueueToFirstStageDurationInstrumentName, "s", "Histogram"),
         };
         Assert.Equal(
             expected.OrderBy(row => row.Name, StringComparer.Ordinal),

@@ -27,6 +27,8 @@ public sealed partial class InMemoryJobStore : IJobStore
     private int _acceptCalls;
     private int _findCalls;
     private int _failCalls;
+    private int _findStatusCalls;
+    private int _progressWriteCalls;
 
     /// <summary>Creates the store over the upload records it checks an acceptance against.</summary>
     /// <param name="uploads">The upload records, as the service holds them.</param>
@@ -50,6 +52,15 @@ public sealed partial class InMemoryJobStore : IJobStore
 
     /// <summary>How many times <see cref="FailJobAsync"/> was called.</summary>
     public int FailCalls => Volatile.Read(ref _failCalls);
+
+    /// <summary>How many times <see cref="FindStatusAsync"/> was called.</summary>
+    public int FindStatusCalls => Volatile.Read(ref _findStatusCalls);
+
+    /// <summary>How many times <see cref="RecordRecordsReadAsync"/> was called.</summary>
+    public int ProgressWriteCalls => Volatile.Read(ref _progressWriteCalls);
+
+    /// <summary>When set, every progress write throws it; used to prove a failing write never fails a step.</summary>
+    public Exception? ProgressWriteFailure { get; set; }
 
     /// <summary>The jobs the store holds, in the order they were accepted.</summary>
     public IReadOnlyList<ReportJobRecord> Jobs
@@ -134,6 +145,7 @@ public sealed partial class InMemoryJobStore : IJobStore
                 instant,
                 instant);
             _jobs.Add(job.ReportJobId, job);
+            _progress.Add(job.ReportJobId, JobProgress.Empty);
             _outputs.Add(acceptance.OutputId, new ReportOutputRecord(
                 acceptance.OutputId, job.ReportJobId, OutputFormat.Pdf, OutputStatus.Pending));
             _references.Add(job.ReportJobId, new TemplateReferenceRecord(

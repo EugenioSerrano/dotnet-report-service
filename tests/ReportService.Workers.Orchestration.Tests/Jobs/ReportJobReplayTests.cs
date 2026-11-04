@@ -102,6 +102,9 @@ public sealed class ReportJobHistoryBoundTests
     /// <summary>The events the longest path of a job that did not have to wait writes.</summary>
     public const int LongestPathEvents = 17;
 
+    /// <summary>The events the longest path of a job that runs the patched steps writes.</summary>
+    public const int LongestPathEventsOfTheFinalizedPath = 31;
+
     /// <summary>The events one rescheduled workflow task adds.</summary>
     public const int EventsPerLostWorkflowTask = 2;
 
@@ -132,6 +135,11 @@ public sealed class ReportJobHistoryBoundTests
         Assert.Equal(1, Scheduled(history, ReportJobActivities.ResolveInputName));
         Assert.Equal(0, Scheduled(history, InputWaitActivities.BeginName));
         Assert.Equal(0, Scheduled(history, InputWaitActivities.EndName));
+
+        // The two steps of the patched path carry no marker in these recordings, so the
+        // patch answers false and neither step is scheduled.
+        Assert.Equal(0, Scheduled(history, JobTransitionActivities.TransitionJobName));
+        Assert.Equal(0, Scheduled(history, JobTransitionActivities.FinalizeJobName));
     }
 
     [Theory]
@@ -293,6 +301,36 @@ public sealed class ReportJobHistoryBoundTests
         Assert.True(
             fired.EventId < lastCheck.EventId,
             $"the recorded timer fired at event {fired.EventId} and the check it woke is at {lastCheck.EventId}.");
+    }
+
+    [Fact]
+    public async Task TheFinalizedPathRunsBothStepsOnceInsideItsOwnBound()
+    {
+        var history = await JobHistoryFiles.ReadAsync(JobHistoryFixtures.FinalizedFile);
+
+        Assert.Equal(1, Scheduled(history, JobTransitionActivities.TransitionJobName));
+        Assert.Equal(1, Scheduled(history, ValidateAndPartitionActivity.Name));
+        Assert.Equal(1, Scheduled(history, JobTransitionActivities.FinalizeJobName));
+
+        // The first stage comes before the data step and the finalising step after it.
+        var transition = EventId(history, JobTransitionActivities.TransitionJobName);
+        var partition = EventId(history, ValidateAndPartitionActivity.Name);
+        var finalize = EventId(history, JobTransitionActivities.FinalizeJobName);
+        Assert.NotNull(transition);
+        Assert.NotNull(partition);
+        Assert.NotNull(finalize);
+        Assert.True(transition < partition, $"the first stage is at event {transition} and the data step at {partition}.");
+        Assert.True(partition < finalize, $"the data step is at event {partition} and the finalising step at {finalize}.");
+
+        // No child execution is started by this path, and the run completed.
+        Assert.DoesNotContain(history.Events, entry => entry.EventType == EventType.StartChildWorkflowExecutionInitiated);
+        Assert.Equal(EventType.WorkflowExecutionCompleted, history.Events.Last().EventType);
+
+        var rescheduled = Rescheduled(history);
+        var allowed = LongestPathEventsOfTheFinalizedPath + (EventsPerLostWorkflowTask * rescheduled);
+        Assert.True(
+            history.Events.Count <= allowed,
+            $"{JobHistoryFixtures.FinalizedFile} holds {history.Events.Count} events, and the patched path allows {allowed} ({LongestPathEventsOfTheFinalizedPath} plus {EventsPerLostWorkflowTask} per rescheduled workflow task, of which it records {rescheduled}).");
     }
 
     private static int Scheduled(WorkflowHistory history, string activityName) =>

@@ -30,6 +30,65 @@ public static class JobWireValues
         _ => throw new ArgumentOutOfRangeException(nameof(status), "the job status has no answer text"),
     };
 
+    /// <summary>The answer text of <paramref name="stage"/>.</summary>
+    /// <param name="stage">The stage to translate.</param>
+    public static string ToWire(ReportJobStage stage) => stage switch
+    {
+        ReportJobStage.WaitingForInput => "waiting-for-input",
+        ReportJobStage.Resolving => "resolving",
+        ReportJobStage.ValidatingData => "validating-data",
+        ReportJobStage.Partitioning => "partitioning",
+        ReportJobStage.ComposingHtml => "composing-html",
+        ReportJobStage.RenderingPdf => "rendering-pdf",
+        ReportJobStage.MergingPdf => "merging-pdf",
+        ReportJobStage.ExportingXlsx => "exporting-xlsx",
+        ReportJobStage.ConvertingMarkdown => "converting-markdown",
+        ReportJobStage.Publishing => "publishing",
+        ReportJobStage.Notifying => "notifying",
+        _ => throw new ArgumentOutOfRangeException(nameof(stage), "the job stage has no answer text"),
+    };
+
+    /// <summary>The answer text of <paramref name="status"/>.</summary>
+    /// <param name="status">The output status to translate.</param>
+    public static string ToWire(OutputStatus status) => status switch
+    {
+        OutputStatus.Pending => "pending",
+        OutputStatus.Running => "running",
+        OutputStatus.Succeeded => "succeeded",
+        OutputStatus.Failed => "failed",
+        OutputStatus.Cancelled => "cancelled",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), "the output status has no answer text"),
+    };
+
+    /// <summary>The answer text of <paramref name="format"/>.</summary>
+    /// <param name="format">The output format to translate.</param>
+    public static string ToWire(OutputFormat format) => format switch
+    {
+        OutputFormat.Pdf => "pdf",
+        OutputFormat.Html => "html",
+        OutputFormat.Xlsx => "xlsx",
+        OutputFormat.Markdown => "markdown",
+        _ => throw new ArgumentOutOfRangeException(nameof(format), "the output format has no answer text"),
+    };
+
+    /// <summary>The text the record store keeps for <paramref name="stage"/>.</summary>
+    /// <param name="stage">The stage to translate.</param>
+    public static string ToStoredText(ReportJobStage stage) => stage switch
+    {
+        ReportJobStage.WaitingForInput => "WAITING_FOR_INPUT",
+        ReportJobStage.Resolving => "RESOLVING",
+        ReportJobStage.ValidatingData => "VALIDATING_DATA",
+        ReportJobStage.Partitioning => "PARTITIONING",
+        ReportJobStage.ComposingHtml => "COMPOSING_HTML",
+        ReportJobStage.RenderingPdf => "RENDERING_PDF",
+        ReportJobStage.MergingPdf => "MERGING_PDF",
+        ReportJobStage.ExportingXlsx => "EXPORTING_XLSX",
+        ReportJobStage.ConvertingMarkdown => "CONVERTING_MARKDOWN",
+        ReportJobStage.Publishing => "PUBLISHING",
+        ReportJobStage.Notifying => "NOTIFYING",
+        _ => throw new ArgumentOutOfRangeException(nameof(stage), "the job stage has no stored text"),
+    };
+
     /// <summary>The text the record store keeps for <paramref name="status"/>.</summary>
     /// <param name="status">The status to translate.</param>
     public static string ToStoredText(ReportJobStatus status) => status switch
@@ -92,6 +151,24 @@ public static class JobWireValues
         "CANCELLING" => ReportJobStatus.Cancelling,
         "CANCELLED" => ReportJobStatus.Cancelled,
         _ => throw new InvalidOperationException("the stored job status is not a known value"),
+    };
+
+    /// <summary>Reads the stored text of a job stage; an unknown text is refused, never defaulted.</summary>
+    /// <param name="value">The text the store returned.</param>
+    public static ReportJobStage ParseStoredStage(string value) => value switch
+    {
+        "WAITING_FOR_INPUT" => ReportJobStage.WaitingForInput,
+        "RESOLVING" => ReportJobStage.Resolving,
+        "VALIDATING_DATA" => ReportJobStage.ValidatingData,
+        "PARTITIONING" => ReportJobStage.Partitioning,
+        "COMPOSING_HTML" => ReportJobStage.ComposingHtml,
+        "RENDERING_PDF" => ReportJobStage.RenderingPdf,
+        "MERGING_PDF" => ReportJobStage.MergingPdf,
+        "EXPORTING_XLSX" => ReportJobStage.ExportingXlsx,
+        "CONVERTING_MARKDOWN" => ReportJobStage.ConvertingMarkdown,
+        "PUBLISHING" => ReportJobStage.Publishing,
+        "NOTIFYING" => ReportJobStage.Notifying,
+        _ => throw new InvalidOperationException("the stored job stage is not a known value"),
     };
 
     /// <summary>Reads the stored text of an output status; an unknown text is refused, never defaulted.</summary>

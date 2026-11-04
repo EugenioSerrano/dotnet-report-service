@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
+using ReportService.Workers.Orchestration.Telemetry;
 using Temporalio.Activities;
 
 namespace ReportService.Workers.Orchestration.Jobs;
@@ -19,13 +20,22 @@ public sealed record TransitionOutputInput(string OutputId);
 /// <param name="ErrorCode">The code of the condition that ended it.</param>
 public sealed record FailOutputInput(string OutputId, string ErrorCode);
 
+/// <summary>What closing a job from its outputs is asked to do.</summary>
+/// <param name="ReportJobId">The identifier of the job.</param>
+public sealed record FinalizeJobInput(string ReportJobId);
+
 /// <summary>
 /// The short metadata steps a job's states are written with, each one a conditional
 /// statement on the orchestration queue: they move a job forward, start an output and
 /// end one output. Their instants come from the process's clock, and a step that
 /// arrives twice answers what the record already says instead of writing again.
 /// </summary>
-public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, ILoggerFactory loggers, ILogger<JobTransitionActivities> logger)
+public sealed class JobTransitionActivities(
+    IJobStore jobs,
+    TimeProvider clock,
+    OrchestrationMetrics metrics,
+    ILoggerFactory loggers,
+    ILogger<JobTransitionActivities> logger)
 {
     /// <summary>The name the job transition is registered and scheduled under.</summary>
     public const string TransitionJobName = "TransitionJob";
@@ -35,6 +45,9 @@ public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, 
 
     /// <summary>The name the output failure is registered and scheduled under.</summary>
     public const string FailOutputName = "FailOutput";
+
+    /// <summary>The name the job's finalisation is registered and scheduled under.</summary>
+    public const string FinalizeJobName = "FinalizeJob";
 
     /// <summary>The states a job is moved forward from, for each state it can be moved to.</summary>
     /// <param name="to">The state to move the job to.</param>
@@ -65,12 +78,50 @@ public sealed class JobTransitionActivities(IJobStore jobs, TimeProvider clock, 
             clock.GetUtcNow(),
             ActivityExecutionContext.Current.CancellationToken).ConfigureAwait(false);
 
+        // The first stage is the one transition out of queued: the time between the job's
+        // acceptance and that step is what a consumer waits before anything is produced.
+        if (input.To == ReportJobStatus.Validating
+            && outcome.Outcome == TransitionOutcome.Applied
+            && outcome.CreatedAt is { } accepted)
+        {
+            metrics.RecordQueueToFirstStageDuration(clock.GetUtcNow() - accepted);
+        }
+
         logger.LogInformation(
             "Job {ReportJobId} transition to {Status}: {Outcome}",
             input.ReportJobId,
             ReportJobMetricsName(input.To),
-            outcome);
-        return outcome;
+            outcome.Outcome);
+        return outcome.Outcome;
+    }
+
+    /// <summary>Closes a job from the states its outputs reached, once.</summary>
+    /// <param name="input">The job to close.</param>
+    [Activity(FinalizeJobName)]
+    public async Task<JobFinalizationResult> FinalizeJobAsync(FinalizeJobInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+
+        var result = await jobs.FinalizeJobAsync(
+            input.ReportJobId,
+            clock.GetUtcNow(),
+            ActivityExecutionContext.Current.CancellationToken).ConfigureAwait(false);
+
+        if (result.Status is { } status)
+        {
+            logger.LogInformation(
+                "Job {ReportJobId} finalization: {Outcome} ({Status})",
+                input.ReportJobId,
+                result.Outcome,
+                ReportJobMetricsName(status));
+        }
+        else
+        {
+            logger.LogInformation("Job {ReportJobId} finalization: {Outcome}", input.ReportJobId, result.Outcome);
+        }
+
+        return result;
     }
 
     /// <summary>Starts one output of a job.</summary>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ReportService.Api.Uploads;
+using ReportService.Jobs;
 using ReportService.Uploads;
 
 namespace ReportService.Api.Http;
@@ -46,6 +47,17 @@ public static class ApiExceptionHandler
                 "Upload store unavailable ({ExceptionType}, {SqlState})",
                 unavailable.GetType().Name,
                 unavailable.SqlState ?? "none");
+            return Refuse(context, StatusCodes.Status503ServiceUnavailable);
+        }
+
+        // The job records are a store of the same class: a database that cannot be reached
+        // or does not answer in time is the same retryable condition, never a fault.
+        if (exception is JobStoreUnavailableException jobStore)
+        {
+            logger.LogWarning(
+                "Job store unavailable ({ExceptionType}, {SqlState})",
+                jobStore.GetType().Name,
+                jobStore.SqlState ?? "none");
             return Refuse(context, StatusCodes.Status503ServiceUnavailable);
         }
 

@@ -85,16 +85,16 @@ public interface IJobStore
 
     /// <summary>
     /// Moves a job from one of <paramref name="from"/> to <paramref name="to"/>, recording
-    /// when it first started. A job already carrying <paramref name="to"/> answers
-    /// <see cref="TransitionOutcome.AlreadyApplied"/>; one in any other state is left exactly
-    /// as it is.
+    /// when it first started and the step the target state enters. A job already carrying
+    /// <paramref name="to"/> answers <see cref="TransitionOutcome.AlreadyApplied"/>; one in
+    /// any other state is left exactly as it is.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="from">The states the change may start from.</param>
     /// <param name="to">The state to move it to.</param>
     /// <param name="now">The instant the change is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    Task<TransitionOutcome> TransitionJobAsync(
+    Task<TransitionJobResult> TransitionJobAsync(
         string reportJobId,
         IReadOnlyList<ReportJobStatus> from,
         ReportJobStatus to,
@@ -160,4 +160,26 @@ public interface IJobStore
     /// <param name="now">The instant the close is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
     Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads one job as its owner reads it, in one snapshot: the job, its outputs in the
+    /// fixed format order and the identifier of each published output. The read is scoped
+    /// by the consumer that owns the job, so a job of another consumer answers the same as
+    /// a job that does not exist.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="consumerId">The consumer that must own the job.</param>
+    /// <param name="cancellationToken">The request's cancellation token.</param>
+    /// <returns>The job as it stands, or <see langword="null"/> when no job of that consumer has the identifier.</returns>
+    Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Records how many records of its input a job has read, raising the stored counter
+    /// and never lowering it. A value that is not higher, one above a total already known,
+    /// and any write after the job ended change nothing.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="recordsRead">How many records the job's step has read so far.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken);
 }
