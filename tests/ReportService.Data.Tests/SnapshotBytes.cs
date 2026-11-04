@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using ReportService.Data;
 
@@ -20,6 +21,38 @@ internal static class SnapshotBytes
     {
         var items = records.Length == 0 ? "[]" : "[" + string.Join(',', records) + "]";
         return Utf8($$"""{"contractVersion":"1.0","header":{{header}},"items":{{items}}}""");
+    }
+
+    /// <summary>
+    /// A document assembled from raw root property text, so a case can put the header
+    /// after the items or the version last without writing its bytes by hand.
+    /// </summary>
+    public static byte[] DocumentOf(params string[] rawProperties) =>
+        Utf8("{" + string.Join(',', rawProperties) + "}");
+
+    /// <summary>The raw records of a document of <paramref name="count"/> ordinary records.</summary>
+    public static string[] Records(int count) => [.. Enumerable.Range(1, count).Select(Record)];
+
+    /// <summary>
+    /// The same object text with <paramref name="member"/> repeated as its last member,
+    /// one byte sequence per case, so the repeated name is the marker a case looks for.
+    /// </summary>
+    public static string Duplicated(string json, string member)
+    {
+        var text = json.Trim();
+        return text[..^1] + ",\"" + member + "\":1,\"" + member + "\":2}";
+    }
+
+    /// <summary>The same bytes inside one complete gzip stream.</summary>
+    public static byte[] Gzip(byte[] document)
+    {
+        using var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, CompressionMode.Compress, leaveOpen: true))
+        {
+            gzip.Write(document, 0, document.Length);
+        }
+
+        return compressed.ToArray();
     }
 
     /// <summary>A record with an ordinary shaped body, numbered by <paramref name="ordinal"/>.</summary>
