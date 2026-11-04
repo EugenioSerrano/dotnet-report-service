@@ -2,7 +2,6 @@ extern alias orchestration;
 
 using System.Globalization;
 using System.IO.Compression;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -27,6 +26,7 @@ using UploadVerificationWorkflow = orchestration::ReportService.Workers.Orchestr
 using VerificationOptions = orchestration::ReportService.Workers.Orchestration.Uploads.VerificationOptions;
 using VerificationResult = orchestration::ReportService.Workers.Orchestration.Uploads.VerificationResult;
 using UploadVerifier = orchestration::ReportService.Workers.Orchestration.Uploads.UploadVerifier;
+using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
 using OrchestrationMetrics = orchestration::ReportService.Workers.Orchestration.Telemetry.OrchestrationMetrics;
 
 namespace ReportService.IntegrationTests.Uploads;
@@ -49,13 +49,17 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
 
     private static readonly TimeSpan ExecutionDeadline = TimeSpan.FromMinutes(2);
 
-    private static readonly DateTimeOffset Now = new(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero);
+    // The class's one instant, read from the clock when the class starts: the upload's
+    // confirmation, its session end and its verification deadline are all measured from it,
+    // and the acceptance reads the running clock, so an instant fixed in the past would make
+    // every upload of this class overdue before its job could be accepted.
+    private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 
     private readonly PostgresFixture _fixture;
 
     private readonly PinnedImage _image = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _hostPort = FreePort();
+    private int _hostPort;
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -83,9 +87,15 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
 
         _engine = ContainerSmoke.Builder(_image, "temporal-notification")
             .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
+            .WithPortBinding(GrpcPort, assignRandomHostPort: true)
             .Build();
         await ContainerSmoke.StartAsync(_engine, _image, cancellationToken);
+
+        // The host port is the one the container runtime allocated when it published the engine's
+        // port, read back from the running container: a port probed before the container starts is
+        // not reserved by anything, and another class starting its own container in the same
+        // process can take it in between.
+        _hostPort = _engine.GetMappedPublicPort(GrpcPort);
         await Wait.UntilAsync(
             $"Temporal gRPC ({_image.Reference}) on port {_hostPort}",
             async token =>
@@ -145,9 +155,9 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
         var result = await VerifyAsync(uploadId, store, signaller, cancellationToken);
 
         Assert.Equal(VerificationResult.Ready, result);
-        Assert.Equal([UploadVerificationWorkflow.WorkflowIdFor(waiting)], signaller.Signalled);
-        Assert.DoesNotContain(UploadVerificationWorkflow.WorkflowIdFor(foreign), signaller.Signalled);
-        Assert.DoesNotContain(UploadVerificationWorkflow.WorkflowIdFor(ended), signaller.Signalled);
+        Assert.Equal([ReportJobWorkflow.WorkflowIdFor(waiting)], signaller.Signalled);
+        Assert.DoesNotContain(ReportJobWorkflow.WorkflowIdFor(foreign), signaller.Signalled);
+        Assert.DoesNotContain(ReportJobWorkflow.WorkflowIdFor(ended), signaller.Signalled);
     }
 
     [Fact]
@@ -292,13 +302,6 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
     private Task<TemporalClient> ClientAsync(CancellationToken cancellationToken) =>
         TemporalClient.ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" })
             .WaitAsync(cancellationToken);
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        return ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-    }
 
     /// <summary>The seam, doubled: it remembers what it nudged and answers that every execution exists.</summary>
     private sealed class RecordingSignaller : IWorkflowSignaller
