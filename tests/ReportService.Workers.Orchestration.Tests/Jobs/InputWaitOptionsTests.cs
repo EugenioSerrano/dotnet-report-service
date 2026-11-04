@@ -110,14 +110,34 @@ public sealed class InputWaitOptionsTests
     [Fact]
     public void TheCeilingIsTheLargestPassLimitTheHistoryBudgetAdmits()
     {
-        // Recomputed from the two measured constants, so a changed constant moves the
+        // Recomputed from the three measured constants, so a changed constant moves the
         // ceiling with it and nothing here carries the number itself.
-        var expected = (InputWaitHistoryBudget.HistoryLimit - InputWaitHistoryBudget.PrefixEvents)
+        var expected = (InputWaitHistoryBudget.HistoryLimit - InputWaitHistoryBudget.PrefixEvents - InputWaitHistoryBudget.FaultEventsPerRun)
             / InputWaitHistoryBudget.WorstCaseEventsPerPass;
+        var derived = InputWaitHistoryBudget.MaxPasses;
 
-        Assert.Equal(InputWaitHistoryBudget.MaxPasses, expected);
-        Assert.True(InputWaitHistoryBudget.KeepsTheBound(InputWaitHistoryBudget.MaxPasses));
-        Assert.False(InputWaitHistoryBudget.KeepsTheBound(InputWaitHistoryBudget.MaxPasses + 1));
+        Assert.Equal(expected, derived);
+        Assert.True(InputWaitHistoryBudget.KeepsTheBound(derived));
+        Assert.False(InputWaitHistoryBudget.KeepsTheBound(derived + 1));
+    }
+
+    [Fact]
+    public void TheCeilingReservesTheEventsAWorkflowTaskTimeoutRecords()
+    {
+        // Recomputed from the three constants the budget carries, so a re-measurement of any
+        // of them moves the ceiling with it and nothing here carries the number itself.
+        var derived = InputWaitHistoryBudget.MaxPasses;
+        var recomputed = (InputWaitHistoryBudget.HistoryLimit - InputWaitHistoryBudget.PrefixEvents - InputWaitHistoryBudget.FaultEventsPerRun)
+            / InputWaitHistoryBudget.WorstCaseEventsPerPass;
+        var events = (derived * InputWaitHistoryBudget.WorstCaseEventsPerPass)
+            + InputWaitHistoryBudget.PrefixEvents
+            + InputWaitHistoryBudget.FaultEventsPerRun;
+
+        Assert.Multiple(
+            () => Assert.Equal(recomputed, derived),
+            () => Assert.True(
+                events <= InputWaitHistoryBudget.HistoryLimit,
+                $"the derived maximum plus one workflow-task timeout writes {events} events, and the limit is {InputWaitHistoryBudget.HistoryLimit}."));
     }
 
     [Fact]
@@ -138,7 +158,9 @@ public sealed class InputWaitOptionsTests
         var options = new InputWaitOptions();
 
         Assert.True(
-            (options.ContinueAsNewAfter * InputWaitHistoryBudget.WorstCaseEventsPerPass) + InputWaitHistoryBudget.PrefixEvents
+            (options.ContinueAsNewAfter * InputWaitHistoryBudget.WorstCaseEventsPerPass)
+            + InputWaitHistoryBudget.PrefixEvents
+            + InputWaitHistoryBudget.FaultEventsPerRun
             <= InputWaitHistoryBudget.HistoryLimit);
     }
 }

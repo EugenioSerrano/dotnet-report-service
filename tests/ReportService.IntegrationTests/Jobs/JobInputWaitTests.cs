@@ -3,7 +3,6 @@ extern alias orchestration;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -75,12 +74,12 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _hostPort = FreePort();
-
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-job-input-wait",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+
+    private int _hostPort;
 
     private IContainer? _engine;
 
@@ -112,9 +111,15 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
         _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-input-wait")
             .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
+            .WithPortBinding(GrpcPort, assignRandomHostPort: true)
             .Build();
         await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+
+        // The host port is the one the container runtime allocated when it published the
+        // engine's port, read back from the running container: a port probed before the
+        // container starts is not reserved by anything, and another class starting its own
+        // container in the same process can take it in between.
+        _hostPort = _engine.GetMappedPublicPort(GrpcPort);
         await Wait.UntilAsync(
             $"Temporal gRPC ({_engineImage.Reference}) on port {_hostPort}",
             async token =>
@@ -307,6 +312,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         var settings = new Settings()
             .WithBackstop(TimeSpan.FromSeconds(1))
             .WithDeadline(TimeSpan.FromSeconds(3))
+            .WithStartToClose(TimeSpan.FromSeconds(1))
             .WithSweepInterval(TimeSpan.FromHours(1));
         var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
 
@@ -355,6 +361,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         var settings = new Settings()
             .WithSessionLifetime(TimeSpan.FromSeconds(10))
             .WithDeadline(TimeSpan.FromSeconds(60))
+            .WithStartToClose(TimeSpan.FromSeconds(1))
             .WithBackstop(TimeSpan.FromSeconds(1))
             .WithSweepInterval(TimeSpan.FromSeconds(1));
 
@@ -365,7 +372,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         using var workerClient = worker.CreateClient();
         await WaitForStatusAsync(workerClient, HttpStatusCode.OK, cancellationToken);
         var (uploadId, reportJobId) = await StreamConfirmAndAcceptAsync(clock, settings, cancellationToken);
-        await WaitForStageAsync(reportJobId, InputWaitStage.WaitingForInput, cancellationToken);
+        await WaitForStageOnTheClockAsync(clock, reportJobId, InputWaitStage.WaitingForInput, cancellationToken);
 
         // Past the session, still before the verification deadline: the sweep runs, the upload
         // keeps verifying and the job keeps waiting.
@@ -438,13 +445,18 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         await WaitForStageAsync(first, stage: null, cancellationToken);
         await WaitForStageAsync(second, stage: null, cancellationToken);
 
-        // The nudge that arrives after a wait has ended has no consumer: it changes nothing.
+        // The nudge that arrives after a wait has ended has no consumer: the execution that
+        // held the wait has closed, so the engine refuses to deliver it, and nothing about
+        // either job changes.
         var client = await EngineClientAsync(cancellationToken);
-        var before = await HistoryAsync(ReportJobWorkflow.WorkflowIdFor(first), cancellationToken);
-        await client.GetWorkflowHandle<ReportJobWorkflow>(ReportJobWorkflow.WorkflowIdFor(first))
-            .SignalAsync((ReportJobWorkflow workflow) => workflow.OnInputChangedAsync());
+        var workflowId = ReportJobWorkflow.WorkflowIdFor(first);
+        var before = await HistoryAsync(workflowId, cancellationToken);
+        var refusal = await Assert.ThrowsAsync<Temporalio.Exceptions.RpcException>(
+            () => client.GetWorkflowHandle<ReportJobWorkflow>(workflowId)
+                .SignalAsync((ReportJobWorkflow workflow) => workflow.OnInputChangedAsync()));
+        Assert.Equal(Temporalio.Exceptions.RpcException.StatusCode.NotFound, refusal.Code);
         await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-        var after = await HistoryAsync(ReportJobWorkflow.WorkflowIdFor(first), cancellationToken);
+        var after = await HistoryAsync(workflowId, cancellationToken);
 
         Assert.Equal(
             before.Events.Count(entry => entry.EventType == EventType.ActivityTaskScheduled),
@@ -620,13 +632,14 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             new HttpRequestMessage(HttpMethod.Post, new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative))
             {
                 Content = new StringContent("{}", Encoding.UTF8, CreateUploadRequestReader.JsonMediaType),
+                Headers = { { ConsumerIdentity.HeaderName, Consumer } },
             },
             cancellationToken))
         {
-            Assert.Equal(HttpStatusCode.OK, completed.StatusCode);
+            Assert.Equal(HttpStatusCode.Accepted, completed.StatusCode);
         }
 
-        var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
+        var reportJobId = await AcceptJobAsync(client, uploadId, cancellationToken);
         return (uploadId, reportJobId);
     }
 
@@ -635,7 +648,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(UploadEndpoints.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
-                """{"profile":"header-items-v1","mode":"api-stream"}""",
+                """{"profile":"header-items-v1","mode":"API_STREAM"}""",
                 Encoding.UTF8,
                 CreateUploadRequestReader.JsonMediaType),
         };
@@ -651,6 +664,11 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
     {
         await using var api = Api(clock: null, settings: new Settings());
         using var client = api.CreateClient();
+        return await AcceptJobAsync(client, uploadId, cancellationToken);
+    }
+
+    private static async Task<string> AcceptJobAsync(HttpClient client, string uploadId, CancellationToken cancellationToken)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
@@ -716,6 +734,30 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             WaitDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
+
+    // The dispatcher's poll is a timer on the case's own clock, so a case that runs the worker
+    // on that clock has to move it for the pending start to be claimed. It moves by one poll
+    // interval at a time and no more than four times, so the case stays well inside the
+    // upload's session and its verification deadline.
+    private async Task WaitForStageOnTheClockAsync(ManualTimeProvider clock, string reportJobId, string? stage, CancellationToken cancellationToken)
+    {
+        var steps = 4;
+        await Wait.UntilAsync(
+            $"the stage of {reportJobId} to be {(stage ?? "cleared")}",
+            async token =>
+            {
+                if (steps > 0)
+                {
+                    steps--;
+                    clock.Advance(TimeSpan.FromSeconds(1));
+                }
+
+                return string.Equals((await JobAsync(reportJobId, token))?.Stage, stage, StringComparison.Ordinal);
+            },
+            WaitDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+    }
 
     private Task WaitForOutcomeAsync(string reportJobId, CancellationToken cancellationToken) =>
         Wait.UntilAsync(
@@ -861,13 +903,6 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             """,
             new { WorkflowId = workflowId },
             cancellationToken: cancellationToken)) ?? string.Empty;
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 
     /// <summary>

@@ -8,7 +8,9 @@ namespace ReportService.Workers.Orchestration.Jobs;
 /// settings are bounded and a refused value stops the process at start, naming the
 /// setting and the rule and never the value: the interval is a correctness bound and
 /// not a preference, and the number of checks is bounded by the history a run may
-/// carry, so no accepted configuration can leave that bound.
+/// carry. The ceiling is derived net of the events one workflow-task timeout and the
+/// task that follows it write, so a run at that ceiling that records one of them still
+/// stays inside the bound, and a run that recorded six or more would not.
 /// </summary>
 public sealed class InputWaitOptions : IValidatedSettings
 {
@@ -42,7 +44,7 @@ public sealed class InputWaitOptions : IValidatedSettings
     /// <inheritdoc />
     public IEnumerable<ConfigurationProblem> Validate()
     {
-        // The two constants the ceiling is derived from are checked against the figure the
+        // The three constants the ceiling is derived from are checked against the figure the
         // decision fixes the first time this type is read: a measurement that pushed the
         // default over it stops the process rather than moving the figure (see
         // <see cref="InputWaitHistoryBudget"/>).
@@ -67,9 +69,10 @@ public sealed class InputWaitOptions : IValidatedSettings
 /// <summary>
 /// The arithmetic behind the pass limit, in one place: a run of the workflow may not
 /// carry more events than the engine's history holds, so the number of checks it takes
-/// is bounded by what is left of that history after the run's own fixed events. The
-/// ceiling is <b>derived</b> from the two counted values rather than written down, so a
-/// later measurement moves it with no code changed and no test carrying a number.
+/// is bounded by what is left of that history after the run's own fixed events and the
+/// events one workflow-task timeout writes, which the derivation reserves. The ceiling
+/// is <b>derived</b> from the three counted values rather than written down, so a later
+/// measurement moves it with no code changed and no test carrying a number.
 /// </summary>
 public static class InputWaitHistoryBudget
 {
@@ -82,14 +85,17 @@ public static class InputWaitHistoryBudget
     /// <summary>The events a run writes whatever it does: its start, its two stage writes and its end.</summary>
     public const int PrefixEvents = 100;
 
+    /// <summary>The events one workflow-task timeout and the workflow task that follows it write.</summary>
+    public const int FaultEventsPerRun = 2;
+
     /// <summary>The largest number of checks one run may take and still fit the history.</summary>
-    public const int MaxPasses = (HistoryLimit - PrefixEvents) / WorstCaseEventsPerPass;
+    public const int MaxPasses = (HistoryLimit - PrefixEvents - FaultEventsPerRun) / WorstCaseEventsPerPass;
 
     /// <summary>The event figure the default number of checks has to keep.</summary>
     public const int DefaultPassesCeiling = 1_200;
 
     /// <summary>
-    /// Refuses to be initialized when the two counted values no longer leave the default
+    /// Refuses to be initialized when the three counted values no longer leave the default
     /// number of checks inside the figure the decision fixes, so a re-measurement that
     /// changed the arithmetic is a failure at start rather than a quiet departure.
     /// </summary>
@@ -99,14 +105,14 @@ public static class InputWaitHistoryBudget
         if (!TheDefaultKeepsTheCeiling)
         {
             throw new InvalidOperationException(
-                "the default number of checks no longer fits the events a run may carry; the two counted values have to be re-measured.");
+                "the default number of checks no longer fits the events a run may carry; the three counted values have to be re-measured.");
         }
     }
 
     /// <summary>Whether a run that takes <paramref name="passes"/> checks stays inside the history.</summary>
     /// <param name="passes">The number of checks the run takes.</param>
     public static bool KeepsTheBound(int passes) =>
-        (passes * WorstCaseEventsPerPass) + PrefixEvents <= HistoryLimit;
+        (passes * WorstCaseEventsPerPass) + PrefixEvents + FaultEventsPerRun <= HistoryLimit;
 
     /// <summary>Whether the default number of checks stays inside the figure the decision fixes.</summary>
     public static bool TheDefaultKeepsTheCeiling =>

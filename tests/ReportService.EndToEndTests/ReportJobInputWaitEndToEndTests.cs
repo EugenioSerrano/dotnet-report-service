@@ -71,8 +71,16 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
         Assert.Null(before.Stage);
         Assert.Equal(0, await ReferencesAsync(connectionString, reportJobId, cancellationToken));
 
-        // The worker runs: the job records that it waits and the verification settles the upload.
+        // The worker runs: the job records that it waits and the verification settles the
+        // upload. Neither the upload's outcome nor the wait's end is read before the product
+        // reached it — the case waits for the state, it never assumes it.
         await commands.ExecuteCommandAsync(Resource(app, "orchestration-worker"), KnownResourceCommands.StartCommand, cancellationToken);
+        await Wait.UntilAsync(
+            $"the upload {uploadId} to be ready",
+            async token => string.Equals(await UploadStatusAsync(api, uploadId, token), "ready", StringComparison.Ordinal),
+            OutcomeDeadline,
+            TimeSpan.FromMilliseconds(500),
+            cancellationToken);
         await Wait.UntilAsync(
             $"the job {reportJobId} to leave the wait",
             async token =>
@@ -84,6 +92,12 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
 
+        // The stored row is what the consumer's status read will project; that read is a later
+        // increment's endpoint, so the case asserts the row it is served from.
+        var after = await JobAsync(connectionString, reportJobId, cancellationToken);
+        Assert.NotNull(after);
+        Assert.Equal("QUEUED", after!.Status);
+        Assert.Null(after.Stage);
         Assert.Equal("ready", await UploadStatusAsync(api, uploadId, cancellationToken));
         Assert.Equal(1, await ReferencesAsync(connectionString, reportJobId, cancellationToken));
     }
@@ -95,12 +109,19 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
         var (app, api) = await StartAsync(cancellationToken);
         await using var composition = app;
         var connectionString = await ConnectionStringAsync(app, cancellationToken);
+        var commands = app.Services.GetRequiredService<ResourceCommandService>();
 
-        // A body the content check refuses: the upload ends rejected and the job carries its code.
+        // The verification runs only once the worker does, so the upload is still being verified
+        // when the job is accepted: the body is refused after the acceptance, and the job has to
+        // carry the upload's own code.
+        await commands.ExecuteCommandAsync(Resource(app, "orchestration-worker"), KnownResourceCommands.StopCommand, cancellationToken);
         var uploadId = await CreateUploadAsync(api, cancellationToken);
-        await StreamAsync(api, uploadId, """{"header":{},"items":[{"id":"not-a-number"}]}""", cancellationToken);
+        await StreamCompressedAsync(api, uploadId, TruncatedCompressedBody(), cancellationToken);
         await ConfirmAsync(api, uploadId, cancellationToken);
+        Assert.Equal("verifying", await UploadStatusAsync(api, uploadId, cancellationToken));
         var reportJobId = await AcceptJobAsync(api, uploadId, cancellationToken);
+        Assert.Null((await JobAsync(connectionString, reportJobId, cancellationToken))!.Stage);
+        await commands.ExecuteCommandAsync(Resource(app, "orchestration-worker"), KnownResourceCommands.StartCommand, cancellationToken);
 
         await Wait.UntilAsync(
             $"the job {reportJobId} to end",
@@ -113,6 +134,13 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
         Assert.Equal("FAILED", job!.Status);
         Assert.Equal("DATA_INVALID", job.ErrorCode);
         Assert.Equal("input-rejected", job.ErrorReason);
+        Assert.Null(job.Stage);
+
+        // Nothing of the job was rendered or published.
+        var output = await OutputAsync(connectionString, reportJobId, cancellationToken);
+        Assert.Equal("FAILED", output!.Status);
+        Assert.Equal("DATA_INVALID", output.ErrorCode);
+        Assert.Equal(0L, await ArtifactsAsync(connectionString, reportJobId, cancellationToken));
     }
 
     private static IResource Resource(DistributedApplication app, string name) =>
@@ -166,6 +194,39 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
         request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, "consumer-a");
         using var sent = await api.SendAsync(request, cancellationToken);
         Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+    }
+
+    // The body is sent as a compressed stream whose trailer is cut: the transfer records the
+    // bytes as they arrived and the encoding the request declares, so the verification is what
+    // refuses them.
+    private static async Task StreamCompressedAsync(HttpClient api, string uploadId, byte[] body, CancellationToken cancellationToken)
+    {
+        using var content = new ByteArrayContent(body);
+        content.Headers.TryAddWithoutValidation("Content-Type", CreateUploadRequestReader.JsonMediaType);
+        content.Headers.TryAddWithoutValidation("Content-Encoding", "gzip");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/content", UriKind.Relative))
+        {
+            Content = content,
+        };
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, "consumer-a");
+        using var sent = await api.SendAsync(request, cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
+    }
+
+    private static byte[] TruncatedCompressedBody()
+    {
+        using var buffer = new MemoryStream();
+        using (var gzip = new System.IO.Compression.GZipStream(
+            buffer,
+            System.IO.Compression.CompressionLevel.Fastest,
+            leaveOpen: true))
+        {
+            gzip.Write(Encoding.UTF8.GetBytes("""{"header":{},"items":[{"id":1,"v":17}]}"""));
+        }
+
+        return [.. buffer.ToArray()[..^4]];
     }
 
     private static async Task ConfirmAsync(HttpClient api, string uploadId, CancellationToken cancellationToken)
@@ -254,6 +315,32 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
             cancellationToken: cancellationToken));
     }
 
+    private static async Task<OutputRow?> OutputAsync(string connectionString, string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.QuerySingleOrDefaultAsync<OutputRow>(new CommandDefinition(
+            """
+            SELECT output_id AS "OutputId", status AS "Status", error_code AS "ErrorCode"
+              FROM report_service.report_outputs
+             WHERE report_job_id = @ReportJobId
+            """,
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
+    private static async Task<long> ArtifactsAsync(string connectionString, string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            """
+            SELECT count(*)
+              FROM report_service.artifacts
+             WHERE report_job_id = @ReportJobId
+            """,
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
     /// <summary>One job row, as the composition's database holds it.</summary>
     private sealed class JobRow
     {
@@ -266,5 +353,15 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
         public string? ErrorCode { get; set; }
 
         public string? ErrorReason { get; set; }
+    }
+
+    /// <summary>One output row, as the composition's database holds it.</summary>
+    private sealed class OutputRow
+    {
+        public string OutputId { get; set; } = string.Empty;
+
+        public string Status { get; set; } = string.Empty;
+
+        public string? ErrorCode { get; set; }
     }
 }
