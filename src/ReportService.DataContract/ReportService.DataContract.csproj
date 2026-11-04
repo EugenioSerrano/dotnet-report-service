@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The template's data contract: the restricted profile a schema document must
+    stay inside, the compiled contract with its two roots (the header and one
+    record), the evaluation of those roots over the reader's own bytes, the
+    first-violation mapping and the bounded cache a worker prepares a contract
+    in. Corvus.Text.Json is the one package here, so its analyzer and its types
+    stay in this assembly; everything a caller sees is a BCL type.
+  -->
+  <PropertyGroup>
+    <RootNamespace>ReportService.DataContract</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The library stays inside this assembly: its types are not part of the surface
+      the rest of the product compiles against, and its analyzer must not change how
+      another project's source is built. Evaluated against the pinned version only.
+    -->
+    <PackageReference Include="Corvus.Text.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.DataContract.Tests" />
+  </ItemGroup>
+
+</Project>

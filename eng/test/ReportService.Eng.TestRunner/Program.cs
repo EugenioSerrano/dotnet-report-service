@@ -25,6 +25,7 @@ internal static class Program
     [
         "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
         "tests/ReportService.Data.Tests/ReportService.Data.Tests.csproj",
+        "tests/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj",
         "tests/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj",
         "tests/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
