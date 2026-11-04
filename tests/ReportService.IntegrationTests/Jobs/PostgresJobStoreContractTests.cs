@@ -210,6 +210,137 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
     }
 
     [Fact]
+    public async Task TheSchemaRefusesAStageOutsideItsSetAndACounterPastItsTotal()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+
+        // A step the product does not have: the stage column admits the row's own set, so a
+        // value outside it is a corrupt row the database refuses rather than an answer.
+        var stage = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE report_service.report_jobs SET stage = 'NOT_A_STEP' WHERE report_job_id = @ReportJobId",
+            new { acceptance.ReportJobId },
+            cancellationToken: cancellationToken)));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, stage.SqlState);
+
+        // More records read than the snapshot is known to hold would be a total the consumer
+        // could not trust; the row is refused, so no answer can carry that pair.
+        var records = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE report_service.report_jobs SET records_read = 5, records_total = 4 WHERE report_job_id = @ReportJobId",
+            new { acceptance.ReportJobId },
+            cancellationToken: cancellationToken)));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, records.SqlState);
+
+        // The same pair for the blocks: a job never completes more of them than it has.
+        var blocks = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE report_service.report_jobs SET blocks_completed = 2, blocks_total = 1 WHERE report_job_id = @ReportJobId",
+            new { acceptance.ReportJobId },
+            cancellationToken: cancellationToken)));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, blocks.SqlState);
+    }
+
+    [Fact]
+    public async Task TwoConcurrentProgressWritesEndAtTheHigherCountWhicheverOrderTheyTake()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        // Two writers of two attempts reach the row at the same time, in either order: the
+        // counter ends at the higher count and never at the one that arrived last.
+        var lower = Store.RecordRecordsReadAsync(acceptance.ReportJobId, 100, cancellationToken);
+        var higher = Store.RecordRecordsReadAsync(acceptance.ReportJobId, 200, cancellationToken);
+        await Task.WhenAll(lower, higher);
+
+        Assert.Equal(200, (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.RecordsRead);
+    }
+
+    [Fact]
+    public async Task AStatusReadTakenWhileAPublicationCommitsSeesOneStateOrTheOther()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        // The publication is held between its artifact insert and its status write by a row
+        // lock another transaction takes first, so the read happens exactly while the two are
+        // written: the pair a consumer sees is one state or the other, never a mix.
+        await using var connection = await _fixture.OpenAsync(_database!, cancellationToken);
+        await using var holding = await connection.BeginTransactionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(
+            "SELECT 1 FROM report_service.report_outputs WHERE output_id = @OutputId FOR UPDATE",
+            new { acceptance.OutputId },
+            holding,
+            cancellationToken: cancellationToken));
+
+        var publishing = Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        await Wait.UntilAsync(
+            "the publication waiting for the output's row",
+            async token =>
+            {
+                await using var probe = await _fixture.OpenAsync(_database!, token);
+                var waiting = await probe.ExecuteScalarAsync<long>(new CommandDefinition(
+                    """
+                    SELECT count(*)
+                      FROM pg_stat_activity
+                     WHERE wait_event_type = 'Lock' AND datname = current_database()
+                    """,
+                    cancellationToken: token));
+                return waiting > 0;
+            },
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromMilliseconds(100),
+            cancellationToken);
+
+        var during = Assert.Single(
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Outputs);
+        Assert.Equal(OutputStatus.Running, during.Status);
+        Assert.Null(during.ArtifactId);
+
+        await holding.CommitAsync(cancellationToken);
+        Assert.True(await publishing.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken) is { Outcome: PublishOutcome.Published });
+
+        var after = Assert.Single(
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Outputs);
+        Assert.Equal(OutputStatus.Succeeded, after.Status);
+        Assert.Equal(ArtifactId, after.ArtifactId);
+    }
+
+    [Fact]
+    public async Task AFinalizationThatRepeatsLeavesTheFirstTerminalWriteExactly()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(
+            Artifact(acceptance.ReportJobId, acceptance.OutputId),
+            cancellationToken)).Outcome);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, (await Store.FinalizeJobAsync(
+            acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken)).Outcome);
+        var first = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        // A retried step that repeats the finalisation writes nothing: the closure the first
+        // call wrote stands, down to the instant it ended and the code it carries.
+        Assert.Equal(JobFinalizationOutcome.AlreadyTerminal, (await Store.FinalizeJobAsync(
+            acceptance.ReportJobId, Now.AddMinutes(5), cancellationToken)).Outcome);
+        var after = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        Assert.Equal(ReportJobStatus.Succeeded, after!.Status);
+        Assert.Equal(first!.FinishedAt, after.FinishedAt);
+        Assert.Equal(first.ErrorCode, after.ErrorCode);
+        Assert.Equal(first.Status, after.Status);
+    }
+
+    [Fact]
     public async Task AJobAcceptedOnAUsableUploadStandsAfterTheUploadEndsLater()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

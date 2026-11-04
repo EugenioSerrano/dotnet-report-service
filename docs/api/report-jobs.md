@@ -6,8 +6,83 @@ job it can follow. This page describes the creation operation, the answer, every
 refusal it gives, and what the service guarantees about the connection and about
 the work that follows.
 
-The job's status read, its outputs and their download are not offered yet; the
-status URL answers as not found until they are.
+The job's outputs and their download are not offered yet. The status read
+described below is.
+
+## Follow a job
+
+```http
+GET /api/v1/report-jobs/job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a
+X-Consumer-Id: dev-consumer
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+{
+  "reportJobId": "job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a",
+  "status": "running",
+  "stage": "rendering-pdf",
+  "progress": {
+    "recordsRead": 1000,
+    "recordsTotal": 1000,
+    "blocksCompleted": 0,
+    "blocksTotal": 1,
+    "pagesGenerated": 0
+  },
+  "outputs": [
+    { "format": "pdf", "status": "running", "artifactId": null, "errorCode": null }
+  ],
+  "errorCode": null,
+  "createdAt": "2026-11-01T12:03:17.123Z",
+  "startedAt": "2026-11-01T12:03:18.004Z",
+  "finishedAt": null
+}
+```
+
+Every member is always present; a value that does not exist yet is written as
+`null`, so a client branches on `null` and never on a missing member.
+
+| Member | Meaning |
+|--------|---------|
+| `reportJobId` | The job's identifier: the one its creation answered with. |
+| `status` | Where the job is: `queued`, `validating`, `partitioning`, `running`, `finalizing`, `succeeded`, `failed`, `cancelling` or `cancelled`. |
+| `stage` | The step the job is in while it runs: `waiting-for-input`, `resolving`, `validating-data`, `partitioning`, `composing-html`, `rendering-pdf`, `merging-pdf`, `exporting-xlsx`, `converting-markdown`, `publishing` or `notifying`. It is `null` while the job is queued, while no step has written one, and for a job that has ended — a finished job is in no step. |
+| `progress.recordsRead` | How many records of your document the job has read. It only rises: a repeated attempt, a retry or a service restart never lowers it. |
+| `progress.recordsTotal` | How many records the document holds, `null` until the job has counted them. **It is never a guess**: while it is `null`, no share of the work can be derived. A total of `0` is a counted, empty report — not an unknown one. |
+| `progress.blocksCompleted` | How many blocks of the report are finished. Only rises. |
+| `progress.blocksTotal` | How many blocks the job was divided into, `null` until that is known. |
+| `progress.pagesGenerated` | How many pages are finished. Only rises. |
+| `outputs[]` | One entry per requested output, in the fixed order `pdf`, `html`, `xlsx`, `markdown`. `format` is the requested format, `status` is `pending`, `running`, `succeeded`, `failed` or `cancelled`, `artifactId` identifies the published file once it exists, and `errorCode` names why the output failed. |
+| `errorCode` | The stable code of the condition that ended a failed job; `null` otherwise. |
+| `createdAt`, `startedAt`, `finishedAt` | When the job was accepted, when it entered its first step and when it ended, in UTC as RFC 3339 with `Z` and three fractional digits; `null` until each happens. |
+
+**There is no percentage.** The service never presents a share of a total it has
+not counted; a client that knows both numbers may compute one itself.
+
+**The counters only rise, and a total once known never changes.** The state and
+the stage never move back either. A job that ends `failed` carries the stable
+code of the condition on itself, and its PDF output carries the same code; the
+answer itself still succeeds with `200`.
+
+Refusals of this read are the shared ones:
+
+| Case | HTTP | `code` |
+|------|------|--------|
+| No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` |
+| The job does not exist, belongs to another consumer, or its identifier is malformed | 404 | `INPUT_NOT_FOUND` |
+| The service cannot reach its own database | 503 | `SERVICE_UNAVAILABLE` |
+
+The three not-found cases answer the identical document, apart from its trace
+identifier: a malformed identifier is refused without a database read, and a
+job of another consumer is indistinguishable from one that does not exist.
+
+Every answer is `Cache-Control: no-store`: an intermediary serving an older
+answer would show counters going back. Poll at about one request per second
+while the job runs; at that rate a poll costs one indexed read of the service's
+own database. An inactive consumer may read its own jobs.
 
 ## Create a job
 

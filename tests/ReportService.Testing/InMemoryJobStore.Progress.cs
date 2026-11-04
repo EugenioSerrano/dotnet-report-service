@@ -40,9 +40,7 @@ public sealed partial class InMemoryJobStore
                     output.Format,
                     output.Status,
                     output.ErrorCode,
-                    output.Status == OutputStatus.Succeeded && _artifacts.TryGetValue(output.OutputId, out var artifact)
-                        ? artifact.ArtifactId
-                        : null))
+                    _artifacts.TryGetValue(output.OutputId, out var artifact) ? artifact.ArtifactId : null))
                 .ToList();
 
             return Task.FromResult<ReportJobStatusView?>(new ReportJobStatusView(
