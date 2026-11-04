@@ -4,12 +4,15 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Dapper;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ReportService.Api.Consumers;
@@ -18,6 +21,10 @@ using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
 using ReportService.Migrations;
 using ReportService.ServiceDefaults;
+using ReportService.Storage;
+using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Packages;
+using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 
@@ -45,6 +52,18 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     private const int GrpcPort = 7233;
 
     private const string Consumer = "dev-consumer";
+
+    /// <summary>The template every job of this class is accepted for.</summary>
+    private const string TemplateId = "pilot-grouped";
+
+    /// <summary>The version of that template whose taken copy this class holds.</summary>
+    private const string Version = "1.0.0";
+
+    /// <summary>The path of the schema inside the taken package.</summary>
+    private const string SchemaPath = "schema.json";
+
+    /// <summary>The pilot's own sample document of that template.</summary>
+    private const string SamplePath = "sample.json";
 
     /// <summary>The message a run on a build without the data-contract step fails with.</summary>
     public const string DataStepNotOnThisCommit =
@@ -92,6 +111,12 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
     private WebApplicationFactory<OrchestrationWorker>? _worker;
 
+    /// <summary>The pilot sample's header, as the profile document carries it.</summary>
+    private string _sampleHeader = "{}";
+
+    /// <summary>The pilot sample's records, in the order the snapshot carries them.</summary>
+    private IReadOnlyList<string> _sampleRecords = [];
+
     /// <summary>Runs against the class's PostgreSQL server.</summary>
     /// <param name="fixture">The container this class owns.</param>
     public DataContractRefusalJobTests(PostgresFixture fixture) => _fixture = fixture;
@@ -101,6 +126,15 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
+
+        // The pilot's own sample carries the header and the records every rebuilt document
+        // below is made of: the taken version's schema admits exactly its shape.
+        var sample = JsonNode.Parse(await File.ReadAllTextAsync(
+            Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId, SamplePath),
+            cancellationToken))!;
+        _sampleHeader = sample["header"]!.ToJsonString();
+        _sampleRecords = [.. sample["items"]!.AsArray().Select(record => record!.ToJsonString())];
+
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
         _connectionString = new NpgsqlConnectionStringBuilder(_fixture.Application(_database))
         {
@@ -119,6 +153,7 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
         _api = Api();
         _worker = Worker();
+        await SeedTakenVersionAsync(cancellationToken);
 
         using var client = _worker.CreateClient();
         await Wait.UntilAsync(
@@ -201,8 +236,8 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
             0,
             DocumentOf(
                 "\"contractVersion\":\"1.0\"",
-                "\"header\":" + Header("PLANTED-VALUE-r3b", "PLANTED-NAME-r3b"),
-                "\"items\":{\"sequence\":1,\"description\":\"PLANTED-VALUE-r3b-row\",\"nested\":{\"PLANTED-NAME-r3b-row\":1}}"),
+                "\"header\":" + HeaderTitled("PLANTED-VALUE-r3b"),
+                "\"items\":{\"sequence\":1,\"description\":\"PLANTED-VALUE-r3b-row\",\"PLANTED-NAME-r3b\":1,\"nested\":{\"PLANTED-NAME-r3b-row\":1}}"),
             "PLANTED-VALUE-r3b",
             "PLANTED-NAME-r3b",
             "PLANTED-VALUE-r3b-row",
@@ -218,11 +253,11 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     [Fact]
     public async Task AMemberRepeatedInAMiddleRecordIsRefusedWithDuplicateProperty()
     {
-        var second = Duplicated("{\"sequence\":2,\"description\":\"PLANTED-VALUE-r4b\"}", "PLANTED-NAME-r4b");
+        var second = Duplicated(_sampleRecords[1], "PLANTED-NAME-r4b");
         await AssertRefusedAsync(
             "duplicate-property",
             2,
-            Document(records: [Record(1), second, Record(3)]),
+            Document(HeaderTitled("PLANTED-VALUE-r4b"), _sampleRecords[0], second, _sampleRecords[2]),
             "PLANTED-VALUE-r4b",
             "PLANTED-NAME-r4b");
     }
@@ -231,11 +266,11 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     public async Task AMemberRepeatedInANestedObjectOfARecordIsRefusedWithDuplicateProperty()
     {
         var innermost = Duplicated("{\"x\":1}", "PLANTED-NAME-r4c");
-        var second = "{\"sequence\":2,\"description\":\"PLANTED-VALUE-r4c\",\"outer\":{\"middle\":" + innermost + "}}";
+        var second = _sampleRecords[1][..^1] + ",\"outer\":{\"middle\":" + innermost + "}}";
         await AssertRefusedAsync(
             "duplicate-property",
             2,
-            Document(records: [Record(1), second, Record(3)]),
+            Document(HeaderTitled("PLANTED-VALUE-r4c"), _sampleRecords[0], second, _sampleRecords[2]),
             "PLANTED-VALUE-r4c",
             "PLANTED-NAME-r4c");
     }
@@ -243,11 +278,11 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     [Fact]
     public async Task AMemberRepeatedInTheLastOfThreeRecordsIsRefusedWithDuplicateProperty()
     {
-        var third = Duplicated("{\"sequence\":3,\"description\":\"PLANTED-VALUE-r4d\"}", "PLANTED-NAME-r4d");
+        var third = Duplicated(_sampleRecords[2], "PLANTED-NAME-r4d");
         await AssertRefusedAsync(
             "duplicate-property",
             3,
-            Document(records: [Record(1), Record(2), third]),
+            Document(HeaderTitled("PLANTED-VALUE-r4d"), _sampleRecords[0], _sampleRecords[1], third),
             "PLANTED-VALUE-r4d",
             "PLANTED-NAME-r4d");
     }
@@ -255,35 +290,24 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     [Fact]
     public async Task AMemberRepeatedInTheLastOfTwoThousandRecordsIsRefusedWithDuplicateProperty()
     {
-        var last = Duplicated("{\"sequence\":2000,\"description\":\"PLANTED-VALUE-r4e\"}", "PLANTED-NAME-r4e");
-        var records = Enumerable.Range(1, 1_999).Select(Record).ToList();
+        var last = Duplicated(_sampleRecords[^1], "PLANTED-NAME-r4e");
+        var records = Enumerable.Range(0, 1_999).Select(index => _sampleRecords[index % _sampleRecords.Count]).ToList();
         records.Add(last);
         await AssertRefusedAsync(
             "duplicate-property",
             2_000,
-            Document(records: [.. records]),
+            Document(HeaderTitled("PLANTED-VALUE-r4e"), [.. records]),
             "PLANTED-VALUE-r4e",
             "PLANTED-NAME-r4e");
     }
 
     [Fact]
-    public async Task AValidSnapshotIsPartitionedAndNotRefused()
-    {
-        var header = "{\"title\":\"PLANTED-VALUE-c1\",\"PLANTED-NAME-c1\":1}";
-        var records = new[]
-        {
-            "{\"sequence\":1,\"description\":\"PLANTED-VALUE-c1-1\",\"nested\":{\"PLANTED-NAME-c1-1\":1}}",
-            "{\"sequence\":2,\"description\":\"PLANTED-VALUE-c1-2\",\"nested\":{\"PLANTED-NAME-c1-2\":1}}",
-            "{\"sequence\":3,\"description\":\"PLANTED-VALUE-c1-3\",\"nested\":{\"PLANTED-NAME-c1-3\":1}}",
-            "{\"sequence\":4,\"description\":\"PLANTED-VALUE-c1-4\",\"nested\":{\"PLANTED-NAME-c1-4\":1}}",
-        };
-
-        await AssertPartitionedAsync(Document(header, records));
-    }
+    public async Task AValidSnapshotIsPartitionedAndNotRefused() =>
+        await AssertPartitionedAsync(Document(_sampleHeader, [.. _sampleRecords]));
 
     [Fact]
     public async Task AnEmptyItemsArrayIsPartitionedAndNotRefused() =>
-        await AssertPartitionedAsync(Document());
+        await AssertPartitionedAsync(Document(header: _sampleHeader));
 
     // One job per refused snapshot, plain and inside a complete gzip stream: the stored row
     // carries the reason and the ordinal of the case, no partition, block, index object or
@@ -367,13 +391,14 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     {
         using var client = _api!.CreateClient();
         var uploadId = await CreateUploadAsync(client, cancellationToken);
-        await SendContentAsync(client, uploadId, compressed ? Gzip(document) : document, cancellationToken);
+        await SendContentAsync(client, uploadId, compressed ? Gzip(document) : document, compressed, cancellationToken);
 
-        using (var confirmed = await client.PostAsync(
-            new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative),
-            content: null,
-            cancellationToken))
+        using (var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative)))
         {
+            request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
+            using var confirmed = await client.SendAsync(request, cancellationToken);
             Assert.Equal(HttpStatusCode.Accepted, confirmed.StatusCode);
         }
 
@@ -402,10 +427,18 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         HttpClient client,
         string uploadId,
         byte[] content,
+        bool compressed,
         CancellationToken cancellationToken)
     {
         using var body = new ByteArrayContent(content);
         body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        if (compressed)
+        {
+            // The service classifies a body's encoding from this header alone, and it only
+            // decompresses a body declared as a gzip stream: this one is, so it says so. The
+            // plain document declares nothing, which is how it is read today.
+            body.Headers.TryAddWithoutValidation("Content-Encoding", "gzip");
+        }
         using var request = new HttpRequestMessage(
             HttpMethod.Put,
             new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/content", UriKind.Relative))
@@ -463,7 +496,7 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
-                $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{uploadId}}","profile":"header-items-v1"},"outputs":["pdf"]}""",
+                $$"""{"template":{"id":"{{TemplateId}}","version":"{{Version}}"},"data":{"uploadId":"{{uploadId}}","profile":"header-items-v1"},"outputs":["pdf"]}""",
                 Encoding.UTF8,
                 "application/json"),
         };
@@ -472,6 +505,52 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
         return document.RootElement.GetProperty("reportJobId").GetString()!;
+    }
+
+    // The taken version this class's jobs are pinned to, recorded in the class's own
+    // composition before the first test runs: the pilot's own schema is packaged through
+    // the archive the take uses, written under the content-addressed key of its bytes, and
+    // the record carries that written package's real size, SHA-256 and file count at the
+    // path its schema is read from.
+    private async Task SeedTakenVersionAsync(CancellationToken cancellationToken)
+    {
+        var schema = await File.ReadAllBytesAsync(
+            Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId, SchemaPath),
+            cancellationToken);
+        var files = new List<PackageFileSource>
+        {
+            new(SchemaPath, _ => Task.FromResult<Stream>(new MemoryStream(schema, writable: false))),
+        };
+
+        using var sink = new MemoryStream();
+        await TemplatePackageArchive.WriteAsync(files, sink, cancellationToken);
+        var bytes = sink.ToArray();
+        var packageSha256 = Convert.ToHexStringLower(SHA256.HashData(bytes));
+        var key = TemplatePackageKeys.ForVersion(Consumer, TemplateId, Version, packageSha256);
+
+        var objects = _api!.Services.GetRequiredService<IObjectStore>();
+        using (var content = new MemoryStream(bytes, writable: false))
+        {
+            var written = await objects.WriteAsync(key, content, cancellationToken);
+            Assert.True(written.Succeeded, "the taken package had to be written");
+        }
+
+        var versions = _api.Services.GetRequiredService<ITemplateVersionStore>();
+        var inserted = await versions.TryInsertAsync(
+            TemplateVersionRecords.Sample(
+                TemplateId,
+                Version,
+                Consumer,
+                shared: true,
+                schemaRef: SchemaPath,
+                packageSha256: packageSha256) with
+            {
+                PackageSize = bytes.Length,
+                FileCount = files.Count,
+                ObjectKey = key,
+            },
+            cancellationToken);
+        Assert.True(inserted.WasInserted, "the taken version had to be recorded");
     }
 
     private WebApplicationFactory<Program> Api()
@@ -562,6 +641,16 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
     private static string Header(string valueMarker, string nameMarker) =>
         "{\"title\":\"" + valueMarker + "\",\"nested\":{\"" + nameMarker + "\":1}}";
+
+    // The pilot's own header with its title carrying the case's value marker: the taken
+    // schema requires a string there and admits the sample's own members, so the header a
+    // rebuilt case carries is the sample's with that one value replaced.
+    private string HeaderTitled(string title)
+    {
+        var header = JsonNode.Parse(_sampleHeader)!.AsObject();
+        header["reportTitle"] = title;
+        return header.ToJsonString();
+    }
 
     private static byte[] DocumentOf(params string[] rawProperties) =>
         Encoding.UTF8.GetBytes("{" + string.Join(',', rawProperties) + "}");
