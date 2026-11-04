@@ -26,8 +26,13 @@ namespace ReportService.TemplateSource.Tests.Take;
 /// and never taken; a source that cannot be reached; a folder that is not the
 /// manifest's version; a commit that fails after the object was written; the
 /// structural refusals, none of which names a package path; another consumer's
-/// version, answered exactly like an absent one, before any content refusal; and
-/// a truncated tree, which is never "not found".
+/// version, answered exactly like an absent one, before any content refusal; the
+/// scratch directory each take was given, gone once the take returns; and a
+/// truncated tree, which is never "not found".
+///
+/// A take makes its scratch area under the temporary directory the whole process
+/// shares, so a case observes the directory its own take was given and never the
+/// root the other takes write to.
 /// </summary>
 public sealed class TemplateTakeTests : IDisposable
 {
@@ -463,19 +468,22 @@ public sealed class TemplateTakeTests : IDisposable
     [Fact]
     public async Task TheScratchDirectoryIsDeletedOnEveryPath()
     {
-        var scratchRoot = Path.Combine(Path.GetTempPath(), "report-service", "takes");
-        if (Directory.Exists(scratchRoot))
-        {
-            Directory.Delete(scratchRoot, recursive: true);
-        }
+        var scratch = new ScratchDirectories(refusedVersion: "1.2.0");
+        _checks.Add(scratch);
+        _source.SeedPackage(Template, "1.2.0", Package(Manifest(version: "1.2.0")));
 
-        await Take().TakeAsync(Template, Version, Consumer, null, null, CancellationToken.None);
-        _source.SeedPackage(Template, Version, Package(Manifest(version: "9.9.9")));
-        await Take().TakeAsync(Template, Version, Consumer, null, null, CancellationToken.None);
+        AssertTaken(await Take().TakeAsync(Template, Version, Consumer, null, null, CancellationToken.None));
 
-        Assert.True(
-            !Directory.Exists(scratchRoot) || Directory.GetDirectories(scratchRoot).Length == 0,
-            "the take left its scratch directory behind");
+        var refused = await Take().TakeAsync(Template, "1.2.0", Consumer, null, null, CancellationToken.None);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, Assert.IsType<RefusedVersion>(refused).Code);
+
+        Assert.Equal(2, scratch.Directories.Count);
+        Assert.All(scratch.Directories, seen => Assert.True(
+            seen.Existed,
+            $"the take had no scratch directory at {seen.Path}"));
+        Assert.All(scratch.Directories, seen => Assert.False(
+            Directory.Exists(seen.Path),
+            $"the take left its scratch directory behind: {seen.Path}"));
     }
 
     [Theory]
@@ -643,6 +651,26 @@ public sealed class TemplateTakeTests : IDisposable
         {
             Calls++;
             return Task.FromResult(answer);
+        }
+    }
+
+    /// <summary>A check that records the scratch directory of every take it is
+    /// given, and refuses the one version it is told to refuse.</summary>
+    private sealed class ScratchDirectories(string? refusedVersion) : ITemplateVersionCheck
+    {
+        private readonly List<(string Path, bool Existed)> _directories = [];
+
+        public IReadOnlyList<(string Path, bool Existed)> Directories => _directories;
+
+        public string Name => "scratch-directories";
+
+        public Task<TemplateCheckResult> CheckAsync(TemplateCandidate candidate, CancellationToken cancellationToken)
+        {
+            _directories.Add((candidate.PackageDirectory, Directory.Exists(candidate.PackageDirectory)));
+            return Task.FromResult(
+                string.Equals(candidate.Version, refusedVersion, StringComparison.Ordinal)
+                    ? TemplateCheckResult.Refuse(TemplateCheckCodes.TemplateInvalid, "the scratch observation refused this version")
+                    : TemplateCheckResult.Pass());
         }
     }
 
