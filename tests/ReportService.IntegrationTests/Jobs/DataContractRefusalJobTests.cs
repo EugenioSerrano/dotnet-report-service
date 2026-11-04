@@ -369,13 +369,12 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         var uploadId = await CreateUploadAsync(client, cancellationToken);
         await SendContentAsync(client, uploadId, compressed ? Gzip(document) : document, cancellationToken);
 
-        using (var confirmed = await client.PostAsync(
-            new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative),
-            content: null,
-            cancellationToken))
-        {
-            Assert.Equal(HttpStatusCode.Accepted, confirmed.StatusCode);
-        }
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/complete", UriKind.Relative));
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
+        using var confirmed = await client.SendAsync(request, cancellationToken);
+        Assert.Equal(HttpStatusCode.Accepted, confirmed.StatusCode);
 
         var status = await WaitForUploadAsync(client, uploadId, cancellationToken);
         Assert.Equal("ready", status.GetProperty("status").GetString());
