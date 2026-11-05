@@ -238,9 +238,9 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
         Assert.Equal(Consumer, outcome.Record.OwnerConsumerId);
     }
 
-    // The sample template's own package, with the three corrections the rendering path needs:
-    // the stylesheet named from the package root the document is served at, one named font
-    // family, and the version printed in the header.
+    // The sample template's own package, with the corrections these cases need: the owner,
+    // one named font family, and the version printed in the header. The stylesheet link is
+    // the sample's own (relative to the package root).
     private static Dictionary<string, byte[]> PackageFiles()
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
@@ -266,12 +266,10 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 
             if (string.Equals(relative, "html/document-start.html.sbn", StringComparison.Ordinal))
             {
-                text = text
-                    .Replace("href=\"styles.css\"", "href=\"html/styles.css\"", StringComparison.Ordinal)
-                    .Replace(
-                        "<h1>{{ header.reportTitle | html.escape }}</h1>",
-                        "<h1>{{ header.reportTitle | html.escape }}</h1>\n  <p class=\"template-version\">" + Template + " " + Version + "</p>",
-                        StringComparison.Ordinal);
+                text = text.Replace(
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>",
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>\n  <p class=\"template-version\">" + Template + " " + Version + "</p>",
+                    StringComparison.Ordinal);
             }
 
             files[relative] = Encoding.UTF8.GetBytes(text);

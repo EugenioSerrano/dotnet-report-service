@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>{{ header.reportTitle | html.escape }}</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="html/styles.css">
 </head>
 <body>
 <header class="document-header">

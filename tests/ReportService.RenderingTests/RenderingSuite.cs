@@ -52,6 +52,9 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <summary>The two template packages the suite prints.</summary>
     public static string TemplatesDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "Templates");
 
+    /// <summary>The sample packages the repository ships, as the folders a consumer copies.</summary>
+    public static string SamplesDirectory => Path.Combine(RepositoryRoot, "samples", "templates");
+
     /// <summary>The declarations of the two packages.</summary>
     public static string ExpectationsDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "OracleExpectations");
 
@@ -109,6 +112,44 @@ public sealed class RenderingSuite : IAsyncLifetime
             ? reported.GetString()
             : null;
         return new RenderOutcome(fixtureId, package, mutation, pdf, verdict, reason);
+    }
+
+    /// <summary>
+    /// Prints the shipped sample <paramref name="sampleId"/> from its own folder with
+    /// its own snapshot: the package and the payload a consumer copies, both mounted
+    /// read-only, printed into the suite's output folder. Nothing is copied,
+    /// regenerated or rewritten on the way.
+    /// </summary>
+    /// <param name="sampleId">The sample's folder name, which is its package id.</param>
+    public async Task<ShippedRenderOutcome> RenderShippedSampleAsync(string sampleId)
+    {
+        var package = Path.Combine(SamplesDirectory, sampleId);
+        var command = new List<string>
+        {
+            "render", "--fixture", "/fixtures/sample.json", "--template", $"/packages/{sampleId}", "--out", "/out",
+        };
+        (string Source, string Target, AccessMode Mode)[] mounts =
+        [
+            (SamplesDirectory, "/packages", AccessMode.ReadOnly),
+            (package, "/fixtures", AccessMode.ReadOnly),
+            (OutputDirectory, "/out", AccessMode.ReadWrite),
+        ];
+
+        var exit = await RunContainerAsync(HostImage, command, mounts).ConfigureAwait(false);
+        var resultPath = Path.Combine(OutputDirectory, "sample.json");
+        if (exit != 0)
+        {
+            throw new InvalidOperationException($"The rendering host exited {exit} for the shipped sample {sampleId}; its result would be in {resultPath}.");
+        }
+
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
+        var pdf = Path.Combine(OutputDirectory, document.RootElement.GetProperty("pdf").GetString()!);
+        var verdict = document.RootElement.GetProperty("verificationPassed").GetBoolean();
+        var reason = document.RootElement.TryGetProperty("verificationReason", out var reported) && reported.ValueKind == JsonValueKind.String
+            ? reported.GetString()
+            : null;
+        var aborted = document.RootElement.GetProperty("abortedRequests").GetInt32();
+        return new ShippedRenderOutcome(pdf, verdict, reason, aborted);
     }
 
     /// <summary>Reads <paramref name="pdf"/> with the judge and returns its verdict.</summary>
@@ -225,15 +266,24 @@ public sealed class RenderingSuite : IAsyncLifetime
         }
     }
 
-    private async Task<long> RunContainerAsync(string image, IReadOnlyList<string> command, IReadOnlyList<(string Source, string Target)> mounts)
+    private Task<long> RunContainerAsync(string image, IReadOnlyList<string> command, IReadOnlyList<(string Source, string Target)> mounts) =>
+        RunContainerAsync(
+            image,
+            command,
+            mounts.Select(mount => (mount.Source, mount.Target, AccessMode.ReadWrite)).ToArray());
+
+    private async Task<long> RunContainerAsync(
+        string image,
+        IReadOnlyList<string> command,
+        IReadOnlyList<(string Source, string Target, AccessMode Mode)> mounts)
     {
         var unique = Interlocked.Increment(ref renders).ToString("D3", CultureInfo.InvariantCulture);
         var builder = new ContainerBuilder(image)
             .WithName($"report-service-rendering-{unique}-{Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]}")
             .WithCommand([.. command]);
-        foreach (var (source, target) in mounts)
+        foreach (var (source, target, mode) in mounts)
         {
-            builder = builder.WithBindMount(source, target, AccessMode.ReadWrite);
+            builder = builder.WithBindMount(source, target, mode);
         }
 
         await using var container = builder.Build();
@@ -278,6 +328,17 @@ public sealed record RenderOutcome(
     string Pdf,
     bool VerificationPassed,
     string? VerificationReason);
+
+/// <summary>One printed shipped sample: where the document is and what the product's verification said about it.</summary>
+/// <param name="Pdf">The PDF the print wrote.</param>
+/// <param name="VerificationPassed">Whether the product's verification accepted it.</param>
+/// <param name="VerificationReason">The reason its verification refused it with, or null.</param>
+/// <param name="AbortedRequests">How many requests of the document the route policy aborted.</param>
+public sealed record ShippedRenderOutcome(
+    string Pdf,
+    bool VerificationPassed,
+    string? VerificationReason,
+    int AbortedRequests);
 
 /// <summary>What the judge said about one printed document.</summary>
 /// <param name="Passed">Whether every rule passed.</param>
