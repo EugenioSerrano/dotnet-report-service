@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
@@ -43,8 +45,28 @@ public sealed class PdfVerificationSmokeTests
 
     private const int Runs = 20;
 
-    /// <summary>The stack the measured verification runs on; recorded with the measurement.</summary>
-    private const int MeasurementStackBytes = 64 * 1024 * 1024;
+    /// <summary>The fixture name of the 2,000-record stream the structural case builds.</summary>
+    private const string StreamFixture = "S2000";
+
+    /// <summary>The hard record maximum of a block, in records.</summary>
+    private const int RecordMaximum = 2_000;
+
+    /// <summary>The hard byte maximum of a block's record bytes.</summary>
+    private const int RecordByteMaximum = 1_048_576;
+
+    /// <summary>The records a printed page holds, at the density the measured documents show.</summary>
+    private const int RecordsPerPage = 34;
+
+    /// <summary>The pages the 2,000-record stream prints at that density.</summary>
+    private const int StreamPageCount = 59;
+
+    /// <summary>The writer of the stream's snapshot: the same compact form the fixture library writes.</summary>
+    private static readonly JsonSerializerOptions StreamWriting = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+    /// <summary>The measured verification runs on the worker's own thread: the process default.</summary>
+    private const int MeasurementStackMiB = 1;
 
     /// <summary>The whole verification of the large document, at p95, in seconds.</summary>
     private const double LargeVerificationP95Seconds = 4.0;
@@ -95,7 +117,7 @@ public sealed class PdfVerificationSmokeTests
             ["machine"] = Environment.MachineName,
             ["warmups"] = WarmUps,
             ["runs"] = Runs,
-            ["measurement_stack_mib"] = MeasurementStackBytes / 1024 / 1024,
+            ["measurement_stack_mib"] = MeasurementStackMiB,
             ["documents"] = new[]
             {
                 new { fixture = LargeFixture, pages = large.Pages, words = large.Words },
@@ -145,6 +167,120 @@ public sealed class PdfVerificationSmokeTests
         Assert.Equal(Runs, wide.Whole.Count);
     }
 
+    /// <summary>
+    /// The deepest unit stream a block may hold — 2,000 records, the hard record maximum — is
+    /// judged on the worker's own thread: the alignment's depth follows the document's pages,
+    /// never its records, so a stream twice the size of the largest printed document is aligned
+    /// exactly as a small one is.
+    /// </summary>
+    [Fact]
+    public async Task TheAlignerJudgesTwoThousandRecordsOnAnOrdinaryThread()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var datasets = Path.Combine(RepositoryPaths.Root, "samples", "datasets");
+        var datasetPath = Path.Combine(datasets, "header-items-v1.grouped.10k.json");
+        Assert.True(
+            File.Exists(datasetPath),
+            $"The pilot dataset {datasetPath} is missing. Generate it with: dotnet run --project samples/datasets/ReportService.Samples.DatasetGenerator -c Release -- generate");
+        var dataset = FixtureDataset.Load(datasetPath, Path.Combine(datasets, FixtureGenerator.SumsFileName));
+
+        // The stream: the pilot dataset's first records, in document order, unchanged except for
+        // the header's own count. Its record bytes are the block's record bytes.
+        var records = dataset.Items.Take(RecordMaximum).Select(item => (JsonObject)item.DeepClone()).ToList();
+        var recordBytes = records.Sum(FixtureGenerator.CompactItemBytes);
+        Assert.True(
+            recordBytes <= RecordByteMaximum,
+            $"The stream holds {recordBytes} record bytes, above the block's {RecordByteMaximum}.");
+
+        var header = (JsonObject)dataset.Header.DeepClone();
+        header["totals"]!["recordCount"] = records.Count;
+        var snapshot = new JsonObject
+        {
+            ["contractVersion"] = FixtureGenerator.ContractVersion,
+            ["header"] = header,
+            ["items"] = new JsonArray([.. records.Select(record => (JsonNode)record)]),
+        };
+
+        var folder = Path.Combine(Root, "stream");
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            Path.Combine(folder, StreamFixture + ".json"),
+            snapshot.ToJsonString(StreamWriting),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            cancellationToken);
+
+        // The same composition the measured documents go through: the product's reader, render
+        // context and composer, then the units the checks compare against.
+        var templates = Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
+        var (_, text, _) = Compose(StreamFixture, Path.Combine(templates, Package), Manifest(), folder);
+        var units = text.Units;
+        var pages = StreamPages(units, RecordsPerPage);
+        var evidence = new JsonObject
+        {
+            ["fixture"] = StreamFixture,
+            ["records"] = records.Count,
+            ["recordBytes"] = recordBytes,
+            ["pages"] = pages.Count,
+            ["units"] = units.Count,
+        };
+        await File.WriteAllTextAsync(
+            Path.Combine(RunEnvironment.EvidenceDirectory(), "stream.json"),
+            evidence.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            $"stream: records={records.Count} recordBytes={recordBytes} pages={pages.Count} units={units.Count}");
+
+        ContentOrderAligner aligner = new();
+        AlignmentOutcome outcome = null!;
+        await Task.Run(() => outcome = aligner.Align(pages, units), cancellationToken);
+
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            $"stream verdict: passed={outcome.Passed} reason={outcome.Reason ?? "none"}");
+        Assert.True(outcome.Passed, $"The stream was refused with {outcome.Reason} on the worker's own thread.");
+        Assert.Equal(units.Count, outcome.ConsumedCharacters.Count);
+        for (var index = 0; index < units.Count; index++)
+        {
+            Assert.Equal(units[index].Normalised.Length, outcome.ConsumedCharacters[index]);
+        }
+
+        Assert.Equal(StreamPageCount, pages.Count);
+    }
+
+    // The pages a block of the stream prints: whole rows only, the document's own start on the
+    // first page and its end on the last, at the record density the printed documents show.
+    private static IReadOnlyList<string> StreamPages(IReadOnlyList<TextUnit> units, int recordsPerPage)
+    {
+        var pages = new List<string>();
+        var page = new StringBuilder();
+        var recordsOnPage = 0;
+        var currentRecord = 0L;
+        foreach (var unit in units)
+        {
+            if (unit.Kind == FragmentKind.Row && unit.RecordOrdinal != currentRecord)
+            {
+                if (recordsOnPage == recordsPerPage)
+                {
+                    pages.Add(page.ToString());
+                    page.Clear();
+                    recordsOnPage = 0;
+                }
+
+                currentRecord = unit.RecordOrdinal;
+                recordsOnPage++;
+            }
+
+            page.Append(unit.Normalised);
+        }
+
+        if (page.Length > 0)
+        {
+            pages.Add(page.ToString());
+        }
+
+        return pages;
+    }
+
     private static async Task<MeasuredDocument> PrintAndMeasureAsync(
         string fixture,
         string package,
@@ -184,16 +320,16 @@ public sealed class PdfVerificationSmokeTests
             var verifier = new BlockVerifier();
             var margins = PlacementConvention.FromMillimetres(manifest.Pdf.MarginMm);
 
-            // The verification runs on one dedicated thread of a recorded stack size: on the
-            // default one-megabyte stack the alignment of a 36-page document overflows, which
-            // is recorded as a finding of its own rather than hidden in a measurement that
-            // cannot finish.
+            // The verification runs on the thread the worker's activity runs on: an ordinary
+            // thread of the pool, with the process's own stack. A block of this size that
+            // cannot be aligned there would crash a job, so the measurement must not hide it
+            // behind a thread of its own.
             var whole = new List<double>(Runs);
             var perPage = new List<double>(Runs);
             var share = new List<double>(Runs);
             VerificationResult? last = null;
             Exception? failure = null;
-            var worker = new Thread(
+            await Task.Run(
                 () =>
                 {
                     try
@@ -220,10 +356,7 @@ public sealed class PdfVerificationSmokeTests
                     {
                         failure = exception;
                     }
-                },
-                MeasurementStackBytes);
-            worker.Start();
-            worker.Join();
+                }).ConfigureAwait(false);
             if (failure is not null)
             {
                 throw new InvalidOperationException($"the measurement of {fixture} did not finish: {failure.Message}", failure);

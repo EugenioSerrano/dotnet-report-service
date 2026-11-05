@@ -230,7 +230,9 @@ public sealed class ContentOrderAligner
 
         /// <summary>
         /// Consumes one page from its start, with the units an earlier page left open
-        /// and the position of the first unit not started yet.
+        /// and the position of the first unit not started yet. This is the search's only
+        /// recursive step: it moves to the document's next page, so the call depth is the
+        /// number of pages the block prints and never the number of units they hold.
         /// </summary>
         private bool ConsumePage(int page, int cursor, OpenUnits open)
         {
@@ -240,12 +242,12 @@ public sealed class ContentOrderAligner
                 // The surface repeats a table's head at the top of every page after the
                 // first; the units of that head were consumed where the document holds them.
                 if (page > 0 && head.Length > 0 && text.StartsWith(head, StringComparison.Ordinal)
-                    && Fit(page, head.Length, cursor, open, end))
+                    && SearchPage(page, head.Length, cursor, open, end))
                 {
                     return true;
                 }
 
-                if (Fit(page, 0, cursor, open, end))
+                if (SearchPage(page, 0, cursor, open, end))
                 {
                     return true;
                 }
@@ -255,98 +257,134 @@ public sealed class ContentOrderAligner
         }
 
         /// <summary>
-        /// Consumes one page from <paramref name="position"/> to <paramref name="end"/>:
-        /// the open units continue where they left off, a later cell of an open unit's
-        /// own row may print first, and the units not started yet follow in document order.
+        /// Consumes one page from <paramref name="position"/> to <paramref name="end"/>: the open
+        /// units continue where they left off, a later cell of an open unit's own row may print
+        /// first, and the units not started yet follow in document order. The alternatives are
+        /// searched longest first and depth first from this method's own stack, in the order the
+        /// document prints them, so the page costs one call whatever its height.
         /// </summary>
-        private bool Fit(int page, int position, int cursor, OpenUnits open, int end)
-        {
-            if (overBudget)
-            {
-                return false;
-            }
-
-            var key = new State(page, position, cursor, end, open);
-            if (failed.Contains(key))
-            {
-                return false;
-            }
-
-            if (position == end)
-            {
-                if (page == pages.Count - 1)
-                {
-                    if (open.IsEmpty && cursor >= units.Count)
-                    {
-                        return true;
-                    }
-                }
-                else if (ConsumePage(page + 1, cursor, open))
-                {
-                    return true;
-                }
-
-                failed.Add(key);
-                return false;
-            }
-
-            if (!open.IsEmpty && ContinueOpen(page, position, cursor, open, end))
-            {
-                return true;
-            }
-
-            if (StartNext(page, position, cursor, open, end))
-            {
-                return true;
-            }
-
-            failed.Add(key);
-            return false;
-        }
-
-        /// <summary>
-        /// Tries every length of the first open unit at the current position: a unit that
-        /// completes closes, one that stops at the page's end continues on the next page,
-        /// and one that stops earlier leaves the page to the later cells of its own row.
-        /// </summary>
-        private bool ContinueOpen(int page, int position, int cursor, OpenUnits open, int end)
+        private bool SearchPage(int page, int position, int cursor, OpenUnits open, int end)
         {
             var text = pages[page];
-            var (unit, offset) = open.First;
-            var remaining = units[unit].Normalised;
-            var available = Math.Min(remaining.Length - offset, end - position);
-            for (var length = available; length >= 1; length--)
+            var stack = new List<Frame>();
+            if (!TryEnter(page, position, cursor, open, end, undoUnit: -1, out var first))
             {
-                if (!Spend(length))
+                return false;
+            }
+
+            stack.Add(first!);
+            while (stack.Count > 0)
+            {
+                var frame = stack[^1];
+                if (overBudget)
                 {
+                    Drain(stack, page, end);
                     return false;
                 }
 
-                if (!text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(offset, length)))
+                if (frame.Position == end)
+                {
+                    stack.RemoveAt(stack.Count - 1);
+                    if (page == pages.Count - 1)
+                    {
+                        if (frame.Open.IsEmpty && frame.Cursor >= units.Count)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (ConsumePage(page + 1, frame.Cursor, frame.Open))
+                    {
+                        return true;
+                    }
+
+                    Abandon(page, end, frame);
+                    continue;
+                }
+
+                if (!NextCandidate(frame))
+                {
+                    stack.RemoveAt(stack.Count - 1);
+                    Abandon(page, end, frame);
+                    continue;
+                }
+
+                var length = frame.CandidateLength;
+                if (!Spend(length))
+                {
+                    Drain(stack, page, end);
+                    return false;
+                }
+
+                if (!text.AsSpan(frame.Position, length).SequenceEqual(frame.Remaining.AsSpan(frame.Offset, length)))
                 {
                     continue;
                 }
 
-                if (offset + length == remaining.Length)
+                if (frame.Phase == Frame.ContinueOpen)
                 {
-                    consumed[unit] = offset + length;
-                    if (Fit(page, position + length, cursor, open.CloseFirst(), end))
+                    if (frame.Offset + length == frame.Remaining.Length)
+                    {
+                        var unit = frame.Unit;
+                        consumed[unit] = frame.Offset + length;
+                        if (TryEnter(page, frame.Position + length, frame.Cursor, frame.Open.CloseFirst(), end, unit, out var closed))
+                        {
+                            stack.Add(closed!);
+                        }
+                        else
+                        {
+                            consumed[unit] = 0;
+                        }
+
+                        continue;
+                    }
+
+                    if (frame.Position + length == end && page < pages.Count - 1)
+                    {
+                        if (ConsumePage(page + 1, frame.Cursor, frame.Open.WithFirstOffset(frame.Offset + length)))
+                        {
+                            return true;
+                        }
+
+                        continue;
+                    }
+
+                    if (TryEnter(page, frame.Position + length, frame.Cursor, frame.Open.WithFirstOffset(frame.Offset + length), end, undoUnit: -1, out var continued))
+                    {
+                        stack.Add(continued!);
+                    }
+
+                    continue;
+                }
+
+                if (length == frame.Remaining.Length)
+                {
+                    var unit = frame.Cursor;
+                    consumed[unit] = length;
+                    if (TryEnter(page, frame.Position + length, frame.Cursor + 1, frame.Open, end, unit, out var started))
+                    {
+                        stack.Add(started!);
+                    }
+                    else
+                    {
+                        consumed[unit] = 0;
+                    }
+
+                    continue;
+                }
+
+                if (frame.Position + length == end && page < pages.Count - 1)
+                {
+                    if (ConsumePage(page + 1, frame.Cursor + 1, frame.Open.Append(new OpenUnit(frame.Cursor, length))))
                     {
                         return true;
                     }
 
-                    consumed[unit] = 0;
+                    continue;
                 }
-                else if (position + length == end && page < pages.Count - 1)
+
+                if (TryEnter(page, frame.Position + length, frame.Cursor + 1, frame.Open.Append(new OpenUnit(frame.Cursor, length)), end, undoUnit: -1, out var next))
                 {
-                    if (ConsumePage(page + 1, cursor, open.WithFirstOffset(offset + length)))
-                    {
-                        return true;
-                    }
-                }
-                else if (Fit(page, position + length, cursor, open.WithFirstOffset(offset + length), end))
-                {
-                    return true;
+                    stack.Add(next!);
                 }
             }
 
@@ -354,60 +392,98 @@ public sealed class ContentOrderAligner
         }
 
         /// <summary>
-        /// Starts the unit at <paramref name="cursor"/>. While an earlier unit of the same
-        /// row is open, that row's later cells may print first; nothing else may.
+        /// Enters one state of a page's search, unless it already failed; its first alternative
+        /// is fixed here, longest first.
         /// </summary>
-        private bool StartNext(int page, int position, int cursor, OpenUnits open, int end)
+        private bool TryEnter(int page, int position, int cursor, OpenUnits open, int end, int undoUnit, out Frame? frame)
         {
-            if (cursor >= units.Count)
+            frame = null;
+            if (failed.Contains(new State(page, position, cursor, end, open)))
             {
                 return false;
             }
 
-            if (!open.IsEmpty && units[cursor].FragmentIndex != units[open.Last.Unit].FragmentIndex)
+            var entered = new Frame(position, cursor, open, end, undoUnit);
+            if (open.IsEmpty)
             {
-                return false;
+                entered.Phase = Frame.StartNext;
+                PrepareStart(entered);
+            }
+            else
+            {
+                entered.Phase = Frame.ContinueOpen;
+                entered.Unit = open.First.Unit;
+                entered.Offset = open.First.Offset;
+                entered.Remaining = units[entered.Unit].Normalised;
+                entered.NextLength = Math.Min(entered.Remaining.Length - entered.Offset, end - position);
             }
 
-            var text = pages[page];
-            var remaining = units[cursor].Normalised;
-            var available = Math.Min(remaining.Length, end - position);
-            for (var length = available; length >= 1; length--)
+            frame = entered;
+            return true;
+        }
+
+        /// <summary>The state's next alternative, or false when it has none left.</summary>
+        private bool NextCandidate(Frame frame)
+        {
+            while (true)
             {
-                if (!Spend(length))
+                if (frame.NextLength >= 1)
                 {
-                    return false;
+                    frame.CandidateLength = frame.NextLength;
+                    frame.NextLength--;
+                    return true;
                 }
 
-                if (!text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(0, length)))
+                if (frame.Phase == Frame.ContinueOpen)
                 {
+                    frame.Phase = Frame.StartNext;
+                    PrepareStart(frame);
                     continue;
                 }
 
-                if (length == remaining.Length)
-                {
-                    consumed[cursor] = length;
-                    if (Fit(page, position + length, cursor + 1, open, end))
-                    {
-                        return true;
-                    }
+                return false;
+            }
+        }
 
-                    consumed[cursor] = 0;
-                }
-                else if (position + length == end && page < pages.Count - 1)
-                {
-                    if (ConsumePage(page + 1, cursor + 1, open.Append(new OpenUnit(cursor, length))))
-                    {
-                        return true;
-                    }
-                }
-                else if (Fit(page, position + length, cursor + 1, open.Append(new OpenUnit(cursor, length)), end))
-                {
-                    return true;
-                }
+        /// <summary>Fixes the alternatives of the unit that has not started yet.</summary>
+        private void PrepareStart(Frame frame)
+        {
+            frame.Unit = frame.Cursor;
+            frame.Offset = 0;
+            if (frame.Cursor >= units.Count
+                || (!frame.Open.IsEmpty && units[frame.Cursor].FragmentIndex != units[frame.Open.Last.Unit].FragmentIndex))
+            {
+                frame.Remaining = string.Empty;
+                frame.NextLength = 0;
+                return;
             }
 
-            return false;
+            frame.Remaining = units[frame.Cursor].Normalised;
+            frame.NextLength = Math.Min(frame.Remaining.Length, frame.End - frame.Position);
+        }
+
+        /// <summary>Records that the state failed, and takes back the unit its entry closed.</summary>
+        private void Abandon(int page, int end, Frame frame)
+        {
+            failed.Add(new State(page, frame.Position, frame.Cursor, end, frame.Open));
+            if (frame.UndoUnit >= 0)
+            {
+                consumed[frame.UndoUnit] = 0;
+            }
+        }
+
+        /// <summary>
+        /// Takes back every state the page's search still holds, innermost first, exactly as the
+        /// recursive form unwound when the comparison budget ran out.
+        /// </summary>
+        private void Drain(List<Frame> stack, int page, int end)
+        {
+            while (stack.Count > 0)
+            {
+                var frame = stack[^1];
+                stack.RemoveAt(stack.Count - 1);
+                Abandon(page, end, frame);
+            }
         }
 
         private bool Spend(int length)
@@ -678,5 +754,60 @@ public sealed class ContentOrderAligner
         }
 
         private readonly record struct State(int Page, int Position, int Cursor, int End, OpenUnits Open);
+
+        /// <summary>
+        /// One state of a page's search and the alternatives it has left: the units an earlier
+        /// page left open continue first, and the unit that has not started follows.
+        /// </summary>
+        private sealed class Frame
+        {
+            /// <summary>The alternatives of the units an earlier page left open.</summary>
+            public const int ContinueOpen = 0;
+
+            /// <summary>The alternatives of the unit that has not started yet.</summary>
+            public const int StartNext = 1;
+
+            public Frame(int position, int cursor, OpenUnits open, int end, int undoUnit)
+            {
+                Position = position;
+                Cursor = cursor;
+                Open = open;
+                End = end;
+                UndoUnit = undoUnit;
+            }
+
+            /// <summary>The position of the page the state stands at.</summary>
+            public int Position { get; }
+
+            /// <summary>The first unit that has not started.</summary>
+            public int Cursor { get; }
+
+            /// <summary>The units an earlier page left open, in document order.</summary>
+            public OpenUnits Open { get; }
+
+            /// <summary>The end of the page's text the state is searched to.</summary>
+            public int End { get; }
+
+            /// <summary>The unit whose consumed count the entry wrote, or -1 when it wrote none.</summary>
+            public int UndoUnit { get; }
+
+            /// <summary>Which family of alternatives the state is trying.</summary>
+            public int Phase { get; set; }
+
+            /// <summary>The unit the current family belongs to.</summary>
+            public int Unit { get; set; }
+
+            /// <summary>How much of the unit was consumed before this state.</summary>
+            public int Offset { get; set; }
+
+            /// <summary>The text of the unit, normalised.</summary>
+            public string Remaining { get; set; } = string.Empty;
+
+            /// <summary>The next length of the current family to try.</summary>
+            public int NextLength { get; set; }
+
+            /// <summary>The length the current alternative tries.</summary>
+            public int CandidateLength { get; set; }
+        }
     }
 }
