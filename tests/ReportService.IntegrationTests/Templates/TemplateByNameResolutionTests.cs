@@ -38,12 +38,15 @@ namespace ReportService.IntegrationTests.Templates;
 /// this build does not run.
 /// </para>
 /// <para>
-/// The deadline case runs a second worker on a five-second resolution bound, which
-/// is the shortest the setting allows: its family holds enough refused versions
-/// that the walk cannot finish inside it. The case is the one arrangement here that
-/// depends on how long a real walk costs; it asserts that reaching the bound is
-/// never reported as invalidity, and a run that finishes first fails by name rather
-/// than passing with nothing checked.
+/// The deadline case starts a worker of its own on a five-second resolution bound —
+/// the shortest the setting allows — and that worker is the only one polling the
+/// resolution queue for the case: this class's four-minute worker is started when a
+/// case first needs it, and the deadline case never does. The case seeds thousands
+/// of versions the take refuses, so the walk costs several times the bound and the
+/// bound is always reached; it asserts that reaching the bound is never reported as
+/// invalidity, that the answer is the copy already taken, and that the resolution's
+/// own record names the deadline. A run that finished the walk first would answer
+/// from a candidate and fail by name rather than pass with nothing checked.
 /// </para>
 /// </summary>
 public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixture>, IAsyncLifetime
@@ -53,6 +56,17 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     private const string DeadlineQueue = "template-by-name-deadline-tests";
     private const string ResolutionDeadline = "00:04:00";
     private const string ShortResolutionDeadline = "00:00:05";
+
+    /// <summary>
+    /// The refused versions the deadline case seeds over the taken one. Each refusal
+    /// is a real read of a package the take refuses, so the walk costs what the
+    /// source costs: 400 of them measured 4.9 to 8.6 seconds on this suite's own
+    /// runs, against a five-second bound. 4,000 keeps the walk above the bound even
+    /// at the fastest refusal this suite has recorded (7 ms each - 28 seconds, more
+    /// than five times the bound), so the bound is reached on every run instead of
+    /// the walk finishing first.
+    /// </summary>
+    private const int RefusedVersions = 4000;
 
     private static readonly TimeSpan Deadline = TimeSpan.FromMinutes(4);
 
@@ -112,9 +126,6 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
         _client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
-
-        _worker = Worker(ResolutionDeadline);
-        await ReadyAsync(_worker, cancellationToken);
 
         _testWorker = new TemporalWorker(
             _client,
@@ -415,19 +426,30 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ADeadlineReachedBeforeADecisionIsNeverReportedAsInvalidity()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+
+        // The version the fallback answers with, seeded before anything takes it.
         ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First);
-        await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
-        for (var index = 0; index < 400; index++)
+
+        // The short-bound host is the only worker on the resolution queue: the
+        // class's four-minute host is never started for this case, so the bound
+        // that cuts the walk can only be this worker's five seconds.
+        await using var shortWorker = await ShortWorkerAsync(cancellationToken);
+        await TakeAsync(Template, ByNameFixtures.First, shortWorker.Queue, cancellationToken);
+
+        for (var index = 0; index < RefusedVersions; index++)
         {
             var version = $"1.1.{index}";
             _stub.Stub.SeedPackage(Template, version, ByNameFixtures.InvalidPackage(Template, version));
         }
 
-        await using var shortWorker = await ShortWorkerAsync(cancellationToken);
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, shortWorker.Queue, cancellationToken);
 
         Assert.Equal(ResolveTemplateVersionOutcomes.ResolvedFromTakenCopy, result.Outcome);
         Assert.Equal(ByNameFixtures.First, result.Version);
+        Assert.Contains(
+            _logs.Lines,
+            line => line.Contains("template.by_name.unchecked", StringComparison.Ordinal)
+                && line.Contains("kind deadline", StringComparison.Ordinal));
     }
 
     /// <summary>The application failure a resolution ends its job with, by the code the case names.</summary>
@@ -460,19 +482,32 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     private async Task<TakeTemplateVersionResult> TakeAsync(
         string templateId,
         string version,
+        CancellationToken cancellationToken)
+    {
+        await LongWorkerAsync(cancellationToken);
+        return await TakeAsync(templateId, version, TestQueue, cancellationToken);
+    }
+
+    private async Task<TakeTemplateVersionResult> TakeAsync(
+        string templateId,
+        string version,
+        string queue,
         CancellationToken cancellationToken) =>
         await _client!
             .ExecuteWorkflowAsync(
                 (TakeVersionForTestWorkflow workflow) => workflow.RunAsync(
                     new TakeTemplateVersionInput(templateId, version, ByNameFixtures.Owner, "job-1")),
-                new WorkflowOptions($"take-{Guid.NewGuid():N}", TestQueue))
+                new WorkflowOptions($"take-{Guid.NewGuid():N}", queue))
             .WaitAsync(cancellationToken);
 
-    private Task<ResolveTemplateVersionResult> ResolveAsync(
+    private async Task<ResolveTemplateVersionResult> ResolveAsync(
         string templateId,
         string consumer,
-        CancellationToken cancellationToken) =>
-        ResolveAsync(templateId, consumer, TestQueue, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        await LongWorkerAsync(cancellationToken);
+        return await ResolveAsync(templateId, consumer, TestQueue, cancellationToken);
+    }
 
     private async Task<ResolveTemplateVersionResult> ResolveAsync(
         string templateId,
@@ -519,7 +554,23 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             cancellationToken);
     }
 
-    /// <summary>A second worker whose resolution bound is the shortest the setting allows.</summary>
+    /// <summary>The class's own worker: the four-minute bound the other cases resolve under,
+    /// started the first time a case needs it so a case that must resolve under another
+    /// bound never has a second worker polling the queue.</summary>
+    private async Task<WebApplicationFactory<PdfWorker>> LongWorkerAsync(CancellationToken cancellationToken)
+    {
+        if (_worker is { } running)
+        {
+            return running;
+        }
+
+        var worker = Worker(ResolutionDeadline);
+        _worker = worker;
+        await ReadyAsync(worker, cancellationToken);
+        return worker;
+    }
+
+    /// <summary>The worker the deadline case resolves under: the shortest bound the setting allows.</summary>
     private async Task<ShortWorker> ShortWorkerAsync(CancellationToken cancellationToken)
     {
         var worker = Worker(ShortResolutionDeadline);
