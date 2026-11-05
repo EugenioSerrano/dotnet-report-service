@@ -438,13 +438,6 @@ internal sealed class PrintingRig : IAsyncDisposable
             .Replace("font-family: sans-serif;", "font-family: \"Liberation Sans\";", StringComparison.Ordinal);
         package["html/styles.css"] = Encoding.UTF8.GetBytes(styles);
 
-        // The document is served at the package root, so its stylesheet is named from there:
-        // the sample's parts name it relative to their own folder, which the print would ask
-        // for at a path the package does not hold.
-        var startWithStyles = Encoding.UTF8.GetString(package["html/document-start.html.sbn"])
-            .Replace("href=\"styles.css\"", "href=\"html/styles.css\"", StringComparison.Ordinal);
-        package["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes(startWithStyles);
-
         // The document names the version it was printed from, so a reading of the PDF says which
         // version a job printed without reading the job's pin.
         var start = Encoding.UTF8.GetString(package["html/document-start.html.sbn"])

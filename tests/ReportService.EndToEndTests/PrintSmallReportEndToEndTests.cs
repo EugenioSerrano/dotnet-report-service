@@ -239,9 +239,8 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
         await versions.TryInsertAsync(record, cancellationToken);
     }
 
-    // The sample template's own package, with the three corrections the rendering path needs:
-    // the stylesheet named from the package root the document is served at, one named font
-    // family, and the version printed in the header.
+    // The sample template's own package, with the corrections these cases need: the owner,
+    // one named font family, and the version printed in the header.
     private static List<PackageFileSource> PackageFiles()
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
@@ -268,12 +267,10 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 
             if (string.Equals(relative, "html/document-start.html.sbn", StringComparison.Ordinal))
             {
-                text = text
-                    .Replace("href=\"styles.css\"", "href=\"html/styles.css\"", StringComparison.Ordinal)
-                    .Replace(
-                        "<h1>{{ header.reportTitle | html.escape }}</h1>",
-                        "<h1>{{ header.reportTitle | html.escape }}</h1>\n  <p class=\"template-version\">" + Template + " " + Version + "</p>",
-                        StringComparison.Ordinal);
+                text = text.Replace(
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>",
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>\n  <p class=\"template-version\">" + Template + " " + Version + "</p>",
+                    StringComparison.Ordinal);
             }
 
             var content = Encoding.UTF8.GetBytes(text);

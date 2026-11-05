@@ -99,9 +99,17 @@ outputs:
     styles: [html/styles.css]
 ```
 
-**Not rendered yet.** No template engine runs in this repository yet, so the
-HTML parts have not been rendered or validated. The manifests, schemas and
-sample files are checked; the parts are a starting point that the
-template-engine measurements render, correct and validate. The parts use
-only the `header`, `item`, `group` and `aggregates` context names, write
-every text value through `html.escape` and write numbers as received.
+The document the product serves lives at the package root, so a part names a
+stylesheet by its path from the package root: `href="html/styles.css"` for the
+file the manifest declares as `html/styles.css`. A part that names the file
+relative to its own folder (`href="styles.css"`) asks for a file the package does
+not hold; the print loses its stylesheet and the report is refused.
+
+**The parts are rendered.** Each package declares its engine, and these three are
+written for Scriban 7.5.1. The simple package is printed as it ships by the
+rendering suite, which asserts that the product's own verification accepts the
+report. The two packages that declare page totals are not printed by that case —
+the product does not yet print page totals — so their printability is not claimed
+here. The parts use only the `header`, `item`, `group` and `aggregates` context
+names, write every text value through `html.escape` and write numbers as
+received.
