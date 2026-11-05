@@ -10,16 +10,40 @@ namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The composition every end-to-end class starts. It is the AppHost's own, with
-/// three additions that belong to the test run and change no product behaviour:
-/// the telemetry view is enabled, answers without a credential on this machine
-/// and receives telemetry on the one address its own container can reach, the
-/// dependency wait keeps the behaviour the composition was written for, and the
+/// the additions that belong to the test run and change no product behaviour: the
+/// render worker's source credential parameter is given an inert test-scoped value
+/// and the source's repository and branch are stated, so the worker starts, and the
+/// worker itself is then given an empty credential, so every read it performs is
+/// anonymous; the telemetry view is enabled, answers without a credential on this
+/// machine and receives telemetry on the one address its own container can reach,
+/// the dependency wait keeps the behaviour the composition was written for, and the
 /// render worker is pointed at that view before its container is created — a
 /// container does not inherit the AppHost's telemetry address and cannot be given
 /// one afterwards.
 /// </summary>
 internal static class TestComposition
 {
+    /// <summary>
+    /// The value the render worker's source credential parameter resolves to in this
+    /// composition. The AppHost declares that parameter as a secret with no default,
+    /// so a run that states no value cannot start the worker; this literal is what
+    /// makes it resolve. It authenticates nothing, has no credential's shape and is
+    /// sent nowhere — the worker is given an empty credential below — and it lives in
+    /// the tree so that a fresh clone reproduces this run without a machine-local
+    /// secret store.
+    /// </summary>
+    public const string InertTemplateSourceToken = "test-scoped-inert-token-not-a-credential";
+
+    /// <summary>
+    /// The public template repository the end-to-end classes read their fixtures from.
+    /// The worker refuses to start without a repository, and these are the fixtures the
+    /// classes resolve; every read is anonymous.
+    /// </summary>
+    public const string FixtureTemplateRepository = "EugenioSerrano/dotnet-report-service-templates";
+
+    /// <summary>The branch of <see cref="FixtureTemplateRepository"/> the fixtures are published on.</summary>
+    public const string FixtureTemplateBranch = "main";
+
     /// <summary>The switch that runs the test's telemetry view without a credential.</summary>
     public const string AnonymousSetting = "ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS";
 
@@ -63,7 +87,11 @@ internal static class TestComposition
 
     /// <summary>Creates the testing builder of the composition, ready to build.</summary>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    /// <param name="arguments">Arguments the AppHost reads as its own configuration.</param>
+    /// <param name="arguments">
+    /// Arguments the AppHost reads as its own configuration. They are placed after the
+    /// composition's own, so a class that states a repository, a branch or any other key
+    /// itself wins: the configuration provider keeps the last value stated for a key.
+    /// </param>
     public static async Task<IDistributedApplicationTestingBuilder> CreateAsync(CancellationToken cancellationToken, params string[] arguments)
     {
         // The receiver's address is resolved here, once for this composition: the
@@ -73,7 +101,15 @@ internal static class TestComposition
         var receiver = RequestedReceiver(Address());
         var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
             new DistributedApplicationTestingBuilderOptions { EnableDashboard = true },
-            arguments,
+            [
+                // The worker's source cannot start without these three, and they are
+                // stated before the caller's own arguments so a class that states a
+                // repository, a branch or another value still wins.
+                $"--Parameters:template-source-token={InertTemplateSourceToken}",
+                $"--TemplateSource:Repository={FixtureTemplateRepository}",
+                $"--TemplateSource:Branch={FixtureTemplateBranch}",
+                .. arguments,
+            ],
             cancellationToken);
 
         // The testing builder starts its telemetry view secured and blanks both receiver
@@ -109,6 +145,13 @@ internal static class TestComposition
         {
             context.EnvironmentVariables[OtlpEndpointVariable] = Text(ContainerReceiver(builder));
         });
+
+        // The source's credential is a parameter of the AppHost, and the value stated above is
+        // only what makes that parameter resolve. The worker is given an empty credential here:
+        // this level reads a public repository and holds no credential, and a non-empty one
+        // would be sent as a bearer credential and refused. The annotation is added after the
+        // AppHost's own, so it is the value the worker's container receives.
+        builder.CreateResourceBuilder(worker).WithEnvironment("TemplateSource__Token", string.Empty);
         return builder;
     }
 
