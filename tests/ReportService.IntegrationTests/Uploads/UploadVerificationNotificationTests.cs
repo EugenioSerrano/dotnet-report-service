@@ -3,7 +3,6 @@ extern alias orchestration;
 using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -41,11 +40,7 @@ namespace ReportService.IntegrationTests.Uploads;
 /// </summary>
 public sealed class UploadVerificationNotificationTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan ExecutionDeadline = TimeSpan.FromMinutes(2);
 
@@ -66,7 +61,7 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
         "report-service-notification",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
 
     private NpgsqlDataSource? _dataSource;
 
@@ -77,6 +72,19 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_root);
         var database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -85,27 +93,8 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(connectionString);
 
-        _engine = ContainerSmoke.Builder(_image, "temporal-notification")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(GrpcPort, assignRandomHostPort: true)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _image, cancellationToken);
-
-        // The host port is the one the container runtime allocated when it published the engine's
-        // port, read back from the running container: a port probed before the container starts is
-        // not reserved by anything, and another class starting its own container in the same
-        // process can take it in between.
-        _hostPort = _engine.GetMappedPublicPort(GrpcPort);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_image.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await ClientAsync(token);
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_image, "temporal-notification", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     /// <inheritdoc />
@@ -118,7 +107,7 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try

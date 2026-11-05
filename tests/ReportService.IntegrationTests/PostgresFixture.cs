@@ -68,19 +68,30 @@ public sealed class PostgresFixture : IAsyncLifetime
             .WithResourceMapping(new FileInfo(InitScriptPath), "/docker-entrypoint-initdb.d/")
             .WithPortBinding(ContainerPort, assignRandomHostPort: true)
             .Build();
-        await ContainerSmoke.StartAsync(_container, _image, cancellationToken);
-        await ReportService.Testing.Wait.UntilAsync(
-            $"PostgreSQL ({_image.Reference}) with the application role",
-            async token =>
-            {
-                await using var connection = new NpgsqlConnection(Bootstrap());
-                await connection.OpenAsync(token);
-                return await connection.ExecuteScalarAsync<long>(
-                    new CommandDefinition("SELECT COUNT(*) FROM pg_roles WHERE rolname = @role", new { role = ApplicationRole }, cancellationToken: token)) == 1;
-            },
-            TimeSpan.FromMinutes(2),
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        try
+        {
+            await ContainerSmoke.StartAsync(
+                _container,
+                _image,
+                token => ReportService.Testing.Wait.UntilAsync(
+                    $"PostgreSQL ({_image.Reference}) with the application role",
+                    async probeToken =>
+                    {
+                        await using var connection = new NpgsqlConnection(Bootstrap());
+                        await connection.OpenAsync(probeToken);
+                        return await connection.ExecuteScalarAsync<long>(
+                            new CommandDefinition("SELECT COUNT(*) FROM pg_roles WHERE rolname = @role", new { role = ApplicationRole }, cancellationToken: probeToken)) == 1;
+                    },
+                    TimeSpan.FromMinutes(2),
+                    TimeSpan.FromSeconds(1),
+                    token),
+                cancellationToken);
+        }
+        catch
+        {
+            _container = null;
+            throw;
+        }
     }
 
     public async ValueTask DisposeAsync()

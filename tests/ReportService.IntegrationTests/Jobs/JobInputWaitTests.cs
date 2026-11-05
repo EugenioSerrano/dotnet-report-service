@@ -7,7 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -58,11 +57,7 @@ namespace ReportService.IntegrationTests.Jobs;
 /// </summary>
 public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(90);
 
@@ -81,7 +76,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
     private int _hostPort;
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
 
     private string? _database;
 
@@ -96,6 +91,19 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -109,27 +117,8 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-input-wait")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(GrpcPort, assignRandomHostPort: true)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
-
-        // The host port is the one the container runtime allocated when it published the
-        // engine's port, read back from the running container: a port probed before the
-        // container starts is not reserved by anything, and another class starting its own
-        // container in the same process can take it in between.
-        _hostPort = _engine.GetMappedPublicPort(GrpcPort);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_engineImage.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await EngineClientAsync(token);
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-input-wait", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     /// <inheritdoc />
@@ -142,7 +131,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try

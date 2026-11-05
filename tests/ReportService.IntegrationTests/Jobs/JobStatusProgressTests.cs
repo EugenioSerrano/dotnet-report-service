@@ -8,7 +8,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -56,8 +55,6 @@ namespace ReportService.IntegrationTests.Jobs;
 /// </summary>
 public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     /// <summary>The consumer the class's jobs belong to.</summary>
     private const string Consumer = "consumer-a";
 
@@ -84,8 +81,6 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
     private static readonly TimeSpan TerminalDeadline = TimeSpan.FromMinutes(3);
 
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
-
     private readonly PostgresFixture _fixture;
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
@@ -97,7 +92,7 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
     private int _hostPort;
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
 
     private string? _database;
 
@@ -120,6 +115,19 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
 
@@ -140,22 +148,8 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-status-progress")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(GrpcPort, assignRandomHostPort: true)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
-        _hostPort = _engine.GetMappedPublicPort(GrpcPort);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_engineImage.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await EngineClientAsync(token);
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-status-progress", cancellationToken);
+        _hostPort = _engine.HostPort;
 
         _api = Api();
         await SeedTakenVersionAsync(cancellationToken);
@@ -176,7 +170,7 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try

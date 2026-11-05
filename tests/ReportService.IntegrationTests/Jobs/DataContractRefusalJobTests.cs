@@ -3,13 +3,11 @@ extern alias orchestration;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,8 +47,6 @@ namespace ReportService.IntegrationTests.Jobs;
 [Trait("Requires", "printing")]
 public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
 
     /// <summary>The template every job of this class is accepted for.</summary>
@@ -92,14 +88,14 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
     private readonly LogCapture _logs = new();
 
-    private readonly int _hostPort = FreePort();
-
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-refusal-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+
+    private int _hostPort;
 
     private string? _database;
 
@@ -124,6 +120,19 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
 
@@ -145,11 +154,8 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-refusal")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-refusal", cancellationToken);
+        _hostPort = _engine.HostPort;
 
         _api = Api();
         _worker = Worker();
@@ -180,7 +186,7 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try
@@ -676,13 +682,6 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         }
 
         return compressed.ToArray();
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 
     /// <summary>One stored job, as the row a consumer's failure is read from.</summary>

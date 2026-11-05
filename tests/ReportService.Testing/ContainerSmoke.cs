@@ -43,4 +43,40 @@ public static class ContainerSmoke
                 $"The container for {image.Reference} did not start: {exception.Message}", exception);
         }
     }
+
+    /// <summary>
+    /// Starts <paramref name="container"/> and then awaits <paramref name="ready"/>.
+    /// A container this helper started is removed when the step after its start
+    /// fails, because the test framework does not dispose a class whose
+    /// initialisation threw: a start failure is removed by the other overload, and
+    /// a readiness failure is removed here before it is rethrown naming the image.
+    /// A cancellation the caller caused is rethrown unchanged, after the removal, so
+    /// cancelling a run never reads as a container fault.
+    /// </summary>
+    public static async Task StartAsync(
+        IContainer container,
+        PinnedImage image,
+        Func<CancellationToken, Task> ready,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(container);
+        ArgumentNullException.ThrowIfNull(image);
+        ArgumentNullException.ThrowIfNull(ready);
+        await StartAsync(container, image, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await ready(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await container.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await container.DisposeAsync().ConfigureAwait(false);
+            throw new InvalidOperationException(
+                $"The container for {image.Reference} started but did not become ready: {exception.Message}", exception);
+        }
+    }
 }

@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Globalization;
 using System.Net;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -233,24 +232,11 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         Directory.CreateDirectory(root);
 
         var image = CompositionPins.Load().WorkflowEngine;
-        var enginePort = FreePort();
-        await using var engine = ContainerSmoke.Builder(image, "temporal-upload-deadline")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(enginePort, GrpcPort)
-            .Build();
         try
         {
-            await ContainerSmoke.StartAsync(engine, image, cancellationToken);
-            await Wait.UntilAsync(
-                $"Temporal gRPC ({image.Reference}) on port {enginePort.ToString(CultureInfo.InvariantCulture)}",
-                async token =>
-                {
-                    var probe = await ConnectAsync(enginePort, token);
-                    return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-                },
-                EngineStartDeadline,
-                TimeSpan.FromSeconds(1),
-                cancellationToken);
+            var engine = await EngineStart.StartAsync(image, "temporal-upload-deadline", cancellationToken);
+            await using var engineOwner = engine.Container;
+            var enginePort = engine.HostPort;
 
             const string UploadId = "upload-00000000000000000000000000000005";
             await using var dataSource = NpgsqlDataSource.Create(connectionString);
@@ -325,10 +311,6 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
             }
         }
     }
-
-    private const int GrpcPort = 7233;
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(90);
 
@@ -499,13 +481,6 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         TemporalClient
             .ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{enginePort.ToString(CultureInfo.InvariantCulture)}") { Namespace = "default" })
             .WaitAsync(cancellationToken);
-
-    private static int FreePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        return ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-    }
 
     // A small body of the shape a verification accepts, compressed on the spot.
     private static byte[] Content()

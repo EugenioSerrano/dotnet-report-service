@@ -1,8 +1,6 @@
 extern alias orchestration;
 
 using System.Net;
-using System.Net.Sockets;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -27,8 +25,6 @@ namespace ReportService.IntegrationTests;
 /// </summary>
 public sealed class WorkerReadinessTests : IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan NotReadyDeadline = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan LostLineDeadline = TimeSpan.FromSeconds(30);
@@ -39,9 +35,9 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
     private static readonly TimeSpan RecoveredLineDeadline = TimeSpan.FromSeconds(90);
 
     private readonly PinnedImage _image = CompositionPins.Load().WorkflowEngine;
-    private readonly int _hostPort = FreePort();
     private readonly LogCapture _logs = new();
-    private IContainer? _engine;
+    private int _hostPort;
+    private EngineStart.Engine? _engine;
 
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
@@ -49,7 +45,7 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
     {
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         _logs.Dispose();
@@ -68,7 +64,7 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
         await AssertOnePollerAsync("report-orchestration", TaskQueueType.Workflow, cancellationToken);
         await AssertOnePollerAsync("report-data", TaskQueueType.Activity, cancellationToken);
 
-        await StopEngineAsync();
+        await StopEngineAsync(cancellationToken);
         await WaitForStatusAsync(client, HttpStatusCode.ServiceUnavailable, NotReadyDeadline, cancellationToken);
         await WaitForLineAsync("engine connection lost", LostLineDeadline, cancellationToken);
 
@@ -86,6 +82,8 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
     public async Task WorkerStartedWithoutAnEngineStaysAliveAndBecomesReadyWhenItAppears()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+        var engine = EngineStart.Prepare(_image, "temporal-readiness");
+        _hostPort = engine.HostPort;
         await using var worker = Worker();
         using var client = worker.CreateClient();
 
@@ -95,7 +93,8 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         }
 
-        await StartEngineAsync(cancellationToken);
+        await EngineStart.StartPreparedAsync(engine, _image, cancellationToken);
+        _engine = engine;
         await WaitForStatusAsync(client, HttpStatusCode.OK, ReadyDeadline, cancellationToken);
 
         Assert.Single(Lines("connected to the workflow engine"));
@@ -114,28 +113,17 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
 
     private async Task StartEngineAsync(CancellationToken cancellationToken)
     {
-        _engine = ContainerSmoke.Builder(_image, "temporal-readiness")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _image, cancellationToken);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_image.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var engine = await TemporalClient.ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}"));
-                return await engine.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        if (_engine is null)
+        {
+            _engine = await EngineStart.StartAsync(_image, "temporal-readiness", cancellationToken);
+            _hostPort = _engine.HostPort;
+            return;
+        }
+
+        await EngineStart.RestartAsync(_engine, _image, cancellationToken);
     }
 
-    private async Task StopEngineAsync()
-    {
-        await _engine!.DisposeAsync();
-        _engine = null;
-    }
+    private Task StopEngineAsync(CancellationToken cancellationToken) => _engine!.Container.StopAsync(cancellationToken);
 
     /// <summary>
     /// States the queue's promise: its engine worker polls it, and
@@ -188,11 +176,4 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
 
     private List<string> Lines(string fragment) =>
         [.. _logs.Lines.Where(l => l.Contains(fragment, StringComparison.Ordinal))];
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
 }

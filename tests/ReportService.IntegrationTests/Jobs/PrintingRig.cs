@@ -3,12 +3,10 @@ extern alias pdf;
 
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
@@ -26,7 +24,6 @@ using ReportService.TemplateSource;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
-using Temporalio.Client;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 using PdfWorker = pdf::ReportService.Workers.Pdf.PdfWorkerProgram;
 
@@ -66,17 +63,11 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>The version whose manifest declares page subtotals.</summary>
     public const string PageTotals = "1.3.0";
 
-    private const int GrpcPort = 7233;
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
-
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromMinutes(2);
 
     private readonly PostgresFixture _fixture;
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
-
-    private readonly int _hostPort = FreePort();
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -89,7 +80,9 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+
+    private int _hostPort;
 
     private TemplateSourceHost? _source;
 
@@ -130,7 +123,16 @@ internal sealed class PrintingRig : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         var rig = new PrintingRig(fixture);
-        await rig.OpenAsync(startOrchestration, cancellationToken);
+        try
+        {
+            await rig.OpenAsync(startOrchestration, cancellationToken);
+        }
+        catch
+        {
+            await rig.DisposeAsync();
+            throw;
+        }
+
         return rig;
     }
 
@@ -309,7 +311,7 @@ internal sealed class PrintingRig : IAsyncDisposable
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         if (_source is not null)
@@ -479,22 +481,8 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private async Task StartEngineAsync(CancellationToken cancellationToken)
     {
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-print")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_engineImage.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await TemporalClient.ConnectAsync(
-                    new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" });
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-print", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     private WebApplicationFactory<Program> Api()
@@ -553,13 +541,6 @@ internal sealed class PrintingRig : IAsyncDisposable
             deadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
 }
 
 /// <summary>One job as the composition's database records it after the run.</summary>

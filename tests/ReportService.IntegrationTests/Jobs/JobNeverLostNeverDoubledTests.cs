@@ -2,10 +2,8 @@ extern alias orchestration;
 
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
@@ -39,8 +37,6 @@ namespace ReportService.IntegrationTests.Jobs;
 [Trait("Requires", "printing")]
 public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
 
     /// <summary>The message a run on a build without the printing steps fails with.</summary>
@@ -55,14 +51,14 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _hostPort = FreePort();
-
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-job-covering-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+
+    private int _hostPort;
 
     private string? _database;
 
@@ -77,6 +73,19 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -90,11 +99,8 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-covering")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-covering", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     /// <inheritdoc />
@@ -107,7 +113,7 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try
@@ -364,12 +370,5 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
                 now,
                 cancellationToken));
         return uploadId;
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 }

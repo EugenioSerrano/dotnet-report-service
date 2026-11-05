@@ -7,7 +7,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
@@ -36,8 +35,6 @@ namespace ReportService.IntegrationTests.Jobs;
 /// </summary>
 public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromMinutes(2);
@@ -54,8 +51,6 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _hostPort = FreePort();
-
     // Everything the child process writes, so a start that fails names its own reason
     // instead of leaving a health check to time out on a refused connection.
     private readonly StringBuilder _apiOutput = new();
@@ -67,7 +62,9 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         "report-service-job-server-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+
+    private int _hostPort;
 
     private Process? _api;
 
@@ -84,6 +81,19 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -97,11 +107,8 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-server")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-server", cancellationToken);
+        _hostPort = _engine.HostPort;
 
         _api = StartApi();
         await WaitForApiAsync(cancellationToken);
@@ -132,7 +139,7 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try
@@ -437,12 +444,5 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
                 now,
                 cancellationToken));
         return uploadId;
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 }

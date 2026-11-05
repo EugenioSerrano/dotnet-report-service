@@ -2,11 +2,9 @@ extern alias orchestration;
 
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
@@ -44,11 +42,7 @@ namespace ReportService.IntegrationTests.Jobs;
 /// </summary>
 public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
-
     private const string Consumer = "dev-consumer";
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(90);
 
@@ -58,14 +52,14 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _hostPort = FreePort();
-
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-job-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+
+    private int _hostPort;
 
     private string? _database;
 
@@ -80,6 +74,19 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -93,21 +100,8 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-job-start")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_engineImage.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await EngineClientAsync(token);
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-start", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     /// <inheritdoc />
@@ -120,7 +114,7 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         try
@@ -510,13 +504,6 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
                 new { IntentId = intentId },
                 cancellationToken: cancellationToken)),
         ];
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 
     /// <summary>One job row, as the table holds it.</summary>

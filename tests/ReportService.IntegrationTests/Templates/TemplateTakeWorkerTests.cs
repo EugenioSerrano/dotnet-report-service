@@ -3,7 +3,6 @@ extern alias pdf;
 using System.Globalization;
 using System.Net;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
@@ -47,7 +46,6 @@ namespace ReportService.IntegrationTests.Templates;
 /// </summary>
 public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
     private const string Owner = "billing-system";
     private const string Other = "reporting-portal";
     private const string Template = "invoice-energy";
@@ -58,13 +56,13 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
 
     private readonly PostgresFixture _fixture;
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
-    private readonly int _enginePort = FreePort();
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-take-worker-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+    private int _hostPort;
     private string _connectionString = string.Empty;
     private NpgsqlDataSource? _dataSource;
     private TemplateSourceHost? _stub;
@@ -81,6 +79,19 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
 
@@ -90,11 +101,8 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-template-take")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_enginePort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-template-take", cancellationToken);
+        _hostPort = _engine.HostPort;
 
         var stub = new GitHubTemplateSourceStub();
         stub.SeedPackage(Template, Version, TemplatePackageFixtures.Valid(Template, Version, Owner));
@@ -104,11 +112,11 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         _stub = await TemplateSourceHost.StartAsync(stub, cancellationToken);
 
         _client = await TemporalClient.ConnectAsync(
-            new TemporalClientConnectOptions($"127.0.0.1:{_enginePort}") { Namespace = "default" }).WaitAsync(cancellationToken);
+            new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
 
         _worker = new WebApplicationFactory<PdfWorker>().WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("Temporal:Address", $"127.0.0.1:{_enginePort}");
+            builder.UseSetting("Temporal:Address", $"127.0.0.1:{_hostPort}");
             builder.UseSetting("Temporal:Namespace", "default");
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
@@ -144,7 +152,14 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         await _testWorkerStop.CancelAsync();
         if (_testWorkerRun is not null)
         {
-            await _testWorkerRun.ConfigureAwait(false);
+            try
+            {
+                await _testWorkerRun.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // The test worker is stopped: that is how it ends.
+            }
         }
 
         _testWorker?.Dispose();
@@ -161,7 +176,7 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         if (_stub is not null)
@@ -303,13 +318,6 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
             """,
             new { TemplateId = templateId, Version = version },
             cancellationToken: cancellationToken));
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 
     /// <summary>One record as the table holds it.</summary>

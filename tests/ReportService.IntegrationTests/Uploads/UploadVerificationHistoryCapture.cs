@@ -1,7 +1,6 @@
 extern alias orchestration;
 
 using System.Globalization;
-using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReportService.ServiceDefaults.Telemetry;
@@ -40,21 +39,17 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
     /// <summary>The variable that names the file the captured history is written to; without it the case is skipped.</summary>
     public const string OutputVariable = "REPORTSERVICE_CAPTURE_WORKFLOW_HISTORY";
 
-    private const int GrpcPort = 7233;
-
     private const string UploadId = "upload-0f1e2d3c4b5a69788796a5b4c3d2e1f0";
 
     private static readonly DateTimeOffset CreatedAt = new(2026, 11, 1, 4, 39, 23, 123, TimeSpan.Zero);
 
     private static readonly DateTimeOffset ConfirmedAt = new(2026, 11, 1, 4, 41, 2, 456, TimeSpan.Zero);
 
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
-
     private static readonly TimeSpan ExecutionDeadline = TimeSpan.FromMinutes(2);
 
     private readonly PinnedImage _image = CompositionPins.Load().WorkflowEngine;
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
 
     private string? _root;
 
@@ -68,7 +63,7 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
     {
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         if (_root is not null)
@@ -218,22 +213,8 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
 
     private async Task StartEngineAsync(CancellationToken cancellationToken)
     {
-        _hostPort = FreePort();
-        _engine = ContainerSmoke.Builder(_image, "temporal-capture")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_hostPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _image, cancellationToken);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_image.Reference}) on port {_hostPort}",
-            async token =>
-            {
-                var probe = await ConnectAsync(token);
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_image, "temporal-capture", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     private Task<TemporalClient> ConnectAsync(CancellationToken cancellationToken) =>
@@ -262,13 +243,6 @@ public sealed class UploadVerificationHistoryCapture : IAsyncLifetime
         }
 
         return buffer.ToArray();
-    }
-
-    private static int FreePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        return ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
     }
 
     /// <summary>The seam the recording uses: the capture holds no waiting job, so nothing is nudged.</summary>

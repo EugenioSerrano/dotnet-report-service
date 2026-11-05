@@ -5,11 +5,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Npgsql;
 using ReportService.Migrations;
 using ReportService.Testing;
-using Temporalio.Client;
 using Temporalio.Common;
 
 namespace ReportService.IntegrationTests.Uploads;
@@ -39,13 +37,9 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
     /// <summary>The heap limit both processes run under: one hundred and twenty-eight mebibytes.</summary>
     public const string HeapLimit = "0x8000000";
 
-    private const int GrpcPort = 7233;
-
     private const int OneGibibyte = 1024 * 1024 * 1024;
 
     private const int SixtyFourMebibytes = 64 * 1024 * 1024;
-
-    private static readonly TimeSpan EngineStartDeadline = TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan ReadinessDeadline = TimeSpan.FromSeconds(90);
 
@@ -85,9 +79,9 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
 
     private readonly PinnedImage _image = CompositionPins.Load().WorkflowEngine;
 
-    private readonly int _grpcPort = FreePort();
+    private EngineStart.Engine? _engine;
 
-    private IContainer? _engine;
+    private int _hostPort;
 
     private string? _database;
 
@@ -97,6 +91,19 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
+    {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         _database = await _fixture.CreateDatabaseAsync(cancellationToken);
@@ -109,22 +116,8 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
         await BuildAsync(ApiProject, cancellationToken);
         await BuildAsync(WorkerProject, cancellationToken);
 
-        _engine = ContainerSmoke.Builder(_image, "temporal-transfer")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_grpcPort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _image, cancellationToken);
-        await Wait.UntilAsync(
-            $"Temporal gRPC ({_image.Reference}) on port {_grpcPort}",
-            async token =>
-            {
-                var probe = await TemporalClient.ConnectAsync(
-                    new TemporalClientConnectOptions($"127.0.0.1:{_grpcPort}") { Namespace = "default" });
-                return await probe.Connection.CheckHealthAsync(options: new RpcOptions { CancellationToken = token });
-            },
-            EngineStartDeadline,
-            TimeSpan.FromSeconds(1),
-            cancellationToken);
+        _engine = await EngineStart.StartAsync(_image, "temporal-transfer", cancellationToken);
+        _hostPort = _engine.HostPort;
     }
 
     /// <inheritdoc />
@@ -132,7 +125,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
     {
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
     }
 
@@ -264,7 +257,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
         var workerEnvironment = new Dictionary<string, string>(shared, StringComparer.Ordinal)
         {
             ["ASPNETCORE_URLS"] = workerUrl,
-            ["Temporal__Address"] = $"127.0.0.1:{_grpcPort}",
+            ["Temporal__Address"] = $"127.0.0.1:{_hostPort}",
             ["Temporal__Namespace"] = "default",
             ["Uploads__MaxUncompressedBytes"] = (4L * 1024 * 1024 * 1024).ToString(CultureInfo.InvariantCulture),
             ["Uploads__Verification__StartToClose"] = "00:10:00",

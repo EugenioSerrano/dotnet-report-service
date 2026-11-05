@@ -3,7 +3,6 @@ extern alias pdf;
 using System.Globalization;
 using System.Net;
 using Dapper;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
@@ -49,7 +48,6 @@ namespace ReportService.IntegrationTests.Templates;
 /// </summary>
 public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
-    private const int GrpcPort = 7233;
     private const string Template = ByNameFixtures.Template;
     private const string TestQueue = "template-by-name-tests";
     private const string DeadlineQueue = "template-by-name-deadline-tests";
@@ -60,14 +58,14 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
     private readonly PostgresFixture _fixture;
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
-    private readonly int _enginePort = FreePort();
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-by-name-it",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
     private readonly LogCapture _logs = new();
 
-    private IContainer? _engine;
+    private EngineStart.Engine? _engine;
+    private int _hostPort;
     private string _connectionString = string.Empty;
     private NpgsqlDataSource? _dataSource;
     private TemplateSourceHost? _stub;
@@ -84,6 +82,19 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            await OpenAsync();
+        }
+        catch
+        {
+            await DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task OpenAsync()
+    {
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_directory);
 
@@ -93,17 +104,14 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
-        _engine = ContainerSmoke.Builder(_engineImage, "temporal-template-by-name")
-            .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
-            .WithPortBinding(_enginePort, GrpcPort)
-            .Build();
-        await ContainerSmoke.StartAsync(_engine, _engineImage, cancellationToken);
+        _engine = await EngineStart.StartAsync(_engineImage, "temporal-template-by-name", cancellationToken);
+        _hostPort = _engine.HostPort;
 
         var stub = new GitHubTemplateSourceStub();
         _stub = await TemplateSourceHost.StartAsync(stub, cancellationToken);
 
         _client = await TemporalClient.ConnectAsync(
-            new TemporalClientConnectOptions($"127.0.0.1:{_enginePort}") { Namespace = "default" }).WaitAsync(cancellationToken);
+            new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
 
         _worker = Worker(ResolutionDeadline);
         await ReadyAsync(_worker, cancellationToken);
@@ -120,7 +128,14 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         await _testWorkerStop.CancelAsync();
         if (_testWorkerRun is not null)
         {
-            await _testWorkerRun.ConfigureAwait(false);
+            try
+            {
+                await _testWorkerRun.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // The test worker is stopped: that is how it ends.
+            }
         }
 
         _testWorker?.Dispose();
@@ -137,7 +152,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
         if (_engine is not null)
         {
-            await _engine.DisposeAsync();
+            await _engine.Container.DisposeAsync();
         }
 
         if (_stub is not null)
@@ -474,7 +489,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     private WebApplicationFactory<PdfWorker> Worker(string resolveDeadline) =>
         new WebApplicationFactory<PdfWorker>().WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("Temporal:Address", $"127.0.0.1:{_enginePort}");
+            builder.UseSetting("Temporal:Address", $"127.0.0.1:{_hostPort}");
             builder.UseSetting("Temporal:Namespace", "default");
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
@@ -541,13 +556,6 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             cancellationToken: cancellationToken));
     }
 
-    private static int FreePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
-
     /// <summary>One record as the table holds it.</summary>
     private sealed class StoredVersion
     {
@@ -579,7 +587,15 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         public async ValueTask DisposeAsync()
         {
             await stop.CancelAsync();
-            await run.ConfigureAwait(false);
+            try
+            {
+                await run.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // The worker was asked to stop, which is how a run of one ends.
+            }
+
             testWorker.Dispose();
             stop.Dispose();
             await worker.DisposeAsync();
