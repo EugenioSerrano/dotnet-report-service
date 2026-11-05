@@ -154,4 +154,8 @@ public enum JobFinalizationOutcome
 /// <summary>The result of closing a job.</summary>
 /// <param name="Outcome">Whether this call ended the job.</param>
 /// <param name="Status">The status the job carries.</param>
-public sealed record JobFinalizationResult(JobFinalizationOutcome Outcome, ReportJobStatus? Status);
+public sealed record JobFinalizationResult(JobFinalizationOutcome Outcome, ReportJobStatus? Status)
+{
+    /// <summary>The code the job ended with, when it ended failed; null otherwise.</summary>
+    public string? ErrorCode { get; init; }
+}

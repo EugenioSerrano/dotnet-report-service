@@ -668,4 +668,6 @@ the best place to understand *why* things are the way they are before
 proposing a change.
 
 Licensed under the [MIT License](LICENSE). Third-party components keep their
-own licences; a notice file accompanies each release.
+own licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) names every
+package the shipped images carry, at the exact version this repository pins,
+with its licence, its copyright line and the notice the licence requires.

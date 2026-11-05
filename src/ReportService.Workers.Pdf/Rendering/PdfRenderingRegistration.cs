@@ -35,6 +35,7 @@ public static class PdfRenderingRegistration
             services.GetRequiredService<ITemplateEngineAdapter>(),
             services.GetRequiredService<TimeProvider>()));
         services.TryAddSingleton<BlockVerifier>();
+        services.TryAddSingleton<PdfRenderingMetrics>();
         services.TryAddSingleton<BrowserSession>();
         services.TryAddSingleton<IPdfPrinter>(services => new ChromiumPdfPrinter(
             services.GetRequiredService<BrowserSession>(),

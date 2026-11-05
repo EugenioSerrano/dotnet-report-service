@@ -83,6 +83,14 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string TemplateResolvePatch = "template-resolve-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the job's printing path: the job's move to
+    /// running, the lookup of its PDF output and the output's own execution. A run recorded
+    /// before it carries no marker for it, so it replays with the patch inactive and
+    /// schedules none of the steps — it reaches its finalising step exactly as it did.
+    /// </summary>
+    public const string PrintingPathPatch = "printing-path-v1";
+
     /// <summary>Runs one job up to its continuation point.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -172,6 +180,56 @@ public sealed class ReportJobWorkflow
                 refusal.Message,
                 ReportJobActivityOptions.Create()).ConfigureAwait(true);
             return;
+        }
+
+        // The step that prints what the data step admitted: the job moves to running, the
+        // one PDF output it asked for is looked up - a workflow reads nothing itself - and
+        // that output is produced by its own execution on the same queue, which prints and
+        // verifies the block and publishes it. A failure of any of the three steps ends the
+        // job with the code the failure carries, so no run stops with the job left running.
+        // The whole path is gated by its own patch, so every recorded run replays unchanged.
+        if (Workflow.Patched(PrintingPathPatch))
+        {
+            try
+            {
+                await Workflow.ExecuteActivityAsync(
+                    (JobTransitionActivities activities) => activities.TransitionJobAsync(
+                        new TransitionJobInput(input.ReportJobId, ReportJobStatus.Running)),
+                    options).ConfigureAwait(true);
+
+                var output = await Workflow.ExecuteActivityAsync(
+                    (PdfOutputActivities activities) => activities.FindPdfOutputAsync(new FindPdfOutputInput(input.ReportJobId)),
+                    options).ConfigureAwait(true);
+
+                await Workflow.ExecuteChildWorkflowAsync(
+                    (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                        new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
+                    new ChildWorkflowOptions
+                    {
+                        Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
+                        ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                    }).ConfigureAwait(true);
+            }
+            catch (ActivityFailureException failure)
+            {
+                await FailAsync(
+                    input.ReportJobId,
+                    ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
+                    "printing-failed",
+                    MessageOf(failure.InnerException),
+                    options).ConfigureAwait(true);
+                return;
+            }
+            catch (ChildWorkflowFailureException failure)
+            {
+                await FailAsync(
+                    input.ReportJobId,
+                    ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
+                    "printing-failed",
+                    MessageOf(failure.InnerException),
+                    options).ConfigureAwait(true);
+                return;
+            }
         }
 
         // The last step of the run: the job is closed from the outcome of its outputs, and
@@ -401,6 +459,18 @@ public sealed class ReportJobWorkflow
             (TemplateResolutionActivities activities) => activities.PinBaselineAsync(new PinBaselineInput(reportJobId)),
             options);
 
+
+    /// <summary>
+    /// The message a job carries for a failure: the product's own text when the failure is
+    /// one of its refusals, and nothing for a failure the product did not write - an
+    /// engine or transport message is not a consumer's diagnostic.
+    /// </summary>
+    /// <param name="failure">The failure the engine reported inside the step's or the child's failure.</param>
+    /// <returns>The message, or <see langword="null"/> when the failure carries none of the product's own.</returns>
+    public static string? MessageOf(Exception? failure) =>
+        failure is ApplicationFailureException application && !string.IsNullOrEmpty(application.Message)
+            ? application.Message
+            : null;
 
     private static Task FailAsync(string reportJobId, string errorCode, string reason, Temporalio.Workflows.ActivityOptions options) =>
         FailAsync(reportJobId, errorCode, reason, null, options);

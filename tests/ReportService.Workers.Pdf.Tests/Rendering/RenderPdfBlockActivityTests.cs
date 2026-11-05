@@ -6,6 +6,7 @@ using ReportService.Data;
 using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Manifest;
@@ -241,7 +242,9 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             new PreparedTemplateCache(),
             new ScribanTemplateAdapter(),
             renderer ?? new FakeRenderer(),
+            new PdfRenderingMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             TimeProvider.System,
+            NullLoggerFactory.Instance,
             NullLogger<RenderPdfBlockActivity>.Instance,
             Path.Combine(root, "scratch"));
     }

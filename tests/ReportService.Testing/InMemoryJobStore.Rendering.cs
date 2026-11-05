@@ -293,7 +293,10 @@ public sealed partial class InMemoryJobStore
                 ErrorReason = failed is null ? null : "output-failed",
                 FinishedAt = now.ToUniversalTime(),
             };
-            return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, status));
+            return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
+            {
+                ErrorCode = failed?.ErrorCode,
+            });
         }
     }
 

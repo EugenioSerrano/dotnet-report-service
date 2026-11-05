@@ -112,3 +112,68 @@ A schema that cannot be used at all ends the job with `TEMPLATE_INVALID` instead
 in one attempt, and the message names `schema.json` and the rule. The reasons, the
 shape of a snapshot and the whole diagnostic are in
 [data-contract.md](data-contract.md).
+
+## What the document may print, and what it is checked for
+
+Every printed PDF is compared with the document the template produced: each row
+once, in the snapshot's order, with every character of its text. Three
+constraints follow from that, and a template that breaks one is refused when its
+sample is verified — never silenced at print time.
+
+1. **Print the text; do not generate or hide it.** Text that only CSS adds
+   (`content`, list markers, `text-transform`) is not in the document the
+   verification compares against; text that CSS hides (`display: none`) is in it
+   and is not printed. Both make the verification fail. Hyphenation is the same
+   case: it breaks a word into two differently spelled halves.
+2. **Declare what you print as it is.** `outputs.pdf.verification.anchors`
+   names, as member paths, the header and record fields the template prints
+   without changing them:
+
+   ```yaml
+   outputs:
+     pdf:
+       verification:
+         anchors:
+           header: ["$.reportTitle", "$.customer.name"]
+           item: ["$.sequence", "$.description"]
+   ```
+
+   A declared field's value is read from the block and looked for in the printed
+   text. A value that is missing, null, a boolean, an object or an array is not
+   checked; a string or a number is. The list is **required**: a version that
+   declares no list cannot be verified and is refused before anything is printed.
+   An empty list is honoured — a template that prints no field as it is declares
+   `header: []` and `item: []` and relies on the text comparison alone.
+   Characters the browser does not paint (soft hyphens, zero-width characters,
+   bidirectional controls) inside a declared value make the check fail; keep them
+   out of the data a template prints.
+3. **Name one font family, and let the page break where it must.** Fonts come
+   from the image (Liberation Sans) or from the package; nothing is fetched from
+   the network. A row taller than the page continues on the following pages, and
+   its amount prints on the page the row started on. A grid cell aligned to the
+   bottom of a page cannot be split and is refused when a version is taken.
+
+## The values a template can read
+
+The document is composed in block mode, and the same context is available to
+every part of the template:
+
+| Name | What it holds |
+|------|---------------|
+| `header` | the snapshot's header, as it was received |
+| `item` | one record, for `row` (absent from the document parts) |
+| `group` | the group a record is in, for `groupStart` and `groupEnd`, when the manifest declares a group key |
+| `block` | `index` (0 for the first block), `recordCount`, `firstRecordOrdinal`, `isFirst`, `isLast` |
+| `aggregates` | currently empty: no accumulator is declared by the templates this release prints |
+| `render` | `culture`, `timeZone` and `clock`, fixed for the whole job |
+
+Values are plain: objects, arrays, strings, booleans and null; a number is the
+invariant text of its exact decimal, so `0.10` prints as `0.10` and never as
+`0.1`. Every value is HTML-encoded when the template escapes it; printing a
+value without escaping is the template author's decision and is visible in the
+template. No formatting function of the host is available: format in the
+template or in the data.
+
+Templates are written for one engine, named by the manifest. This release prints
+with the Scriban adapter; the other engines arrive with their own adapter and
+the same context.

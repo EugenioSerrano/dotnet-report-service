@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A report job prints the PDF it reports on and publishes it, once: an accepted job over a
+  ready snapshot reads the snapshot, partitions it into one block and its index page,
+  composes the block with the engine of the template version the job pinned, prints it on
+  the browser's own native layout, verifies the printed document, and publishes exactly one
+  output-class artifact. The job ends `succeeded` when its output does, and `failed` with the
+  output's code when it does not; the render reads only the taken copy, so a template source
+  that is unreachable after the version was taken changes nothing.
+- Every printed PDF is verified before it is published: each record's row is printed once,
+  in the snapshot's order, every declared field is printed as it is, every character of the
+  composed text is in the document, and a document has at least one page with a word on
+  every page. A document that fails is never published and never retried. What is checked,
+  with which reader and why is documented in
+  [docs/pdf-verification.md](docs/pdf-verification.md).
+- A template declares the fields it prints as they are under
+  `outputs.pdf.verification.anchors`, and a version that declares none is refused before
+  anything is printed. The constraints the verification puts on a template — no generated or
+  hidden text, no hyphenation, one named font family — and the values a template can read
+  are documented in [docs/template-authoring.md](docs/template-authoring.md).
+- [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) names every package the shipped worker
+  images carry, at the exact version this repository pins, with its licence, its copyright
+  line and the notice the licence requires, including the material PdfPig bundles and the
+  colour profile it embeds.
+- The rendering regression suite prints the core set of documents and judges every one of
+  them with an independent reader as well as with the product's own verification, failing on
+  any disagreement, and keeps a known-bad table document as a permanent case.
+
 - A job's template version is fixed once, right after the request is accepted, and never
   again: a version already taken is bound with one read of the service's records without
   reading the source at all, one that is not taken is taken from the configured repository
@@ -33,6 +59,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The job's run continues past its data step: it moves the job to running, starts the
+  output's own execution, and closes the job from the output's outcome. The steps are gated
+  by a patch, so every history recorded before them still replays unchanged.
+- `report_service.artifacts` and `report_service.pdf_part_commits` are written by the render
+  and the publication; `partitions` by the data step. An output is published once, under the
+  guard that refuses a job that is ending and an output that is no longer running.
+- The telemetry of a printed block now carries the four phases of a render as a histogram,
+  a verification outcome counter with its failure class, a page-count histogram and the
+  count of aborted browser requests.
 - `report_jobs` gains `error_message` (at most 1 000 characters), and
   `template_references` gains the by-name baseline and the pin: the resolved version, the
   commit, the package hash, the engine and its version, the schema reference and the instant

@@ -107,6 +107,50 @@ public sealed class OrchestrationWorkerCompositionTests
         }
     }
 
+    [Fact]
+    public void ThePrintingStepsArePlannedOnTheOrchestrationQueueAndAddNoQueue()
+    {
+        var root = Directory.CreateTempSubdirectory("worker-composition-");
+        try
+        {
+            var builder = Host.CreateApplicationBuilder();
+            builder.Configuration.AddInMemoryCollection(Settings(root.FullName));
+            builder.ConfigureContainer(new DefaultServiceProviderFactory(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
+            OrchestrationWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+            var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
+            var plan = WorkerPlan.Plan(
+                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                registrations);
+
+            // One engine worker still serves the orchestration queue, and the output's own
+            // execution and the steps of a publication are part of it: nothing is added to
+            // another queue, and the render itself is served by the PDF worker.
+            var orchestration = Assert.Single(plan, worker => worker.Queue == ReportJobWorkflow.OrchestrationQueue);
+            var activities = orchestration.Options.Activities.Select(activity => activity.Name).ToList();
+            Assert.Contains(PdfOutputActivities.FindPdfOutputName, activities);
+            Assert.Contains(PdfOutputActivities.PublishOutputName, activities);
+            Assert.Contains(JobTransitionActivities.TransitionOutputName, activities);
+            Assert.Contains(JobTransitionActivities.FailOutputName, activities);
+            Assert.Contains(JobTransitionActivities.FinalizeJobName, activities);
+            Assert.DoesNotContain(PdfOutputStepContracts.RenderPdfBlock, activities);
+            Assert.Contains(
+                orchestration.Options.Workflows,
+                workflow => workflow.Name == ReportPdfOutputWorkflow.WorkflowType);
+
+            var data = Assert.Single(plan, worker => worker.Queue == "report-data");
+            Assert.DoesNotContain(
+                data.Options.Activities,
+                activity => activity.Name is PdfOutputActivities.PublishOutputName or PdfOutputStepContracts.RenderPdfBlock);
+        }
+        finally
+        {
+            root.Delete(true);
+        }
+    }
+
     /// <summary>The settings the process needs, at the values the worker's own defaults carry.</summary>
     private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)
     {

@@ -539,7 +539,10 @@ public sealed partial class PostgresJobStore
                 CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return new JobFinalizationResult(JobFinalizationOutcome.Applied, status);
+            return new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
+            {
+                ErrorCode = failed?.ErrorCode,
+            };
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {

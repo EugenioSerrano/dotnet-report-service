@@ -97,6 +97,7 @@ public static class OrchestrationWorkerRegistration
         builder.AddValidatedConfiguration<InputWaitOptions>(InputWaitOptions.SectionPath);
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
+        builder.Services.AddSingleton<PdfOutputActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<InputWaitSignalActivities>();
         builder.Services.AddSingleton<TemplateResolutionActivities>();
@@ -121,8 +122,10 @@ public static class OrchestrationWorkerRegistration
                 ReportJobWorkflow.Configure(inputWait.Backstop, inputWait.ContinueAsNewAfter);
 
                 options.AddWorkflow<ReportJobWorkflow>();
+                options.AddWorkflow<ReportPdfOutputWorkflow>();
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
+                options.AddAllActivities(provider.GetRequiredService<PdfOutputActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
                 options.AddAllActivities(provider.GetRequiredService<TemplateResolutionActivities>());

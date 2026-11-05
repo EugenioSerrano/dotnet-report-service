@@ -3,6 +3,7 @@ using ReportService.Data;
 using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
@@ -44,7 +45,9 @@ public sealed class RenderPdfBlockActivity(
     PreparedTemplateCache prepared,
     ITemplateEngineAdapter adapter,
     IBlockRenderer renderer,
+    PdfRenderingMetrics metrics,
     TimeProvider clock,
+    ILoggerFactory loggers,
     ILogger<RenderPdfBlockActivity> logger,
     string? scratchRoot = null)
 {
@@ -74,6 +77,13 @@ public sealed class RenderPdfBlockActivity(
     {
         ArgumentNullException.ThrowIfNull(input);
         var cancellationToken = ActivityExecutionContext.Current.CancellationToken;
+
+        // The unit of work every log line and span of this step belongs to, and the two
+        // facts a span needs beside the job's own identifier: the output it produces and
+        // the block it prints. Neither is a metric dimension.
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+        System.Diagnostics.Activity.Current?.SetTag("output.id", input.OutputId);
+        System.Diagnostics.Activity.Current?.SetTag("block.index", input.BlockIndex);
 
         var existing = await jobs.FindPartAsync(input.OutputId, input.BlockIndex, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
@@ -195,6 +205,7 @@ public sealed class RenderPdfBlockActivity(
                 work.Path);
 
             var outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            RecordTheRender(outcome);
             if (!outcome.Passed)
             {
                 throw VerificationFailed(input, outcome);
@@ -209,12 +220,17 @@ public sealed class RenderPdfBlockActivity(
             var key = ObjectKey.FromSegments("outputs", input.ReportJobId, input.OutputId, attemptId);
 
             ObjectWrite written;
+            var storeStarted = System.Diagnostics.Stopwatch.GetTimestamp();
             await using (var content = new FileStream(outcome.PdfPath!, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16))
             {
                 var write = await objects.WriteAsync(key, content, cancellationToken).ConfigureAwait(false);
                 written = write.Value
                     ?? throw new InvalidOperationException("the storage provider reported success without an object");
             }
+
+            metrics.BlockPhase(
+                PdfRenderingMetrics.StorePhase,
+                System.Diagnostics.Stopwatch.GetElapsedTime(storeStarted));
 
             if (written.Size != outcome.SizeBytes || !string.Equals(written.Sha256, outcome.Sha256, StringComparison.Ordinal))
             {
@@ -252,6 +268,29 @@ public sealed class RenderPdfBlockActivity(
                         input.OutputId);
                     throw Refuse(ExecutionFailed, "the output is no longer running");
             }
+        }
+    }
+
+    // The four phases and the verdict of one render, as §11 names them: the durations of the
+    // composition, the print, the verification and the store, the outcome with its class, the
+    // pages the block holds, and the requests the document made that were aborted.
+    private void RecordTheRender(BlockRenderOutcome outcome)
+    {
+        var verification = outcome.Verification;
+        metrics.BlockPhase(PdfRenderingMetrics.ComposePhase, TimeSpan.FromMilliseconds(outcome.ComposeMs));
+        if (outcome.Print is { } print)
+        {
+            metrics.BlockPhase(PdfRenderingMetrics.PrintPhase, print.Duration);
+            metrics.AbortedRequests(print.AbortedRequests);
+        }
+
+        metrics.BlockPhase(
+            PdfRenderingMetrics.VerifyPhase,
+            TimeSpan.FromMilliseconds(verification.ReadAndAlignMs + verification.SourceChecksMs));
+        metrics.VerificationOutcome(verification.Passed, verification.Reason);
+        if (verification.Pages > 0)
+        {
+            metrics.Pages(verification.Pages);
         }
     }
 

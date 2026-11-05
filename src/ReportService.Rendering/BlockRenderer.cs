@@ -39,6 +39,9 @@ public sealed record BlockRenderOutcome(
 {
     /// <summary>Whether the block may be committed and published.</summary>
     public bool Passed => Verification.Passed && PdfPath is not null;
+
+    /// <summary>How long composing the block took, in milliseconds; zero when it was refused before composing.</summary>
+    public double ComposeMs { get; init; }
 }
 
 /// <summary>The product's one way to render a block: compose, check, print and verify it.</summary>
@@ -64,6 +67,10 @@ public sealed class BlockRenderer(
     IPdfPrinter printer,
     BlockVerifier verifier) : IBlockRenderer
 {
+    /// <summary>The product's one activity source: the phases of a render are its spans.</summary>
+    private const string ActivitySourceName = "ReportService";
+
+    private static readonly System.Diagnostics.ActivitySource Source = new(ActivitySourceName);
     /// <summary>Renders <paramref name="request"/>.</summary>
     /// <param name="request">The block, its facts and the package to compose it with.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
@@ -95,7 +102,7 @@ public sealed class BlockRenderer(
             return Refused(blockIndex, VerificationReasons.AnchorsUndeclared);
         }
 
-        var composed = composer.Compose(request.Composition, cancellationToken);
+        var composed = Compose(request, cancellationToken, out var composeMs);
         if (blockMutation is not null)
         {
             composed = blockMutation.Apply(composed);
@@ -111,7 +118,16 @@ public sealed class BlockRenderer(
             request.Manifest.Pdf.Verification,
             request.IsFirstBlock);
 
-        var sourceChecks = verifier.CheckSource(source, out var sourceChecksMs);
+        SourceCheckOutcome sourceChecks;
+        long sourceChecksMs;
+        using (var sourceSpan = Source.StartActivity("verify"))
+        {
+            sourceSpan?.SetTag("block.index", blockIndex);
+            sourceSpan?.SetTag("phase", "source-checks");
+            sourceChecks = verifier.CheckSource(source, out sourceChecksMs);
+            sourceSpan?.SetTag("verification.passed", sourceChecks.Passed);
+        }
+
         if (!sourceChecks.Passed)
         {
             return new BlockRenderOutcome(
@@ -131,26 +147,51 @@ public sealed class BlockRenderer(
                     Pages: 0,
                     Words: 0,
                     ReadAndAlignMs: 0,
-                    SourceChecksMs: sourceChecksMs));
+                    SourceChecksMs: sourceChecksMs))
+            {
+                ComposeMs = composeMs,
+            };
         }
 
         Directory.CreateDirectory(request.WorkDirectory);
         var pdfPath = Path.Combine(request.WorkDirectory, "block-" + blockIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".pdf");
         var html = htmlMutation is null ? composed.Text : htmlMutation.Apply(composed.Text);
-        var print = await printer.PrintAsync(html, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
 
-        var verification = verifier.Verify(new PrintedCheckInput(
-            pdfPath,
-            blockIndex,
-            PlacementConvention.FromMillimetres(request.Manifest.Pdf.MarginMm),
-            composed,
-            text,
-            sourceChecksMs));
+        PrintOutcome print;
+        using (var printSpan = Source.StartActivity("print"))
+        {
+            printSpan?.SetTag("block.index", blockIndex);
+            print = await printer.PrintAsync(html, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
+            printSpan?.SetTag("print.aborted_requests", print.AbortedRequests);
+            printSpan?.SetTag("print.console_errors", print.ConsoleErrors);
+        }
+
+        VerificationResult verification;
+        using (var verifySpan = Source.StartActivity("verify"))
+        {
+            verifySpan?.SetTag("block.index", blockIndex);
+            verification = verifier.Verify(new PrintedCheckInput(
+                pdfPath,
+                blockIndex,
+                PlacementConvention.FromMillimetres(request.Manifest.Pdf.MarginMm),
+                composed,
+                text,
+                sourceChecksMs));
+            verifySpan?.SetTag("verification.passed", verification.Passed);
+            verifySpan?.SetTag("verification.pages", verification.Pages);
+            if (verification.Reason is { } reason)
+            {
+                verifySpan?.SetTag("verification.reason", reason);
+            }
+        }
 
         if (!verification.Passed)
         {
             Delete(pdfPath);
-            return new BlockRenderOutcome(null, 0, null, print, verification);
+            return new BlockRenderOutcome(null, 0, null, print, verification)
+            {
+                ComposeMs = composeMs,
+            };
         }
 
         var bytes = await File.ReadAllBytesAsync(pdfPath, cancellationToken).ConfigureAwait(false);
@@ -159,7 +200,26 @@ public sealed class BlockRenderer(
             bytes.LongLength,
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
             print,
-            verification);
+            verification)
+        {
+            ComposeMs = composeMs,
+        };
+    }
+
+    private ComposedBlock Compose(BlockRenderRequest request, CancellationToken cancellationToken, out double composeMs)
+    {
+        using var span = Source.StartActivity("compose");
+        span?.SetTag("block.index", request.BlockIndex);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        try
+        {
+            return composer.Compose(request.Composition, cancellationToken);
+        }
+        finally
+        {
+            composeMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            span?.SetTag("compose.duration_ms", composeMs);
+        }
     }
 
     private static BlockRenderOutcome Refused(int blockIndex, string reason) =>

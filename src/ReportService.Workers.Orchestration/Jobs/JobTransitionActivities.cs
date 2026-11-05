@@ -110,11 +110,27 @@ public sealed class JobTransitionActivities(
 
         if (result.Status is { } status)
         {
+            // The one line that says how the job ended, with the code it ended on: a job
+            // closed from a failed output carries that output's code, and one whose
+            // outputs all succeeded carries none. The outcome metric is recorded only for
+            // the call that wrote the closure, so a retried finalisation adds nothing.
+            logger.LogInformation(
+                "Job {ReportJobId} ended {Status} ({ErrorCode}): {Outcome}",
+                input.ReportJobId,
+                ReportJobMetricsName(status),
+                result.ErrorCode ?? OrchestrationMetrics.NoCode,
+                result.Outcome);
+
             logger.LogInformation(
                 "Job {ReportJobId} finalization: {Outcome} ({Status})",
                 input.ReportJobId,
                 result.Outcome,
                 ReportJobMetricsName(status));
+
+            if (result.Outcome == JobFinalizationOutcome.Applied)
+            {
+                metrics.JobOutcome(ReportJobMetricsName(status), result.ErrorCode ?? OrchestrationMetrics.NoCode);
+            }
         }
         else
         {
