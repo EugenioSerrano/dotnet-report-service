@@ -5,11 +5,20 @@ using System.Text.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Dapper;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
+using ReportService.Storage;
+using ReportService.Storage.Filesystem;
+using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource;
+using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Take;
 using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 
 namespace ReportService.EndToEndTests;
@@ -282,10 +291,18 @@ public sealed class ReportJobAcceptanceEndToEndTests : IDisposable
 
 /// <summary>
 /// The second half of the same story on a build that can print: the job accepted on the
-/// running composition reaches a terminal status, <c>SUCCEEDED</c> for these inputs. It
-/// carries the trait that keeps it out of a run that cannot print, and when the steps
+/// running composition reaches a terminal status, <c>SUCCEEDED</c> for these inputs.
+/// <para>
+/// The version the job prints is taken before the job is submitted — the same state a second
+/// job over an already-taken version is in — because the composition's render worker is a
+/// container and the template source is outside it. The class therefore never needs the
+/// source, and the document it uploads is that version's own sample.
+/// </para>
+/// <para>
+/// It carries the trait that keeps it out of a run that cannot print, and when the steps
 /// that print are not on the build it runs on, it fails by name instead of passing as a
 /// covering run that never covered anything.
+/// </para>
 /// </summary>
 [Trait("Requires", "printing")]
 public sealed class ReportJobCompletionEndToEndTests : IDisposable
@@ -293,6 +310,20 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
     /// <summary>The message a run on a build without the printing steps fails with.</summary>
     public const string PrintingNotOnThisCommit =
         "printing is not on this commit: the accepted job's execution ended with the job still queued, so the steps that take a ready input to its end are not part of this build, and this run cannot be a covering run.";
+
+    // The version this class takes for itself, and the consumer the composition's registry
+    // holds: the owner the taken copy is recorded with, the identity the upload and the job
+    // are sent as, and the version the request names, all stated once.
+    private const string Consumer = "consumer-a";
+
+    private const string Template = "pilot-simple";
+
+    private const string Version = "1.0.0";
+
+    // The sample document the job's data is: the version's own, uploaded unchanged. It is the
+    // one file of the template package the class leaves out, because the package is what the
+    // render reads and the sample is what the case sends.
+    private const string SamplePath = "sample.json";
 
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
 
@@ -335,17 +366,32 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
 
         var connectionString = await app.GetConnectionStringAsync("reportservice", cancellationToken)
             ?? throw new InvalidOperationException("the composition had no connection string for its metadata database");
+        await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        var storage = FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = StorageRoot(), CreateIfMissing = true },
+            StorageRoot(),
+            TimeProvider.System,
+            NullLogger<FilesystemObjectStore>.Instance);
+        var versions = new PostgresTemplateVersionStore(dataSource);
         using var api = app.CreateHttpClient("api");
-        var uploadId = await ReadyUploadAsync(api, cancellationToken);
+
+        // The version is taken before the upload and before the job: the API cannot accept a
+        // job for a version its records do not hold yet.
+        await TakenAsync(dataSource, versions, storage, cancellationToken);
+
+        var sample = await File.ReadAllBytesAsync(
+            Path.Combine(RepositoryPaths.Root, "samples", "templates", Template, SamplePath),
+            cancellationToken);
+        var uploadId = await ReadyUploadAsync(api, sample, cancellationToken);
 
         using var accepted = await api.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
             {
                 Content = new StringContent(
-                    $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{uploadId}}","profile":"header-items-v1"},"outputs":["pdf"]}""",
+                    $$"""{"template":{"id":"{{Template}}","version":"{{Version}}"},"data":{"uploadId":"{{uploadId}}","profile":"header-items-v1"},"outputs":["pdf"]}""",
                     Encoding.UTF8,
                     "application/json"),
-                Headers = { { ConsumerIdentity.HeaderName, "consumer-a" } },
+                Headers = { { ConsumerIdentity.HeaderName, Consumer } },
             },
             cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, accepted.StatusCode);
@@ -381,26 +427,26 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         Assert.Equal("SUCCEEDED", status);
     }
 
-    private static async Task<string> ReadyUploadAsync(HttpClient api, CancellationToken cancellationToken)
+    private static async Task<string> ReadyUploadAsync(HttpClient api, byte[] document, CancellationToken cancellationToken)
     {
         using var created = await api.SendAsync(
             new HttpRequestMessage(HttpMethod.Post, new Uri(UploadEndpoints.RoutePrefix, UriKind.Relative))
             {
                 Content = new StringContent("""{"profile":"header-items-v1","mode":"API_STREAM"}""", Encoding.UTF8, "application/json"),
-                Headers = { { ConsumerIdentity.HeaderName, "consumer-a" } },
+                Headers = { { ConsumerIdentity.HeaderName, Consumer } },
             },
             cancellationToken);
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         using var createdDocument = JsonDocument.Parse(await created.Content.ReadAsStringAsync(cancellationToken));
         var uploadId = createdDocument.RootElement.GetProperty("uploadId").GetString()!;
 
-        var content = new ByteArrayContent(Encoding.UTF8.GetBytes("""{"header":{},"items":[{"id":1,"v":17}]}"""));
+        var content = new ByteArrayContent(document);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(CreateUploadRequestReader.JsonMediaType);
         using var request = new HttpRequestMessage(HttpMethod.Put, new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}/content", UriKind.Relative))
         {
             Content = content,
         };
-        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, "consumer-a");
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
         using (var sent = await api.SendAsync(request, cancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, sent.StatusCode);
@@ -412,7 +458,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
                 // The declared hash is optional: an empty object declares nothing, and a
                 // member whose value is null is refused as malformed.
                 Content = new StringContent("{}", Encoding.UTF8, CreateUploadRequestReader.JsonMediaType),
-                Headers = { { ConsumerIdentity.HeaderName, "consumer-a" } },
+                Headers = { { ConsumerIdentity.HeaderName, Consumer } },
             },
             cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, confirmed.StatusCode);
@@ -422,7 +468,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
             async token =>
             {
                 using var read = new HttpRequestMessage(HttpMethod.Get, new Uri($"{UploadEndpoints.RoutePrefix}/{uploadId}", UriKind.Relative));
-                read.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, "consumer-a");
+                read.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
                 using var response = await api.SendAsync(read, token);
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
@@ -437,6 +483,86 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
             cancellationToken);
         return uploadId;
     }
+
+    // The version the job prints, taken here in the test process with the product's own take:
+    // the client dials the loopback stand-in this process serves, and the take writes the
+    // version's bytes to the composition's shared storage root and its record to the
+    // composition's metadata database, so every process of the composition sees the taken
+    // copy. The render worker container never reads a template source.
+    private static async Task TakenAsync(
+        NpgsqlDataSource dataSource,
+        PostgresTemplateVersionStore versions,
+        IObjectStore storage,
+        CancellationToken cancellationToken)
+    {
+        var stub = new GitHubTemplateSourceStub();
+        stub.SeedPackage(Template, Version, PackageFiles());
+        await using var source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+
+        var options = source.Options();
+        using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        var take = new TemplateTake(
+            new GitHubTemplateSource(client, options),
+            versions,
+            storage,
+            new TemplateManifestReader(),
+            new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
+            [],
+            new TemplateTakeMetrics(),
+            TimeProvider.System,
+            Options.Create(options),
+            NullLogger<TemplateTake>.Instance);
+
+        var outcome = await take.TakeAsync(Template, Version, Consumer, commit: null, reportJobId: null, cancellationToken);
+        Assert.NotNull(outcome.Record);
+        Assert.Equal(Version, outcome.Record!.Version);
+        Assert.Equal(Consumer, outcome.Record.OwnerConsumerId);
+    }
+
+    // The sample template's own package, with the corrections these cases need: the owner, one
+    // named font family, and the version printed in the header. The stylesheet link is the
+    // sample's own (relative to the package root), and the sample document itself is left out
+    // because it is the case's upload rather than a part of what the render reads.
+    private static Dictionary<string, byte[]> PackageFiles()
+    {
+        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+            if (string.Equals(relative, SamplePath, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var text = File.ReadAllText(file);
+            if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
+            {
+                text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
+            }
+
+            if (string.Equals(relative, "html/styles.css", StringComparison.Ordinal))
+            {
+                text = text.Replace("font-family: sans-serif;", "font-family: \"Liberation Sans\";", StringComparison.Ordinal);
+            }
+
+            if (string.Equals(relative, "html/document-start.html.sbn", StringComparison.Ordinal))
+            {
+                text = text.Replace(
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>",
+                    "<h1>{{ header.reportTitle | html.escape }}</h1>\n  <p class=\"template-version\">" + Template + " " + Version + "</p>",
+                    StringComparison.Ordinal);
+            }
+
+            files[relative] = Encoding.UTF8.GetBytes(text);
+        }
+
+        return files;
+    }
+
+    // The composition's one storage root, shared by every process of the run and mounted into
+    // the render worker.
+    private static string StorageRoot() => Path.Combine(RepositoryPaths.Root, ".storage");
 
     private static async Task<string?> StatusAsync(string connectionString, string reportJobId, CancellationToken cancellationToken)
     {
