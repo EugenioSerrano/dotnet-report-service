@@ -24,7 +24,7 @@ namespace ReportService.TemplatePackages.Records;
 /// <param name="FileCount">How many files the package holds.</param>
 /// <param name="ObjectKey">The content-addressed key the package is stored under.</param>
 /// <param name="Manifest">The typed view of the stored manifest.</param>
-/// <param name="ManifestJson">The stored manifest, whole and canonical.</param>
+/// <param name="ManifestJson">The manifest document as JSON text, every member and every value the take read, with member order and spacing left to the storage.</param>
 /// <param name="TakenAt">When the version was taken.</param>
 public sealed record TemplateVersionRecord(
     string TemplateId,

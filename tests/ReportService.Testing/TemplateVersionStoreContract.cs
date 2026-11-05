@@ -1,4 +1,5 @@
 using ReportService.TemplatePackages.Records;
+using ReportService.Testing.Manifests;
 
 namespace ReportService.Testing;
 
@@ -47,7 +48,11 @@ public abstract class TemplateVersionStoreContract
         Assert.Equal(written.PackageSize, found.PackageSize);
         Assert.Equal(written.FileCount, found.FileCount);
         Assert.Equal(written.ObjectKey, found.ObjectKey);
-        Assert.Equal(written.ManifestJson, found.ManifestJson);
+        Assert.True(
+            ManifestDocuments.AreTheSameDocument(written.ManifestJson, found.ManifestJson),
+            $"the manifest of the version found is not the document that was written.{Environment.NewLine}"
+            + $"written: {written.ManifestJson}{Environment.NewLine}"
+            + $"found: {found.ManifestJson}");
         Assert.Equal(written.TakenAt, found.TakenAt);
     }
 
@@ -100,7 +105,11 @@ public abstract class TemplateVersionStoreContract
         Assert.All(records, record => Assert.Equal(one.TemplateId, record.TemplateId));
         Assert.Equal(one.PackageSha256, records[0].PackageSha256);
         Assert.Equal(one.Engine, records[0].Engine);
-        Assert.Equal(one.ManifestJson, records[0].ManifestJson);
+        Assert.True(
+            ManifestDocuments.AreTheSameDocument(one.ManifestJson, records[0].ManifestJson),
+            $"the manifest of the version listed is not the document that was written.{Environment.NewLine}"
+            + $"written: {one.ManifestJson}{Environment.NewLine}"
+            + $"listed: {records[0].ManifestJson}");
     }
 
     [Fact]
