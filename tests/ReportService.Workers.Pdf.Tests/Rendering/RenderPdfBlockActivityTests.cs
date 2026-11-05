@@ -240,6 +240,50 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
     }
 
     [Fact]
+    public async Task ABlockWhosePackageDeclaresNoFieldIsRefusedBeforeItIsComposed()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var withoutTheDeclaration = record with
+        {
+            Manifest = record.Manifest with
+            {
+                Outputs = record.Manifest.Outputs! with
+                {
+                    Pdf = record.Manifest.Outputs!.Pdf! with { Verification = null },
+                },
+            },
+        };
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var printer = new PrinterThatMustNotPrint();
+        var renderer = new BlockRenderer(
+            new BlockComposer(new ScribanTemplateAdapter(), TimeProvider.System),
+            printer,
+            new BlockVerifier());
+        var activity = Activity(jobs, new FakeVersionStore { Record = withoutTheDeclaration }, renderer, storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        // A taken copy whose manifest declares no field it prints as it is cannot be bound to
+        // its data: the step fails closed with the print class, before composing, so nothing
+        // is printed, committed or written under the output namespace.
+        Assert.Equal("PAGINATION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Null(jobs.Committed);
+        Assert.False(
+            Directory.Exists(Path.Combine(root, "store", "outputs")),
+            "a refused block wrote an object under the output namespace");
+        Assert.False(printer.Called, "a package that declares no field it prints as it is must be refused before printing");
+    }
+
+    [Fact]
     public async Task ATakenCopyThatIsNotThereIsRefused()
     {
         var storage = await StorageAsync();
@@ -261,7 +305,7 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
     private RenderPdfBlockActivity Activity(
         FakeJobStore jobs,
         FakeVersionStore? versions = null,
-        FakeRenderer? renderer = null,
+        IBlockRenderer? renderer = null,
         IObjectStore? store = null,
         PdfRenderingMetrics? metrics = null)
     {
@@ -497,6 +541,25 @@ internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
             Print: print,
             new VerificationResult(true, null, 0, null, null, null, null, null, 2, 10, 1, 1));
+    }
+}
+
+/// <summary>
+/// The printer as a refusal must leave it: a package refused before composing never
+/// reaches the printer, so any call is the failure the case is watching for.
+/// </summary>
+internal sealed class PrinterThatMustNotPrint : IPdfPrinter
+{
+    public bool Called { get; private set; }
+
+    public Task<PrintOutcome> PrintAsync(
+        string html,
+        ITemplatePackageFiles files,
+        string pdfPath,
+        CancellationToken cancellationToken = default)
+    {
+        Called = true;
+        return Task.FromResult(new PrintOutcome(pdfPath, AbortedRequests: 0, ConsoleErrors: 0, TimeSpan.Zero));
     }
 }
 
