@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ReportService.Templates\ReportService.Templates.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>
 
   <ItemGroup>

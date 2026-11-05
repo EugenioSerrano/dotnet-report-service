@@ -23,6 +23,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 

@@ -23,6 +23,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="ReaderCases\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

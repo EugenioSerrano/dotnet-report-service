@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Reading a printed document and checking that it holds what was composed: the
+    positioned words and their boxes, the placement convention, the text units of
+    a composed block, the normalisation, the content-order alignment and the
+    source-bound checks. The only package it references is the PDF reader; the
+    writing and judging tools of the test suites never reference this assembly's
+    reader from the product.
+  -->
+  <ItemGroup>
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+</Project>

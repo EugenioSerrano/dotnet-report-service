@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the verification: the text units of a composed block, the
+    normalisation, the content-order alignment and the checks that bind a printed
+    document to the block it was composed from. Hermetic: no browser, no container,
+    no network. The reader's own case reads the copy of the table document the
+    rendering suite keeps, linked here rather than duplicated.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\ReportService.RenderingTests\ReaderCases\*.pdf" Link="PdfCases\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

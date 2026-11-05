@@ -78,6 +78,7 @@ internal static partial class CoverageFloors
         new("ReportService.Templates", Project: "ReportService.Templates.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.TemplatePackages", Project: "ReportService.TemplatePackages.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.TemplateSource", Project: "ReportService.TemplateSource.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Pdf.Verification", Project: "ReportService.Pdf.Verification.Tests", LinePercent: 90, BranchPercent: 85, Tier: "integrity"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Pdf", Project: "ReportService.Workers.Pdf.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
@@ -95,6 +96,7 @@ internal static partial class CoverageFloors
         ("ReportService.Data.Tests", ["ReportService.Data"]),
         ("ReportService.DataContract.Tests", ["ReportService.DataContract"]),
         ("ReportService.Jobs.Tests", ["ReportService.Jobs"]),
+        ("ReportService.Pdf.Verification.Tests", ["ReportService.Pdf.Verification"]),
         ("ReportService.Migrations.Tests", ["ReportService.Migrations"]),
         ("ReportService.Storage.Tests", ["ReportService.Storage", "ReportService.Storage.Filesystem"]),
         ("ReportService.Uploads.Tests", ["ReportService.Uploads"]),

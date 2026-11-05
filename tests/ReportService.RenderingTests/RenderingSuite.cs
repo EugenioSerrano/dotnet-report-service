@@ -104,7 +104,11 @@ public sealed class RenderingSuite : IAsyncLifetime
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
         var pdf = Path.Combine(OutputDirectory, document.RootElement.GetProperty("pdf").GetString()!);
-        return new RenderOutcome(fixtureId, package, mutation, pdf);
+        var verdict = document.RootElement.GetProperty("verificationPassed").GetBoolean();
+        var reason = document.RootElement.TryGetProperty("verificationReason", out var reported) && reported.ValueKind == JsonValueKind.String
+            ? reported.GetString()
+            : null;
+        return new RenderOutcome(fixtureId, package, mutation, pdf, verdict, reason);
     }
 
     /// <summary>Reads <paramref name="pdf"/> with the judge and returns its verdict.</summary>
@@ -267,7 +271,13 @@ public sealed class RenderingSuite : IAsyncLifetime
 /// <param name="Package">The package it was composed with.</param>
 /// <param name="Mutation">The control applied, or null for none.</param>
 /// <param name="Pdf">The PDF the print wrote.</param>
-public sealed record RenderOutcome(string Fixture, string Package, string? Mutation, string Pdf);
+public sealed record RenderOutcome(
+    string Fixture,
+    string Package,
+    string? Mutation,
+    string Pdf,
+    bool VerificationPassed,
+    string? VerificationReason);
 
 /// <summary>What the judge said about one printed document.</summary>
 /// <param name="Passed">Whether every rule passed.</param>

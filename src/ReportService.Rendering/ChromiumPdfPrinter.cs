@@ -25,7 +25,7 @@ public sealed class PrintTemporarilyFailedException(string message, Exception? i
 /// outline or tag tree of the browser's own.
 /// </para>
 /// </summary>
-public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider clock)
+public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider clock) : IPdfPrinter
 {
     /// <summary>The content security policy the document carries.</summary>
     public const string ContentSecurityPolicy =

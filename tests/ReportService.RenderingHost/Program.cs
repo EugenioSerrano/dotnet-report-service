@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using ReportService.Data;
 using ReportService.Rendering;
+using ReportService.Pdf.Verification;
 using ReportService.Templates;
 
 namespace ReportService.RenderingHost;
@@ -95,18 +96,59 @@ internal static partial class Program
 
         var composer = new BlockComposer(adapter, TimeProvider.System);
         var composed = composer.Compose(composition);
-        if (mutation is not null)
+        if (mutation is not null && !KnownBad.IsHtmlLevel(mutation))
         {
-            composed = KnownBad.Apply(mutation, composed);
+            composed = KnownBad.ApplyComposition(mutation, composed);
         }
+
+        // The product's own checks: the units of the composition, then the checks that
+        // need no page. A control applied at the page level changes the document after
+        // this point, so only the printed text can be wrong - which is what the check
+        // after printing is for.
+        var text = new TextUnitExtractor().Extract(composed);
+        var verifier = new BlockVerifier();
+        var anchors = manifest.Pdf.Verification;
+        var source = new SourceCheckInput(
+            new PartitionFacts(1, records.Count),
+            new IndexFacts(0, records.Count, 1),
+            new BlockFacts(0, 1, [.. records.Select(record => new BlockRecord(record.Ordinal, record.Values))], header),
+            composed,
+            text,
+            anchors,
+            IsFirstBlock: true);
+        var sourceCheck = verifier.CheckSource(source, out var sourceChecksMs);
 
         var fixtureId = Path.GetFileNameWithoutExtension(snapshotPath);
         var name = mutation is null ? fixtureId : $"{fixtureId}-{mutation}";
         var pdfPath = Path.Combine(outFolder, name + ".pdf");
 
-        await using var session = new BrowserSession();
-        var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
-        var outcome = await printer.PrintAsync(composed.Text, files, pdfPath).ConfigureAwait(false);
+        string? verificationReason = sourceCheck.Reason;
+        var verificationPassed = false;
+        var pages = 0;
+        var words = 0;
+        PrintOutcome? outcome = null;
+        if (sourceCheck.Passed)
+        {
+            var html = mutation is not null && KnownBad.IsHtmlLevel(mutation)
+                ? KnownBad.ApplyHtml(mutation, composed)
+                : composed.Text;
+
+            await using var session = new BrowserSession();
+            var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
+            outcome = await printer.PrintAsync(html, files, pdfPath).ConfigureAwait(false);
+
+            var verification = verifier.Verify(new PrintedCheckInput(
+                pdfPath,
+                0,
+                PlacementConvention.FromMillimetres(manifest.Pdf.MarginMm),
+                composed,
+                text,
+                sourceChecksMs));
+            verificationPassed = verification.Passed;
+            verificationReason = verification.Reason;
+            pages = verification.Pages;
+            words = verification.Words;
+        }
 
         var bytes = await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false);
         var result = new RenderResult(
@@ -116,9 +158,13 @@ internal static partial class Program
             Pdf: Path.GetFileName(pdfPath),
             Sha256: Convert.ToHexStringLower(SHA256.HashData(bytes)),
             SizeBytes: bytes.LongLength,
-            AbortedRequests: outcome.AbortedRequests,
-            ConsoleErrors: outcome.ConsoleErrors,
-            DurationMs: (long)outcome.Duration.TotalMilliseconds);
+            AbortedRequests: outcome?.AbortedRequests ?? 0,
+            ConsoleErrors: outcome?.ConsoleErrors ?? 0,
+            DurationMs: (long)(outcome?.Duration.TotalMilliseconds ?? 0),
+            VerificationPassed: verificationPassed,
+            VerificationReason: verificationReason,
+            Pages: pages,
+            Words: words);
 
         var resultPath = Path.Combine(outFolder, name + ".json");
         await File.WriteAllTextAsync(
@@ -166,6 +212,10 @@ internal static partial class Program
 /// <param name="AbortedRequests">How many requests of the document the route policy aborted.</param>
 /// <param name="ConsoleErrors">How many console errors the page reported.</param>
 /// <param name="DurationMs">How long the print took, in milliseconds.</param>
+/// <param name="VerificationPassed">What the product's verification said about the document.</param>
+/// <param name="VerificationReason">The reason its verification refused it with, or null.</param>
+/// <param name="Pages">How many pages the verification read.</param>
+/// <param name="Words">How many words the verification read.</param>
 internal sealed record RenderResult(
     string Fixture,
     string Template,
@@ -175,7 +225,11 @@ internal sealed record RenderResult(
     long SizeBytes,
     int AbortedRequests,
     int ConsoleErrors,
-    long DurationMs);
+    long DurationMs,
+    bool VerificationPassed,
+    string? VerificationReason,
+    int Pages,
+    int Words);
 
 /// <summary>The serializer context of the result file, generated at build time.</summary>
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -205,10 +259,45 @@ internal static partial class KnownBad
         "RowWithoutText",
     ];
 
+    /// <summary>Whether the control acts on the printed page rather than on the composition.</summary>
+    /// <param name="name">The control's name.</param>
+    public static bool IsHtmlLevel(string name) => name is "NC-W" or "NC-L" or "NC-R" or "NC-F";
+
+    /// <summary>
+    /// Applies a control of the composition: it acts before the expected units are
+    /// extracted, so the reference the checks compare against is wrong too.
+    /// </summary>
+    /// <param name="name">The control's name.</param>
+    /// <param name="block">The composition.</param>
+    public static ComposedBlock ApplyComposition(string name, ComposedBlock block)
+    {
+        if (IsHtmlLevel(name))
+        {
+            throw new InvalidDataException($"The control '{name}' acts on the printed page, not on the composition.");
+        }
+
+        return Apply(name, block);
+    }
+
+    /// <summary>
+    /// Applies a control of the printed page: the expected units are extracted from the
+    /// unchanged composition, so only the document the reader sees is wrong.
+    /// </summary>
+    /// <param name="name">The control's name.</param>
+    /// <param name="block">The composition, unchanged.</param>
+    public static string ApplyHtml(string name, ComposedBlock block)
+    {
+        if (!IsHtmlLevel(name))
+        {
+            throw new InvalidDataException($"The control '{name}' acts on the composition, not on the printed page.");
+        }
+
+        return Apply(name, block).Text;
+    }
+
     /// <summary>Applies the control named <paramref name="name"/> to <paramref name="block"/>.</summary>
     public static ComposedBlock Apply(string name, ComposedBlock block)
-    {
-        ArgumentNullException.ThrowIfNull(block);
+    {        ArgumentNullException.ThrowIfNull(block);
         var rows = block.Rows.ToList();
         if (name is not "HeaderAnchorDropped" && rows.Count == 0)
         {

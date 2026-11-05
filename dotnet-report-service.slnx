@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/eng/">
     <Project Path="eng/pdf-base/ReportService.Eng.PlaywrightInstaller/ReportService.Eng.PlaywrightInstaller.csproj" />
+    <Project Path="eng/pdf-reader-agreement/ReportService.Eng.ReaderAgreement/ReportService.Eng.ReaderAgreement.csproj" />
     <Project Path="eng/test/ReportService.Eng.TestRunner/ReportService.Eng.TestRunner.csproj" />
   </Folder>
   <Folder Name="/samples/">
@@ -13,6 +14,7 @@
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
     <Project Path="src/ReportService.Jobs/ReportService.Jobs.csproj" />
     <Project Path="src/ReportService.Migrations/ReportService.Migrations.csproj" />
+    <Project Path="src/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
     <Project Path="src/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
     <Project Path="src/ReportService.ServiceDefaults.Temporal/ReportService.ServiceDefaults.Temporal.csproj" />
     <Project Path="src/ReportService.Storage.Filesystem/ReportService.Storage.Filesystem.csproj" />
@@ -37,6 +39,7 @@
     <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.PdfOracle/ReportService.PdfOracle.csproj" />
     <Project Path="tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj" />
+    <Project Path="tests/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
     <Project Path="tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
     <Project Path="tests/ReportService.RenderingHost/ReportService.RenderingHost.csproj" />
     <Project Path="tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj" />

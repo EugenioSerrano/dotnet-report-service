@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The reader agreement re-run: the product's own reader over the agreed set of
+    printed documents, written in the extraction format the measured experiment
+    reads, and compared with the measured reading word for word. It is an
+    engineering tool: it is never published, never shipped and never referenced by
+    the product.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ReportService.Eng.ReaderAgreement</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+</Project>

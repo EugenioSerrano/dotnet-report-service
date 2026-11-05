@@ -35,6 +35,21 @@ public sealed class KnownBadControlTests(RenderingSuite suite)
         { "NC-F", "B100", ["text-altered"] },
     };
 
+    /// <summary>The class the product's own verification reports each control with.</summary>
+    public static TheoryData<string, string> ProductClasses => new()
+    {
+        { "RowRemoved", "row-lost" },
+        { "RowDuplicated", "row-extra" },
+        { "RowWithoutText", "row-without-text" },
+        { "AnchorTruncated", "anchor-mismatch" },
+        { "AnchorDoubleEncoded", "anchor-mismatch" },
+        { "HeaderAnchorDropped", "anchor-mismatch" },
+        { "NC-W", "text-dropped" },
+        { "NC-L", "text-extra" },
+        { "NC-R", "row-lost" },
+        { "NC-F", "text-altered" },
+    };
+
     /// <summary>The judge refuses the document with a class the control's change names.</summary>
     /// <param name="mutation">The control applied.</param>
     /// <param name="fixture">The fixture it was applied to.</param>
@@ -50,5 +65,24 @@ public sealed class KnownBadControlTests(RenderingSuite suite)
         Assert.True(
             verdict.Classes.Any(failure => expected.Any(name => failure.Contains(name, StringComparison.Ordinal))),
             $"{mutation}: the judge reported {string.Join(", ", verdict.Classes)}; expected one of {string.Join(", ", expected)}.");
+    }
+
+    /// <summary>
+    /// The product's own verification refuses every control, with the class the agreed
+    /// mapping gives it, beside the judge's refusal: the two readings agree on what was
+    /// changed, so a defect neither reader catches is the one case this rule exists for.
+    /// </summary>
+    /// <param name="mutation">The control applied.</param>
+    /// <param name="expected">The class the product's verification reports.</param>
+    [Theory]
+    [MemberData(nameof(ProductClasses))]
+    public async Task TheProductsOwnChecksRefuseEveryControlWithItsClass(string mutation, string expected)
+    {
+        var render = await suite.RenderAsync(mutation == "AnchorDoubleEncoded" ? "A1-esc" : "B100", "integrity-table", mutation);
+        var verdict = await suite.JudgeAsync(render);
+
+        Assert.False(render.VerificationPassed, $"{mutation} printed and the product's verification passed it.");
+        Assert.Equal(expected, render.VerificationReason);
+        Assert.False(verdict.Passed, $"{mutation} printed and the judge passed it.");
     }
 }

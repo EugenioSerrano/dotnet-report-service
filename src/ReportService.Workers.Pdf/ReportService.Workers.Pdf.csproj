@@ -7,6 +7,9 @@
   <ItemGroup>
     <ProjectReference Include="..\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
     <ProjectReference Include="..\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <ProjectReference Include="..\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>
 
   <!--

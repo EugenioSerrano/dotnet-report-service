@@ -3,6 +3,7 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Pdf;
+using ReportService.Workers.Pdf.Rendering;
 using ReportService.Workers.Pdf.Templates;
 
 namespace ReportService.Workers.Pdf;
@@ -34,6 +35,7 @@ public sealed class PdfWorkerProgram
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();
         builder.AddTemplateResolutionWork();
+        builder.AddPdfRenderingWork();
 
         var app = builder.Build();
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });

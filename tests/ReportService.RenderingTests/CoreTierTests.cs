@@ -25,17 +25,24 @@ public sealed class CoreTierTests(RenderingSuite suite)
         { "K0", "integrity-table" },
     };
 
-    /// <summary>The judge passes a document the product printed from a valid fixture.</summary>
+    /// <summary>
+    /// The judge and the product's own verification both pass a document the product
+    /// printed from a valid fixture: the two readings agree on every one of them, and a
+    /// disagreement fails the suite.
+    /// </summary>
     /// <param name="fixture">The fixture printed.</param>
     /// <param name="package">The package it was printed with.</param>
     [Theory]
     [MemberData(nameof(PositiveFixtures))]
-    public async Task ThePrintedDocumentPassesTheJudge(string fixture, string package)
+    public async Task ThePrintedDocumentPassesTheJudgeAndTheProductsOwnChecks(string fixture, string package)
     {
         var render = await suite.RenderAsync(fixture, package);
         var verdict = await suite.JudgeAsync(render);
 
         Assert.True(verdict.Passed, $"{fixture} judged with {package}: {string.Join(", ", verdict.Classes)}");
         Assert.True(verdict.Pages >= 1, $"{fixture} printed no page.");
+        Assert.True(
+            render.VerificationPassed,
+            $"{fixture} printed with {package}: the judge passed it and the product's verification refused it ({render.VerificationReason}).");
     }
 }
