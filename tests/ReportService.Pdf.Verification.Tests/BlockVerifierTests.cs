@@ -50,6 +50,29 @@ public sealed class BlockVerifierTests
     }
 
     [Fact]
+    public void ARowThatPrintsNoTextIsRefusedByItsOwnCheckBeforeTheAnchors()
+    {
+        // The row is there and its ordinal is right, so row coverage passes; a row with
+        // no text cannot carry its declared value either, and the class names the row.
+        var composition = Sample.Block(
+            (FragmentKind.DocumentStart, 0, "<p>title</p>"),
+            (FragmentKind.Row, 1, "<td></td>"),
+            (FragmentKind.DocumentEnd, 0, "<p>end</p>"));
+        var input = new SourceCheckInput(
+            new PartitionFacts(1, 1),
+            new IndexFacts(0, 1, 1),
+            new BlockFacts(0, 1, [new BlockRecord(1, new Dictionary<string, object?> { ["description"] = "one" })], new Dictionary<string, object?>()),
+            composition,
+            new TextUnitExtractor().Extract(composition),
+            new VerificationAnchors([], ["$.description"]),
+            IsFirstBlock: true);
+
+        var outcome = new BlockVerifier().CheckSource(input, out _);
+
+        Assert.Equal(VerificationReasons.RowWithoutText, outcome.Reason);
+    }
+
+    [Fact]
     public void ADocumentTheReaderCannotReadFailsAsUnreadable()
     {
         var composition = Sample.Rows("one");

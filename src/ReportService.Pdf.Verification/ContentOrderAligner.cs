@@ -71,10 +71,11 @@ public sealed record AlignmentOutcome(
 /// Consumes the expected text units page by page, in the painting order the
 /// document was printed in: every page's words are concatenated, the repeated head
 /// of a table is consumed where the surface prints it again, and the units must
-/// follow each other exactly - a unit may end at more than one position, so the
-/// pass searches the split points longest first, depth first, and remembers the
-/// states that failed. A unit that starts on one page and ends on the next is one
-/// unit, not two: its continuation must be the first thing the next page prints.
+/// follow each other exactly. A unit that is not finished on a page stays open and
+/// continues on the next one, after a later cell of its own row - the surface prints
+/// the cells of a row that fit on the page before it continues a cell that does not.
+/// A unit may end at more than one position, so the pass searches the split points
+/// longest first, depth first, and remembers the states that failed.
 /// </summary>
 public sealed class ContentOrderAligner
 {
@@ -108,6 +109,90 @@ public sealed class ContentOrderAligner
         return search.Failure();
     }
 
+    /// <summary>One unit that was started and not finished, and how much of it was consumed.</summary>
+    private readonly record struct OpenUnit(int Unit, int Offset);
+
+    /// <summary>
+    /// The units a page started but did not finish, in document order. A unit stays
+    /// open while the later cells of its own row print on the page it began on, and it
+    /// continues - in this order - on the page that follows.
+    /// </summary>
+    private sealed class OpenUnits : IEquatable<OpenUnits>
+    {
+        /// <summary>No open unit.</summary>
+        public static OpenUnits None { get; } = new([]);
+
+        private readonly OpenUnit[] open;
+
+        private OpenUnits(OpenUnit[] open) => this.open = open;
+
+        /// <summary>Whether every started unit was finished.</summary>
+        public bool IsEmpty => open.Length == 0;
+
+        /// <summary>The first unit to continue, in document order.</summary>
+        public OpenUnit First => open[0];
+
+        /// <summary>The last unit started, which fixes the row the open units belong to.</summary>
+        public OpenUnit Last => open[^1];
+
+        /// <summary>The same list without its first unit.</summary>
+        public OpenUnits CloseFirst() => open.Length == 1 ? None : new OpenUnits(open[1..]);
+
+        /// <summary>The same list with its first unit's consumed length replaced.</summary>
+        /// <param name="offset">How much of the first unit was consumed.</param>
+        public OpenUnits WithFirstOffset(int offset)
+        {
+            var copy = (OpenUnit[])open.Clone();
+            copy[0] = new OpenUnit(copy[0].Unit, offset);
+            return new OpenUnits(copy);
+        }
+
+        /// <summary>The same list with <paramref name="unit"/> started after its last unit.</summary>
+        /// <param name="unit">The unit to start.</param>
+        public OpenUnits Append(OpenUnit unit)
+        {
+            var copy = new OpenUnit[open.Length + 1];
+            open.CopyTo(copy, 0);
+            copy[^1] = unit;
+            return new OpenUnits(copy);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(OpenUnits? other)
+        {
+            if (other is null || other.open.Length != open.Length)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < open.Length; index++)
+            {
+                if (open[index] != other.open[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj) => Equals(obj as OpenUnits);
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            foreach (var unit in open)
+            {
+                hash.Add(unit.Unit);
+                hash.Add(unit.Offset);
+            }
+
+            return hash.ToHashCode();
+        }
+    }
+
     /// <summary>One pass's state: the pages, the units, the failed states and the budget.</summary>
     private sealed class Search
     {
@@ -138,17 +223,16 @@ public sealed class ContentOrderAligner
                 return units.Count == 0;
             }
 
-            return ConsumePage(0, 0, 0);
+            return ConsumePage(0, 0, OpenUnits.None);
         }
 
         public IReadOnlyList<int> ConsumedCharacters() => consumed;
 
         /// <summary>
-        /// Consumes one page from its start, with the unit at <paramref name="cursor"/>
-        /// open at <paramref name="openOffset"/> characters - no unit when the cursor is
-        /// past the end.
+        /// Consumes one page from its start, with the units an earlier page left open
+        /// and the position of the first unit not started yet.
         /// </summary>
-        private bool ConsumePage(int page, int cursor, int openOffset)
+        private bool ConsumePage(int page, int cursor, OpenUnits open)
         {
             var text = pages[page];
             foreach (var end in Ends(text, page == pages.Count - 1))
@@ -156,18 +240,186 @@ public sealed class ContentOrderAligner
                 // The surface repeats a table's head at the top of every page after the
                 // first; the units of that head were consumed where the document holds them.
                 if (page > 0 && head.Length > 0 && text.StartsWith(head, StringComparison.Ordinal)
-                    && Fit(page, head.Length, cursor, openOffset, end))
+                    && Fit(page, head.Length, cursor, open, end))
                 {
                     return true;
                 }
 
-                if (Fit(page, 0, cursor, openOffset, end))
+                if (Fit(page, 0, cursor, open, end))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Consumes one page from <paramref name="position"/> to <paramref name="end"/>:
+        /// the open units continue where they left off, a later cell of an open unit's
+        /// own row may print first, and the units not started yet follow in document order.
+        /// </summary>
+        private bool Fit(int page, int position, int cursor, OpenUnits open, int end)
+        {
+            if (overBudget)
+            {
+                return false;
+            }
+
+            var key = new State(page, position, cursor, end, open);
+            if (failed.Contains(key))
+            {
+                return false;
+            }
+
+            if (position == end)
+            {
+                if (page == pages.Count - 1)
+                {
+                    if (open.IsEmpty && cursor >= units.Count)
+                    {
+                        return true;
+                    }
+                }
+                else if (ConsumePage(page + 1, cursor, open))
+                {
+                    return true;
+                }
+
+                failed.Add(key);
+                return false;
+            }
+
+            if (!open.IsEmpty && ContinueOpen(page, position, cursor, open, end))
+            {
+                return true;
+            }
+
+            if (StartNext(page, position, cursor, open, end))
+            {
+                return true;
+            }
+
+            failed.Add(key);
+            return false;
+        }
+
+        /// <summary>
+        /// Tries every length of the first open unit at the current position: a unit that
+        /// completes closes, one that stops at the page's end continues on the next page,
+        /// and one that stops earlier leaves the page to the later cells of its own row.
+        /// </summary>
+        private bool ContinueOpen(int page, int position, int cursor, OpenUnits open, int end)
+        {
+            var text = pages[page];
+            var (unit, offset) = open.First;
+            var remaining = units[unit].Normalised;
+            var available = Math.Min(remaining.Length - offset, end - position);
+            for (var length = available; length >= 1; length--)
+            {
+                if (!Spend(length))
+                {
+                    return false;
+                }
+
+                if (!text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(offset, length)))
+                {
+                    continue;
+                }
+
+                if (offset + length == remaining.Length)
+                {
+                    consumed[unit] = offset + length;
+                    if (Fit(page, position + length, cursor, open.CloseFirst(), end))
+                    {
+                        return true;
+                    }
+
+                    consumed[unit] = 0;
+                }
+                else if (position + length == end && page < pages.Count - 1)
+                {
+                    if (ConsumePage(page + 1, cursor, open.WithFirstOffset(offset + length)))
+                    {
+                        return true;
+                    }
+                }
+                else if (Fit(page, position + length, cursor, open.WithFirstOffset(offset + length), end))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Starts the unit at <paramref name="cursor"/>. While an earlier unit of the same
+        /// row is open, that row's later cells may print first; nothing else may.
+        /// </summary>
+        private bool StartNext(int page, int position, int cursor, OpenUnits open, int end)
+        {
+            if (cursor >= units.Count)
+            {
+                return false;
+            }
+
+            if (!open.IsEmpty && units[cursor].FragmentIndex != units[open.Last.Unit].FragmentIndex)
+            {
+                return false;
+            }
+
+            var text = pages[page];
+            var remaining = units[cursor].Normalised;
+            var available = Math.Min(remaining.Length, end - position);
+            for (var length = available; length >= 1; length--)
+            {
+                if (!Spend(length))
+                {
+                    return false;
+                }
+
+                if (!text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(0, length)))
+                {
+                    continue;
+                }
+
+                if (length == remaining.Length)
+                {
+                    consumed[cursor] = length;
+                    if (Fit(page, position + length, cursor + 1, open, end))
+                    {
+                        return true;
+                    }
+
+                    consumed[cursor] = 0;
+                }
+                else if (position + length == end && page < pages.Count - 1)
+                {
+                    if (ConsumePage(page + 1, cursor + 1, open.Append(new OpenUnit(cursor, length))))
+                    {
+                        return true;
+                    }
+                }
+                else if (Fit(page, position + length, cursor + 1, open.Append(new OpenUnit(cursor, length)), end))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool Spend(int length)
+        {
+            spent += length;
+            if (spent > budget)
+            {
+                overBudget = true;
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -181,83 +433,6 @@ public sealed class ContentOrderAligner
             {
                 yield return text.Length - foot.Length;
             }
-        }
-
-        /// <summary>Consumes the rest of the page, starting with <paramref name="cursor"/> and its consumed prefix.</summary>
-        private bool Fit(int page, int position, int cursor, int openOffset, int end)
-        {
-            if (overBudget)
-            {
-                return false;
-            }
-
-            var key = new State(page, position, cursor, openOffset, end);
-            if (failed.Contains(key))
-            {
-                return false;
-            }
-
-            if (cursor >= units.Count)
-            {
-                if (position == end && (page == pages.Count - 1 || ConsumePage(page + 1, cursor, 0)))
-                {
-                    return true;
-                }
-
-                failed.Add(key);
-                return false;
-            }
-
-            var text = pages[page];
-            var remaining = units[cursor].Normalised;
-            var available = Math.Min(remaining.Length - openOffset, end - position);
-            for (var length = available; length >= 1; length--)
-            {
-                spent += length;
-                if (spent > budget)
-                {
-                    overBudget = true;
-                    return false;
-                }
-
-                if (!text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(openOffset, length)))
-                {
-                    continue;
-                }
-
-                if (openOffset + length == remaining.Length)
-                {
-                    consumed[cursor] = openOffset + length;
-                    if (Fit(page, position + length, cursor + 1, 0, end))
-                    {
-                        return true;
-                    }
-
-                    consumed[cursor] = 0;
-                }
-                else if (position + length == end && page < pages.Count - 1)
-                {
-                    consumed[cursor] = openOffset + length;
-                    if (ConsumePage(page + 1, cursor, openOffset + length))
-                    {
-                        return true;
-                    }
-
-                    consumed[cursor] = 0;
-                }
-            }
-
-            // Nothing more of the open unit fits: the page must end here for the unit to
-            // continue on the next one.
-            if (position == end && openOffset < remaining.Length && page < pages.Count - 1
-                && ConsumePage(page + 1, cursor, openOffset))
-            {
-                consumed[cursor] = openOffset;
-                return true;
-            }
-
-            failed.Add(key);
-            return false;
         }
 
         /// <summary>
@@ -280,80 +455,112 @@ public sealed class ContentOrderAligner
             var page = 0;
             var position = 0;
             var cursor = 0;
-            var openOffset = 0;
+            var open = OpenUnits.None;
+            var trackedUnit = -1;
+            var unitStart = 0;
+            var unitStartOffset = 0;
 
             while (page < pages.Count)
             {
                 var text = pages[page];
-                var last = page == pages.Count - 1;
-                var end = Ends(text, last).First();
-                if (page > 0 && head.Length > 0 && text.StartsWith(head, StringComparison.Ordinal))
-                {
-                    position = head.Length;
-                }
+                var end = Ends(text, page == pages.Count - 1).First();
+                position = page > 0 && head.Length > 0 && text.StartsWith(head, StringComparison.Ordinal)
+                    ? head.Length
+                    : 0;
+                trackedUnit = -1;
 
-                while (cursor < units.Count)
+                while (position < end)
                 {
-                    var remaining = units[cursor].Normalised;
-
-                    // The class of a mismatch is decided where the unit it belongs to
-                    // starts: a whole row that is missing must not be reported as a word
-                    // that changed inside it.
-                    var unitStart = position;
-                    var unitOpenOffset = openOffset;
-                    var available = Math.Min(remaining.Length - openOffset, end - position);
-                    var fitted = 0;
-                    for (var length = available; length >= 1; length--)
+                    // The unit that must print now: an open one continues before a new one
+                    // starts, and a later cell of its row may print before it continues.
+                    var unitIndex = open.IsEmpty ? cursor : open.First.Unit;
+                    var offset = open.IsEmpty ? 0 : open.First.Offset;
+                    if (unitIndex >= units.Count)
                     {
-                        if (text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(openOffset, length)))
-                        {
-                            fitted = length;
-                            break;
-                        }
+                        return Classify(page, position, cursor, 0);
                     }
 
+                    if (unitIndex != trackedUnit)
+                    {
+                        trackedUnit = unitIndex;
+                        unitStart = position;
+                        unitStartOffset = offset;
+                    }
+
+                    var remaining = units[unitIndex].Normalised;
+                    var fitted = LongestPrefix(text, position, end, remaining, offset);
                     if (fitted == 0)
                     {
-                        if (position == end)
+                        if (open.IsEmpty || cursor >= units.Count
+                            || units[cursor].FragmentIndex != units[open.Last.Unit].FragmentIndex)
                         {
-                            break;
+                            return Classify(page, unitStart, unitIndex, unitStartOffset);
                         }
 
-                        return Classify(page, unitStart, cursor, unitOpenOffset);
+                        var cell = units[cursor].Normalised;
+                        var started = LongestPrefix(text, position, end, cell, 0);
+                        if (started == 0)
+                        {
+                            return Classify(page, position, cursor, 0);
+                        }
+
+                        position += started;
+                        open = started == cell.Length ? open : open.Append(new OpenUnit(cursor, started));
+                        cursor++;
+                        continue;
                     }
 
                     position += fitted;
-                    openOffset += fitted;
-                    if (openOffset == remaining.Length)
+                    if (offset + fitted < remaining.Length)
+                    {
+                        var wasOpen = !open.IsEmpty;
+                        open = wasOpen
+                            ? open.WithFirstOffset(offset + fitted)
+                            : open.Append(new OpenUnit(unitIndex, fitted));
+                        if (!wasOpen)
+                        {
+                            cursor++;
+                        }
+
+                        continue;
+                    }
+
+                    var closedAnOpenUnit = !open.IsEmpty;
+                    open = closedAnOpenUnit ? open.CloseFirst() : open;
+                    if (!closedAnOpenUnit)
                     {
                         cursor++;
-                        openOffset = 0;
                     }
-                    else if (position < end)
-                    {
-                        return Classify(page, unitStart, cursor, unitOpenOffset);
-                    }
-                }
-
-                if (position != end)
-                {
-                    return Classify(page, position, cursor, openOffset);
                 }
 
                 page++;
-                position = 0;
-                openOffset = 0;
             }
 
-            return cursor < units.Count
-                ? Classify(pages.Count - 1, pages[^1].Length, cursor, openOffset)
+            return !open.IsEmpty || cursor < units.Count
+                ? Classify(pages.Count - 1, pages[^1].Length, open.IsEmpty ? cursor : open.First.Unit, open.IsEmpty ? 0 : open.First.Offset)
                 : new AlignmentOutcome(false, VerificationReasons.AmbiguousAlignment, null, null, null, consumed);
+        }
+
+        /// <summary>The longest prefix of a unit's remaining text that the page prints here.</summary>
+        private static int LongestPrefix(string text, int position, int end, string remaining, int offset)
+        {
+            var available = Math.Min(remaining.Length - offset, end - position);
+            for (var length = available; length >= 1; length--)
+            {
+                if (text.AsSpan(position, length).SequenceEqual(remaining.AsSpan(offset, length)))
+                {
+                    return length;
+                }
+            }
+
+            return 0;
         }
 
         /// <summary>
         /// The class of a mismatch at one position: a whole row that is followed by the
-        /// next one was lost; text that reappears later was dropped; text that appears
-        /// where the composition has none was added; anything else was altered.
+        /// next one was lost, a row that starts again where the next one belongs was
+        /// printed twice, text that reappears later was dropped, text that appears where
+        /// the composition has none was added, anything else was altered.
         /// </summary>
         private AlignmentOutcome Classify(int page, int position, int cursor, int openOffset)
         {
@@ -363,7 +570,8 @@ public sealed class ContentOrderAligner
             if (cursor < units.Count
                 && units[cursor].Kind == FragmentKind.Row
                 && units[cursor].IndexInFragment == 0
-                && NextRowStartsWith(cursor, printed))
+                && openOffset == 0
+                && WholeRowIsMissing(cursor, printed))
             {
                 return Failure(page, position, cursor, VerificationReasons.RowLost);
             }
@@ -414,12 +622,22 @@ public sealed class ContentOrderAligner
         private static AlignmentOutcome Failure(int page, int position, int cursor, string reason) =>
             new(false, reason, page + 1, position, cursor, []);
 
-        /// <summary>Whether the printed text continues with the first row after the one at the cursor.</summary>
-        private bool NextRowStartsWith(int cursor, string printed)
+        /// <summary>
+        /// Whether the whole row at <paramref name="cursor"/> is absent: the printed text
+        /// continues with the row that follows it, or nothing is printed after it at all.
+        /// </summary>
+        private bool WholeRowIsMissing(int cursor, string printed)
         {
+            if (printed.Length == 0)
+            {
+                return true;
+            }
+
             for (var index = cursor + 1; index < units.Count; index++)
             {
-                if (units[index].Kind != FragmentKind.Row)
+                if (units[index].FragmentIndex == units[cursor].FragmentIndex
+                    || units[index].Kind != FragmentKind.Row
+                    || units[index].IndexInFragment != 0)
                 {
                     continue;
                 }
@@ -459,6 +677,6 @@ public sealed class ContentOrderAligner
             return builder.ToString();
         }
 
-        private readonly record struct State(int Page, int Position, int Cursor, int OpenOffset, int End);
+        private readonly record struct State(int Page, int Position, int Cursor, int End, OpenUnits Open);
     }
 }

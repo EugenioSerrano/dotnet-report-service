@@ -122,21 +122,26 @@ internal static partial class Program
         var name = mutation is null ? fixtureId : $"{fixtureId}-{mutation}";
         var pdfPath = Path.Combine(outFolder, name + ".pdf");
 
+        // The document is printed whatever the source checks said: a control exists to
+        // produce a document the judge can read, and a composition the product refuses
+        // before printing is still a document the second reader must refuse on its own.
+        var html = mutation is not null && KnownBad.IsHtmlLevel(mutation)
+            ? KnownBad.ApplyHtml(mutation, composed)
+            : composed.Text;
+
+        await using var session = new BrowserSession();
+        var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
+        var outcome = await printer.PrintAsync(html, files, pdfPath).ConfigureAwait(false);
+
         string? verificationReason = sourceCheck.Reason;
         var verificationPassed = false;
         var pages = 0;
         var words = 0;
-        PrintOutcome? outcome = null;
+        int? verificationPage = null;
+        int? verificationUnit = null;
+        int? verificationOffset = null;
         if (sourceCheck.Passed)
         {
-            var html = mutation is not null && KnownBad.IsHtmlLevel(mutation)
-                ? KnownBad.ApplyHtml(mutation, composed)
-                : composed.Text;
-
-            await using var session = new BrowserSession();
-            var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
-            outcome = await printer.PrintAsync(html, files, pdfPath).ConfigureAwait(false);
-
             var verification = verifier.Verify(new PrintedCheckInput(
                 pdfPath,
                 0,
@@ -148,6 +153,9 @@ internal static partial class Program
             verificationReason = verification.Reason;
             pages = verification.Pages;
             words = verification.Words;
+            verificationPage = verification.Page;
+            verificationUnit = verification.UnitIndex;
+            verificationOffset = verification.Offset;
         }
 
         var bytes = await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false);
@@ -158,11 +166,14 @@ internal static partial class Program
             Pdf: Path.GetFileName(pdfPath),
             Sha256: Convert.ToHexStringLower(SHA256.HashData(bytes)),
             SizeBytes: bytes.LongLength,
-            AbortedRequests: outcome?.AbortedRequests ?? 0,
-            ConsoleErrors: outcome?.ConsoleErrors ?? 0,
-            DurationMs: (long)(outcome?.Duration.TotalMilliseconds ?? 0),
+            AbortedRequests: outcome.AbortedRequests,
+            ConsoleErrors: outcome.ConsoleErrors,
+            DurationMs: (long)outcome.Duration.TotalMilliseconds,
             VerificationPassed: verificationPassed,
             VerificationReason: verificationReason,
+            VerificationPage: verificationPage,
+            VerificationUnit: verificationUnit,
+            VerificationOffset: verificationOffset,
             Pages: pages,
             Words: words);
 
@@ -214,6 +225,9 @@ internal static partial class Program
 /// <param name="DurationMs">How long the print took, in milliseconds.</param>
 /// <param name="VerificationPassed">What the product's verification said about the document.</param>
 /// <param name="VerificationReason">The reason its verification refused it with, or null.</param>
+/// <param name="VerificationPage">The page its verification stopped on, or null.</param>
+/// <param name="VerificationUnit">The unit its verification stopped at, or null.</param>
+/// <param name="VerificationOffset">The offset within the page its verification stopped at, or null.</param>
 /// <param name="Pages">How many pages the verification read.</param>
 /// <param name="Words">How many words the verification read.</param>
 internal sealed record RenderResult(
@@ -228,6 +242,9 @@ internal sealed record RenderResult(
     long DurationMs,
     bool VerificationPassed,
     string? VerificationReason,
+    int? VerificationPage,
+    int? VerificationUnit,
+    int? VerificationOffset,
     int Pages,
     int Words);
 
@@ -309,9 +326,9 @@ internal static partial class KnownBad
         return name switch
         {
             // C-1: a row the partition says exists is not composed.
-            "RowRemoved" => Replace(block, rows[Math.Min(1, rows.Count - 1)], string.Empty),
-            // C-1: a row is composed twice.
-            "RowDuplicated" => Replace(block, first, block.TextOf(first) + block.TextOf(first)),
+            "RowRemoved" => Without(block, rows[Math.Min(1, rows.Count - 1)]),
+            // C-1: a row is composed twice, under its own ordinal.
+            "RowDuplicated" => Twice(block, first),
             // C-3: a row prints no text.
             "RowWithoutText" => Replace(block, first, TextNode().Replace(block.TextOf(first), "><")),
             // C-4: a value printed as it is, truncated by one character.
@@ -386,6 +403,31 @@ internal static partial class KnownBad
             var bytes = Encoding.UTF8.GetBytes(text);
             fragments.Add(current with { Start = (int)stream.Length, Length = bytes.Length });
             stream.Write(bytes);
+        }
+
+        return new ComposedBlock(stream.ToArray(), fragments);
+    }
+
+    /// <summary>The composition without the fragment: its record is composed nowhere.</summary>
+    private static ComposedBlock Without(ComposedBlock block, ComposedFragment fragment) =>
+        Rebuild(block, current => ReferenceEquals(current, fragment) ? [] : [block.TextOf(current)]);
+
+    /// <summary>The composition with the fragment again, under its own ordinal.</summary>
+    private static ComposedBlock Twice(ComposedBlock block, ComposedFragment fragment) =>
+        Rebuild(block, current => ReferenceEquals(current, fragment) ? [block.TextOf(current), block.TextOf(current)] : [block.TextOf(current)]);
+
+    private static ComposedBlock Rebuild(ComposedBlock block, Func<ComposedFragment, IEnumerable<string>> texts)
+    {
+        using var stream = new MemoryStream(block.Html.Length);
+        var fragments = new List<ComposedFragment>(block.Fragments.Count + 1);
+        foreach (var current in block.Fragments)
+        {
+            foreach (var text in texts(current))
+            {
+                var bytes = Encoding.UTF8.GetBytes(text);
+                fragments.Add(current with { Start = (int)stream.Length, Length = bytes.Length });
+                stream.Write(bytes);
+            }
         }
 
         return new ComposedBlock(stream.ToArray(), fragments);

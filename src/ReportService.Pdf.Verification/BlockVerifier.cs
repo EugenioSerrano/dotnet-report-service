@@ -37,15 +37,24 @@ public sealed class BlockVerifier
         ArgumentNullException.ThrowIfNull(input);
         var started = Stopwatch.GetTimestamp();
 
-        var outcome = anchors.Check(input);
+        // The declaration is checked before anything else: a package that prints no field
+        // as it is declares nothing the block could be bound to, so it is refused whatever
+        // else would have failed too.
+        if (input.Anchors is null)
+        {
+            sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            return SourceCheckOutcome.Fail(VerificationReasons.AnchorsUndeclared);
+        }
+
+        var outcome = coverage.CheckSource(input);
         if (outcome.Passed)
         {
-            outcome = coverage.CheckSource(input);
+            outcome = rowText.Check(input);
         }
 
         if (outcome.Passed)
         {
-            outcome = rowText.Check(input);
+            outcome = anchors.Check(input);
         }
 
         sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;

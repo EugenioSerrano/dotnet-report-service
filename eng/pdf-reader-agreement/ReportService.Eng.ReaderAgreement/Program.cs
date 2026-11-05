@@ -18,7 +18,7 @@ internal static class Program
     private const int ExitDifference = 1;
     private const int ExitUsage = 2;
 
-    private static readonly JsonSerializerOptions Json = new()
+    internal static readonly JsonSerializerOptions Json = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -71,21 +71,33 @@ internal static class Program
     {
         var set = JsonSerializer.Deserialize<PdfSet>(File.ReadAllText(setPath), Json)
             ?? throw new InvalidDataException($"The set {setPath} is empty.");
+        var regenerated = RegeneratedIndex.Load(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(setPath))!, "regenerated.json"));
         var root = RepositoryRoot();
         var differences = 0;
 
         foreach (var entry in set.Set)
         {
-            var path = Path.Combine(root, entry.Source.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(path))
+            // A regenerated document has no source of its own: the run that produced it
+            // recorded its path and hash beside the set.
+            var source = entry.Source ?? string.Empty;
+            var sha256 = entry.Sha256 ?? string.Empty;
+            if (entry.Regenerated)
             {
-                Console.Error.WriteLine($"{entry.Id}: the document is not there ({entry.Source}).");
+                var recorded = regenerated.Find(entry.Id);
+                source = recorded?.Path ?? string.Empty;
+                sha256 = recorded?.Sha256 ?? string.Empty;
+            }
+
+            var path = Path.Combine(root, source.Replace('/', Path.DirectorySeparatorChar));
+            if (string.IsNullOrEmpty(source) || !File.Exists(path))
+            {
+                Console.Error.WriteLine($"{entry.Id}: the document is not there ({source}).");
                 differences++;
                 continue;
             }
 
-            var sha256 = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path)));
-            if (!string.Equals(sha256, entry.Sha256, StringComparison.Ordinal))
+            var actual = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path)));
+            if (!string.Equals(actual, sha256, StringComparison.Ordinal))
             {
                 Console.Error.WriteLine($"{entry.Id}: the document is not the recorded one.");
                 differences++;
@@ -95,7 +107,7 @@ internal static class Program
             var readings = new List<ExtractionFile>(3);
             for (var repetition = 1; repetition <= 3; repetition++)
             {
-                readings.Add(ExtractionFile.Of(PdfWordReader.Read(path, PageMargins.None), sha256));
+                readings.Add(ExtractionFile.Of(PdfWordReader.Read(path, PageMargins.None), actual));
             }
 
             if (readings.Any(reading => !reading.SameAs(readings[0])))
@@ -116,7 +128,7 @@ internal static class Program
         return differences == 0 ? ExitOk : ExitDifference;
     }
 
-    /// <summary>Compares two folders of readings, word for word and page for page.</summary>
+    /// <summary>Compares two folders of readings, word for word and page for page, repetition by repetition.</summary>
     private static int Compare(string measuredDirectory, string productDirectory)
     {
         var measured = Directory.EnumerateFiles(measuredDirectory, "*.r1.json").Order(StringComparer.Ordinal).ToList();
@@ -128,25 +140,29 @@ internal static class Program
         var differences = 0;
         foreach (var file in measured)
         {
-            var name = Path.GetFileName(file);
-            var product = Path.Combine(productDirectory, name);
-            if (!File.Exists(product))
+            var stem = Path.GetFileName(file)[..^".r1.json".Length];
+            for (var repetition = 1; repetition <= 3; repetition++)
             {
-                Console.Error.WriteLine($"{name}: the product reader has no reading.");
-                differences++;
-                continue;
-            }
+                var name = $"{stem}.r{repetition}.json";
+                var product = Path.Combine(productDirectory, name);
+                if (!File.Exists(product))
+                {
+                    Console.Error.WriteLine($"{name}: the product reader has no reading.");
+                    differences++;
+                    continue;
+                }
 
-            var expected = ExtractionFile.Read(file);
-            var actual = ExtractionFile.Read(product);
-            if (!expected.SameAs(actual))
-            {
-                Console.Error.WriteLine($"{name}: the product reader's reading differs.");
-                differences++;
+                var expected = ExtractionFile.Read(Path.Combine(measuredDirectory, name));
+                var actual = ExtractionFile.Read(product);
+                if (!expected.SameAs(actual))
+                {
+                    Console.Error.WriteLine($"{name}: the product reader's reading differs.");
+                    differences++;
+                }
             }
         }
 
-        Console.WriteLine($"compared {measured.Count} document(s), {differences} difference(s)");
+        Console.WriteLine($"compared {measured.Count} document(s) over three repetitions, {differences} difference(s)");
         return differences == 0 ? ExitOk : ExitDifference;
     }
 
@@ -175,7 +191,41 @@ internal sealed record PdfSetEntry
 {
     public string Id { get; init; } = string.Empty;
 
-    public string Source { get; init; } = string.Empty;
+    public string? Source { get; init; }
+
+    public string? Sha256 { get; init; }
+
+    /// <summary>Whether the document is one the original harnesses regenerated.</summary>
+    public bool Regenerated { get; init; }
+}
+
+/// <summary>
+/// The regenerated documents the harness runs produced, as the run recorded them:
+/// where each PDF is, relative to the repository root, and its hash.
+/// </summary>
+internal sealed record RegeneratedIndex
+{
+    public List<RegeneratedPdf> Pdfs { get; init; } = [];
+
+    /// <summary>Reads the index beside the set, or an empty one when the set holds none.</summary>
+    /// <param name="path">The <c>regenerated.json</c> beside the set.</param>
+    public static RegeneratedIndex Load(string path) =>
+        File.Exists(path)
+            ? JsonSerializer.Deserialize<RegeneratedIndex>(File.ReadAllText(path), Program.Json) ?? new RegeneratedIndex()
+            : new RegeneratedIndex();
+
+    /// <summary>The record of <paramref name="id"/>, or null when the regeneration never produced it.</summary>
+    /// <param name="id">The document's id in the set.</param>
+    public RegeneratedPdf? Find(string id) =>
+        Pdfs.FirstOrDefault(pdf => string.Equals(pdf.Id, id, StringComparison.Ordinal));
+}
+
+/// <summary>One regenerated document: its id, its path from the repository root and its hash.</summary>
+internal sealed record RegeneratedPdf
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Path { get; init; } = string.Empty;
 
     public string Sha256 { get; init; } = string.Empty;
 }
@@ -206,6 +256,8 @@ internal sealed class ExtractionFile
 
     public static ExtractionFile Of(PdfReading reading, string pdfSha256) => new()
     {
+        Reader = "pdfpig",
+        Configuration = "pdfpig-a",
         PdfSha256 = pdfSha256,
         Pages = reading.Pages.Count,
         PageSizes = [.. reading.Pages.Select(page => new[] { page.Width, page.Height })],
@@ -220,7 +272,13 @@ internal sealed class ExtractionFile
         JsonSerializer.Deserialize<ExtractionFile>(File.ReadAllText(path), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
         ?? throw new InvalidDataException($"The reading {path} is empty.");
 
-    /// <summary>Whether both readings hold the same pages and the same words, in the same order.</summary>
+    /// <summary>
+    /// Whether both readings hold the same pages, the same page sizes and, on each page,
+    /// the same words with the same boxes. The order of the words is not compared: the
+    /// measured extractor lists them in the library's own order, the product's reader in
+    /// the content order the verification compares in, and the measured files record no
+    /// content order to compare with. Every other value of every word is compared.
+    /// </summary>
     public bool SameAs(ExtractionFile other)
     {
         if (Pages != other.Pages || PageSizes.Count != other.PageSizes.Count)
@@ -244,23 +302,55 @@ internal sealed class ExtractionFile
             return false;
         }
 
-        for (var index = 0; index < Boxes.Count; index++)
+        for (var page = 1; page <= Pages; page++)
         {
-            if (!string.Equals(Texts[index], other.Texts[index], StringComparison.Ordinal))
+            var mine = Words(page);
+            var theirs = other.Words(page);
+            if (mine.Count != theirs.Count)
             {
                 return false;
             }
 
-            for (var figure = 0; figure < 5; figure++)
+            foreach (var group in mine.GroupBy(word => word.Text, StringComparer.Ordinal))
             {
-                if (!Nearly(Boxes[index][figure], other.Boxes[index][figure]))
+                var same = theirs.Where(word => string.Equals(word.Text, group.Key, StringComparison.Ordinal)).ToList();
+                var left = group.OrderBy(word => (word.Box[0], word.Box[1], word.Box[2], word.Box[3])).ToList();
+                if (same.Count != left.Count)
                 {
                     return false;
+                }
+
+                var right = same.OrderBy(word => (word.Box[0], word.Box[1], word.Box[2], word.Box[3])).ToList();
+                for (var index = 0; index < left.Count; index++)
+                {
+                    for (var figure = 0; figure < 4; figure++)
+                    {
+                        if (!Nearly(left[index].Box[figure], right[index].Box[figure]))
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
         }
 
         return true;
+    }
+
+    private List<(string Text, double[] Box)> Words(int page)
+    {
+        var words = new List<(string Text, double[] Box)>();
+        for (var index = 0; index < Boxes.Count; index++)
+        {
+            if (Boxes[index][0] != page)
+            {
+                continue;
+            }
+
+            words.Add((Texts[index], [Boxes[index][1], Boxes[index][2], Boxes[index][3], Boxes[index][4]]));
+        }
+
+        return words;
     }
 
     /// <summary>Points are compared at the precision the experiment recorded them with.</summary>
