@@ -83,16 +83,29 @@ public sealed class ReportPdfOutputWorkflow
     }
 
     /// <summary>
-    /// The code an output ends with for a failure: the failure's own code when it is a
-    /// domain refusal, and the generic code otherwise.
+    /// The code an output ends with for a failure: the failure's own code when it is one of
+    /// the codes this path raises, and the generic code otherwise. A runtime exception reaches
+    /// the workflow with its own type name where a code would be, and that type is not a
+    /// consumer's answer.
     /// </summary>
     /// <param name="failure">The failure, as the engine reported it inside the step's failure.</param>
     /// <returns>The code to end the output with.</returns>
     public static string CodeOf(Exception? failure) =>
         failure is ApplicationFailureException application
-        && !string.IsNullOrEmpty(application.ErrorType)
-            ? application.ErrorType!
+        && application.ErrorType is { Length: > 0 } code
+        && DomainCodes.Contains(code)
+            ? code
             : ExecutionFailed;
+
+    /// <summary>The codes the steps of a printed output raise, and the only ones an output keeps.</summary>
+    private static readonly HashSet<string> DomainCodes = new(StringComparer.Ordinal)
+    {
+        "PAGINATION_FAILED",
+        "UNSUPPORTED_CAPABILITY",
+        "QUOTA_EXCEEDED",
+        "RENDER_TIMEOUT",
+        "EXECUTION_FAILED",
+    };
 
     private static async Task FailTheOutputAsync(ReportPdfOutputInput input, string code, ActivityOptions options)
     {

@@ -22,6 +22,7 @@ failed.
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
+| **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance` |
 
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
   is run with every change. Its mechanics — one build, the invocations without
@@ -47,6 +48,13 @@ failed.
   when the printing steps are not part of the build.
 - The end-to-end level prepares the render worker image once, before the tests
   start, so the classes never publish it at the same time.
+- The **performance** level is the C4 smoke of the verification: it prints two documents
+  once through the rendering host image and measures the product verification twenty times
+  each, writing `performance.json` beside the run's record. It runs on the reference
+  environment only, never in the hermetic or integration levels.
+- Every test process is given the run's own folder in `REPORTSERVICE_RUN_DIRECTORY`, so a
+  class that must leave an artefact for a person writes it into
+  `artifacts/test-results/<stamp>/evidence/` through `ReportService.Testing.RunEnvironment`.
 - The **rendering** level prints real documents and judges them: it publishes the
   rendering host image on the PDF base and builds the judge image in
   [`../eng/pdf-oracle/`](../eng/pdf-oracle/), then prints the core tier of the

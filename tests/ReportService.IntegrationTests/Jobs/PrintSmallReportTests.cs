@@ -33,8 +33,9 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
 
+        var snapshot = PrintingRig.Snapshot(25);
         var reportJobId = await rig.SubmitAsync(
-            await rig.ReadyUploadAsync(PrintingRig.Snapshot(25), cancellationToken),
+            await rig.ReadyUploadAsync(snapshot, cancellationToken),
             PrintingRig.First,
             cancellationToken);
         var job = await rig.WaitForTerminalAsync(reportJobId, Deadline, cancellationToken);
@@ -56,6 +57,27 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         var bytes = await rig.ReadArtifactAsync(job, cancellationToken);
         Assert.Equal(job.SizeBytes, bytes.LongLength);
         Assert.Equal(job.Sha256, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
+
+        // The document and the snapshot it was printed from are kept in the run's evidence, with
+        // both hashes: they are what the independent reader's declaration was measured on, and
+        // the two files a person reproduces the measurement from. A process started without a
+        // run folder (the class run by hand) keeps them nowhere and says so.
+        if (RunEnvironment.RunDirectory is null)
+        {
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"no {RunEnvironment.RunDirectoryVariable}: the evidence of this job was not written");
+            return;
+        }
+
+        var pdfPath = RunEnvironment.WriteEvidence("pilot-simple.pdf", bytes);
+        var snapshotPath = RunEnvironment.WriteEvidence("pilot-simple.snapshot.json", snapshot);
+        var hashes = string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"pilot-simple.pdf sha256={RunEnvironment.Sha256Of(bytes)} bytes={bytes.LongLength}{Environment.NewLine}"
+            + $"pilot-simple.snapshot.json sha256={RunEnvironment.Sha256Of(snapshot)} bytes={snapshot.LongLength}{Environment.NewLine}");
+        RunEnvironment.WriteEvidence("pilot-simple.evidence.txt", System.Text.Encoding.UTF8.GetBytes(hashes));
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            $"evidence: {pdfPath}{Environment.NewLine}{snapshotPath}{Environment.NewLine}{hashes}");
     }
 
     [Theory]

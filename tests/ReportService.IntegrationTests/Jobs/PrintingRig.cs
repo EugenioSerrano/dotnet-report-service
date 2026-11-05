@@ -80,8 +80,8 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
-        "report-service-print-it",
-        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        "rs12",
+        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
 
     private readonly LogCapture _logs = new();
 
@@ -418,7 +418,8 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
 
         var manifest = Encoding.UTF8.GetString(package["template.yaml"])
-            .Replace("version: \"" + First + "\"", "version: \"" + version + "\"", StringComparison.Ordinal);
+            .Replace("version: \"" + First + "\"", "version: \"" + version + "\"", StringComparison.Ordinal)
+            .Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
         if (!declaresAnchors)
         {
             manifest = RemoveTheVerificationBlock(manifest);
@@ -430,6 +431,19 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
 
         package["template.yaml"] = Encoding.UTF8.GetBytes(manifest);
+
+        // The package prints with one named font family, so every document of these cases is
+        // laid out with the font the image carries instead of whatever the browser picks.
+        var styles = Encoding.UTF8.GetString(package["html/styles.css"])
+            .Replace("font-family: sans-serif;", "font-family: \"Liberation Sans\";", StringComparison.Ordinal);
+        package["html/styles.css"] = Encoding.UTF8.GetBytes(styles);
+
+        // The document is served at the package root, so its stylesheet is named from there:
+        // the sample's parts name it relative to their own folder, which the print would ask
+        // for at a path the package does not hold.
+        var startWithStyles = Encoding.UTF8.GetString(package["html/document-start.html.sbn"])
+            .Replace("href=\"styles.css\"", "href=\"html/styles.css\"", StringComparison.Ordinal);
+        package["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes(startWithStyles);
 
         // The document names the version it was printed from, so a reading of the PDF says which
         // version a job printed without reading the job's pin.

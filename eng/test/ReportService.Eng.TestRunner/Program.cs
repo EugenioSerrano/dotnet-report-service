@@ -50,6 +50,9 @@ internal static class Program
     /// <summary>The end-to-end suite: the whole local composition.</summary>
     private const string EndToEndProject = "tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj";
 
+    /// <summary>The performance suite: the verification smoke on the reference environment.</summary>
+    private const string PerformanceProject = "tests/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj";
+
     /// <summary>The composition host; the level prepares the render worker image through it.</summary>
     private const string AppHostProject = "src/ReportService.AppHost/ReportService.AppHost.csproj";
 
@@ -67,6 +70,14 @@ internal static class Program
 
     /// <summary>The variable that tells each composition the run has prepared the render worker image.</summary>
     private const string ImagePreparedVariable = "REPORTSERVICE_RENDER_WORKER_IMAGE_PREPARED";
+
+    /// <summary>
+    /// The variable that names the run's evidence folder to every test process, so a class
+    /// that produces an artefact a person must inspect writes it into the run's own folder
+    /// instead of guessing one. It is the same name <c>RunEnvironment</c> in the shared test
+    /// library reads.
+    /// </summary>
+    private const string RunDirectoryVariable = "REPORTSERVICE_RUN_DIRECTORY";
 
     /// <summary>Options of every <c>dotnet test</c> call.</summary>
     private static readonly string[] TestOptions = ["-c", "Release", "--no-ansi", "--no-progress"];
@@ -106,6 +117,7 @@ internal static class Program
             "hermetic" => HermeticProjects,
             "integration" => [IntegrationProject],
             "rendering" => [RenderingProject],
+            "performance" => [PerformanceProject],
             _ => new[] { EndToEndProject },
         };
 
@@ -305,6 +317,10 @@ internal static class Program
             "e2e" => new Dictionary<string, string> { [ImagePreparedVariable] = "true" },
             _ => new Dictionary<string, string>(),
         };
+
+        // The run's own folder is named to every process, so a class that must leave an
+        // artefact for a person to inspect writes it beside the run's record.
+        environment[RunDirectoryVariable] = runDirectory;
 
         var line = $"> dotnet {string.Join(' ', arguments.Select(Quote))}";
         Console.WriteLine(line);

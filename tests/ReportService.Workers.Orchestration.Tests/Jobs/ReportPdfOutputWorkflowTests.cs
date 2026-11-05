@@ -53,6 +53,17 @@ public sealed class ReportPdfOutputWorkflowTests
     }
 
     [Fact]
+    public void ARuntimeExceptionTypeIsNotAConsumersCode()
+    {
+        // The engine reports a .NET exception with its own type name where a code would be;
+        // that name is not what a consumer is told the job failed with.
+        var failure = new ApplicationFailureException(
+            "the step threw", errorType: "InvalidOperationException", nonRetryable: false);
+
+        Assert.Equal(ReportPdfOutputWorkflow.ExecutionFailed, ReportPdfOutputWorkflow.CodeOf(failure));
+    }
+
+    [Fact]
     public void AJobMessageIsTheProductsOwnTextAndNothingElse()
     {
         var refusal = new ApplicationFailureException(

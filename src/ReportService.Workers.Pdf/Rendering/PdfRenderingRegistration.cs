@@ -37,13 +37,19 @@ public static class PdfRenderingRegistration
         services.TryAddSingleton<BlockVerifier>();
         services.TryAddSingleton<PdfRenderingMetrics>();
         services.TryAddSingleton<BrowserSession>();
-        services.TryAddSingleton<IPdfPrinter>(services => new ChromiumPdfPrinter(
+        services.TryAddSingleton(services => new ChromiumPdfPrinter(
             services.GetRequiredService<BrowserSession>(),
             services.GetRequiredService<TimeProvider>()));
+        services.TryAddSingleton<IPdfPrinter>(services => services.GetRequiredService<ChromiumPdfPrinter>());
         services.TryAddSingleton(services => new BlockRenderer(
             services.GetRequiredService<BlockComposer>(),
             services.GetRequiredService<ChromiumPdfPrinter>(),
             services.GetRequiredService<BlockVerifier>()));
+
+        // The render step asks for the one renderer by its contract: a process that registered
+        // the implementation alone could not construct the step at all, and the process would
+        // refuse to start rather than print a document.
+        services.TryAddSingleton<IBlockRenderer>(services => services.GetRequiredService<BlockRenderer>());
         services.AddSingleton<RenderPdfBlockActivity>();
 
         // The third registration on the queue: the same engine worker serves it, under

@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Measurements of the data path: the reading-and-validation pass over the
-    deterministic volume datasets, with the template's schema evaluated on, and
-    the per-record cost of that validation. Not a hermetic project and not part
-    of the integration suite: it runs on the reference environment, over the
-    datasets the repository's generator produces.
+    Measurements of the data and verification paths: the reading-and-validation pass over
+    the deterministic volume datasets, the per-record cost of that validation, and the
+    verification's smoke thresholds of the reference environment. Not a hermetic project
+    and not part of the integration suite: the smoke prints the documents through the
+    rendering host image and measures them in process, on the reference environment only.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 
@@ -24,6 +25,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\..\src\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 

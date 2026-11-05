@@ -134,11 +134,22 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
 var templateSourceRepository = builder.Configuration["TemplateSource:Repository"] ?? string.Empty;
 var templateSourceBranch = builder.Configuration["TemplateSource:Branch"] ?? "main";
 var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
+
+// The source's address and the one exception to its transport rule are forwarded so a local
+// run can serve templates itself. The composition is a development tool on a developer's
+// machine: it is never deployed and never shipped in an image, so nothing a consumer reaches
+// changes here. The address defaults to the public API and the exception to off; the worker
+// still refuses a plain-text address that is not loopback, and the credential below is still
+// a secret the process reads and sends only to the configured address.
+var templateSourceApiBaseUrl = builder.Configuration["TemplateSource:ApiBaseUrl"] ?? "https://api.github.com/";
+var templateSourceAllowInsecureLoopback = builder.Configuration["TemplateSource:AllowInsecureLoopback"] ?? "false";
 var templateSourceToken = builder.AddParameter("template-source-token", secret: true);
 renderWorker
     .WithEnvironment("TemplateSource__Repository", templateSourceRepository)
     .WithEnvironment("TemplateSource__Branch", templateSourceBranch)
     .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline)
+    .WithEnvironment("TemplateSource__ApiBaseUrl", templateSourceApiBaseUrl)
+    .WithEnvironment("TemplateSource__AllowInsecureLoopback", templateSourceAllowInsecureLoopback)
     .WithEnvironment("TemplateSource__Token", templateSourceToken);
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
