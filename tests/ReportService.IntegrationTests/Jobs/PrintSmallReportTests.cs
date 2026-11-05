@@ -1,5 +1,6 @@
 using System.Text;
 using ReportService.Testing;
+using UglyToad.PdfPig.Content;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -269,8 +270,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         AssertNoOutputObject(rig);
     }
 
-    // The text of a printed document, read from its own pages: the words the reader extracts,
-    // joined with a space. Nothing of the layout engine's own output is consulted.
+    // The text of a printed document, page by page, as the page itself presents it: every
+    // character in the order it was painted, and one space where a word begins and the line
+    // or cell break left no character between them. A description the table wraps inside its
+    // cell is therefore read as the one string its source has. Nothing of the layout engine's
+    // own output is consulted.
     private static string TextOf(byte[] pdf)
     {
         var path = Path.Combine(Path.GetTempPath(), "report-service-print-" + Guid.NewGuid().ToString("N") + ".pdf");
@@ -281,7 +285,33 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
             var text = new StringBuilder();
             foreach (var page in document.GetPages())
             {
-                text.Append(page.Text).Append(' ');
+                // The first letter of every word the reader finds: a word that begins where the
+                // page's own characters carry nothing is the space a line or cell break dropped.
+                var wordStarts = new HashSet<Letter>(ReferenceEqualityComparer.Instance);
+                foreach (var word in page.GetWords())
+                {
+                    if (word.Letters.Count > 0)
+                    {
+                        wordStarts.Add(word.Letters[0]);
+                    }
+                }
+
+                // The page's own characters, in the order the page presents them, with one space
+                // where a word begins and nothing already separates it from the character before.
+                var pageText = new StringBuilder();
+                foreach (var letter in page.Letters)
+                {
+                    if (wordStarts.Contains(letter)
+                        && pageText.Length > 0
+                        && !char.IsWhiteSpace(pageText[pageText.Length - 1]))
+                    {
+                        pageText.Append(' ');
+                    }
+
+                    pageText.Append(letter.Value);
+                }
+
+                text.Append(pageText).Append(' ');
             }
 
             return text.ToString();
