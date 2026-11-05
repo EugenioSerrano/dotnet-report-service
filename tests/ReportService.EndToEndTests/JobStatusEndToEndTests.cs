@@ -222,13 +222,27 @@ public sealed class JobStatusEndToEndTests : IDisposable
         using (var content = new MemoryStream(bytes, writable: false))
         {
             var written = await objects.WriteAsync(key, content, cancellationToken);
-            Assert.True(written.Succeeded, "the taken package had to be written");
+            if (written.Succeeded)
+            {
+                // The object was stored under the key its bytes name.
+            }
+            else if (written.Outcome == StorageOutcome.AlreadyExists)
+            {
+                // The key's last segment is the package's own SHA-256, so an object already
+                // there is this package: a repeat write is the no-op the store answers. It is
+                // verified rather than trusted, so an object that is absent, incomplete or
+                // different still fails the case.
+                await VerifyStoredPackageAsync(objects, key, bytes, packageSha256, cancellationToken);
+            }
+            else
+            {
+                Assert.Fail(
+                    $"the taken package had to be written: the store answered {written.Outcome} "
+                    + $"({written.Error?.Code ?? "no code"}: {written.Error?.Message ?? "no message"})");
+            }
         }
 
-        await using var dataSource = NpgsqlDataSource.Create(connectionString);
-        var versions = new PostgresTemplateVersionStore(dataSource);
-        var inserted = await versions.TryInsertAsync(
-            TemplateVersionRecords.Sample(
+        var record = TemplateVersionRecords.Sample(
                 TemplateId,
                 Version,
                 ConsumerA,
@@ -239,9 +253,77 @@ public sealed class JobStatusEndToEndTests : IDisposable
                 PackageSize = bytes.Length,
                 FileCount = files.Count,
                 ObjectKey = key,
-            },
-            cancellationToken);
-        Assert.True(inserted.WasInserted, "the taken version had to be recorded");
+            };
+        await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        var versions = new PostgresTemplateVersionStore(dataSource);
+        var inserted = await versions.TryInsertAsync(record, cancellationToken);
+        if (!inserted.WasInserted)
+        {
+            // The store records a version once and answers the record it holds: a repeat take
+            // is that answer, and it is this package only when every field below agrees.
+            AssertHoldsTheSamePackage(record, inserted.Record);
+        }
+    }
+
+    // Reads the object at the content-addressed key back through the verifying reader, which
+    // checks the size and the SHA-256 as the content is consumed: the seed continues only when
+    // the object is the package it built, and fails the case loudly when it is not.
+    private static async Task VerifyStoredPackageAsync(
+        IObjectStore objects,
+        ObjectKey key,
+        byte[] bytes,
+        string packageSha256,
+        CancellationToken cancellationToken)
+    {
+        var read = await objects.OpenReadAsync(key, bytes.Length, packageSha256, cancellationToken);
+        if (!read.Succeeded || read.Value is null)
+        {
+            Assert.Fail(
+                $"the object at the taken key had to be read back and verified: the store answered {read.Outcome} "
+                + $"({read.Error?.Code ?? "no code"}: {read.Error?.Message ?? "no message"}); "
+                + $"{bytes.Length} bytes with SHA-256 {packageSha256} were expected");
+        }
+
+        await using var verified = read.Value!;
+        try
+        {
+            await verified.Content.CopyToAsync(Stream.Null, cancellationToken);
+        }
+        catch (StorageIntegrityException integrity)
+        {
+            Assert.Fail(
+                $"the object at the taken key is not the package: it has {integrity.ActualSize} bytes with "
+                + $"SHA-256 {integrity.ActualSha256}, and {integrity.ExpectedSize} bytes with "
+                + $"SHA-256 {integrity.ExpectedSha256} were expected");
+        }
+    }
+
+    // The store answers a repeat insert with the record it holds, and that is the same package
+    // only when the identity and the package's own fields agree; anything else is another
+    // package under a version this class must never accept.
+    private static void AssertHoldsTheSamePackage(TemplateVersionRecord expected, TemplateVersionRecord held)
+    {
+        List<string> differences = [];
+        AddDifference(differences, "template id", expected.TemplateId, held.TemplateId);
+        AddDifference(differences, "version", expected.Version, held.Version);
+        AddDifference(differences, "owner", expected.OwnerConsumerId, held.OwnerConsumerId);
+        AddDifference(differences, "shared", expected.Shared.ToString(CultureInfo.InvariantCulture), held.Shared.ToString(CultureInfo.InvariantCulture));
+        AddDifference(differences, "package hash", expected.PackageSha256, held.PackageSha256);
+        AddDifference(differences, "object key", expected.ObjectKey.ToString(), held.ObjectKey.ToString());
+        AddDifference(differences, "package size", expected.PackageSize.ToString(CultureInfo.InvariantCulture), held.PackageSize.ToString(CultureInfo.InvariantCulture));
+        AddDifference(differences, "file count", expected.FileCount.ToString(CultureInfo.InvariantCulture), held.FileCount.ToString(CultureInfo.InvariantCulture));
+        if (differences.Count > 0)
+        {
+            Assert.Fail("the version was already recorded with another package: " + string.Join("; ", differences));
+        }
+    }
+
+    private static void AddDifference(List<string> differences, string field, string expected, string held)
+    {
+        if (!string.Equals(expected, held, StringComparison.Ordinal))
+        {
+            differences.Add($"{field} is {held}, and this package's is {expected}");
+        }
     }
 
     private async Task<string> ReadyUploadAsync(HttpClient api, string consumer, byte[] document, CancellationToken cancellationToken)
