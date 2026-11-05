@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The independent judge of a printed document: it reads a PDF with the text
+    tools installed in its own image and judges the printed words against the
+    data the document was printed from. It references no product assembly and no
+    PDF library, so its verdict is reached without the code it judges.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.PdfOracle.Tests" />
+  </ItemGroup>
+
+</Project>

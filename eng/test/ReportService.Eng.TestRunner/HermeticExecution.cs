@@ -51,7 +51,7 @@ internal static partial class HermeticExecution
     public const string BuildLogFileName = "hermetic-build.log";
 
     /// <summary>The command line of the level, as the usage message states it.</summary>
-    public const string UsageLine = "Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|e2e [--without-printing]";
+    public const string UsageLine = "Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|rendering|e2e [--without-printing]";
 
     /// <summary>The options the hermetic level accepts, as the usage message states them.</summary>
     public const string UsageOptions = "       hermetic: [--degree <n>] [--sequential --reason \"<text>\"] [--coverage-role <measure|verification>]";
@@ -59,6 +59,10 @@ internal static partial class HermeticExecution
     /// <summary>The message of <c>--without-printing</c> on the hermetic level, which has no printing classes.</summary>
     public const string WithoutPrintingOnHermetic =
         "--without-printing selects the group of the integration and end-to-end levels that needs the printing steps; the hermetic level has none.";
+
+    /// <summary>The message of <c>--without-printing</c> on the rendering level, which prints by definition.</summary>
+    public const string WithoutPrintingOnRendering =
+        "--without-printing selects the group of the integration and end-to-end levels that needs the printing steps; the rendering level prints every document it judges.";
 
     /// <summary>
     /// Reads the caller's arguments. The level comes first; the hermetic level
@@ -186,7 +190,7 @@ internal static partial class HermeticExecution
             }
         }
 
-        if (level is not ("hermetic" or "integration" or "e2e"))
+        if (level is not ("hermetic" or "integration" or "rendering" or "e2e"))
         {
             error = level is null ? "The command needs one level." : $"'{level}' is not a level of the runner.";
             return false;
@@ -207,7 +211,7 @@ internal static partial class HermeticExecution
 
         if (withoutPrinting)
         {
-            error = WithoutPrintingOnHermetic;
+            error = level == "rendering" ? WithoutPrintingOnRendering : WithoutPrintingOnHermetic;
             return false;
         }
 

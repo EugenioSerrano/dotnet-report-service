@@ -1,3 +1,8 @@
+@page {
+  size: A4 portrait;
+  margin: 15mm 12mm 18mm 12mm;
+}
+
 html {
   font-family: "Liberation Sans", sans-serif;
   font-size: 9pt;
@@ -27,6 +32,7 @@ table.detail {
 
 table.detail th,
 table.detail td {
+  box-sizing: border-box;
   padding: 0;
   text-align: left;
   vertical-align: top;
@@ -46,10 +52,14 @@ table.detail th {
 
 .col-description {
   width: 120mm;
+  padding-right: 2mm;
 }
 
 .col-amount {
   width: 30mm;
+}
+
+table.detail td.col-amount {
   text-align: right;
 }
 

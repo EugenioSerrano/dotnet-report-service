@@ -35,6 +35,8 @@ dotnet-report-service/
 │   ├── ReportService.TemplateSource.Tests/     Unit/component tests of the template source: settings, the client against an in-process source, the version listing, the changed-version warning, the by-name resolution, the manifest reader and the take (hermetic)
 │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
+│   ├── ReportService.RenderingHost/      The console the rendering suite starts in its own image: composes a block, prints it and applies a known-bad control
+│   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
 │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   ├── ReportService.PerformanceTests/   Memory and throughput measurements over the generated datasets (reference environment)
 │   └── ReportService.Testing/            Support library shared by the test projects: the repository and image pins, the template-source and template-package fixtures, the in-memory stores and the waits
@@ -42,6 +44,7 @@ dotnet-report-service/
 ├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md)
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
+│   ├── pdf-oracle/           The judge's image: the independent reader, its text tools and the accepted licence record
 │   └── test/                  The test runner: one command per test level
 ├── spikes/                    Stage 0 experiments (not part of the product)
 ├── artifacts/                 Local build and test output (git-ignored, never committed)

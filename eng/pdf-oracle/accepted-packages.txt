@@ -1,0 +1,54 @@
+# The packages the oracle image installs, accepted by the owner as ADR-013 C3
+# (eng/pdf-oracle/THIRD-PARTY-TOOLS.md section 1; commit 611fd0f).
+# One package name per line; a package the install adds that is not listed here
+# stops the build.
+fontconfig-config
+fonts-dejavu-core
+fonts-dejavu-mono
+libbrotli1
+libbsd0
+libcairo2
+libcurl3t64-gnutls
+libdeflate0
+libexpat1
+libfontconfig1
+libfreetype6
+libgssapi-krb5-2
+libjbig0
+libjpeg-turbo8
+libjpeg8
+libk5crypto3
+libkeyutils1
+libkrb5-3
+libkrb5support0
+liblcms2-2
+libldap2
+liblerc4
+libnghttp2-14
+libnspr4
+libnss3
+libopenjp2-7
+libpixman-1-0
+libpng16-16t64
+libpoppler134
+libpsl5t64
+libqpdf29t64
+librtmp1
+libsasl2-2
+libsasl2-modules-db
+libsharpyuv0
+libsqlite3-0
+libssh-4
+libtiff6
+libwebp7
+libx11-6
+libx11-data
+libxau6
+libxcb-render0
+libxcb-shm0
+libxcb1
+libxdmcp6
+libxext6
+libxrender1
+poppler-utils
+qpdf

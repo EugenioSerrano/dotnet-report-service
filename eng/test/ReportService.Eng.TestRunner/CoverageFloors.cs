@@ -106,6 +106,9 @@ internal static partial class CoverageFloors
         // they hold no product behaviour, so the project measures them and the
         // run reports them without a floor.
         ("ReportService.Fixtures.Tests", ["ReportService.Testing"]),
+        // The independent judge of a printed document is an instrument of the test
+        // levels, not a product assembly: it is measured and reported without a floor.
+        ("ReportService.PdfOracle.Tests", ["ReportService.PdfOracle"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
         ("ReportService.Workers.Pdf.Tests", ["ReportService.Workers.Pdf"]),
     ];
