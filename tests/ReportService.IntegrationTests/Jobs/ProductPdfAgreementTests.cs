@@ -33,13 +33,13 @@ public sealed class ProductPdfAgreementTests : IClassFixture<PostgresFixture>
 
     private static readonly TimeSpan Deadline = TimeSpan.FromMinutes(4);
 
-    /// <summary>The control and the class the product's verification reports for it (§2.9.5).</summary>
+    /// <summary>The control and the class the product's verification reports for it.</summary>
     public static TheoryData<string, string> Mutations { get; } = new()
     {
         { "NC-W", "text-dropped" },
-        { "NC-L", "text-repeated" },
+        { "NC-L", "text-extra" },
         { "NC-R", "row-lost" },
-        { "NC-F", "text-dropped" },
+        { "NC-F", "text-altered" },
     };
 
     private readonly PostgresFixture _fixture;
@@ -118,8 +118,18 @@ public sealed class ProductPdfAgreementTests : IClassFixture<PostgresFixture>
             [(fixtures, "/fixtures"), (templates, "/packages"), (output, "/out")],
             cancellationToken);
 
-        using var result = JsonDocument.Parse(await File.ReadAllTextAsync(
-            Path.Combine(output, IntegrityFixture + ".json"), cancellationToken));
+        // The host names what it writes after the fixture and the control: the one contract
+        // both readers of the folder use. The case spells it once, here.
+        var resultName = $"{IntegrityFixture}-{mutation}";
+        var resultPath = Path.Combine(output, resultName + ".json");
+        if (!File.Exists(resultPath))
+        {
+            Assert.Fail(
+                $"the rendering host wrote no result for {mutation}: expected '{resultName}.json' in '{output}'. "
+                + $"The folder holds: {DescribeFolder(output)}.");
+        }
+
+        using var result = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken));
         // The product's verification refuses the controlled document, with the class the
         // mapping names: nothing of this control may reach a consumer.
         Assert.False(result.RootElement.GetProperty("verificationPassed").GetBoolean());
@@ -127,14 +137,30 @@ public sealed class ProductPdfAgreementTests : IClassFixture<PostgresFixture>
         Assert.Equal(productClass, reason, ignoreCase: true);
 
         var pdf = Path.Combine(output, result.RootElement.GetProperty("pdf").GetString()!);
+        if (!File.Exists(pdf))
+        {
+            Assert.Fail(
+                $"the result for {mutation} names '{Path.GetFileName(pdf)}', which the rendering host did not write. "
+                + $"The folder holds: {DescribeFolder(output)}.");
+        }
+
         var verdict = await JudgeAsync(
-            IntegrityFixture + "-" + mutation,
+            resultName,
             await File.ReadAllBytesAsync(pdf, cancellationToken),
             await File.ReadAllBytesAsync(Path.Combine(fixtures, IntegrityFixture + ".json"), cancellationToken),
             IntegrityPackage,
             cancellationToken);
         Assert.False(verdict.Passed, $"{mutation} passed the judge, and the product refused it");
         Assert.Contains(verdict.Classes, failure => failure.Contains("text-", StringComparison.Ordinal) || failure.Contains("row-", StringComparison.Ordinal) || failure.Contains("structure-lost", StringComparison.Ordinal));
+    }
+
+    // What the folder holds, for a failure that names the contract it expected.
+    private static string DescribeFolder(string folder)
+    {
+        List<string?> files = Directory.Exists(folder)
+            ? [.. Directory.EnumerateFiles(folder).Select(path => Path.GetFileName(path)).Order(StringComparer.Ordinal)]
+            : [];
+        return files.Count == 0 ? "(no files)" : string.Join(", ", files);
     }
 
     // The judge in its own image: the document, the snapshot it was printed from and the
