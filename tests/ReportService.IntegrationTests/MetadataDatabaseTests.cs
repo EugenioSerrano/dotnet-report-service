@@ -244,17 +244,26 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         Assert.Equal(MigrationCatalog.ExpectedVersion, current.Data["expected"]);
         Assert.Equal(MigrationCatalog.ExpectedVersion, current.Data["applied"]);
 
+        // The entry is the next number after the highest script the build ships, so the
+        // journal is genuinely ahead of the expected version: a later delivered script moves
+        // both, and the entry keeps sorting above it.
+        var aheadName = NextScriptName("ahead");
+        Assert.True(
+            string.CompareOrdinal(aheadName, MigrationCatalog.ExpectedVersion) > 0,
+            $"the journal entry '{aheadName}' must sort above the expected version '{MigrationCatalog.ExpectedVersion}'");
+
         await using (var connection = await server.OpenAsync(database, cancellationToken))
         {
             await connection.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO public.schema_migrations (script_name, checksum) VALUES (@name, @checksum)",
-                new { name = "0009_ahead.sql", checksum = new string('b', 64) },
+                new { name = aheadName, checksum = new string('b', 64) },
                 cancellationToken: cancellationToken));
         }
 
         var ahead = await check.CheckHealthAsync(Context(), cancellationToken);
         Assert.Equal(HealthStatus.Unhealthy, ahead.Status);
-        Assert.Equal("0009_ahead.sql", ahead.Data["applied"]);
+        Assert.Equal(aheadName, ahead.Data["applied"]);
+        Assert.Equal(MigrationCatalog.ExpectedVersion, ahead.Data["expected"]);
         Assert.DoesNotContain(server.RolePassword, ahead.Description, StringComparison.Ordinal);
     }
 
