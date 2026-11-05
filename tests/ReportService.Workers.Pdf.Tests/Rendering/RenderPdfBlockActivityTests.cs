@@ -1,4 +1,5 @@
 using System.Formats.Tar;
+using System.Diagnostics.Metrics;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -173,6 +174,41 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
     }
 
     [Fact]
+    public async Task ABlockThatPrintsReportsItsFourPhasesAndItsVerdict()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var identity = MeterIdentity.ForHost("ReportService.Tests.RenderPhases");
+        using var metrics = new PdfRenderingMetrics(identity);
+        using var recorded = new RecordedMeasurements(identity);
+        var renderer = new FakeRenderer(new PrintOutcome("printed.pdf", AbortedRequests: 2, ConsoleErrors: 0, TimeSpan.FromSeconds(1)));
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store, metrics);
+
+        await new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0)));
+
+        // The composition, the print, the verification and the store each reported a duration;
+        // the verdict passed with no class, the block holds two pages, and the two requests the
+        // document made that were aborted are counted.
+        var phases = recorded.Of(PdfRenderingMetrics.BlockDurationInstrumentName);
+        Assert.Equal(4, phases.Count);
+        Assert.Equal(
+            [PdfRenderingMetrics.ComposePhase, PdfRenderingMetrics.PrintPhase, PdfRenderingMetrics.VerifyPhase, PdfRenderingMetrics.StorePhase],
+            phases.Select(measurement => measurement.Tag("phase")));
+        var outcome = Assert.Single(recorded.Of(PdfRenderingMetrics.VerificationOutcomesInstrumentName));
+        Assert.Equal(PdfRenderingMetrics.PassResult, outcome.Tag("result"));
+        Assert.Equal(PdfRenderingMetrics.NoClass, outcome.Tag("class"));
+        Assert.Equal(2, Assert.Single(recorded.Of(PdfRenderingMetrics.PagesInstrumentName)).Value);
+        Assert.Equal(2, Assert.Single(recorded.Of(PdfRenderingMetrics.AbortedRequestsInstrumentName)).Value);
+    }
+
+    [Fact]
     public async Task ABlockOutsideTheJobsPartitionIsRefused()
     {
         var jobs = new FakeJobStore
@@ -226,7 +262,8 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         FakeJobStore jobs,
         FakeVersionStore? versions = null,
         FakeRenderer? renderer = null,
-        IObjectStore? store = null)
+        IObjectStore? store = null,
+        PdfRenderingMetrics? metrics = null)
     {
         store ??= FilesystemObjectStore.Open(
             new FilesystemStorageOptions { Root = Path.Combine(root, "store"), CreateIfMissing = true },
@@ -242,7 +279,7 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             new PreparedTemplateCache(),
             new ScribanTemplateAdapter(),
             renderer ?? new FakeRenderer(),
-            new PdfRenderingMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
+            metrics ?? new PdfRenderingMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             TimeProvider.System,
             NullLoggerFactory.Instance,
             NullLogger<RenderPdfBlockActivity>.Instance,
@@ -443,7 +480,7 @@ internal sealed class FakeVersionStore : ITemplateVersionStore
 }
 
 /// <summary>The renderer as the step calls it: it answers a verified document and writes nothing.</summary>
-internal sealed class FakeRenderer : IBlockRenderer
+internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer
 {
     public bool Called { get; private set; }
 
@@ -458,7 +495,58 @@ internal sealed class FakeRenderer : IBlockRenderer
             path,
             bytes.LongLength,
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
-            Print: null,
+            Print: print,
             new VerificationResult(true, null, 0, null, null, null, null, null, 2, 10, 1, 1));
     }
+}
+
+/// <summary>What the product's meter published while a case ran, listened to by its own identity.</summary>
+internal sealed class RecordedMeasurements : IDisposable
+{
+    private readonly MeterListener _listener = new();
+
+    private readonly Lock _gate = new();
+
+    private readonly List<Measurement> _measurements = [];
+
+    public RecordedMeasurements(MeterIdentity identity)
+    {
+        _listener.InstrumentPublished = (instrument, listener) =>
+        {
+            if (string.Equals(instrument.Meter.Name, identity.Name, StringComparison.Ordinal))
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        _listener.SetMeasurementEventCallback<double>((instrument, value, tags, state) =>
+            Add(new Measurement(instrument.Name, value, tags.ToArray())));
+        _listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
+            Add(new Measurement(instrument.Name, value, tags.ToArray())));
+        _listener.Start();
+    }
+
+    public IReadOnlyList<Measurement> Of(string instrumentName)
+    {
+        lock (_gate)
+        {
+            return [.. _measurements.Where(measurement => string.Equals(measurement.Name, instrumentName, StringComparison.Ordinal))];
+        }
+    }
+
+    public void Dispose() => _listener.Dispose();
+
+    private void Add(Measurement measurement)
+    {
+        lock (_gate)
+        {
+            _measurements.Add(measurement);
+        }
+    }
+}
+
+/// <summary>One measurement as the meter published it.</summary>
+internal sealed record Measurement(string Name, double Value, IReadOnlyList<KeyValuePair<string, object?>> Tags)
+{
+    public string? Tag(string name) =>
+        Tags.FirstOrDefault(tag => string.Equals(tag.Key, name, StringComparison.Ordinal)).Value as string;
 }
