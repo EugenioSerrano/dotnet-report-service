@@ -45,11 +45,13 @@ internal static class SyntheticDocument
           "heightMm": 297,
           "marginMm": { "top": 15, "right": 12, "bottom": 18, "left": 12 },
           "columns": [
-            { "column": "seq", "startMm": 12, "endMm": 26 },
+            { "column": "sequence", "startMm": 12, "endMm": 26 },
             { "column": "date", "startMm": 26, "endMm": 48 },
             { "column": "description", "startMm": 48, "endMm": 168 },
             { "column": "amount", "startMm": 168, "endMm": 198 }
           ],
+          "rowKey": "sequence",
+          "amountColumn": "amount",
           "headRow": ["Seq", "Date", "Description", "Amount"],
           "headerAnchors": ["$.reportTitle", "$.customer.name", "$.currency", "$.totals.recordCount"],
           "trail": "$.freeText",
@@ -59,7 +61,7 @@ internal static class SyntheticDocument
         """;
 
     /// <summary>The data the built document was printed from.</summary>
-    public static FixtureSource Fixture() => FixtureSource.Parse(FixtureJson);
+    public static FixtureSource Fixture() => FixtureSource.Parse(FixtureJson, Expectation());
 
     /// <summary>The page and columns the package declares.</summary>
     public static ExpectationDocument Expectation() => ExpectationDocument.Parse(ExpectationJson);

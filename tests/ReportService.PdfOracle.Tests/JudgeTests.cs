@@ -139,7 +139,7 @@ public sealed class JudgeTests
 
         var verdict = IntegrityRules.Judge(
             new PdfExtraction(1, 1, [(SyntheticDocument.PageWidthPt, SyntheticDocument.PageHeightPt)], words),
-            FixtureSource.Parse(noRows),
+            FixtureSource.Parse(noRows, SyntheticDocument.Expectation()),
             SyntheticDocument.Expectation(),
             "document.pdf");
 

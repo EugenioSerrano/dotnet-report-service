@@ -42,11 +42,17 @@ public sealed class DeclarationTests
         var expectation = ExpectationDocument.Load(DeclarationPath(id));
         var package = PackageGeometry.Read(PackagePath(id));
 
-        // The names and their order are the row template's, so a width is never read
-        // against the wrong column.
-        Assert.Equal(
-            string.Join(", ", package.Columns),
-            string.Join(", ", expectation.Columns.Select(column => column.Column)));
+        // The names are the record members the row template prints, in the order it prints
+        // them: the bands are matched to the package's own widths by position, so a width is
+        // never read against the wrong column.
+        var row = File.ReadAllText(Path.Combine(PackagePath(id), "html", "row.html.sbn"));
+        var members = System.Text.RegularExpressions.Regex
+            .Matches(row, @"item\.(?<member>[A-Za-z_][A-Za-z0-9_]*)")
+            .Select(match => match.Groups["member"].Value)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        Assert.Equal(string.Join(", ", members), string.Join(", ", expectation.Columns.Select(column => column.Column)));
+        Assert.Equal(package.Columns.Count, expectation.Columns.Count);
 
         // Each band starts where the package's own widths put it, from its own left margin.
         for (var index = 0; index < package.Columns.Count; index++)
@@ -62,6 +68,20 @@ public sealed class DeclarationTests
         Assert.Equal(A4WidthMm - package.LeftMarginMm - package.RightMarginMm, package.ContainerWidthMm, 3);
         Assert.Equal(package.LeftMarginMm, expectation.Columns[0].StartMm, 3);
         Assert.Equal(A4WidthMm - package.RightMarginMm, expectation.Columns[^1].EndMm, 3);
+    }
+
+    [Theory]
+    [InlineData("integrity-table")]
+    [InlineData("integrity-grid")]
+    public void TheDeclaredRolesNameColumnsTheDeclarationHolds(string id)
+    {
+        var expectation = ExpectationDocument.Load(DeclarationPath(id));
+        var columns = expectation.Columns.Select(column => column.Column).ToList();
+
+        Assert.Contains(expectation.RowKey, columns);
+        Assert.Contains(expectation.AmountColumn, columns);
+        Assert.Equal("sequence", expectation.RowKey);
+        Assert.Equal("amount", expectation.AmountColumn);
     }
 
     [Theory]
@@ -103,6 +123,33 @@ public sealed class DeclarationTests
             """;
 
         Assert.Throws<InvalidDataException>(() => ExpectationDocument.Parse(text));
+    }
+
+    [Fact]
+    public void ADeclarationWithoutItsRolesIsRefused()
+    {
+        // The judge never guesses which column identifies a record or which one must print
+        // on the row's first page: a declaration that omits either role is refused.
+        var text = """
+            {
+              "paper": "A4",
+              "widthMm": 210,
+              "heightMm": 297,
+              "marginMm": { "top": 15, "right": 12, "bottom": 18, "left": 12 },
+              "columns": [ { "column": "sequence", "startMm": 12, "endMm": 26 } ],
+              "headRow": ["Seq"],
+              "headerAnchors": ["$.reportTitle"],
+              "grouped": false,
+              "blockTotal": false
+            }
+            """;
+
+        var withoutRoles = Assert.Throws<InvalidDataException>(() => ExpectationDocument.Parse(text));
+        Assert.Contains("rowKey", withoutRoles.Message, StringComparison.Ordinal);
+
+        var unknownRole = Assert.Throws<InvalidDataException>(() => ExpectationDocument.Parse(
+            text.Replace("\"grouped\"", "\"rowKey\": \"sequence\", \"amountColumn\": \"total\", \"grouped\"", StringComparison.Ordinal)));
+        Assert.Contains("amountColumn", unknownRole.Message, StringComparison.Ordinal);
     }
 
     [Fact]

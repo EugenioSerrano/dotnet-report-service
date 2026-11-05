@@ -44,7 +44,8 @@ public sealed class CaptionPageTests
 
     private static FixtureSource ReportingWithTrail() =>
         FixtureSource.Parse(
-            SyntheticDocument.FixtureJson.Replace("\"freeText\": \"\"", "\"freeText\": \"closing note\"", StringComparison.Ordinal));
+            SyntheticDocument.FixtureJson.Replace("\"freeText\": \"\"", "\"freeText\": \"closing note\"", StringComparison.Ordinal),
+            SyntheticDocument.Expectation());
 
     private static string Describe(Verdict verdict) =>
         string.Join(", ", verdict.Failures.Select(failure => $"{failure.Rule} {failure.Class} {failure.Page?.ToString(CultureInfo.InvariantCulture)} {failure.Detail}"));

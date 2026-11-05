@@ -96,8 +96,8 @@ internal static class Program
 
         try
         {
-            var fixture = FixtureSource.Load(options["fixture"]);
             var expectation = ExpectationDocument.Load(options["expectation"]);
+            var fixture = FixtureSource.Load(options["fixture"], expectation);
             var extraction = await read(options["pdf"], cancellationToken).ConfigureAwait(false);
             var verdict = IntegrityRules.Judge(extraction, fixture, expectation, Path.GetFileName(options["pdf"]));
             var json = verdict.ToJson();

@@ -85,6 +85,10 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private readonly LogCapture _logs = new();
 
+    private readonly Dictionary<string, byte[]> _snapshotOf = new(StringComparer.Ordinal);
+
+    private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
+
     private IContainer? _engine;
 
     private TemplateSourceHost? _source;
@@ -172,6 +176,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         using var content = new MemoryStream(document, writable: false);
         var written = await Objects.WriteAsync(key, content, cancellationToken);
         Assert.True(written.Succeeded);
+        _snapshotOf[uploadId] = document;
         Assert.Equal(
             SnapshotCommitResult.Committed,
             await uploads.CommitReadyAsync(
@@ -190,6 +195,10 @@ internal sealed class PrintingRig : IAsyncDisposable
                 cancellationToken));
         return uploadId;
     }
+
+    /// <summary>The snapshot one job was printed from, as the case handed it to the upload.</summary>
+    /// <param name="reportJobId">The job.</param>
+    public byte[] SnapshotOf(string reportJobId) => _snapshotOf[_uploadOf[reportJobId]];
 
     /// <summary>Submits one job through the product's own API and answers its identifier.</summary>
     /// <param name="uploadId">The ready upload it reports on.</param>
@@ -213,7 +222,9 @@ internal sealed class PrintingRig : IAsyncDisposable
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         Assert.True(response.StatusCode == HttpStatusCode.Accepted, $"the job had to be accepted: {(int)response.StatusCode} {body}");
         using var document = JsonDocument.Parse(body);
-        return document.RootElement.GetProperty("reportJobId").GetString()!;
+        var reportJobId = document.RootElement.GetProperty("reportJobId").GetString()!;
+        _uploadOf[reportJobId] = uploadId;
+        return reportJobId;
     }
 
     /// <summary>Waits for the job to reach a terminal status and answers what the record says.</summary>

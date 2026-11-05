@@ -3,19 +3,24 @@ using System.Text.Json.Nodes;
 
 namespace ReportService.PdfOracle;
 
-/// <summary>One detail record of the fixture, as the printed row must hold it.</summary>
+/// <summary>One detail record of the fixture, as the declaration's columns read it.</summary>
 /// <param name="Ordinal">The record's ordinal in the snapshot, from 1.</param>
-/// <param name="Sequence">The record's own number, printed in the first column.</param>
-/// <param name="Date">The date cell's text.</param>
-/// <param name="Description">The description cell's text.</param>
-/// <param name="Amount">The amount cell's text.</param>
-internal sealed record FixtureRecord(int Ordinal, int Sequence, string Date, string Description, string Amount);
+/// <param name="Key">The value of the column the declaration names as the row key.</param>
+/// <param name="Values">Every declared column's value for this record, as the printed text holds it.</param>
+internal sealed record FixtureRecord(int Ordinal, string Key, IReadOnlyDictionary<string, string> Values)
+{
+    /// <summary>The record's value of one declared column.</summary>
+    /// <param name="column">The column's name, which is the record member it prints.</param>
+    public string Member(string column) => Values[column];
+}
 
 /// <summary>
 /// The data a document was printed from, read the way the data contract holds it:
-/// one header object and the detail records in document order. The judge reads the
-/// file itself instead of the code that parsed it, so an expectation never arrives
-/// through the code under test.
+/// one header object and the detail records in document order. A record is read
+/// through the columns the declaration names — each column's name is the record
+/// member it prints — so the judge reads a package's own records instead of a fixed
+/// four. The judge reads the file itself instead of the code that parsed it, so an
+/// expectation never arrives through the code under test.
 /// </summary>
 internal sealed class FixtureSource
 {
@@ -37,18 +42,24 @@ internal sealed class FixtureSource
     /// <summary>The contract version every snapshot declares.</summary>
     public string ContractVersion => Text(root, "contractVersion");
 
-    /// <summary>Reads the snapshot written at <paramref name="path"/>.</summary>
-    public static FixtureSource Load(string path)
+    /// <summary>Reads the snapshot written at <paramref name="path"/> through <paramref name="expectation"/>'s columns.</summary>
+    /// <param name="path">The file holding the snapshot.</param>
+    /// <param name="expectation">The declaration whose columns name the record members.</param>
+    public static FixtureSource Load(string path, ExpectationDocument expectation)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(expectation);
 
-        return Parse(File.ReadAllText(path));
+        return Parse(File.ReadAllText(path), expectation);
     }
 
-    /// <summary>Reads a snapshot from its text.</summary>
-    public static FixtureSource Parse(string text)
+    /// <summary>Reads a snapshot from its text through <paramref name="expectation"/>'s columns.</summary>
+    /// <param name="text">The snapshot.</param>
+    /// <param name="expectation">The declaration whose columns name the record members.</param>
+    public static FixtureSource Parse(string text, ExpectationDocument expectation)
     {
         ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(expectation);
 
         var root = JsonNode.Parse(text) as JsonObject
             ?? throw new InvalidDataException("The snapshot is not a JSON object.");
@@ -67,12 +78,16 @@ internal sealed class FixtureSource
         {
             var item = items[index] as JsonObject
                 ?? throw new InvalidDataException("A record is not a JSON object.");
-            records.Add(new FixtureRecord(
-                index + 1,
-                (int)Number(item, "sequence"),
-                Text(item, "date"),
-                Text(item, "description"),
-                Text(item, "amount")));
+            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var column in expectation.Columns)
+            {
+                values[column.Column] = item[column.Column] is JsonValue value
+                    ? Printable(value)
+                    : throw new InvalidDataException(
+                        $"A record holds no '{column.Column}', the member its declaration's column prints.");
+            }
+
+            records.Add(new FixtureRecord(index + 1, values[expectation.RowKey], values));
         }
 
         return new FixtureSource(root, header, records);
@@ -118,10 +133,5 @@ internal sealed class FixtureSource
     private static string Text(JsonObject node, string name) =>
         node[name] is JsonValue value
             ? Printable(value)
-            : throw new InvalidDataException($"The snapshot holds no '{name}'.");
-
-    private static decimal Number(JsonObject node, string name) =>
-        node[name] is JsonValue value && value.TryGetValue<decimal>(out var number)
-            ? number
             : throw new InvalidDataException($"The snapshot holds no '{name}'.");
 }

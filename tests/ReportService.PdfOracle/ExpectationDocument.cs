@@ -29,6 +29,8 @@ internal sealed class ExpectationDocument
         double bottomMm,
         double leftMm,
         IReadOnlyList<ColumnBand> columns,
+        string rowKey,
+        string amountColumn,
         IReadOnlyList<string> headRow,
         IReadOnlyList<string> headerAnchors,
         string? trail,
@@ -43,6 +45,8 @@ internal sealed class ExpectationDocument
         BottomMm = bottomMm;
         LeftMm = leftMm;
         Columns = columns;
+        RowKey = rowKey;
+        AmountColumn = amountColumn;
         HeadRow = headRow;
         HeaderAnchors = headerAnchors;
         Trail = trail;
@@ -73,6 +77,18 @@ internal sealed class ExpectationDocument
 
     /// <summary>The columns of the detail table, left to right.</summary>
     public IReadOnlyList<ColumnBand> Columns { get; }
+
+    /// <summary>
+    /// The column whose value identifies a record across the pages of one row: a line
+    /// that begins a row carries a record number there. It is a declared column.
+    /// </summary>
+    public string RowKey { get; }
+
+    /// <summary>
+    /// The column whose value must print on the page the row begins on (and that a
+    /// trailer may carry). It is a declared column.
+    /// </summary>
+    public string AmountColumn { get; }
 
     /// <summary>The words of the column captions, in the order the package prints them.</summary>
     public IReadOnlyList<string> HeadRow { get; }
@@ -150,6 +166,8 @@ internal sealed class ExpectationDocument
             [.. columns.Select(column => column as JsonObject
                 ?? throw new InvalidDataException("A column is not a JSON object."))
                 .Select(column => new ColumnBand(Text(column, "column"), Number(column, "startMm"), Number(column, "endMm")))],
+            Role(root, "rowKey", columns),
+            Role(root, "amountColumn", columns),
             [.. headRow.Select(word => word?.GetValue<string>()
                 ?? throw new InvalidDataException("A column caption is not text."))],
             [.. anchors.Select(anchor => anchor?.GetValue<string>()
@@ -157,6 +175,25 @@ internal sealed class ExpectationDocument
             root["trail"] is JsonValue trail && trail.TryGetValue<string>(out var trailPath) ? trailPath : null,
             Flag(root, "grouped"),
             Flag(root, "blockTotal"));
+    }
+
+    // A declared role names one of the declaration's own columns: the judge never guesses
+    // which column identifies a record or which one must print on the row's first page.
+    private static string Role(JsonObject root, string name, JsonArray columns)
+    {
+        if (root[name] is not JsonValue value || !value.TryGetValue<string>(out var role) || string.IsNullOrWhiteSpace(role))
+        {
+            throw new InvalidDataException($"The declaration holds no '{name}'.");
+        }
+
+        var declared = columns
+            .Select(column => column as JsonObject)
+            .Select(column => column is null ? null : column["column"]?.GetValue<string>())
+            .Where(column => column is not null)
+            .ToList();
+        return declared.Contains(role, StringComparer.Ordinal)
+            ? role
+            : throw new InvalidDataException($"The declaration's '{name}' names no column it declares.");
     }
 
     private static JsonNode Member(JsonObject node, string name) =>

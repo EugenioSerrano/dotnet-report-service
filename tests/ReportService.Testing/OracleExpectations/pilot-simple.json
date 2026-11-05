@@ -1,0 +1,19 @@
+{
+  "paper": "A4",
+  "widthMm": 210,
+  "heightMm": 297,
+  "marginMm": { "top": 15, "right": 12, "bottom": 18, "left": 12 },
+  "columns": [
+    { "column": "sequence", "startMm": 12, "endMm": 49.2 },
+    { "column": "description", "startMm": 49.2, "endMm": 86.4 },
+    { "column": "quantity", "startMm": 86.4, "endMm": 123.6 },
+    { "column": "unitPrice", "startMm": 123.6, "endMm": 160.8 },
+    { "column": "amount", "startMm": 160.8, "endMm": 198 }
+  ],
+  "rowKey": "sequence",
+  "amountColumn": "amount",
+  "headRow": ["#", "Description", "Quantity", "Unit price", "Amount"],
+  "headerAnchors": ["$.reportTitle", "$.customer.name", "$.customer.id", "$.generatedAt", "$.currency"],
+  "grouped": false,
+  "blockTotal": false
+}

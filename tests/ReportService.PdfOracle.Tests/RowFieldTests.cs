@@ -43,7 +43,10 @@ public sealed class RowFieldTests
         var verdict = JudgeTests.Judge(Replaced("2026-01-02", "2026-01-09"));
 
         var failure = Assert.Single(verdict.Failures);
-        Assert.Equal("TI-4", failure.Rule);
+
+        // A date is an ordinary declared column: its cell is compared with the record's
+        // member through the same text rule every column but the amount goes through.
+        Assert.Equal("TI-3", failure.Rule);
         Assert.Equal("text-altered", failure.Class);
         Assert.Equal(2, failure.Row);
         Assert.Equal("date", failure.Field);

@@ -73,7 +73,7 @@ internal static class ExtractionControls
     {
         var row = Tallest(classified);
         var page = row.Pages.Max;
-        var word = row.Words.Where(entry => entry.Column == "description" && entry.Word.Page == page).Select(entry => entry.Word).FirstOrDefault();
+        var word = row.Words.Where(entry => entry.Column == TextColumn(expectation) && entry.Word.Page == page).Select(entry => entry.Word).FirstOrDefault();
         if (word is null)
         {
             return NotEvaluable("E1", "delete a description word", "text-dropped");
@@ -81,9 +81,9 @@ internal static class ExtractionControls
 
         return Evaluate(
             "E1",
-            $"delete a description word of row {row.Sequence} on page {page}",
+            $"delete a description word of row {row.Key} on page {page}",
             "text-dropped",
-            row.Sequence,
+            row.Key,
             passing,
             fixture,
             expectation,
@@ -111,9 +111,9 @@ internal static class ExtractionControls
 
         return Evaluate(
             "E2",
-            $"copy the last line of row {row.Sequence} below the row on page {lastPage}",
+            $"copy the last line of row {row.Key} below the row on page {lastPage}",
             "text-repeated",
-            row.Sequence,
+            row.Key,
             passing,
             fixture,
             expectation,
@@ -127,9 +127,9 @@ internal static class ExtractionControls
 
         return Evaluate(
             "E3",
-            $"delete every word of row {row.Sequence}",
+            $"delete every word of row {row.Key}",
             "row-lost",
-            row.Sequence,
+            row.Key,
             passing,
             fixture,
             expectation,
@@ -139,7 +139,7 @@ internal static class ExtractionControls
     private static ControlOutcome SwapTwoWords(PdfExtraction passing, FixtureSource fixture, ExpectationDocument expectation, ClassifiedDocument classified)
     {
         var row = Tallest(classified);
-        foreach (var line in row.Words.Where(entry => entry.Column == "description").GroupBy(entry => new { entry.Word.Page, entry.Word.YCentre }))
+        foreach (var line in row.Words.Where(entry => entry.Column == TextColumn(expectation)).GroupBy(entry => new { entry.Word.Page, entry.Word.YCentre }))
         {
             var words = line.Select(entry => entry.Word).ToList();
             for (var index = 0; index + 1 < words.Count; index++)
@@ -153,9 +153,9 @@ internal static class ExtractionControls
 
                 return Evaluate(
                     "E4",
-                    $"swap two adjacent description words of row {row.Sequence} on page {first.Page}",
+                    $"swap two adjacent description words of row {row.Key} on page {first.Page}",
                     "text-altered",
-                    row.Sequence,
+                    row.Key,
                     passing,
                     fixture,
                     expectation,
@@ -196,7 +196,7 @@ internal static class ExtractionControls
             var replaced = firstWords.Select((word, position) => (From: word, To: moved[position])).ToList();
             return Evaluate(
                 "E5",
-                $"move row {first.Sequence} below row {second.Sequence}",
+                $"move row {first.Key} below row {second.Key}",
                 "row-order",
                 null,
                 passing,
@@ -234,9 +234,9 @@ internal static class ExtractionControls
 
         return Evaluate(
             "E6",
-            $"print row {row.Sequence} a second time",
+            $"print row {row.Key} a second time",
             "row-duplicated",
-            row.Sequence,
+            row.Key,
             passing,
             fixture,
             expectation,
@@ -273,9 +273,9 @@ internal static class ExtractionControls
             return NotEvaluable("E8", "print a record number the data does not hold", "row-order");
         }
 
-        var held = fixture.Records.Select(record => record.Sequence).ToHashSet();
+        var held = fixture.Records.Select(record => record.Key).ToHashSet(StringComparer.Ordinal);
         var sequence = 1;
-        while (held.Contains(sequence))
+        while (held.Contains(sequence.ToString(CultureInfo.InvariantCulture)))
         {
             sequence++;
         }
@@ -292,29 +292,46 @@ internal static class ExtractionControls
             "E8",
             $"print record number {sequence}, which the data does not hold",
             "row-order",
-            sequence,
+            sequence.ToString(CultureInfo.InvariantCulture),
             passing,
             fixture,
             expectation,
             list => list.Add(injected));
     }
 
+    /// <summary>
+    /// The column a text control changes: the widest declared column that is neither the
+    /// row key nor the amount — the cell that holds several words, where a word can be cut
+    /// without disturbing the others.
+    /// </summary>
+    private static string TextColumn(ExpectationDocument expectation) =>
+        expectation.Columns
+            .Where(column => !string.Equals(column.Column, expectation.RowKey, StringComparison.Ordinal)
+                && !string.Equals(column.Column, expectation.AmountColumn, StringComparison.Ordinal))
+            .OrderByDescending(column => column.EndMm - column.StartMm)
+            .Select(column => column.Column)
+            .FirstOrDefault()
+        ?? expectation.RowKey;
+
     private static ControlOutcome Evaluate(
         string id,
         string mutation,
         string expectedClass,
-        int? expectedRow,
+        string? expectedKey,
         PdfExtraction passing,
         FixtureSource fixture,
         ExpectationDocument expectation,
         Action<List<PdfWord>> change)
     {
+        var expectedRow = int.TryParse(expectedKey, NumberStyles.None, CultureInfo.InvariantCulture, out var number)
+            ? number
+            : (int?)null;
         var words = passing.Words.ToList();
         change(words);
         var verdict = IntegrityRules.Judge(passing.WithWords(words), fixture, expectation, id);
         var behaved = verdict.Failures.Any(failure =>
             string.Equals(failure.Class, expectedClass, StringComparison.Ordinal)
-            && (expectedRow is null || failure.Row == expectedRow));
+            && (expectedKey is null || failure.Row == expectedRow));
 
         return new ControlOutcome(id, mutation, expectedClass, behaved, Described(verdict));
     }
@@ -326,5 +343,5 @@ internal static class ExtractionControls
         classified.Rows.FirstOrDefault(row => row.Pages.Count > 1) ?? classified.Rows[0];
 
     private static List<PdfWord> RowWords(ItemRow row) =>
-        [.. row.NumberWords, .. row.Words.Select(entry => entry.Word)];
+        [.. row.Words.Select(entry => entry.Word)];
 }

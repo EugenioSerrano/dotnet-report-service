@@ -109,7 +109,7 @@ internal static class IntegrityRules
 
         Structure(extraction, placed, classified, expectation, failures);
         HeadRows(classified, extraction, failures);
-        Rows(classified, fixture, failures);
+        Rows(classified, fixture, expectation, failures);
         Regions(classified, fixture, expectation, failures);
         Marks(placed, classified, failures);
 
@@ -222,65 +222,77 @@ internal static class IntegrityRules
         }
     }
 
-    /// <summary>Every record once, in order, with its own text.</summary>
-    private static void Rows(ClassifiedDocument classified, FixtureSource fixture, List<Failure> failures)
+    /// <summary>Every record once, in order, with every declared column's own text.</summary>
+    private static void Rows(ClassifiedDocument classified, FixtureSource fixture, ExpectationDocument expectation, List<Failure> failures)
     {
-        var expected = fixture.Records.Select(record => record.Sequence).ToList();
-        var actual = classified.Rows.Select(row => row.Sequence).ToList();
-        var expectedSet = expected.ToHashSet();
-        var printed = new Dictionary<int, int>();
-        foreach (var sequence in actual)
+        var expected = fixture.Records.Select(record => record.Key).ToList();
+        var actual = classified.Rows.Select(row => row.Key).ToList();
+        var expectedSet = expected.ToHashSet(StringComparer.Ordinal);
+        var printed = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var key in actual)
         {
-            printed[sequence] = printed.GetValueOrDefault(sequence) + 1;
+            printed[key] = printed.GetValueOrDefault(key) + 1;
         }
 
         var coverage = false;
-        foreach (var sequence in expected)
+        foreach (var key in expected)
         {
-            if (!printed.ContainsKey(sequence))
+            if (!printed.ContainsKey(key))
             {
-                failures.Add(new Failure("TI-2", "row-lost", Row: sequence));
+                failures.Add(new Failure("TI-2", "row-lost", Row: NumberOf(key)));
                 coverage = true;
             }
         }
 
-        foreach (var sequence in actual.Where(sequence => printed[sequence] > 1).Distinct())
+        foreach (var key in actual.Where(key => printed[key] > 1).Distinct(StringComparer.Ordinal))
         {
-            var second = classified.Rows.Where(row => row.Sequence == sequence).Skip(1).First();
-            failures.Add(new Failure("TI-2", "row-duplicated", Row: sequence, Page: second.AnchorPage, Detail: $"{Count(printed[sequence])} rows print it"));
+            var second = classified.Rows.Where(row => string.Equals(row.Key, key, StringComparison.Ordinal)).Skip(1).First();
+            failures.Add(new Failure("TI-2", "row-duplicated", Row: NumberOf(key), Page: second.AnchorPage, Detail: $"{Count(printed[key])} rows print it"));
             coverage = true;
         }
 
-        foreach (var row in classified.Rows.Where(row => !expectedSet.Contains(row.Sequence)))
+        foreach (var row in classified.Rows.Where(row => !expectedSet.Contains(row.Key)))
         {
-            failures.Add(new Failure("TI-2", "row-order", Row: row.Sequence, Page: row.AnchorPage, Detail: "the record is not in the fixture"));
+            failures.Add(new Failure("TI-2", "row-order", Row: row.Number, Page: row.AnchorPage, Detail: "the record is not in the fixture"));
             coverage = true;
         }
 
-        if (!coverage && !expected.SequenceEqual(actual))
+        if (!coverage && !expected.SequenceEqual(actual, StringComparer.Ordinal))
         {
-            var index = Enumerable.Range(0, Math.Min(expected.Count, actual.Count)).First(position => expected[position] != actual[position]);
-            failures.Add(new Failure("TI-2", "row-order", Row: actual[index], Page: classified.Rows[index].AnchorPage, Detail: $"position {Count(index + 1)} of the detail"));
+            var index = Enumerable.Range(0, Math.Min(expected.Count, actual.Count))
+                .First(position => !string.Equals(expected[position], actual[position], StringComparison.Ordinal));
+            failures.Add(new Failure("TI-2", "row-order", Row: classified.Rows[index].Number, Page: classified.Rows[index].AnchorPage, Detail: $"position {Count(index + 1)} of the detail"));
         }
 
-        var bySequence = new Dictionary<int, ItemRow>();
+        var byKey = new Dictionary<string, ItemRow>(StringComparer.Ordinal);
         foreach (var row in classified.Rows)
         {
-            bySequence.TryAdd(row.Sequence, row);
+            byKey.TryAdd(row.Key, row);
         }
 
         foreach (var record in fixture.Records)
         {
-            if (!bySequence.TryGetValue(record.Sequence, out var row))
+            if (!byKey.TryGetValue(record.Key, out var row))
             {
                 continue;
             }
 
-            CheckField("TI-3", record.Sequence, "description", Field(row, "description"), record.Description, failures);
-            CheckField("TI-4", record.Sequence, "date", Field(row, "date"), record.Date, failures);
-            var amount = Field(row, "amount");
-            CheckField("TI-4", record.Sequence, "amount", amount, record.Amount, failures);
-            CheckAmountOnItsRowsFirstPage(record.Sequence, row, amount, failures);
+            // Every declared column is compared with the record's member of the same name,
+            // and the column the declaration names as the amount carries the rule that the
+            // value prints on the page the row begins on.
+            foreach (var column in expectation.Columns)
+            {
+                var words = Field(row, column.Column);
+                if (string.Equals(column.Column, expectation.AmountColumn, StringComparison.Ordinal))
+                {
+                    CheckField("TI-4", row.Number, column.Column, words, record.Member(column.Column), failures);
+                    CheckAmountOnItsRowsFirstPage(row, column.Column, words, failures);
+                }
+                else
+                {
+                    CheckField("TI-3", row.Number, column.Column, words, record.Member(column.Column), failures);
+                }
+            }
         }
     }
 
@@ -340,7 +352,7 @@ internal static class IntegrityRules
         {
             foreach (var (column, word) in row.Words.Where(entry => entry.Word.Text.Contains(ContinuesMark, StringComparison.Ordinal)))
             {
-                failures.Add(new Failure("TI-7", "text-altered", Row: row.Sequence, Field: column, Page: word.Page, Detail: "a continuation mark prints"));
+                failures.Add(new Failure("TI-7", "text-altered", Row: row.Number, Field: column, Page: word.Page, Detail: "a continuation mark prints"));
             }
         }
 
@@ -356,7 +368,7 @@ internal static class IntegrityRules
         }
     }
 
-    private static void CheckField(string rule, int sequence, string field, IReadOnlyList<PdfWord> words, string expected, List<Failure> failures)
+    private static void CheckField(string rule, int? sequence, string field, IReadOnlyList<PdfWord> words, string expected, List<Failure> failures)
     {
         if (words.Any(word => Normalisation.HasUnmappedGlyph(word.Text)))
         {
@@ -380,7 +392,7 @@ internal static class IntegrityRules
     /// The first page is taken from the row's own first text — the page its number
     /// printed on — so the declaration the document is read against names no page.
     /// </summary>
-    private static void CheckAmountOnItsRowsFirstPage(int sequence, ItemRow row, IReadOnlyList<PdfWord> words, List<Failure> failures)
+    private static void CheckAmountOnItsRowsFirstPage(ItemRow row, string column, IReadOnlyList<PdfWord> words, List<Failure> failures)
     {
         var elsewhere = words.FirstOrDefault(word => word.Page != row.AnchorPage);
         if (elsewhere is not null)
@@ -388,12 +400,16 @@ internal static class IntegrityRules
             failures.Add(new Failure(
                 "TI-4",
                 "structure-lost",
-                Row: sequence,
-                Field: "amount",
+                Row: row.Number,
+                Field: column,
                 Page: elsewhere.Page,
-                Detail: $"the amount prints on page {Count(elsewhere.Page)}; the row begins on page {Count(row.AnchorPage)}"));
+                Detail: $"the {column} prints on page {Count(elsewhere.Page)}; the row begins on page {Count(row.AnchorPage)}"));
         }
     }
+
+    /// <summary>The row key as a record number, when it is one: a failure names the record it belongs to.</summary>
+    private static int? NumberOf(string key) =>
+        int.TryParse(key, NumberStyles.None, CultureInfo.InvariantCulture, out var number) ? number : null;
 
     /// <summary>The page of the word holding the normalised offset.</summary>
     private static int? PageAt(IReadOnlyList<PdfWord> words, int offset)

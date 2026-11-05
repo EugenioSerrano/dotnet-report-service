@@ -1,27 +1,29 @@
 using System.Globalization;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
-using ReportService.TemplatePackages.Keys;
-using ReportService.TemplatePackages.Manifest;
-using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource;
+using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Take;
 using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 
 namespace ReportService.EndToEndTests;
 
 /// <summary>
-/// The demo of this Bolt, over the whole local composition: a snapshot uploaded and confirmed
+/// The demo of the printing path, over the whole local composition: a snapshot uploaded and confirmed
 /// against the running API, a job accepted, and the job's own PDF printed from the template
 /// version it was fixed to and published once, checked by the composition's records and by
 /// reading the artifact back through the storage port.
@@ -87,7 +89,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 
         var snapshot = Snapshot(25);
         var uploadId = await ReadyUploadAsync(uploads, storage, snapshot, cancellationToken);
-        await TakenAsync(versions, storage, cancellationToken);
+        await TakenAsync(dataSource, versions, storage, cancellationToken);
 
         var reportJobId = await SubmitAsync(api, uploadId, cancellationToken);
         var job = await WaitForSucceededAsync(dataSource, reportJobId, cancellationToken);
@@ -201,51 +203,48 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
         return uploadId;
     }
 
-    // The version the job prints, taken: its package written under its content-addressed key and
-    // its record written once, exactly as the take leaves them.
+    // The version the job prints, taken here in the test process with the product's own take:
+    // the client dials the loopback double this process serves, and the take writes the
+    // version's bytes to the composition's shared storage root and its record to the
+    // composition's metadata database, so every process of the composition sees the taken
+    // copy. The render worker container never reads a template source.
     private static async Task TakenAsync(
+        NpgsqlDataSource dataSource,
         PostgresTemplateVersionStore versions,
         IObjectStore storage,
         CancellationToken cancellationToken)
     {
-        var files = PackageFiles();
-        using var sink = new MemoryStream();
-        await TemplatePackageArchive.WriteAsync(files, sink, cancellationToken);
-        var bytes = sink.ToArray();
-        var packageSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
-        var key = TemplatePackageKeys.ForVersion(Consumer, Template, Version, packageSha256);
-        using var content = new MemoryStream(bytes, writable: false);
-        var written = await storage.WriteAsync(key, content, cancellationToken);
-        Assert.True(written.Succeeded);
+        var stub = new GitHubTemplateSourceStub();
+        stub.SeedPackage(Template, Version, PackageFiles());
+        await using var source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
 
-        var record = new TemplateVersionRecord(
-            Template,
-            Version,
-            Consumer,
-            Shared: false,
-            ManifestVersion: "1.0",
-            Engine: TemplateEngine.Scriban,
-            EngineVersion: "7.5.1",
-            SchemaRef: SchemaPath,
-            CommitSha: new string('a', 40),
-            SourceTreeSha: new string('b', 40),
-            PackageSha256: packageSha256,
-            PackageSize: bytes.Length,
-            FileCount: files.Count,
-            ObjectKey: key,
-            Manifest: Manifest(),
-            ManifestJson: "{}",
-            TakenAt: DateTimeOffset.UtcNow);
-        await versions.TryInsertAsync(record, cancellationToken);
+        var options = source.Options();
+        using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        var take = new TemplateTake(
+            new GitHubTemplateSource(client, options),
+            versions,
+            storage,
+            new TemplateManifestReader(),
+            new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
+            [],
+            new TemplateTakeMetrics(),
+            TimeProvider.System,
+            Options.Create(options),
+            NullLogger<TemplateTake>.Instance);
+
+        var outcome = await take.TakeAsync(Template, Version, Consumer, commit: null, reportJobId: null, cancellationToken);
+        Assert.NotNull(outcome.Record);
+        Assert.Equal(Version, outcome.Record!.Version);
+        Assert.Equal(Consumer, outcome.Record.OwnerConsumerId);
     }
 
     // The sample template's own package, with the three corrections the rendering path needs:
     // the stylesheet named from the package root the document is served at, one named font
     // family, and the version printed in the header.
-    private static List<PackageFileSource> PackageFiles()
+    private static Dictionary<string, byte[]> PackageFiles()
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
-        var files = new List<PackageFileSource>();
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
@@ -254,8 +253,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
                 continue;
             }
 
-            var bytes = File.ReadAllBytes(file);
-            var text = Encoding.UTF8.GetString(bytes);
+            var text = File.ReadAllText(file);
             if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
             {
                 text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
@@ -276,53 +274,12 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
                         StringComparison.Ordinal);
             }
 
-            var content = Encoding.UTF8.GetBytes(text);
-            files.Add(new PackageFileSource(relative, _ => Task.FromResult<Stream>(new MemoryStream(content, writable: false))));
+            files[relative] = Encoding.UTF8.GetBytes(text);
         }
 
         return files;
     }
 
-    private static TemplateManifest Manifest() => new()
-    {
-        ManifestVersion = "1.0",
-        Id = Template,
-        Version = Version,
-        Owner = Consumer,
-        Shared = false,
-        Engine = TemplateEngine.Scriban,
-        DeclaredEngineVersion = "7.5.1",
-        DataContract = new TemplateDataContract { Version = "1.0", Profile = "header-items-v1", Schema = SchemaPath },
-        Outputs = new TemplateOutputs
-        {
-            Html = new TemplateHtmlOutput
-            {
-                Parts = new TemplateParts
-                {
-                    DocumentStart = "html/document-start.html.sbn",
-                    Row = "html/row.html.sbn",
-                    DocumentEnd = "html/document-end.html.sbn",
-                },
-                Styles = ["html/styles.css"],
-            },
-            Pdf = new TemplatePdfOutput
-            {
-                Paper = "A4",
-                Orientation = "portrait",
-                MarginMm = new TemplateMargins { Top = 15, Right = 12, Bottom = 18, Left = 12 },
-                PageTotals = new TemplatePageTotals { Enabled = false },
-                Verification = new TemplatePdfVerification
-                {
-                    Anchors = new TemplatePdfAnchors
-                    {
-                        Header = ["$.reportTitle", "$.customer.name", "$.customer.id", "$.currency", "$.generatedAt", "$.totals.recordCount", "$.totals.amount"],
-                        Item = ["$.sequence", "$.description", "$.quantity", "$.unitPrice", "$.amount"],
-                    },
-                },
-            },
-        },
-        LocaleDefaults = new TemplateLocaleDefaults { Culture = "es-AR", TimeZone = "America/Argentina/Buenos_Aires" },
-    };
 
     private static byte[] Snapshot(int records)
     {

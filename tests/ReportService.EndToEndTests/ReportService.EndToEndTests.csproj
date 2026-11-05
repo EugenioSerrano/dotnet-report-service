@@ -24,8 +24,9 @@
     <ProjectReference Include="..\..\src\ReportService.AppHost\ReportService.AppHost.csproj" />
     <!-- Removes a run's objects from the shared storage root through the storage port. -->
     <ProjectReference Include="..\..\src\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
-    <!-- The records and the taken version the demo's job is accepted and printed from. -->
+    <!-- The records and the take the demo's job is accepted and printed from. -->
     <ProjectReference Include="..\..\src\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Uploads\ReportService.Uploads.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>

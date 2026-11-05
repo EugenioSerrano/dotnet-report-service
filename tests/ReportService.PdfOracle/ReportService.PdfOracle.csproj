@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ReportService.PdfOracle.Tests" />
+    <!-- The drift case reads every declaration the judge is handed, through the same parser. -->
+    <InternalsVisibleTo Include="ReportService.Fixtures.Tests" />
   </ItemGroup>
 
 </Project>

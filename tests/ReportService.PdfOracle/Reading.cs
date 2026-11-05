@@ -12,19 +12,22 @@ internal sealed record ContentLine(int Page, IReadOnlyList<PdfWord> Words)
     public string Text => string.Join(' ', Words.Select(word => word.Text));
 }
 
-/// <summary>One detail row as it printed: the line holding its number and every line it continued on.</summary>
-internal sealed class ItemRow(int sequence, int page)
+/// <summary>One detail row as it printed: the line holding its key and every line it continued on.</summary>
+internal sealed class ItemRow(string key, int? number, int page)
 {
-    /// <summary>The record number the row printed.</summary>
-    public int Sequence { get; } = sequence;
+    /// <summary>The value of the row key column the row printed.</summary>
+    public string Key { get; } = key;
+
+    /// <summary>The key as a record number, when it is one.</summary>
+    public int? Number { get; } = number;
 
     /// <summary>The page the row began on.</summary>
     public int AnchorPage { get; } = page;
 
-    /// <summary>Its words but the number, each with the column it printed in.</summary>
+    /// <summary>Its words but the key, each with the column it printed in.</summary>
     public List<(string Column, PdfWord Word)> Words { get; } = [];
 
-    /// <summary>The words of its number, printed where the row begins.</summary>
+    /// <summary>The words of its key, printed where the row begins.</summary>
     public List<PdfWord> NumberWords { get; } = [];
 
     /// <summary>The pages it printed on.</summary>
@@ -207,7 +210,8 @@ internal static class Classification
 
         var rows = new List<ItemRow>();
         var headRowPages = new List<int>();
-        var unclassified = new List<ContentLine>();
+        var unclassified = new List<(int Index, ContentLine Line)>();
+        var lastTableLine = start - 1;
         if (start >= 0)
         {
             ItemRow? current = null;
@@ -217,24 +221,31 @@ internal static class Classification
                 if (Normalisation.N(line.Text) == headRowN)
                 {
                     headRowPages.Add(line.Page);
+                    lastTableLine = index;
                     continue;
                 }
 
-                var seqWords = line.Words.Where(word => Placement.ColumnOf(word, expectation) == "seq").ToList();
-                if (seqWords.Count > 0)
+                var keyWords = line.Words.Where(word => Placement.ColumnOf(word, expectation) == expectation.RowKey).ToList();
+                if (keyWords.Count > 0)
                 {
-                    var sequence = string.Concat(seqWords.Select(word => word.Text));
-                    if (IsRecordNumber(sequence))
+                    var key = string.Concat(keyWords.Select(word => word.Text));
+                    if (IsRecordNumber(key))
                     {
-                        current = new ItemRow(int.Parse(sequence, CultureInfo.InvariantCulture), line.Page);
-                        current.NumberWords.AddRange(seqWords);
+                        current = new ItemRow(key, int.Parse(key, CultureInfo.InvariantCulture), line.Page);
+                        current.NumberWords.AddRange(keyWords);
+                        foreach (var word in keyWords)
+                        {
+                            current.Words.Add((expectation.RowKey, word));
+                        }
+
                         rows.Add(current);
-                        AddWords(current, line, seqWords, expectation);
+                        AddWords(current, line, keyWords, expectation);
+                        lastTableLine = index;
                     }
                     else
                     {
                         current = null;
-                        unclassified.Add(line);
+                        unclassified.Add((index, line));
                     }
 
                     continue;
@@ -243,32 +254,45 @@ internal static class Classification
                 if (current is not null)
                 {
                     AddWords(current, line, [], expectation);
+                    lastTableLine = index;
                 }
                 else
                 {
-                    unclassified.Add(line);
+                    unclassified.Add((index, line));
                 }
             }
         }
+
+        // A declaration that names no trailer still prints one: the lines after the last
+        // detail row are the document's closing text, not lines that belong nowhere. They
+        // are covered by the text the composition holds, not by a member this declaration
+        // would have to name.
+        var trail = expectation.Trail is not null
+            ? lines.Skip(trailStart).ToList()
+            : unclassified.Where(entry => entry.Index > lastTableLine).Select(entry => entry.Line).ToList();
+        var orphans = unclassified
+            .Where(entry => expectation.Trail is not null || entry.Index <= lastTableLine)
+            .Select(entry => entry.Line)
+            .ToList();
 
         return new ClassifiedDocument
         {
             Lead = start < 0 ? lines.Take(trailStart).ToList() : lines.Take(start).ToList(),
             HeadRowPages = headRowPages,
             Rows = rows,
-            Trail = lines.Skip(trailStart).ToList(),
-            Unclassified = unclassified,
+            Trail = trail,
+            Unclassified = orphans,
         };
     }
 
-    /// <summary>Whether a line begins a detail row: its first column holds a record number.</summary>
+    /// <summary>Whether a line begins a detail row: its key column holds a record number.</summary>
     public static bool IsRowAnchor(ContentLine line, ExpectationDocument expectation)
     {
         ArgumentNullException.ThrowIfNull(line);
         ArgumentNullException.ThrowIfNull(expectation);
 
-        var seqWords = line.Words.Where(word => Placement.ColumnOf(word, expectation) == "seq").ToList();
-        return seqWords.Count > 0 && IsRecordNumber(string.Concat(seqWords.Select(word => word.Text)));
+        var keyWords = line.Words.Where(word => Placement.ColumnOf(word, expectation) == expectation.RowKey).ToList();
+        return keyWords.Count > 0 && IsRecordNumber(string.Concat(keyWords.Select(word => word.Text)));
     }
 
     private static bool IsRecordNumber(string text) =>
