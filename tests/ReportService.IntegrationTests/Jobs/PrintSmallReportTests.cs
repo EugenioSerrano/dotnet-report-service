@@ -89,8 +89,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
 
+        // The snapshot this case prints: the same bytes are uploaded and compared, so the
+        // comparison follows the document's own data at every record count.
+        var snapshot = PrintingRig.Snapshot(records);
         var reportJobId = await rig.SubmitAsync(
-            await rig.ReadyUploadAsync(PrintingRig.Snapshot(records), cancellationToken),
+            await rig.ReadyUploadAsync(snapshot, cancellationToken),
             PrintingRig.First,
             cancellationToken);
         var job = await rig.WaitForTerminalAsync(reportJobId, Deadline, cancellationToken);
@@ -99,12 +102,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         Assert.Equal(records, job.RecordCount);
         var text = TextOf(await rig.ReadArtifactAsync(job, cancellationToken));
 
-        // Every record's own text is in the printed document: the sample's descriptions repeat,
-        // so the sequences are what proves the count, and the description of each record proves
-        // the text. The comparison is with the source snapshot's values, never with anything the
-        // layout engine reported.
-        var sample = PrintingRig.Snapshot(2);
-        using var source = System.Text.Json.JsonDocument.Parse(sample);
+        // Every distinct description of the snapshot this job carried is in the printed
+        // document. The sample's descriptions repeat, so the text is compared as a set: a
+        // document that drops or alters one of them fails here. The comparison is with the
+        // source snapshot's values, never with anything the layout engine reported.
+        using var source = System.Text.Json.JsonDocument.Parse(snapshot);
         var descriptions = source.RootElement.GetProperty("items").EnumerateArray()
             .Select(item => item.GetProperty("description").GetString()!)
             .Distinct(StringComparer.Ordinal)
