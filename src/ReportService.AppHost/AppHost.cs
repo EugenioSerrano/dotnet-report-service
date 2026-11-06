@@ -152,6 +152,18 @@ renderWorker
     .WithEnvironment("TemplateSource__AllowInsecureLoopback", templateSourceAllowInsecureLoopback)
     .WithEnvironment("TemplateSource__Token", templateSourceToken);
 
+// The source's certificate authority, when the deployment supplies one: the file is mounted read-only
+// into the worker and the worker is given the path it finds it at. Nothing is added when none is
+// configured, so a composition that trusts the platform's store starts exactly as before.
+var templateSourceTrustAnchor = await TemplateSourceTrustMount.DescribeAsync(
+    builder.Configuration["TemplateSource:TrustAnchor"], CancellationToken.None);
+if (templateSourceTrustAnchor is not null)
+{
+    renderWorker
+        .WithBindMount(templateSourceTrustAnchor.MountSource, TemplateSourceTrustMount.ContainerPath, isReadOnly: true)
+        .WithEnvironment(TemplateSourceTrustMount.SettingName, TemplateSourceTrustMount.ContainerPath);
+}
+
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.
 // One stored-size limit is given to both the API and this worker: a body accepted by

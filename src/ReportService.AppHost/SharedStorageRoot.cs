@@ -34,10 +34,27 @@ internal sealed record SharedStorageRoot(string HostPath, string MountSource)
     public static async Task<SharedStorageRoot> DescribeAsync(string repositoryRoot, CancellationToken cancellationToken = default)
     {
         var hostPath = Path.Combine(repositoryRoot, DirectoryName);
-        var mountSource = OperatingSystem.IsWindows() && !await IsDockerDesktopAsync(cancellationToken)
+        var mountSource = await ToMountSourceAsync(hostPath, cancellationToken);
+        return new SharedStorageRoot(hostPath, mountSource);
+    }
+
+    /// <summary>
+    /// The form of <paramref name="hostPath"/> the container engine accepts for a
+    /// mount. On a Windows host whose engine runs in a WSL distribution (for example
+    /// Rancher Desktop), the engine accepts only its own form of a Windows path —
+    /// drive <c>D:</c> is <c>/mnt/d</c> — so the path is given in that form. Docker
+    /// Desktop translates Windows paths itself and gets the path as is. Every mount of
+    /// the composition obtains its source here, so the rule exists once.
+    /// </summary>
+    /// <param name="hostPath">The path on the host.</param>
+    /// <param name="cancellationToken">The caller's cancellation token.</param>
+    public static async Task<string> ToMountSourceAsync(string hostPath, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(hostPath);
+
+        return OperatingSystem.IsWindows() && !await IsDockerDesktopAsync(cancellationToken)
             ? ToEnginePath(hostPath)
             : hostPath;
-        return new SharedStorageRoot(hostPath, mountSource);
     }
 
     /// <summary>A Windows drive path in the form a WSL-hosted engine mounts it (<c>D:\a\b</c> → <c>/mnt/d/a/b</c>); other paths unchanged.</summary>

@@ -150,6 +150,86 @@ public sealed class TemplateSourceOptionsTests
         Assert.Equal(string.Empty, options.RepositoryName);
     }
 
+    [Fact]
+    public void TheSettingsTrustThePlatformStoreUnlessAnAnchorIsConfigured()
+    {
+        Assert.Null(Valid().TrustAnchor);
+        Assert.Empty(Valid().Validate());
+    }
+
+    [Fact]
+    public void AnAnchorBesideAnAdmittedPlainTextLoopbackIsRefused()
+    {
+        var options = Valid();
+        options.ApiBaseUrl = "http://127.0.0.1:5000/";
+        options.AllowInsecureLoopback = true;
+        options.TrustAnchor = "trust-anchor.pem";
+
+        var problem = Assert.Single(
+            options.Validate(),
+            candidate => candidate.Setting == nameof(TemplateSourceOptions.TrustAnchor));
+
+        Assert.Equal(
+            "is configured while the source is a plain-text loopback; the anchor would protect nothing",
+            problem.Reason);
+        Assert.DoesNotContain("trust-anchor.pem", problem.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnAnchorBesideAnHttpsSourceIsAdmitted()
+    {
+        var options = Valid();
+        options.ApiBaseUrl = "https://source.example/";
+        options.TrustAnchor = "trust-anchor.pem";
+
+        Assert.Empty(options.Validate());
+    }
+
+    [Fact]
+    public void AConfiguredButEmptyAnchorIsRefused()
+    {
+        var options = Valid();
+        options.TrustAnchor = "   ";
+
+        var problem = Assert.Single(
+            options.Validate(),
+            candidate => candidate.Setting == nameof(TemplateSourceOptions.TrustAnchor));
+
+        Assert.Equal("is configured but empty", problem.Reason);
+    }
+
+    [Theory]
+    [InlineData("http://127.0.0.1:5000/", true)]
+    [InlineData("http://localhost:5000/", true)]
+    [InlineData("http://[::1]:5000/", true)]
+    [InlineData("https://127.0.0.1/", false)]
+    [InlineData("http://10.0.0.1/", false)]
+    [InlineData("ftp://127.0.0.1/", false)]
+    [InlineData("not a uri", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void TheCombinationRuleAgreesWithTheUrlRuleAboutPlainTextLoopback(string? apiBaseUrl, bool admitsPlainText)
+    {
+        // The rule that refuses an anchor beside a plain-text loopback copies three
+        // conditions of the URL rule, which this change does not touch. Over a table of
+        // addresses its answer must be exactly "the URL rule admits this value as plain
+        // text", so the copy cannot drift from the rule it mirrors without this red.
+        var options = Valid();
+        options.ApiBaseUrl = apiBaseUrl!;
+        options.AllowInsecureLoopback = true;
+        options.TrustAnchor = "trust-anchor.pem";
+
+        var problems = options.Validate().ToList();
+        var urlRefused = problems.Any(problem => problem.Setting == nameof(TemplateSourceOptions.ApiBaseUrl));
+        var anchorRefused = problems.Any(problem => problem.Setting == nameof(TemplateSourceOptions.TrustAnchor));
+
+        Assert.Equal(admitsPlainText, anchorRefused);
+        if (admitsPlainText)
+        {
+            Assert.False(urlRefused);
+        }
+    }
+
     private static TemplateSourceOptions Valid() => new()
     {
         Repository = "report-service-tests/template-source",

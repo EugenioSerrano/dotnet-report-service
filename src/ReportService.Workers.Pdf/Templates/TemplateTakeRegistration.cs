@@ -22,7 +22,9 @@ namespace ReportService.Workers.Pdf.Templates;
 /// <c>report-pdf-rendering</c>, and that registration bounds the queue to one
 /// activity at a time — the PDF worker's own rule. The source's settings are
 /// validated at start, so a missing repository stops the process naming the
-/// setting instead of failing at the first take.
+/// setting instead of failing at the first take. The source's client trusts the
+/// deployment's own anchor when it configures one and the platform's store when it
+/// does not, and the rest of the process keeps its own trust.
 /// </summary>
 public static class TemplateTakeRegistration
 {
@@ -35,6 +37,10 @@ public static class TemplateTakeRegistration
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
+        builder.Services.AddSingleton(services => TemplateSourceTrustAnchor.Load(
+            services.GetRequiredService<IOptions<TemplateSourceOptions>>().Value.TrustAnchor,
+            services.GetRequiredService<ILoggerFactory>().CreateLogger(TemplateSourceTrustAnchor.LogCategory)));
+        builder.AddSettingsCheck(services => TrustAnchorProblems(services));
         builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
             services.GetRequiredService<IOptions<DatabaseOptions>>().Value.ConnectionString));
         builder.Services.TryAddSingleton(TimeProvider.System);
@@ -42,7 +48,9 @@ public static class TemplateTakeRegistration
         builder.Services.AddSingleton<TemplateTakeMetrics>();
         builder.Services.AddSingleton(services => new TemplateVersionConflict(
             services.GetRequiredService<ILoggerFactory>().CreateLogger(TemplateVersionConflict.LogCategory)));
-        builder.Services.AddHttpClient(TemplateSourceClientName);
+        builder.Services.AddHttpClient(TemplateSourceClientName)
+            .ConfigurePrimaryHttpMessageHandler(services => TemplateSourceHttpHandler.Create(
+                services.GetRequiredService<TemplateSourceTrustAnchor>().Certificates));
         builder.Services.AddSingleton<ITemplateSource>(services => new GitHubTemplateSource(
             services.GetRequiredService<IHttpClientFactory>().CreateClient(TemplateSourceClientName),
             services.GetRequiredService<IOptions<TemplateSourceOptions>>().Value));
@@ -60,5 +68,17 @@ public static class TemplateTakeRegistration
                 options.AddAllActivities(services.GetRequiredService<TakeTemplateVersionActivity>());
             }));
         return builder;
+    }
+
+    // The anchor's own start-up check: the file's refusal is reported on the setting it
+    // belongs to, in the same act that validates every settings record, so a bad anchor
+    // stops the process before it reports ready and never fails a take instead. The
+    // registered checks are not prefixed by the section, so the prefix is put here.
+    private static IReadOnlyList<ConfigurationProblem> TrustAnchorProblems(IServiceProvider services)
+    {
+        var problem = services.GetRequiredService<TemplateSourceTrustAnchor>().Problem;
+        return problem is null
+            ? []
+            : [problem with { Setting = $"{TemplateSourceOptions.SectionPath}:{problem.Setting}" }];
     }
 }

@@ -89,6 +89,15 @@ public sealed partial class TemplateSourceOptions : IValidatedSettings
     /// <summary>Whether a plain-text loopback source is admitted; development and tests only.</summary>
     public bool AllowInsecureLoopback { get; set; }
 
+    /// <summary>
+    /// The PEM file of the certificate authorities the source's certificate must chain
+    /// to; absent, the platform's own store is used. The file holds one or more public
+    /// certificates and no private key. When it is configured those authorities are the
+    /// whole trust of this source, so a source whose certificate chains to a public
+    /// authority must name that authority in the file too.
+    /// </summary>
+    public string? TrustAnchor { get; set; }
+
     /// <summary>The owner part of <see cref="Repository"/>; empty when the setting is invalid.</summary>
     public string Owner => Repository is not null && Repository.Contains('/', StringComparison.Ordinal)
         ? Repository[..Repository.IndexOf('/', StringComparison.Ordinal)]
@@ -160,7 +169,32 @@ public sealed partial class TemplateSourceOptions : IValidatedSettings
         {
             yield return new ConfigurationProblem(nameof(MaxPackageBytes), $"is not between 1 and {MaxPackageBytesLimit} bytes");
         }
+
+        if (TrustAnchor is not null)
+        {
+            if (string.IsNullOrWhiteSpace(TrustAnchor))
+            {
+                yield return new ConfigurationProblem(nameof(TrustAnchor), "is configured but empty");
+            }
+            else if (AdmitsPlainTextLoopback())
+            {
+                yield return new ConfigurationProblem(
+                    nameof(TrustAnchor),
+                    "is configured while the source is a plain-text loopback; the anchor would protect nothing");
+            }
+        }
     }
+
+    // Exactly the branch the URL rule admits beside 'https': a plain-text address on
+    // the loopback the caller declared it accepts. The method is a copy of those three
+    // conditions, because the URL rule is not this change's to open; an equivalence
+    // test over a table of addresses fails as soon as the two drift apart.
+    private bool AdmitsPlainTextLoopback() =>
+        !string.IsNullOrWhiteSpace(ApiBaseUrl)
+        && Uri.TryCreate(ApiBaseUrl, UriKind.Absolute, out var baseUri)
+        && string.Equals(baseUri.Scheme, Uri.UriSchemeHttp, StringComparison.Ordinal)
+        && baseUri.IsLoopback
+        && AllowInsecureLoopback;
 
     private IEnumerable<ConfigurationProblem> ValidateApiBaseUrl()
     {
