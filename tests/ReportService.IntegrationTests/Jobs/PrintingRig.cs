@@ -19,8 +19,12 @@ using ReportService.Migrations;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
+using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Manifest;
+using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
+using ReportService.TemplateSource.Manifest;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
@@ -196,6 +200,63 @@ internal sealed class PrintingRig : IAsyncDisposable
                 now,
                 cancellationToken));
         return uploadId;
+    }
+
+    /// <summary>
+    /// Records <paramref name="version"/> as a version already taken, with its package stored at
+    /// the content-addressed key of its own bytes and the manifest the package's files carry.
+    /// </summary>
+    /// <param name="version">The version to record.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task SeedTakenVersionAsync(string version, CancellationToken cancellationToken)
+    {
+        var files = Package(version, declaresAnchors: false, pageTotals: false);
+        var sources = files
+            .Select(file => new PackageFileSource(
+                file.Key,
+                _ => Task.FromResult<Stream>(new MemoryStream(file.Value, writable: false))))
+            .ToList();
+
+        using var archive = new MemoryStream();
+        await TemplatePackageArchive.WriteAsync(sources, archive, cancellationToken);
+        var bytes = archive.ToArray();
+        var packageSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
+        var key = TemplatePackageKeys.ForVersion(Consumer, Template, version, packageSha256);
+        using (var content = new MemoryStream(bytes, writable: false))
+        {
+            var written = await Objects.WriteAsync(key, content, cancellationToken);
+            Assert.True(
+                written.Succeeded || written.Outcome == StorageOutcome.AlreadyExists,
+                $"the taken package had to be written: the store answered {written.Outcome} "
+                + $"({written.Error?.Code ?? "no code"}: {written.Error?.Message ?? "no message"})");
+        }
+
+        // The record carries the manifest the archived files themselves declare, so the taken
+        // copy and its record cannot describe two different packages.
+        var read = new TemplateManifestReader().Read(new MemoryStream(files["template.yaml"], writable: false));
+        Assert.True(read.Succeeded, read.Reason);
+        var manifest = read.Manifest!;
+        var record = TemplateVersionRecords.Sample(
+                Template,
+                version,
+                manifest.Owner!,
+                shared: manifest.Shared,
+                schemaRef: manifest.DataContract!.Schema!,
+                packageSha256: packageSha256) with
+            {
+                ManifestVersion = manifest.ManifestVersion!,
+                Engine = manifest.Engine!.Value,
+                EngineVersion = TemplateEngineCatalog.VersionOf(manifest.Engine.Value),
+                PackageSize = bytes.LongLength,
+                FileCount = files.Count,
+                ObjectKey = key,
+                Manifest = manifest,
+                ManifestJson = read.CanonicalJson!,
+            };
+        var inserted = await new PostgresTemplateVersionStore(_dataSource!).TryInsertAsync(record, cancellationToken);
+        Assert.True(
+            inserted.WasInserted,
+            $"the taken version had to be recorded once: the store answered with version {inserted.Record.Version} of {inserted.Record.TemplateId}");
     }
 
     /// <summary>The snapshot one job was printed from, as the case handed it to the upload.</summary>

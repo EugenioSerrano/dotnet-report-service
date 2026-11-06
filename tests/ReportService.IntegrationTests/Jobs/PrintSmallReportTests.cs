@@ -232,8 +232,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
 
-        // The version is taken by the double before any take-side check exists: the render is the
-        // gate that refuses it, and it refuses before composing.
+        // The version is already taken and its copy seeded: the job's template step pins it from its
+        // record and reads no source, so the render is the gate that refuses it, and it refuses
+        // before composing.
+        await rig.SeedTakenVersionAsync(PrintingRig.NoAnchors, cancellationToken);
+
         var reportJobId = await rig.SubmitAsync(
             await rig.ReadyUploadAsync(PrintingRig.Snapshot(25), cancellationToken),
             PrintingRig.NoAnchors,
