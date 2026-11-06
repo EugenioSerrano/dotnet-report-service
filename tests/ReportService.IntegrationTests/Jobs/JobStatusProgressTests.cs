@@ -205,6 +205,7 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         var uploadId = await ReadySnapshotAsync(Document(_sampleHeader, Records(1_000)), cancellationToken);
         var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
         var samples = new List<Sample>();
+        Sample settled;
         var gate = new DataQueueGate();
 
         // The data queue is withheld, so the run reaches the step that reads the snapshot and
@@ -289,29 +290,31 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             gate.Release();
             using (var client = _api.CreateClient())
             {
+                var rising = new List<Sample>();
                 await SampleUntilAsync(
                     client,
                     reportJobId,
-                    samples,
+                    rising,
                     "the committed partition of the job",
                     sample => sample.RecordsTotal == 1_000 && sample.RecordsRead == 1_000,
                     ProgressDeadline,
                     cancellationToken);
+
+                // The run leaves the data step as soon as the partition is committed - the build
+                // moves the job to its printing step there - so the sample that first reads the
+                // committed counters can already be the printing step's. The series this case
+                // asserts is the job's at its data step, and where it ends is that state, never
+                // which poll landed first.
+                samples.AddRange(rising.TakeWhile(sample => sample.Status is "queued" or "validating"));
             }
 
-            // The run reaches its last step: the output has not started, so nothing is written
-            // and the job stays exactly as its steps left it — never as a terminal green.
+            // The run's last step closes the job from its one output, so a run that has completed
+            // leaves nothing to wait for: the state read here is the end that run reaches, never
+            // the data step it left.
             await WaitUntilRunCompletedAsync(reportJobId, cancellationToken);
             using (var client = _api.CreateClient())
             {
-                await SampleUntilAsync(
-                    client,
-                    reportJobId,
-                    samples,
-                    "the job after its run completed",
-                    _ => true,
-                    ReadyDeadline,
-                    cancellationToken);
+                settled = await ReadAsync(client, reportJobId, cancellationToken);
             }
         }
         finally
@@ -319,27 +322,32 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             await worker.DisposeAsync();
         }
 
-        var settled = samples[^1];
-        Assert.Equal("validating", settled.Status);
-        Assert.Equal("validating-data", settled.Stage);
+        // The end state of a run that prints: the job entered its printing step, printed and
+        // verified its one block, published it and was closed on that output's own outcome.
+        Assert.Equal("succeeded", settled.Status);
+        Assert.Equal("rendering-pdf", settled.Stage);
         Assert.Equal(1_000, settled.RecordsRead);
         Assert.Equal(1_000, settled.RecordsTotal);
         Assert.Equal(1, settled.BlocksTotal);
-        Assert.Equal(0, settled.BlocksCompleted);
-        Assert.Equal(0, settled.PagesGenerated);
-        Assert.Null(settled.FinishedAt);
+        Assert.Equal(1, settled.BlocksCompleted);
+        Assert.True(
+            settled.PagesGenerated >= 1,
+            $"the printed block counts its pages, and this one counted {settled.PagesGenerated}");
+        Assert.NotNull(settled.FinishedAt);
         var pdf = Assert.Single(settled.Outputs);
-        Assert.Equal("pending", pdf.Status);
-        Assert.Null(pdf.ArtifactId);
+        Assert.Equal("succeeded", pdf.Status);
+        Assert.NotNull(pdf.ArtifactId);
 
         AssertOnlyRisen(samples);
 
-        // The instants the answer carries are the stored ones, in UTC with three digits.
+        // The instants the answer carries are the stored ones, in UTC with three digits - and the
+        // job that ended carries the instant it ended at, on the row and on the answer alike.
         var instants = await InstantsAsync(reportJobId, cancellationToken);
         Assert.Equal(JobWireValues.TruncateToMillisecond(instants.CreatedAt), Parcel(settled.CreatedAt));
         Assert.NotNull(settled.StartedAt);
         Assert.Equal(JobWireValues.TruncateToMillisecond(instants.StartedAt!.Value), Parcel(settled.StartedAt));
-        Assert.Null(instants.FinishedAt);
+        Assert.NotNull(instants.FinishedAt);
+        Assert.Equal(JobWireValues.TruncateToMillisecond(instants.FinishedAt!.Value), Parcel(settled.FinishedAt));
     }
 
     [Fact]
