@@ -15,6 +15,7 @@ using ReportService.Jobs;
 using ReportService.Migrations;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
+using ReportService.Storage.Filesystem;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Api.Enums.V1;
@@ -305,11 +306,15 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
                 StringComparison.Ordinal))];
 
     // One upload in the state a job's data reference is judged in, driven through the record
-    // store's own steps so each case starts from a state the service can reach.
+    // store's own steps so each case starts from a state the service can reach. The bytes a
+    // real client would have sent are the template's own sample; the snapshot row a ready
+    // upload commits names the object written below, never bytes nobody stored.
     private async Task<string> GivenUploadAsync(UploadStatus status, DateTimeOffset deadline, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
+        var document = File.ReadAllBytes(Path.Combine(
+            RepositoryPaths.Root, "samples", "templates", "pilot-grouped", "sample.json"));
         var uploads = new PostgresUploadStore(_dataSource!);
         var record = new UploadRecord(
             uploadId,
@@ -323,24 +328,44 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
         await uploads.CreateAsync(record, cancellationToken);
         Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(
-            uploadId, UploadContentOutcome.Complete, 900, 900, new string('a', 64), now, cancellationToken));
+            uploadId,
+            UploadContentOutcome.Complete,
+            document.LongLength,
+            document.LongLength,
+            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document)),
+            now,
+            cancellationToken));
         Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, deadline, cancellationToken));
 
         if (status is UploadStatus.Ready)
         {
+            var objects = FilesystemObjectStore.Open(
+                new FilesystemStorageOptions { Root = StorageRoot(), CreateIfMissing = true },
+                StorageRoot(),
+                TimeProvider.System,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<FilesystemObjectStore>.Instance);
+            var snapshotKey = ObjectKey.FromSegments("snapshots", uploadId, "a");
+            using var content = new MemoryStream(document, writable: false);
+            var written = await objects.WriteAsync(snapshotKey, content, cancellationToken);
+            Assert.True(
+                written.Succeeded,
+                $"the snapshot had to be written: the store answered {written.Outcome} "
+                + $"({written.Error?.Code ?? "no code"}: {written.Error?.Message ?? "no message"})");
+            var snapshot = written.Value!;
+
             Assert.Equal(
                 SnapshotCommitResult.Committed,
                 await uploads.CommitReadyAsync(
                     new SnapshotRecord(
                         uploadId,
                         Consumer,
-                        ObjectKey.FromSegments("snapshots", uploadId, "a"),
+                        snapshotKey,
                         UploadContentEncoding.None,
                         DataProfile.HeaderItemsV1,
-                        new string('a', 64),
-                        900,
-                        new string('a', 64),
-                        900,
+                        snapshot.Sha256,
+                        snapshot.Size,
+                        snapshot.Sha256,
+                        snapshot.Size,
                         now),
                     now,
                     cancellationToken));
@@ -361,6 +386,8 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
 
         return uploadId;
     }
+
+    private string StorageRoot() => Path.Combine(_directory, "storage");
 
     // The request the product's own operation answers, sent to a host built from the product's
     // own registrations; the host is disposed before the worker starts, so the answer cannot be

@@ -14,6 +14,7 @@ using ReportService.Jobs;
 using ReportService.Migrations;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
+using ReportService.Storage.Filesystem;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Client;
@@ -353,6 +354,12 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
     {
         var now = DateTimeOffset.UtcNow;
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
+
+        // The document a real upload of this template's sample carries, read once and
+        // written below: the bytes and the row that names them come from the same array,
+        // so the snapshot cannot describe content nobody stored.
+        var document = File.ReadAllBytes(Path.Combine(
+            RepositoryPaths.Root, "samples", "templates", "pilot-grouped", "sample.json"));
         var uploads = new PostgresUploadStore(_dataSource!);
         await uploads.CreateAsync(
             new UploadRecord(
@@ -366,8 +373,32 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
                 now.AddHours(1)),
             cancellationToken);
         Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
+
+        // The snapshot's object is written through the same store and root the worker reads
+        // it with, and the row takes the size and SHA-256 the write answered. A row that
+        // named bytes nobody wrote is a read that can only fail.
+        var objects = FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = StorageRoot(), CreateIfMissing = true },
+            StorageRoot(),
+            TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<FilesystemObjectStore>.Instance);
+        var snapshotKey = ObjectKey.FromSegments("snapshots", uploadId, "a");
+        using var content = new MemoryStream(document, writable: false);
+        var written = await objects.WriteAsync(snapshotKey, content, cancellationToken);
+        Assert.True(
+            written.Succeeded,
+            $"the snapshot had to be written: the store answered {written.Outcome} "
+            + $"({written.Error?.Code ?? "no code"}: {written.Error?.Message ?? "no message"})");
+        var snapshot = written.Value!;
+
         Assert.True(await uploads.RecordTransferAsync(
-            uploadId, UploadContentOutcome.Complete, 900, 900, new string('a', 64), now, cancellationToken));
+            uploadId,
+            UploadContentOutcome.Complete,
+            document.LongLength,
+            snapshot.Size,
+            snapshot.Sha256,
+            now,
+            cancellationToken));
         Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, now.AddHours(6), cancellationToken));
         Assert.Equal(
             SnapshotCommitResult.Committed,
@@ -375,16 +406,18 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
                 new SnapshotRecord(
                     uploadId,
                     Consumer,
-                    ObjectKey.FromSegments("snapshots", uploadId, "a"),
+                    snapshotKey,
                     UploadContentEncoding.None,
                     DataProfile.HeaderItemsV1,
-                    new string('a', 64),
-                    900,
-                    new string('a', 64),
-                    900,
+                    snapshot.Sha256,
+                    snapshot.Size,
+                    snapshot.Sha256,
+                    snapshot.Size,
                     now),
                 now,
                 cancellationToken));
         return uploadId;
     }
+
+    private string StorageRoot() => Path.Combine(_directory, "storage");
 }
