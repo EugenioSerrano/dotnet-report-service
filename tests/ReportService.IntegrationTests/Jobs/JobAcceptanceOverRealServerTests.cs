@@ -74,6 +74,8 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
     private NpgsqlDataSource? _dataSource;
 
+    private RenderWorkerHost? _render;
+
     /// <summary>Runs against the class's server.</summary>
     /// <param name="fixture">The container this class owns.</param>
     public JobAcceptanceOverRealServerTests(PostgresFixture fixture) => _fixture = fixture;
@@ -112,11 +114,27 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
         _api = StartApi();
         await WaitForApiAsync(cancellationToken);
+
+        _render = await RenderWorkerHost.StartAsync(
+            _hostPort,
+            _connectionString!,
+            Path.Combine(_directory, "storage"),
+            "pilot-grouped",
+            ReadyDeadline,
+            null,
+            cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        // The render worker stops while the process that accepted the job is still there to be
+        // killed in this class's own order.
+        if (_render is not null)
+        {
+            await _render.DisposeAsync();
+        }
+
         if (_api is not null)
         {
             try

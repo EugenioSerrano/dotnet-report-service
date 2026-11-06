@@ -102,6 +102,8 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
     private WebApplicationFactory<Program>? _api;
 
+    private RenderWorkerHost? _render;
+
     /// <summary>The pilot sample's header, as the document section carries it.</summary>
     private string _sampleHeader = "{}";
 
@@ -152,12 +154,25 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         _hostPort = _engine.HostPort;
 
         _api = Api();
+        _render = await RenderWorkerHost.StartAsync(
+            _hostPort,
+            _connectionString!,
+            Path.Combine(_directory, "storage"),
+            TemplateId,
+            ReadyDeadline,
+            null,
+            cancellationToken);
         await SeedTakenVersionAsync(cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        if (_render is not null)
+        {
+            await _render.DisposeAsync();
+        }
+
         if (_api is not null)
         {
             await _api.DisposeAsync();

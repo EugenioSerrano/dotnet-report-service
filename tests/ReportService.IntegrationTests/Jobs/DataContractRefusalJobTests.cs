@@ -107,6 +107,8 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
     private WebApplicationFactory<OrchestrationWorker>? _worker;
 
+    private RenderWorkerHost? _render;
+
     /// <summary>The pilot sample's header, as the profile document carries it.</summary>
     private string _sampleHeader = "{}";
 
@@ -159,6 +161,14 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
 
         _api = Api();
         _worker = Worker();
+        _render = await RenderWorkerHost.StartAsync(
+            _hostPort,
+            _connectionString!,
+            Path.Combine(_directory, "storage"),
+            TemplateId,
+            ReadyDeadline,
+            _logs,
+            cancellationToken);
         await SeedTakenVersionAsync(cancellationToken);
 
         using var client = _worker.CreateClient();
@@ -177,6 +187,11 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        if (_render is not null)
+        {
+            await _render.DisposeAsync();
+        }
+
         _worker?.Dispose();
         _api?.Dispose();
         if (_dataSource is not null)

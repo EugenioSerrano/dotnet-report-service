@@ -355,12 +355,17 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
             builder.ConfigureTestServices(services => KeepOnlyQueueWork(services, queue));
         });
 
-    // A process creates one engine worker per declared queue that has work. This case needs the two
-    // halves of that process at two moments, so it keeps only the wanted queue's registration and
-    // each host starts exactly the engine worker its moment calls for; the product keeps no test
-    // switch. The work is registered by the product's own factories, which build the registration
-    // and only then state its queue, so the wanted one is picked after it is built - and a queue
-    // with no work at all fails here instead of silently leaving a second worker of this process.
+    // A process creates one engine worker per declared queue that has work, and applies every
+    // registration of that queue to it. This case needs the two halves of that process at two
+    // moments, so it keeps only the wanted queue's work - every registration of it, which is what
+    // the process itself would apply - and each host starts exactly the engine worker its moment
+    // calls for; the product keeps no test switch. The work is registered by the product's own
+    // factories, which build the registration and only then state its queue, so the wanted ones
+    // are picked after they are built, and a queue with no work at all fails here instead of
+    // silently leaving a second worker of this process. `report-orchestration` carries two
+    // registrations - the verification workflow and the jobs' work, the notification activity
+    // among them - and a host that kept one of them would serve the workflow and not what it
+    // schedules next.
     private static void KeepOnlyQueueWork(IServiceCollection services, string queue)
     {
         var registrations = services
@@ -371,16 +376,23 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
         services.RemoveAll<TaskQueueWork>();
         services.AddSingleton(provider =>
         {
-            foreach (var registration in registrations)
+            var kept = registrations
+                .Select(factory => factory(provider))
+                .OfType<TaskQueueWork>()
+                .Where(work => string.Equals(work.Queue, queue, StringComparison.Ordinal))
+                .ToList();
+            if (kept.Count == 0)
             {
-                if (registration(provider) is TaskQueueWork work
-                    && string.Equals(work.Queue, queue, StringComparison.Ordinal))
-                {
-                    return work;
-                }
+                throw new InvalidOperationException($"No work is registered on the task queue '{queue}'.");
             }
 
-            throw new InvalidOperationException($"No work is registered on the task queue '{queue}'.");
+            return new TaskQueueWork(queue, options =>
+            {
+                foreach (var work in kept)
+                {
+                    work.Configure(options);
+                }
+            });
         });
     }
 

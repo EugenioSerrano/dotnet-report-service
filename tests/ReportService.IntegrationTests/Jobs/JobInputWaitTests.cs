@@ -84,6 +84,8 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
     private NpgsqlDataSource? _dataSource;
 
+    private RenderWorkerHost? _render;
+
     /// <summary>Runs against the class's server.</summary>
     /// <param name="fixture">The container this class owns.</param>
     public JobInputWaitTests(PostgresFixture fixture) => _fixture = fixture;
@@ -119,11 +121,25 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
         _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-input-wait", cancellationToken);
         _hostPort = _engine.HostPort;
+
+        _render = await RenderWorkerHost.StartAsync(
+            _hostPort,
+            _connectionString!,
+            StorageRoot(),
+            "pilot-grouped",
+            ReadyDeadline,
+            null,
+            cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        if (_render is not null)
+        {
+            await _render.DisposeAsync();
+        }
+
         if (_dataSource is not null)
         {
             await _dataSource.DisposeAsync();

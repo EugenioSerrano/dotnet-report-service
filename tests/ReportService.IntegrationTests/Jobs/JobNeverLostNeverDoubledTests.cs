@@ -66,6 +66,8 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
 
     private NpgsqlDataSource? _dataSource;
 
+    private RenderWorkerHost? _render;
+
     /// <summary>Runs against the class's server.</summary>
     /// <param name="fixture">The container this class owns.</param>
     public JobNeverLostNeverDoubledTests(PostgresFixture fixture) => _fixture = fixture;
@@ -101,11 +103,25 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
 
         _engine = await EngineStart.StartAsync(_engineImage, "temporal-job-covering", cancellationToken);
         _hostPort = _engine.HostPort;
+
+        _render = await RenderWorkerHost.StartAsync(
+            _hostPort,
+            _connectionString!,
+            Path.Combine(_directory, "storage"),
+            "pilot-grouped",
+            ReadyDeadline,
+            null,
+            cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        if (_render is not null)
+        {
+            await _render.DisposeAsync();
+        }
+
         if (_dataSource is not null)
         {
             await _dataSource.DisposeAsync();
