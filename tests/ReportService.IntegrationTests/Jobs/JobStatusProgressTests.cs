@@ -24,8 +24,10 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
 using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource.Manifest;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Client;
@@ -796,17 +798,38 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         });
 
     // The taken version this class's jobs are pinned to, recorded in the class's own composition
-    // before the first case: the pilot's schema is packaged, written under the content-addressed
-    // key of its bytes, and the record carries the written package's own size and hash.
+    // before the first case: the pilot sample's own package files are archived under the
+    // content-addressed key of their bytes, the manifest the package carries is read back and
+    // recorded with them, and the record carries the written package's own size and count.
     private async Task SeedTakenVersionAsync(CancellationToken cancellationToken)
     {
-        var schema = await File.ReadAllBytesAsync(
-            Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId, SchemaPath),
-            cancellationToken);
-        var files = new List<PackageFileSource>
+        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId);
+
+        // The copy belongs to the consumer that takes it, and every other member of the document
+        // stays as the sample declares it: only the owner line is written over, and the bytes
+        // written here are the ones the record's manifest is read from.
+        var manifestBytes = Encoding.UTF8.GetBytes(
+            Encoding.UTF8.GetString(await File.ReadAllBytesAsync(
+                    Path.Combine(root, TemplateManifestReader.FileName),
+                    cancellationToken))
+                .Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal));
+
+        var files = new List<PackageFileSource>();
+        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
-            new(SchemaPath, _ => Task.FromResult<Stream>(new MemoryStream(schema, writable: false))),
-        };
+            var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+            if (string.Equals(relative, SamplePath, StringComparison.Ordinal))
+            {
+                // The sample document is the data a case submits, and no part of its package.
+                continue;
+            }
+
+            files.Add(string.Equals(relative, TemplateManifestReader.FileName, StringComparison.Ordinal)
+                ? new PackageFileSource(
+                    relative,
+                    _ => Task.FromResult<Stream>(new MemoryStream(manifestBytes, writable: false)))
+                : PackageFileSource.FromFile(root, relative));
+        }
 
         using var sink = new MemoryStream();
         await TemplatePackageArchive.WriteAsync(files, sink, cancellationToken);
@@ -821,21 +844,89 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             Assert.True(written.Succeeded, "the taken package had to be written");
         }
 
-        var versions = _api.Services.GetRequiredService<ITemplateVersionStore>();
-        var inserted = await versions.TryInsertAsync(
-            TemplateVersionRecords.Sample(
+        // One read of the manifest the package holds feeds both representations the record
+        // carries, so the copy and its record cannot describe two different versions.
+        var read = new TemplateManifestReader().Read(new MemoryStream(manifestBytes, writable: false));
+        Assert.True(read.Succeeded, read.Reason);
+        var manifest = read.Manifest;
+        Assert.NotNull(manifest);
+        Assert.Equal(TemplateId, manifest.Id);
+        Assert.Equal(Version, manifest.Version);
+        Assert.Equal(Consumer, manifest.Owner);
+        Assert.Equal(SchemaPath, manifest.DataContract!.Schema);
+
+        var taken = TemplateVersionRecords.Sample(
                 TemplateId,
                 Version,
-                Consumer,
-                shared: true,
-                schemaRef: SchemaPath,
+                manifest.Owner!,
+                shared: manifest.Shared,
+                schemaRef: manifest.DataContract!.Schema!,
                 packageSha256: packageSha256) with
             {
                 PackageSize = bytes.Length,
                 FileCount = files.Count,
                 ObjectKey = key,
-            },
-            cancellationToken);
+                Manifest = manifest,
+                ManifestJson = read.CanonicalJson!,
+            };
+
+        // What the manifest declares and what this fixture wrote have to be one set: a copy
+        // missing a part or a stylesheet is refused by the render before it prints anything, and
+        // the refusal names no file.
+        var writtenPaths = files.Select(file => file.RelativePath).ToHashSet(StringComparer.Ordinal);
+        string?[] declaredParts =
+        [
+            manifest.Outputs?.Html?.Parts?.DocumentStart,
+            manifest.Outputs?.Html?.Parts?.GroupStart,
+            manifest.Outputs?.Html?.Parts?.Row,
+            manifest.Outputs?.Html?.Parts?.GroupEnd,
+            manifest.Outputs?.Html?.Parts?.DocumentEnd,
+            manifest.Outputs?.Pdf?.Parts?.DocumentStart,
+            manifest.Outputs?.Pdf?.Parts?.GroupStart,
+            manifest.Outputs?.Pdf?.Parts?.Row,
+            manifest.Outputs?.Pdf?.Parts?.GroupEnd,
+            manifest.Outputs?.Pdf?.Parts?.DocumentEnd,
+        ];
+        foreach (var path in declaredParts)
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                Assert.True(
+                    writtenPaths.Contains(path),
+                    $"the manifest declares '{path}', and the package written here carries no such file");
+            }
+        }
+
+        foreach (var style in manifest.Outputs?.Html?.Styles ?? [])
+        {
+            Assert.True(
+                writtenPaths.Contains(style),
+                $"the manifest declares '{style}', and the package written here carries no such file");
+        }
+
+        // The stored document is the representation every later reader gets, and it has to type
+        // into the members the render maps before this record is written.
+        var stored = TemplateManifestJson.ReadTyped(taken.ManifestJson);
+        Assert.NotNull(stored);
+        var storedOutputs = stored.Outputs;
+        Assert.NotNull(storedOutputs);
+        var storedPdf = storedOutputs.Pdf;
+        Assert.NotNull(storedPdf);
+        Assert.True(
+            storedPdf.Parts is not null || storedOutputs.Html?.Parts is not null,
+            "the stored manifest declares no parts, and a package whose manifest declares none is refused");
+        Assert.Equal(taken.Engine, stored.Engine);
+        Assert.Equal(manifest.DeclaredEngineVersion, stored.DeclaredEngineVersion);
+
+        // The package names the engine that renders it, and the record carries the version this
+        // deployment renders that engine with.
+        Assert.NotNull(manifest.Engine);
+        Assert.False(string.IsNullOrEmpty(manifest.DeclaredEngineVersion), "the package names no engine version");
+        Assert.Equal(taken.Engine, manifest.Engine);
+        Assert.Equal(TemplateEngineCatalog.VersionOf(taken.Engine), taken.EngineVersion);
+
+        var versions = _api.Services.GetRequiredService<ITemplateVersionStore>();
+        var inserted = await versions.TryInsertAsync(taken, cancellationToken);
         Assert.True(inserted.WasInserted, "the taken version had to be recorded");
     }
 
