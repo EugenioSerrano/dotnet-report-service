@@ -11,8 +11,9 @@ namespace ReportService.TemplatePackages.Records;
 /// written with constant SQL over a pooled data source. The insert lets the
 /// primary key decide a race: the loser reads the winner's row in the same
 /// transaction and reports it, so two takes of one version can never leave two
-/// rows. The stored manifest is read back as written, so no reader needs the
-/// source format.
+/// rows. The stored manifest is kept as a JSON document and read back in the
+/// column's own canonical text; every reader parses the document, so member
+/// order and spacing belong to the storage and never to a reader.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Runs only against a real PostgreSQL server; covered by the integration suite.")]
 public sealed class PostgresTemplateVersionStore : ITemplateVersionStore

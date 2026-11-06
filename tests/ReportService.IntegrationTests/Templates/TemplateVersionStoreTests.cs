@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Dapper;
 using Npgsql;
 using ReportService.Migrations;
@@ -5,6 +6,7 @@ using ReportService.TemplatePackages.Keys;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
+using ReportService.Testing.Manifests;
 
 namespace ReportService.IntegrationTests.Templates;
 
@@ -12,9 +14,11 @@ namespace ReportService.IntegrationTests.Templates;
 /// The taken-version record against a real PostgreSQL 18.6 with the product's
 /// migrations applied: a version is recorded once even when eight takes of it
 /// insert at the same moment, and the losers read the winner; the table's own
-/// checks refuse a row the product can never write; the manifest survives the
-/// round trip through <c>jsonb</c>, numbers and all; and the pin the next change
-/// adds compiles against the table it pins to.
+/// checks refuse a row the product can never write; a recorded manifest reads
+/// back as the same document through <c>jsonb</c> - every member and every
+/// value - while the member order and the spacing of the column's own text are
+/// never part of the contract; and the pin the next change adds compiles against
+/// the table it pins to.
 /// </summary>
 public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
@@ -69,7 +73,43 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new PostgresTemplateVersionStore(_dataSource!);
-        var record = Record("round-trip");
+        var sample = Record("round-trip");
+
+        // The document the take records: the sample's own identity members, a
+        // decimal whose digits must survive, a number in exponent form, and a
+        // member the typed view does not know.
+        var document = new JsonObject
+        {
+            ["manifestVersion"] = sample.ManifestVersion,
+            ["id"] = sample.TemplateId,
+            ["version"] = sample.Version,
+            ["owner"] = sample.OwnerConsumerId,
+            ["shared"] = sample.Shared,
+            ["engine"] = TemplateEngineNames.ToManifestName(sample.Engine),
+            ["engineVersion"] = sample.EngineVersion,
+            ["dataContract"] = new JsonObject
+            {
+                ["profile"] = "header-items-v1",
+                ["version"] = "1.0",
+                ["schema"] = sample.SchemaRef,
+            },
+            ["outputs"] = new JsonObject
+            {
+                ["pdf"] = new JsonObject
+                {
+                    ["marginMm"] = new JsonObject { ["top"] = JsonValue.Create(15.50m) },
+                    ["pageTotals"] = new JsonObject { ["enabled"] = true, ["scale"] = JsonNode.Parse("1e2") },
+                },
+            },
+            ["authoringNotes"] = new JsonObject { ["source"] = "pilot", ["reviewed"] = true },
+        };
+
+        var text = TemplateManifestJson.Write(document);
+        var record = sample with
+        {
+            ManifestJson = text,
+            Manifest = TemplateManifestJson.ReadTyped(text),
+        };
 
         Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
 
@@ -85,7 +125,11 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
         Assert.Equal(record.PackageSize, read.PackageSize);
         Assert.Equal(record.FileCount, read.FileCount);
         Assert.Equal(record.ObjectKey, read.ObjectKey);
-        Assert.Equal(record.ManifestJson, read.ManifestJson);
+        Assert.True(
+            ManifestDocuments.AreTheSameDocument(record.ManifestJson, read.ManifestJson),
+            $"the manifest read back is not the document the take recorded.{Environment.NewLine}"
+            + $"recorded: {record.ManifestJson}{Environment.NewLine}"
+            + $"read: {read.ManifestJson}");
         Assert.Equal(record.Manifest.Outputs?.Pdf?.MarginMm?.Top, read.Manifest.Outputs?.Pdf?.MarginMm?.Top);
         Assert.Equal(record.Manifest.Outputs?.Pdf?.PageTotals?.Scale, read.Manifest.Outputs?.Pdf?.PageTotals?.Scale);
         Assert.Equal(record.TakenAt.ToUniversalTime(), read.TakenAt.ToUniversalTime());

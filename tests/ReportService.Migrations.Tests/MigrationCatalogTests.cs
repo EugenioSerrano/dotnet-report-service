@@ -29,12 +29,35 @@ public sealed class MigrationCatalogTests
 
     private const string TemplateResolution = "0009_template-resolution.sql";
 
+    private const string VersionSyntax = "0010_template-versions-version-syntax.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(TemplateResolution, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(VersionSyntax, MigrationCatalog.ExpectedVersion);
+    }
+
+    /// <summary>
+    /// The tenth script states the version syntax the product writes: one
+    /// <c>ALTER TABLE</c> that adds the named check, and no table, no column and
+    /// no drop of its own. That the server refuses a version outside the syntax is
+    /// a case against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheVersionSyntaxScriptAddsTheNamedCheckAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
+
+        Assert.Equal(10, MigrationCatalog.Scripts.Count);
+        Assert.Equal(VersionSyntax, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(VersionSyntax, MigrationCatalog.ExpectedVersion);
+        Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ADD COLUMN", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

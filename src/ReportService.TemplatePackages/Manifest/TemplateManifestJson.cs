@@ -5,10 +5,12 @@ using System.Text.Json.Serialization;
 namespace ReportService.TemplatePackages.Manifest;
 
 /// <summary>
-/// The stored form of a manifest and its typed view. The stored form is the
-/// document's own members in the document's order, without indentation, so the
-/// bytes recorded for a version depend on what its author wrote and never on a
-/// runtime's formatting or on a mapping's iteration order.
+/// The stored form of a manifest and its typed view. The text this writer
+/// produces holds the document's members in the document's order without
+/// indentation, so what it writes depends on what the manifest's author wrote and
+/// never on a runtime's formatting or on a mapping's iteration order. The column
+/// that keeps it may store the same document in another member order and
+/// spacing, and a reader parses the document, never the text.
 /// </summary>
 public static class TemplateManifestJson
 {
