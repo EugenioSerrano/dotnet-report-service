@@ -48,11 +48,12 @@ namespace ReportService.IntegrationTests.Jobs;
 /// failed through the store's own writer, and a snapshot the reader refuses — on the job and
 /// on its PDF output.
 /// <para>
-/// The templates this class's jobs are pinned to are installed before the first case, because
-/// nothing on this commit takes a version: the pilot's own schema is packaged, written to the
-/// object store and recorded in the version store, exactly as the other integration classes do.
-/// The uploads are settled through the upload store's own record operation rather than by the
-/// verification work, so the data work the case needs is the only work the data queue carries.
+/// The version this class's jobs are pinned to is recorded before the first case, because nothing
+/// on this commit takes one: the pilot sample's own package files are archived under the
+/// content-addressed key of their bytes and the manifest the package carries is recorded with
+/// them, exactly as a take leaves the version it reads. The uploads are settled through the upload
+/// store's own record operation rather than by the verification work, so the data work the case
+/// needs is the only work the data queue carries.
 /// </para>
 /// </summary>
 public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAsyncLifetime
@@ -87,10 +88,12 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
+    // The render writes each part under a key of 149 characters and its temporary sibling in the
+    // same directory is 38 longer, so this class's temporary root stays short: it is held to 48
+    // characters, and the fixture asserts it before any host starts.
     private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "report-service-job-status-progress",
-        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        Path.GetPathRoot(Path.GetTempPath())!,
+        "rs061-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
 
     private int _hostPort;
 
@@ -133,6 +136,13 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
     private async Task OpenAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+        var volume = Path.GetPathRoot(Path.GetTempPath())!;
+        Assert.True(
+            volume.Length == 3 && volume[1] == ':' && volume[2] == Path.DirectorySeparatorChar,
+            $"the class's storage base needs a drive root, and the temporary path's is '{volume}'");
+        Assert.True(
+            _directory.Length + "/storage".Length <= 48,
+            $"the class's storage root is {_directory.Length + "/storage".Length} characters and must stay at most 48: the render's part key is 149 characters, its temporary sibling is 38 longer, and the storage provider accepts a path of 248");
         Directory.CreateDirectory(_directory);
 
         var sample = JsonNode.Parse(await File.ReadAllTextAsync(
