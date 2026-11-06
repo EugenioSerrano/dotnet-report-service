@@ -48,11 +48,16 @@ public sealed class TestCertificateAuthority : IDisposable
     }
 
     /// <summary>
-    /// Issues the certificate a loopback listener serves: valid for
-    /// <c>127.0.0.1</c> and <c>localhost</c>, for server authentication only,
-    /// signed by this authority.
+    /// Issues the certificate a listener serves: valid for <c>127.0.0.1</c> and
+    /// <c>localhost</c> beside every name the caller adds, for server
+    /// authentication only, signed by this authority. A client matches the
+    /// address it dials against these names, never against the subject, so a
+    /// listener a caller reaches by a name of its own has to carry that name
+    /// here.
     /// </summary>
-    public X509Certificate2 IssueSourceCertificate(string commonName = "127.0.0.1")
+    /// <param name="commonName">The common name the certificate's subject carries.</param>
+    /// <param name="dnsNames">Further names a client may dial the listener by, beside <c>localhost</c>.</param>
+    public X509Certificate2 IssueSourceCertificate(string commonName = "127.0.0.1", IReadOnlyList<string>? dnsNames = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(commonName);
 
@@ -68,6 +73,15 @@ public sealed class TestCertificateAuthority : IDisposable
         var names = new SubjectAlternativeNameBuilder();
         names.AddIpAddress(IPAddress.Loopback);
         names.AddDnsName("localhost");
+        if (dnsNames is not null)
+        {
+            foreach (var dnsName in dnsNames)
+            {
+                ArgumentException.ThrowIfNullOrWhiteSpace(dnsName);
+                names.AddDnsName(dnsName);
+            }
+        }
+
         request.CertificateExtensions.Add(names.Build());
 
         var serial = RandomNumberGenerator.GetBytes(12);

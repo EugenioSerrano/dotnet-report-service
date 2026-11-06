@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Aspire.Hosting;
@@ -10,38 +11,34 @@ using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
 using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 
 namespace ReportService.EndToEndTests;
 
 /// <summary>
-/// The template of a report job over the whole composition: the API, the orchestration worker
-/// and the PDF worker in their own containers, the real metadata database and the public
-/// fixture repository the render worker reads. A job that names one version is pinned to it
-/// after the <c>202</c>; a job that names only its template is pinned to the highest release the
-/// fixture holds; a range is refused at once and creates no job.
+/// The template of a report job over the whole composition: the API, the orchestration
+/// worker and the PDF worker in their own containers, the real metadata database, and a
+/// template source this class serves itself, over TLS, on a port of this machine. The
+/// composition reads that source by the name a container uses for this machine and trusts
+/// it through the certificate authority the case generated, supplied to the worker as a
+/// public certificate file and trusted by that one client, so the version a job resolves is
+/// exactly the one the case seeded. A job that names one version is pinned to it after the
+/// <c>202</c>; a job that names only its template is pinned to the highest release the
+/// source holds; a range is refused at once and creates no job.
 /// <para>
-/// The pin is read from the composition's database, because the status read does not show it.
-/// The class stays small on purpose: the anonymous client's hourly allowance is shared with the
-/// delivered live class. A branch that moved is a change to record, never one to read past: the
-/// recorded commit is asserted beside the pin, and a repository that no longer holds the version
-/// is a stop of the run, never a silent rewrite.
+/// The pin is read from the composition's database, because the status read does not show
+/// it. The class stays small on purpose: every verdict it asserts is the tree's, because
+/// the source it reads is one it started and seeded — the requests the worker sent are
+/// kept there, which is what shows they arrived and carried no credential, and the commit
+/// the pin records is the source's own.
 /// </para>
 /// </summary>
 public sealed class TemplateReferenceEndToEndTests : IDisposable
 {
-    /// <summary>The repository the fixtures live in.</summary>
-    public const string Repository = "EugenioSerrano/dotnet-report-service-templates";
-
-    /// <summary>The branch the fixtures are published on.</summary>
-    public const string Branch = "main";
-
-    /// <summary>The commit the fixtures of the delivered live class were published at.</summary>
-    public const string PinnedCommit = "e464d10d459b143cbde2cfced0be063e1b93a423";
-
-    /// <summary>The template the fixtures hold.</summary>
+    /// <summary>The template the case's source holds.</summary>
     public const string Template = "invoice-energy";
 
-    /// <summary>The version the fixtures hold, and the highest release a by-name job resolves to.</summary>
+    /// <summary>The version the case's source holds, and the highest release a by-name job resolves to.</summary>
     public const string Version = "1.1.0";
 
     private const string Registry = """
@@ -59,36 +56,64 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         "report-service-e2e-template",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
-    /// <summary>Creates the directory the temporary registry lives in.</summary>
+    private TestCertificateAuthority? _authority;
+    private X509Certificate2? _leaf;
+    private string? _anchor;
+
+    /// <summary>Creates the directory the temporary registry and the trust anchor live in.</summary>
     public TemplateReferenceEndToEndTests() => Directory.CreateDirectory(_directory);
 
     /// <inheritdoc />
-    public void Dispose() => Directory.Delete(_directory, recursive: true);
+    public void Dispose()
+    {
+        _leaf?.Dispose();
+        _authority?.Dispose();
+
+        try
+        {
+            Directory.Delete(_directory, recursive: true);
+        }
+        catch (IOException)
+        {
+            // A leftover temporary directory is not a test failure.
+        }
+    }
 
     [Fact]
     public async Task TheExactVersionIsPinnedAfterTheAcceptanceAndTheByNameJobTakesTheHighestRelease()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (app, api) = await StartAsync(cancellationToken);
+        await using var source = await StartSourceAsync(cancellationToken);
+        var (app, api) = await StartAsync(cancellationToken, source);
         await using var composition = app;
         var connectionString = await ConnectionStringAsync(app, cancellationToken);
         var uploadId = await ReadyUploadAsync(api, cancellationToken);
 
-        // An exact reference: the version is taken from the fixture repository and pinned with
-        // the values the take read.
+        // An exact reference: the version is taken from the source this case serves and pinned
+        // with the values the take read.
         var exact = await AcceptedJobAsync(api, uploadId, Version, cancellationToken);
         var exactPin = await PinnedAsync(connectionString, exact, cancellationToken);
         Assert.Equal(Version, exactPin.ResolvedVersion);
-        Assert.True(
-            string.Equals(PinnedCommit, exactPin.CommitSha, StringComparison.Ordinal),
-            $"the fixtures this class reads are published at commit {PinnedCommit}; the composition pinned {exactPin.CommitSha} — a branch that moved is a change to record, never one to read past");
+        Assert.Equal(source.Stub.CommitSha, exactPin.CommitSha);
         Assert.Equal(40, exactPin.CommitSha.Length);
         Assert.Equal(64, exactPin.PackageSha256.Length);
         Assert.Equal("SCRIBAN", exactPin.Engine);
         Assert.Equal("schema.json", exactPin.SchemaRef);
         Assert.True(exactPin.ResolvedAt > DateTimeOffset.MinValue);
 
-        // By name: the highest release the fixture holds, never a pre-release, and never the
+        // The take reached the source this case serves, and carried no credential: the requests
+        // the worker's client made are the ones the source recorded, every one of them addressed
+        // to the source's repository, and none of them authorized.
+        Assert.NotEmpty(source.Stub.Requests);
+        Assert.All(
+            source.Stub.Requests,
+            request => Assert.StartsWith(
+                $"/repos/{GitHubTemplateSourceStub.Owner}/{GitHubTemplateSourceStub.Repository}/",
+                request.Path,
+                StringComparison.Ordinal));
+        Assert.All(source.Stub.Requests, request => Assert.Empty(request.Authorization));
+
+        // By name: the highest release the source holds, never a pre-release, and never the
         // version a previous job happened to name.
         var byName = await AcceptedJobAsync(api, uploadId, version: null, cancellationToken);
         var byNamePin = await PinnedAsync(connectionString, byName, cancellationToken);
@@ -105,7 +130,8 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
     public async Task ARangeIsRefusedAndNoJobIsCreated()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (app, api) = await StartAsync(cancellationToken);
+        await using var source = await StartSourceAsync(cancellationToken);
+        var (app, api) = await StartAsync(cancellationToken, source);
         await using var composition = app;
         var connectionString = await ConnectionStringAsync(app, cancellationToken);
         var uploadId = await ReadyUploadAsync(api, cancellationToken);
@@ -122,15 +148,41 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         Assert.Equal(before, await JobCountAsync(connectionString, cancellationToken));
     }
 
-    private async Task<(DistributedApplication App, HttpClient Api)> StartAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Starts the template source this case serves: an authority generated for the case, a
+    /// listener certificate naming the address a container on this machine reaches the host
+    /// by, the authority's public certificate written as the file the composition supplies as
+    /// the source's trust anchor, and the double seeded with the one version the case resolves.
+    /// It is started before the composition — the anchor must exist when the composition turns
+    /// the path into a mount — and it outlives it, because the worker may read until it stops.
+    /// </summary>
+    private async Task<TemplateSourceTlsHost> StartSourceAsync(CancellationToken cancellationToken)
+    {
+        _authority = TestCertificateAuthority.Create("report-service end-to-end template source");
+        var leaf = _authority.IssueSourceCertificate(dnsNames: [TestComposition.ContainerHostName]);
+        _leaf = leaf;
+        _anchor = _authority.WritePem(_directory);
+
+        var stub = new GitHubTemplateSourceStub();
+        stub.SeedPackage(Template, Version, TemplatePackageFixtures.Valid(Template, Version, Consumer));
+        return await TemplateSourceTlsHost.StartAsync(stub, leaf, cancellationToken);
+    }
+
+    private async Task<(DistributedApplication App, HttpClient Api)> StartAsync(
+        CancellationToken cancellationToken,
+        TemplateSourceTlsHost source)
     {
         var registry = Path.Combine(_directory, "consumers.json");
         await File.WriteAllTextAsync(registry, Registry, cancellationToken);
+        var anchor = _anchor
+            ?? throw new InvalidOperationException("the source's trust anchor has to be written before the composition starts");
         var appHost = await TestComposition.CreateAsync(
             cancellationToken,
             $"--Consumers:File={registry}",
-            $"--TemplateSource:Repository={Repository}",
-            $"--TemplateSource:Branch={Branch}");
+            $"--TemplateSource:ApiBaseUrl={SourceUrl(source)}",
+            $"--TemplateSource:Repository={GitHubTemplateSourceStub.Owner}/{GitHubTemplateSourceStub.Repository}",
+            $"--TemplateSource:Branch={GitHubTemplateSourceStub.Branch}",
+            $"--TemplateSource:TrustAnchor={anchor}");
         var app = await appHost.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
@@ -141,6 +193,16 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
 
         return (app, app.CreateHttpClient("api"));
     }
+
+    /// <summary>
+    /// The address the worker reads the source at: the port the case's own listener reported,
+    /// reached by the name a container on this machine dials the host by. The name is the one
+    /// a container resolves to this machine, never this machine's loopback, which a container
+    /// cannot reach.
+    /// </summary>
+    private static string SourceUrl(TemplateSourceTlsHost source) => string.Create(
+        CultureInfo.InvariantCulture,
+        $"https://{TestComposition.ContainerHostName}:{source.BaseUrl.Port}/");
 
     private static async Task<string> ConnectionStringAsync(DistributedApplication app, CancellationToken cancellationToken) =>
         await app.GetConnectionStringAsync("reportservice", cancellationToken)
