@@ -334,10 +334,12 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             await worker.DisposeAsync();
         }
 
-        // The end state of a run that prints: the job entered its printing step, printed and
-        // verified its one block, published it and was closed on that output's own outcome.
+        // The end state of a run that prints: the job printed and verified its one block, published
+        // it and was closed on that output's own outcome. The answer carries no step for a job that
+        // has ended - a terminal job is in none - and the row keeps the step the run entered, read
+        // below.
         Assert.Equal("succeeded", settled.Status);
-        Assert.Equal("rendering-pdf", settled.Stage);
+        Assert.Null(settled.Stage);
         Assert.Equal(1_000, settled.RecordsRead);
         Assert.Equal(1_000, settled.RecordsTotal);
         Assert.Equal(1, settled.BlocksTotal);
@@ -351,6 +353,12 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         Assert.NotNull(pdf.ArtifactId);
 
         AssertOnlyRisen(samples);
+
+        // The step the run entered, read where the product keeps it: the row still holds the
+        // printing step, and the answer never answers one for a job that has ended.
+        var stage = await StageAsync(reportJobId, cancellationToken);
+        Assert.NotNull(stage);
+        Assert.Equal("rendering-pdf", JobWireValues.ToWire(JobWireValues.ParseStoredStage(stage!)));
 
         // The instants the answer carries are the stored ones, in UTC with three digits - and the
         // job that ended carries the instant it ended at, on the row and on the answer alike.
@@ -595,6 +603,17 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             "SELECT output_id FROM report_service.report_outputs WHERE report_job_id = @ReportJobId AND format = 'PDF'",
             new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken)) ?? string.Empty;
+    }
+
+    // The step the job entered, read from its row: the status answer carries no step for a job that
+    // has ended, and the column is where the product keeps the one the run reached.
+    private async Task<string?> StageAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+            "SELECT stage FROM report_service.report_jobs WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
     }
 
     private async Task WaitUntilRunCompletedAsync(string reportJobId, CancellationToken cancellationToken)
