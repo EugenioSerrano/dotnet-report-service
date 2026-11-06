@@ -53,9 +53,24 @@ public sealed class ProductPdfAgreementTests : IClassFixture<PostgresFixture>
     /// <param name="fixture">The container this class owns.</param>
     public ProductPdfAgreementTests(PostgresFixture fixture) => _fixture = fixture;
 
+    // The verdicts belong to the run: the runner names a folder for every process it starts, and a
+    // process it did not start has none to write them into. That case says so and runs nothing,
+    // rather than doing the work and reporting the product's failure for a harness gap.
+    private static void RequireRunFolder()
+    {
+        if (RunEnvironment.RunDirectory is null)
+        {
+            Assert.Skip(
+                $"no {RunEnvironment.RunDirectoryVariable}: this process was not started by "
+                + "eng/test/ReportService.Eng.TestRunner, so the run has no folder for the verdicts these cases produce. "
+                + "Run the level through the runner: dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration.");
+        }
+    }
+
     [Fact]
     public async Task EveryPublishedPdfPassesTheJudgeAndTheProductionVerification()
     {
+        RequireRunFolder();
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_working);
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
@@ -99,6 +114,7 @@ public sealed class ProductPdfAgreementTests : IClassFixture<PostgresFixture>
     [MemberData(nameof(Mutations))]
     public async Task EveryNativeMutationFailsBothReadersWithItsClass(string mutation, string productClass)
     {
+        RequireRunFolder();
         var cancellationToken = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(_working);
         var fixtures = Path.Combine(_working, "fixtures");
