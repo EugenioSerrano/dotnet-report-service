@@ -48,9 +48,12 @@ public sealed class CompositionSmokeTests
             .Select(r => r.Name)
             .Where(name => !finishingResources.Contains(name, StringComparer.Ordinal))
             .ToList();
-        var containerNames = appHost.Resources.OfType<ContainerResource>().Select(r => r.Name).ToList();
         Assert.NotEmpty(resources);
         Assert.NotEmpty(finishingResources);
+
+        // The containers this composition started, read from the model while every one of them
+        // runs: an identity of its own, which no other class's composition shares.
+        var containers = new List<(string Resource, string Id)>();
 
         await using (var app = await appHost.BuildAsync(cancellationToken))
         {
@@ -86,16 +89,27 @@ public sealed class CompositionSmokeTests
             Assert.True(
                 notHealthy.Count == 0,
                 $"Not healthy within {HealthyDeadline.TotalMinutes:F0} min: {string.Join(", ", notHealthy)} (of {string.Join(", ", resources)}).");
+
+            foreach (var container in appHost.Resources.OfType<ContainerResource>())
+            {
+                containers.Add((container.Name, await ContainerAsync(app, container.Name, cancellationToken)));
+            }
+
+            // A case with no container identities would pass the check below without reading
+            // anything; the composition's own containers are the check's subject.
+            Assert.NotEmpty(containers);
         }
 
-        // After disposal, no container of the composition may remain.
+        // After disposal, none of the containers this composition started may still run.
         IReadOnlyList<string> leftovers = [];
         await Wait.UntilAsync(
             "removal of the composition's containers",
             async token =>
             {
-                leftovers = (await RunningContainerNamesAsync(token))
-                    .Where(name => containerNames.Any(resource => name.StartsWith(resource + "-", StringComparison.Ordinal)))
+                var running = await RunningContainerIdsAsync(token);
+                leftovers = containers
+                    .Where(container => running.Contains(Short(container.Id), StringComparer.Ordinal))
+                    .Select(container => $"{container.Resource} ({Short(container.Id)})")
                     .ToList();
                 return leftovers.Count == 0;
             },
@@ -122,7 +136,51 @@ public sealed class CompositionSmokeTests
         Assert.Equal(pin.Tag, image.Tag);
     }
 
-    private static async Task<IReadOnlyList<string>> RunningContainerNamesAsync(CancellationToken cancellationToken)
+    // The property the composition reports for a running container's identity.
+    private const string ContainerIdProperty = "container.id";
+
+    // The length of the shortened identity the container runtime lists by default.
+    private const int ShortenedIdLength = 12;
+
+    /// <summary>
+    /// The identity of the container the model started for the named resource, read while it
+    /// runs: the model's own id, never a name another composition's container can share.
+    /// </summary>
+    private static async Task<string> ContainerAsync(
+        DistributedApplication app,
+        string resource,
+        CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(HealthyDeadline);
+        try
+        {
+            var container = await app.ResourceNotifications.WaitForResourceAsync(
+                resource,
+                update => update.Snapshot.Properties.Any(property => property.Name == ContainerIdProperty && property.Value is not null),
+                deadline.Token);
+            return Convert.ToString(
+                container.Snapshot.Properties.Single(property => property.Name == ContainerIdProperty).Value,
+                CultureInfo.InvariantCulture)!;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The case identifies its own containers through the model's identity; a resource
+            // that reports none within the class's deadline fails by name, and a name or a
+            // prefix is never read in its place.
+            throw new InvalidOperationException(
+                $"The composition's '{resource}' container reported no '{ContainerIdProperty}' within {HealthyDeadline.TotalMinutes:F0} min, so the container this composition started cannot be identified.");
+        }
+    }
+
+    /// <summary>
+    /// The container runtime's shortened form of an identity. The model may report the full
+    /// identity while the list of running containers carries it shortened, and the two agree
+    /// on these characters.
+    /// </summary>
+    private static string Short(string containerId) => containerId[..Math.Min(ShortenedIdLength, containerId.Length)];
+
+    private static async Task<IReadOnlyList<string>> RunningContainerIdsAsync(CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo("docker")
         {
@@ -130,7 +188,7 @@ public sealed class CompositionSmokeTests
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        foreach (var argument in new[] { "ps", "--format", "{{.Names}}" })
+        foreach (var argument in new[] { "ps", "--format", "{{.ID}}" })
         {
             startInfo.ArgumentList.Add(argument);
         }
@@ -143,6 +201,20 @@ public sealed class CompositionSmokeTests
             throw new InvalidOperationException($"docker ps failed with exit code {process.ExitCode}.");
         }
 
-        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var ids = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        // The comparison below reads two shortened identities against each other. A runtime
+        // that listed any other length would make every comparison false and the check pass
+        // without reading anything, so the length is required here: the case fails instead.
+        foreach (var id in ids)
+        {
+            if (id.Length != ShortenedIdLength)
+            {
+                throw new InvalidOperationException(
+                    $"The container runtime listed the identity '{id}' with {id.Length} characters where its shortened form of {ShortenedIdLength} was expected, so the containers this composition started cannot be compared with the ones still running.");
+            }
+        }
+
+        return ids;
     }
 }

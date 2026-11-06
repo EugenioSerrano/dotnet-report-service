@@ -17,8 +17,8 @@ namespace ReportService.EndToEndTests;
 /// the version the code expects, the PDF worker carries no database check, and
 /// every process reaches the database as the application role — the AppHost's own
 /// health checks on the server's bootstrap user excepted. The orchestration worker
-/// runs one engine worker per queue it registers work on, and the rendering queue
-/// carries none until rendering work is registered.
+/// and the render worker each run one engine worker per queue they register work
+/// on, so every queue they serve reports a running worker.
 /// </summary>
 public sealed class CompositionTopologyTests
 {
@@ -31,8 +31,6 @@ public sealed class CompositionTopologyTests
     private const string WorkerRunning = "worker running";
 
     private const string WorkerStopped = "worker stopped";
-
-    private const string NoRegisteredWork = "no registered work";
 
     private const string ApplicationRole = "reportservice";
     private const string BootstrapRole = "postgres";
@@ -55,16 +53,17 @@ public sealed class CompositionTopologyTests
     /// The state each worker reports for each of its queues, in one place: the
     /// orchestration worker registers the job workflow and its metadata steps on
     /// <c>report-orchestration</c> and the verification and partitioning activities on
-    /// <c>report-data</c>, so both report a running worker, and the rendering queue
-    /// carries no registered work yet. Stated together, a queue that stops being declared
-    /// fails by name rather than disappearing; a change that registers work on a queue
-    /// updates this table in the same change.
+    /// <c>report-data</c>, and the render worker registers the template take and the
+    /// by-name resolution on <c>report-pdf-rendering</c>, so every queue reports a
+    /// running worker. Stated together, a queue that stops being declared fails by name
+    /// rather than disappearing; a change that registers work on a queue updates this
+    /// table in the same change.
     /// </summary>
     private static readonly QueueExpectation[] QueueExpectations =
     [
         new("orchestration-worker", "report-orchestration", WorkerRunning),
         new("orchestration-worker", "report-data", WorkerRunning),
-        new("render-worker", "report-pdf-rendering", NoRegisteredWork),
+        new("render-worker", "report-pdf-rendering", WorkerRunning),
     ];
 
     [Fact]
