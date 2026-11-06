@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
     <!-- Hosted in memory by the readiness tests. Both have a top-level Program class, so the worker's is reached through its alias. -->
     <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
