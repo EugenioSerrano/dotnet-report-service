@@ -226,7 +226,24 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
         }
 
         Assert.True(terminal, $"the job {reportJobId} had to reach a terminal status within {OutcomeDeadline}");
-        Assert.Equal("SUCCEEDED", await JobStatusAsync(reportJobId, cancellationToken));
+
+        // The end this build gives the job: the input is taken, the data step commits its one block
+        // of the sample's 40 records, and the render refuses the template because it declares page
+        // totals - a capability this service does not have yet - so the job and its one output end
+        // failed with that code and nothing is published. The success that would follow page
+        // accounting is not asserted here: this build cannot reach it.
+        var outcome = await TerminalOutcomeAsync(reportJobId, cancellationToken);
+        Assert.Equal("FAILED", outcome.Status);
+        Assert.Equal("UNSUPPORTED_CAPABILITY", outcome.ErrorCode);
+        Assert.Equal(1, outcome.BlockCount);
+        Assert.Equal(40L, outcome.RecordCount);
+
+        var pdf = Assert.Single(await OutputsAsync(reportJobId, cancellationToken));
+        Assert.Equal("PDF", pdf.Format);
+        Assert.Equal("FAILED", pdf.Status);
+        Assert.Equal("UNSUPPORTED_CAPABILITY", pdf.ErrorCode);
+        Assert.False(pdf.HasArtifact, $"the refused output of {reportJobId} publishes nothing");
+
         Assert.Single(await ReferencesAsync(reportJobId, cancellationToken));
     }
 
@@ -306,6 +323,43 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
                 cancellationToken: cancellationToken)),
         ];
     }
+
+    private async Task<TerminalOutcome> TerminalOutcomeAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.QuerySingleAsync<TerminalOutcome>(new CommandDefinition(
+            """
+            SELECT j.status AS "Status", j.error_code AS "ErrorCode",
+                   p.block_count AS "BlockCount", p.record_count AS "RecordCount"
+              FROM report_service.report_jobs j
+              JOIN report_service.partitions p ON p.report_job_id = j.report_job_id
+             WHERE j.report_job_id = @ReportJobId
+            """,
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<OutputOutcome>> OutputsAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return
+        [
+            .. await connection.QueryAsync<OutputOutcome>(new CommandDefinition(
+                """
+                SELECT o.format AS "Format", o.status AS "Status", o.error_code AS "ErrorCode",
+                       a.artifact_id IS NOT NULL AS "HasArtifact"
+                  FROM report_service.report_outputs o
+                  LEFT JOIN report_service.artifacts a ON a.output_id = o.output_id
+                 WHERE o.report_job_id = @ReportJobId
+                """,
+                new { ReportJobId = reportJobId },
+                cancellationToken: cancellationToken)),
+        ];
+    }
+
+    private sealed record TerminalOutcome(string Status, string ErrorCode, int BlockCount, long RecordCount);
+
+    private sealed record OutputOutcome(string Format, string Status, string? ErrorCode, bool HasArtifact);
 
     private async Task<string> AcceptJobAsync(string uploadId, CancellationToken cancellationToken)
     {
