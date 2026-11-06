@@ -1,5 +1,6 @@
 using System.Text;
 using ReportService.Testing;
+using UglyToad.PdfPig.Content;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -89,8 +90,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
 
+        // The snapshot this case prints: the same bytes are uploaded and compared, so the
+        // comparison follows the document's own data at every record count.
+        var snapshot = PrintingRig.Snapshot(records);
         var reportJobId = await rig.SubmitAsync(
-            await rig.ReadyUploadAsync(PrintingRig.Snapshot(records), cancellationToken),
+            await rig.ReadyUploadAsync(snapshot, cancellationToken),
             PrintingRig.First,
             cancellationToken);
         var job = await rig.WaitForTerminalAsync(reportJobId, Deadline, cancellationToken);
@@ -99,12 +103,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         Assert.Equal(records, job.RecordCount);
         var text = TextOf(await rig.ReadArtifactAsync(job, cancellationToken));
 
-        // Every record's own text is in the printed document: the sample's descriptions repeat,
-        // so the sequences are what proves the count, and the description of each record proves
-        // the text. The comparison is with the source snapshot's values, never with anything the
-        // layout engine reported.
-        var sample = PrintingRig.Snapshot(2);
-        using var source = System.Text.Json.JsonDocument.Parse(sample);
+        // Every distinct description of the snapshot this job carried is in the printed
+        // document. The sample's descriptions repeat, so the text is compared as a set: a
+        // document that drops or alters one of them fails here. The comparison is with the
+        // source snapshot's values, never with anything the layout engine reported.
+        using var source = System.Text.Json.JsonDocument.Parse(snapshot);
         var descriptions = source.RootElement.GetProperty("items").EnumerateArray()
             .Select(item => item.GetProperty("description").GetString()!)
             .Distinct(StringComparer.Ordinal)
@@ -267,8 +270,11 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         AssertNoOutputObject(rig);
     }
 
-    // The text of a printed document, read from its own pages: the words the reader extracts,
-    // joined with a space. Nothing of the layout engine's own output is consulted.
+    // The text of a printed document, page by page, as the page itself presents it: every
+    // character in the order it was painted, and one space where a word begins and the line
+    // or cell break left no character between them. A description the table wraps inside its
+    // cell is therefore read as the one string its source has. Nothing of the layout engine's
+    // own output is consulted.
     private static string TextOf(byte[] pdf)
     {
         var path = Path.Combine(Path.GetTempPath(), "report-service-print-" + Guid.NewGuid().ToString("N") + ".pdf");
@@ -279,7 +285,33 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
             var text = new StringBuilder();
             foreach (var page in document.GetPages())
             {
-                text.Append(page.Text).Append(' ');
+                // The first letter of every word the reader finds: a word that begins where the
+                // page's own characters carry nothing is the space a line or cell break dropped.
+                var wordStarts = new HashSet<Letter>(ReferenceEqualityComparer.Instance);
+                foreach (var word in page.GetWords())
+                {
+                    if (word.Letters.Count > 0)
+                    {
+                        wordStarts.Add(word.Letters[0]);
+                    }
+                }
+
+                // The page's own characters, in the order the page presents them, with one space
+                // where a word begins and nothing already separates it from the character before.
+                var pageText = new StringBuilder();
+                foreach (var letter in page.Letters)
+                {
+                    if (wordStarts.Contains(letter)
+                        && pageText.Length > 0
+                        && !char.IsWhiteSpace(pageText[pageText.Length - 1]))
+                    {
+                        pageText.Append(' ');
+                    }
+
+                    pageText.Append(letter.Value);
+                }
+
+                text.Append(pageText).Append(' ');
             }
 
             return text.ToString();
