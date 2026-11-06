@@ -18,8 +18,9 @@ namespace ReportService.IntegrationTests.Templates;
 /// The owner's metadata read against the record a take wrote, on real PostgreSQL
 /// and the API's own host: its owner reads the nine members the version is
 /// described by; another consumer, an untaken version and a malformed one are
-/// answered with the identical not-found document, without a storage read; and a
-/// consumer the deployment does not know is refused before anything is read.
+/// answered with the same not-found document - the request's own trace identifier
+/// aside - without a storage read; and a consumer the deployment does not know is
+/// refused before anything is read.
 /// </summary>
 public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
@@ -111,16 +112,36 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         using var untaken = await GetAsync(record.TemplateId, "9.9.9", Owner, cancellationToken);
         using var malformed = await GetAsync(record.TemplateId, "latest", Owner, cancellationToken);
 
-        var documents = new[]
+        var answers = new[] { other, untaken, malformed };
+        var bodies = new string[answers.Length];
+        var comparable = new string[answers.Length];
+        var traceIds = new string[answers.Length];
+        for (var index = 0; index < answers.Length; index++)
         {
-            await other.Content.ReadAsStringAsync(cancellationToken),
-            await untaken.Content.ReadAsStringAsync(cancellationToken),
-            await malformed.Content.ReadAsStringAsync(cancellationToken),
-        };
+            bodies[index] = await answers[index].Content.ReadAsStringAsync(cancellationToken);
+            comparable[index] = WithoutTraceIdentifier(bodies[index], out traceIds[index]);
+        }
 
-        Assert.All([other, untaken, malformed], response => Assert.Equal(HttpStatusCode.NotFound, response.StatusCode));
-        Assert.All(documents, body => Assert.Contains("\"code\":\"TEMPLATE_NOT_FOUND\"", body, StringComparison.Ordinal));
-        Assert.Single(documents.Distinct(StringComparer.Ordinal));
+        Assert.All(answers, response => Assert.Equal(HttpStatusCode.NotFound, response.StatusCode));
+        Assert.All(answers, response => Assert.Equal(ApiProblem.ContentType, response.Content.Headers.ContentType?.MediaType));
+        Assert.All(bodies, body => Assert.Contains("\"code\":\"TEMPLATE_NOT_FOUND\"", body, StringComparison.Ordinal));
+        Assert.All(bodies, body => Assert.Equal(AnswerMembers, MembersOf(body)));
+
+        // One condition, one answer. The request's own trace identifier is present and different
+        // for each request, and it is the only member that is not the condition's, so it is
+        // replaced before the documents are compared: the three answers are then one document.
+        Assert.Equal(answers.Length, traceIds.Distinct(StringComparer.Ordinal).Count());
+        Assert.Single(comparable.Distinct(StringComparer.Ordinal));
+        Assert.Single(answers.Select(EnvelopeOf).Distinct(StringComparer.Ordinal));
+
+        // And the document is the documented one: a comparison that would pass for any three
+        // 404s would prove nothing about this condition.
+        using var document = JsonDocument.Parse(bodies[0]);
+        var answer = document.RootElement;
+        Assert.Equal("about:blank", answer.GetProperty("type").GetString());
+        Assert.Equal("Template not found", answer.GetProperty("title").GetString());
+        Assert.Equal((int)HttpStatusCode.NotFound, answer.GetProperty("status").GetInt32());
+        Assert.Equal("The template version was not found.", answer.GetProperty("detail").GetString());
     }
 
     [Fact]
@@ -155,6 +176,48 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
             new Uri($"/api/v1/templates/{templateId}/versions/{version}", UriKind.Relative));
         request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, consumer);
         return await client.SendAsync(request, cancellationToken);
+    }
+
+    // The members of a not-found answer: what the condition says and the request's own
+    // identifier, and nothing that could tell the three conditions apart.
+    private static readonly string[] AnswerMembers =
+        ["code", "detail", "status", "title", "traceId", "type"];
+
+    private static string[] MembersOf(string body)
+    {
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.EnumerateObject()
+            .Select(member => member.Name)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    // The headers of the answer, the clock aside. The length follows the one member that is the
+    // request's own, so it is compared by name and never by value.
+    private static string EnvelopeOf(HttpResponseMessage response) =>
+        string.Join(
+            ';',
+            response.Headers.Concat(response.Content.Headers)
+                .Select(header => header.Key)
+                .Where(name => !string.Equals(name, "Date", StringComparison.OrdinalIgnoreCase))
+                .Order(StringComparer.Ordinal));
+
+    // The request's own trace identifier: present in every answer, different for every request,
+    // and the one member that is not the condition's. It is replaced by one fixed text so that
+    // the answers are compared member for member on the condition they describe.
+    private static string WithoutTraceIdentifier(string body, out string traceId)
+    {
+        using var document = JsonDocument.Parse(body);
+        Assert.True(
+            document.RootElement.TryGetProperty("traceId", out var member),
+            "the answer carries no trace identifier");
+        Assert.Equal(JsonValueKind.String, member.ValueKind);
+        traceId = member.GetString()!;
+        Assert.False(string.IsNullOrWhiteSpace(traceId), "the answer's trace identifier is empty");
+
+        var present = "\"traceId\":\"" + traceId + "\"";
+        Assert.Contains(present, body, StringComparison.Ordinal);
+        return body.Replace(present, "\"traceId\":\"<the request's own>\"", StringComparison.Ordinal);
     }
 
     private WebApplicationFactory<Program> Api()
