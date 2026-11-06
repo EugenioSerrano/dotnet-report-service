@@ -220,10 +220,17 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
 
         var client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" });
+        await WaitUntilRunCompletedAsync(client, workflowId, cancellationToken);
         var history = await client.GetWorkflowHandle(workflowId)
             .FetchHistoryAsync(new WorkflowHistoryEventFetchOptions())
             .WaitAsync(cancellationToken);
         Assert.Contains(history.Events, entry => entry.EventType == Temporalio.Api.Enums.V1.EventType.WorkflowExecutionCompleted);
+
+        // The job the disconnected client left behind started and ended on its own run's outcome.
+        var job = (await JobAsync(reportJobId, cancellationToken))!;
+        Assert.Contains(job.Status, new[] { "SUCCEEDED", "FAILED" });
+        Assert.NotNull(job.StartedAt);
+        Assert.NotNull(job.FinishedAt);
     }
 
     // The built API, as its own process, on the product's own settings. It is given port
@@ -414,6 +421,35 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
         return reportJobId!;
     }
 
+    private static async Task WaitUntilRunCompletedAsync(
+        TemporalClient client,
+        string workflowId,
+        CancellationToken cancellationToken) =>
+        await Wait.UntilAsync(
+            $"the run of {workflowId} to complete",
+            async token =>
+            {
+                var description = await client.GetWorkflowHandle(workflowId).DescribeAsync().WaitAsync(token);
+                return description.Status == Temporalio.Api.Enums.V1.WorkflowExecutionStatus.Completed;
+            },
+            DispatchDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+
+    private async Task<JobRow?> JobAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.QuerySingleOrDefaultAsync<JobRow>(new CommandDefinition(
+            """
+            SELECT report_job_id AS "ReportJobId", status AS "Status", started_at AS "StartedAt",
+                   finished_at AS "FinishedAt", error_code AS "ErrorCode"
+              FROM report_service.report_jobs
+             WHERE report_job_id = @ReportJobId
+            """,
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
     private WebApplicationFactory<OrchestrationWorker> Worker() =>
         new WebApplicationFactory<OrchestrationWorker>().WithWebHostBuilder(builder =>
         {
@@ -493,4 +529,18 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
     }
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
+
+    /// <summary>One job row, as the table holds it.</summary>
+    private sealed class JobRow
+    {
+        public string ReportJobId { get; set; } = string.Empty;
+
+        public string Status { get; set; } = string.Empty;
+
+        public DateTime? StartedAt { get; set; }
+
+        public DateTime? FinishedAt { get; set; }
+
+        public string? ErrorCode { get; set; }
+    }
 }

@@ -446,30 +446,44 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         await WaitForStageAsync(first, InputWaitStage.WaitingForInput, cancellationToken);
         await WaitForStageAsync(second, InputWaitStage.WaitingForInput, cancellationToken);
 
+        // The two executions that hold the waits, taken while they hold them: the nudge below is
+        // judged on the first of these runs, not on whatever run the chain holds later.
+        var firstWorkflowId = ReportJobWorkflow.WorkflowIdFor(first);
+        var secondWorkflowId = ReportJobWorkflow.WorkflowIdFor(second);
+        var firstRun = (await ExecutionAsync(firstWorkflowId, cancellationToken))!.Value.RunId;
+        var secondRun = (await ExecutionAsync(secondWorkflowId, cancellationToken))!.Value.RunId;
+
         worker.ReleaseVerification();
         await WaitForStageAsync(first, stage: null, cancellationToken);
         await WaitForStageAsync(second, stage: null, cancellationToken);
 
-        // The nudge that arrives after a wait has ended has no consumer: the execution that
-        // held the wait has closed, so the engine refuses to deliver it, and nothing about
-        // either job changes.
+        // The wait has ended and the delivered build takes both jobs past it, so the nudge is
+        // judged where it can be: the run that held the wait has closed, the engine refuses to
+        // deliver to it, and a closed run cannot gain an event - the history is read once before
+        // and once after, with nothing in between to wait for.
         var client = await EngineClientAsync(cancellationToken);
-        var workflowId = ReportJobWorkflow.WorkflowIdFor(first);
-        var before = await HistoryAsync(workflowId, cancellationToken);
+        await WaitUntilRunClosedAsync(client, firstWorkflowId, firstRun, cancellationToken);
+        await WaitUntilRunClosedAsync(client, secondWorkflowId, secondRun, cancellationToken);
+        var before = await HistoryAsync(firstWorkflowId, firstRun, cancellationToken);
         var refusal = await Assert.ThrowsAsync<Temporalio.Exceptions.RpcException>(
-            () => client.GetWorkflowHandle<ReportJobWorkflow>(workflowId)
+            () => client.GetWorkflowHandle<ReportJobWorkflow>(firstWorkflowId, firstRun)
                 .SignalAsync((ReportJobWorkflow workflow) => workflow.OnInputChangedAsync()));
         Assert.Equal(Temporalio.Exceptions.RpcException.StatusCode.NotFound, refusal.Code);
-        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-        var after = await HistoryAsync(workflowId, cancellationToken);
+        var after = await HistoryAsync(firstWorkflowId, firstRun, cancellationToken);
 
         Assert.Equal(
             before.Events.Count(entry => entry.EventType == EventType.ActivityTaskScheduled),
             after.Events.Count(entry => entry.EventType == EventType.ActivityTaskScheduled));
         Assert.Equal(1, after.Events.Count(entry => entry.EventType == EventType.ActivityTaskScheduled
             && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName));
-        Assert.Equal("QUEUED", (await JobAsync(first, cancellationToken))!.Status);
-        Assert.Equal("QUEUED", (await JobAsync(second, cancellationToken))!.Status);
+
+        // Both jobs followed the upload out of the wait and ended on their own run's outcome.
+        var firstJob = (await JobAsync(first, cancellationToken))!;
+        var secondJob = (await JobAsync(second, cancellationToken))!;
+        Assert.Contains(firstJob.Status, new[] { "SUCCEEDED", "FAILED" });
+        Assert.NotNull(firstJob.FinishedAt);
+        Assert.Contains(secondJob.Status, new[] { "SUCCEEDED", "FAILED" });
+        Assert.NotNull(secondJob.FinishedAt);
     }
 
     [Fact]
@@ -786,6 +800,25 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             $"the upload {uploadId} to be {status}",
             async token => string.Equals(await UploadStatusAsync(uploadId, token), UploadWireValues.ToStoredText(status), StringComparison.Ordinal),
             WaitDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+
+    // The run closes when its own outcome has been written; a closed run refuses a signal with
+    // NotFound, and its history no longer changes. The wait is on that state, never on a clock.
+    private static async Task WaitUntilRunClosedAsync(
+        TemporalClient client,
+        string workflowId,
+        string runId,
+        CancellationToken cancellationToken) =>
+        await Wait.UntilAsync(
+            $"the run {runId} of {workflowId} to close",
+            async token =>
+            {
+                var description = await client.GetWorkflowHandle<ReportJobWorkflow>(workflowId, runId)
+                    .DescribeAsync().WaitAsync(token);
+                return description.Status != Temporalio.Api.Enums.V1.WorkflowExecutionStatus.Running;
+            },
+            DispatchDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
 

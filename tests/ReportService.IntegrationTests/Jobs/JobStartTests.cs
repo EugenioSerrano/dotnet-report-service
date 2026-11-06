@@ -170,12 +170,16 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
         Assert.NotNull(execution);
         Assert.Equal(reference.RunId, execution!.Value.RunId);
 
-        // The check ran exactly once, and the ready input stops the run at its continuation
-        // point: the job stays queued until the steps that print are delivered with it.
+        // The check ran exactly once, and the delivered build takes the ready input past its
+        // data step to the job's own outcome: the run closes and the job ends on it, never
+        // leaving the job queued behind a step this build does not have.
+        await WaitUntilRunCompletedAsync(workflowId, cancellationToken);
         var history = await HistoryAsync(workflowId, cancellationToken);
         Assert.Single(Activities(history, ReportJobActivities.ResolveInputName));
         Assert.Contains(history.Events, entry => entry.EventType == EventType.WorkflowExecutionCompleted);
-        Assert.Equal("QUEUED", (await JobAsync(reportJobId, cancellationToken))!.Status);
+        var job = (await JobAsync(reportJobId, cancellationToken))!;
+        Assert.Contains(job.Status, new[] { "SUCCEEDED", "FAILED" });
+        Assert.NotNull(job.FinishedAt);
     }
 
     [Fact]
@@ -204,7 +208,12 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
         Assert.Equal(started.Id, reference.WorkflowId);
         Assert.Equal(started.ResultRunId, reference.RunId);
         Assert.Equal(reference.RunId, (await ExecutionAsync(workflowId, cancellationToken))!.Value.RunId);
-        Assert.Single(Activities(await HistoryAsync(workflowId, cancellationToken), ReportJobActivities.ResolveInputName));
+
+        // The dispatch is the API's record; the check appears in the history when the engine
+        // schedules it. The case waits for that state before it counts, so the count is the
+        // activity's, never the engine's pace.
+        var history = await WaitForInputCheckAsync(workflowId, cancellationToken);
+        Assert.Single(Activities(history, ReportJobActivities.ResolveInputName));
     }
 
     [Fact]
@@ -470,6 +479,41 @@ public sealed class JobStartTests : IClassFixture<PostgresFixture>, IAsyncLifeti
             DispatchDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
+
+    // The run closes when the job's own outcome is written and the execution returns; the
+    // history is read after it, so the completion it carries is the run's, not the engine's pace.
+    private async Task WaitUntilRunCompletedAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        var client = await EngineClientAsync(cancellationToken);
+        await Wait.UntilAsync(
+            $"the run of {workflowId} to complete",
+            async token =>
+            {
+                var description = await client.GetWorkflowHandle(workflowId).DescribeAsync().WaitAsync(token);
+                return description.Status == Temporalio.Api.Enums.V1.WorkflowExecutionStatus.Completed;
+            },
+            DispatchDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+    }
+
+    // A readiness probe on the history's own state: the check the case counts is scheduled by the
+    // engine after the dispatch is recorded, and the case reads the history it observed it in.
+    private async Task<WorkflowHistory> WaitForInputCheckAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        WorkflowHistory? history = null;
+        await Wait.UntilAsync(
+            $"the input check of {workflowId} in its history",
+            async token =>
+            {
+                history = await HistoryAsync(workflowId, token);
+                return Activities(history, ReportJobActivities.ResolveInputName).Count >= 1;
+            },
+            DispatchDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+        return history!;
+    }
 
     private async Task<(string WorkflowId, string RunId)?> ExecutionAsync(string workflowId, CancellationToken cancellationToken)
     {
