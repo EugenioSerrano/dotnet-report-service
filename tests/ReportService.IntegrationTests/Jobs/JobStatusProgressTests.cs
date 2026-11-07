@@ -24,8 +24,10 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
 using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource.Manifest;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Client;
@@ -46,11 +48,12 @@ namespace ReportService.IntegrationTests.Jobs;
 /// failed through the store's own writer, and a snapshot the reader refuses — on the job and
 /// on its PDF output.
 /// <para>
-/// The templates this class's jobs are pinned to are installed before the first case, because
-/// nothing on this commit takes a version: the pilot's own schema is packaged, written to the
-/// object store and recorded in the version store, exactly as the other integration classes do.
-/// The uploads are settled through the upload store's own record operation rather than by the
-/// verification work, so the data work the case needs is the only work the data queue carries.
+/// The version this class's jobs are pinned to is recorded before the first case, because nothing
+/// on this commit takes one: the pilot sample's own package files are archived under the
+/// content-addressed key of their bytes and the manifest the package carries is recorded with
+/// them, exactly as a take leaves the version it reads. The uploads are settled through the upload
+/// store's own record operation rather than by the verification work, so the data work the case
+/// needs is the only work the data queue carries.
 /// </para>
 /// </summary>
 public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAsyncLifetime
@@ -85,10 +88,12 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
 
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
 
+    // The render writes each part under a key of 149 characters and its temporary sibling in the
+    // same directory is 38 longer, so this class's temporary root stays short: it is held to 48
+    // characters, and the fixture asserts it before any host starts.
     private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "report-service-job-status-progress",
-        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        Path.GetPathRoot(Path.GetTempPath())!,
+        "rs061-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
 
     private int _hostPort;
 
@@ -131,6 +136,13 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
     private async Task OpenAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+        var volume = Path.GetPathRoot(Path.GetTempPath())!;
+        Assert.True(
+            volume.Length == 3 && volume[1] == ':' && volume[2] == Path.DirectorySeparatorChar,
+            $"the class's storage base needs a drive root, and the temporary path's is '{volume}'");
+        Assert.True(
+            _directory.Length + "/storage".Length <= 48,
+            $"the class's storage root is {_directory.Length + "/storage".Length} characters and must stay at most 48: the render's part key is 149 characters, its temporary sibling is 38 longer, and the storage provider accepts a path of 248");
         Directory.CreateDirectory(_directory);
 
         var sample = JsonNode.Parse(await File.ReadAllTextAsync(
@@ -205,6 +217,7 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         var uploadId = await ReadySnapshotAsync(Document(_sampleHeader, Records(1_000)), cancellationToken);
         var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
         var samples = new List<Sample>();
+        Sample settled;
         var gate = new DataQueueGate();
 
         // The data queue is withheld, so the run reaches the step that reads the snapshot and
@@ -289,29 +302,31 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             gate.Release();
             using (var client = _api.CreateClient())
             {
+                var rising = new List<Sample>();
                 await SampleUntilAsync(
                     client,
                     reportJobId,
-                    samples,
+                    rising,
                     "the committed partition of the job",
                     sample => sample.RecordsTotal == 1_000 && sample.RecordsRead == 1_000,
                     ProgressDeadline,
                     cancellationToken);
+
+                // The run leaves the data step as soon as the partition is committed - the build
+                // moves the job to its printing step there - so the sample that first reads the
+                // committed counters can already be the printing step's. The series this case
+                // asserts is the job's at its data step, and where it ends is that state, never
+                // which poll landed first.
+                samples.AddRange(rising.TakeWhile(sample => sample.Status is "queued" or "validating"));
             }
 
-            // The run reaches its last step: the output has not started, so nothing is written
-            // and the job stays exactly as its steps left it — never as a terminal green.
+            // The run's last step closes the job from its one output, so a run that has completed
+            // leaves nothing to wait for: the state read here is the end that run reaches, never
+            // the data step it left.
             await WaitUntilRunCompletedAsync(reportJobId, cancellationToken);
             using (var client = _api.CreateClient())
             {
-                await SampleUntilAsync(
-                    client,
-                    reportJobId,
-                    samples,
-                    "the job after its run completed",
-                    _ => true,
-                    ReadyDeadline,
-                    cancellationToken);
+                settled = await ReadAsync(client, reportJobId, cancellationToken);
             }
         }
         finally
@@ -319,27 +334,40 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             await worker.DisposeAsync();
         }
 
-        var settled = samples[^1];
-        Assert.Equal("validating", settled.Status);
-        Assert.Equal("validating-data", settled.Stage);
+        // The end state of a run that prints: the job printed and verified its one block, published
+        // it and was closed on that output's own outcome. The answer carries no step for a job that
+        // has ended - a terminal job is in none - and the row keeps the step the run entered, read
+        // below.
+        Assert.Equal("succeeded", settled.Status);
+        Assert.Null(settled.Stage);
         Assert.Equal(1_000, settled.RecordsRead);
         Assert.Equal(1_000, settled.RecordsTotal);
         Assert.Equal(1, settled.BlocksTotal);
-        Assert.Equal(0, settled.BlocksCompleted);
-        Assert.Equal(0, settled.PagesGenerated);
-        Assert.Null(settled.FinishedAt);
+        Assert.Equal(1, settled.BlocksCompleted);
+        Assert.True(
+            settled.PagesGenerated >= 1,
+            $"the printed block counts its pages, and this one counted {settled.PagesGenerated}");
+        Assert.NotNull(settled.FinishedAt);
         var pdf = Assert.Single(settled.Outputs);
-        Assert.Equal("pending", pdf.Status);
-        Assert.Null(pdf.ArtifactId);
+        Assert.Equal("succeeded", pdf.Status);
+        Assert.NotNull(pdf.ArtifactId);
 
         AssertOnlyRisen(samples);
 
-        // The instants the answer carries are the stored ones, in UTC with three digits.
+        // The step the run entered, read where the product keeps it: the row still holds the
+        // printing step, and the answer never answers one for a job that has ended.
+        var stage = await StageAsync(reportJobId, cancellationToken);
+        Assert.NotNull(stage);
+        Assert.Equal("rendering-pdf", JobWireValues.ToWire(JobWireValues.ParseStoredStage(stage!)));
+
+        // The instants the answer carries are the stored ones, in UTC with three digits - and the
+        // job that ended carries the instant it ended at, on the row and on the answer alike.
         var instants = await InstantsAsync(reportJobId, cancellationToken);
         Assert.Equal(JobWireValues.TruncateToMillisecond(instants.CreatedAt), Parcel(settled.CreatedAt));
         Assert.NotNull(settled.StartedAt);
         Assert.Equal(JobWireValues.TruncateToMillisecond(instants.StartedAt!.Value), Parcel(settled.StartedAt));
-        Assert.Null(instants.FinishedAt);
+        Assert.NotNull(instants.FinishedAt);
+        Assert.Equal(JobWireValues.TruncateToMillisecond(instants.FinishedAt!.Value), Parcel(settled.FinishedAt));
     }
 
     [Fact]
@@ -577,6 +605,17 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             cancellationToken: cancellationToken)) ?? string.Empty;
     }
 
+    // The step the job entered, read from its row: the status answer carries no step for a job that
+    // has ended, and the column is where the product keeps the one the run reached.
+    private async Task<string?> StageAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+            "SELECT stage FROM report_service.report_jobs WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
     private async Task WaitUntilRunCompletedAsync(string reportJobId, CancellationToken cancellationToken)
     {
         var client = await EngineClientAsync(cancellationToken);
@@ -788,17 +827,38 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         });
 
     // The taken version this class's jobs are pinned to, recorded in the class's own composition
-    // before the first case: the pilot's schema is packaged, written under the content-addressed
-    // key of its bytes, and the record carries the written package's own size and hash.
+    // before the first case: the pilot sample's own package files are archived under the
+    // content-addressed key of their bytes, the manifest the package carries is read back and
+    // recorded with them, and the record carries the written package's own size and count.
     private async Task SeedTakenVersionAsync(CancellationToken cancellationToken)
     {
-        var schema = await File.ReadAllBytesAsync(
-            Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId, SchemaPath),
-            cancellationToken);
-        var files = new List<PackageFileSource>
+        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", TemplateId);
+
+        // The copy belongs to the consumer that takes it, and every other member of the document
+        // stays as the sample declares it: only the owner line is written over, and the bytes
+        // written here are the ones the record's manifest is read from.
+        var manifestBytes = Encoding.UTF8.GetBytes(
+            Encoding.UTF8.GetString(await File.ReadAllBytesAsync(
+                    Path.Combine(root, TemplateManifestReader.FileName),
+                    cancellationToken))
+                .Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal));
+
+        var files = new List<PackageFileSource>();
+        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
-            new(SchemaPath, _ => Task.FromResult<Stream>(new MemoryStream(schema, writable: false))),
-        };
+            var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+            if (string.Equals(relative, SamplePath, StringComparison.Ordinal))
+            {
+                // The sample document is the data a case submits, and no part of its package.
+                continue;
+            }
+
+            files.Add(string.Equals(relative, TemplateManifestReader.FileName, StringComparison.Ordinal)
+                ? new PackageFileSource(
+                    relative,
+                    _ => Task.FromResult<Stream>(new MemoryStream(manifestBytes, writable: false)))
+                : PackageFileSource.FromFile(root, relative));
+        }
 
         using var sink = new MemoryStream();
         await TemplatePackageArchive.WriteAsync(files, sink, cancellationToken);
@@ -813,21 +873,89 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
             Assert.True(written.Succeeded, "the taken package had to be written");
         }
 
-        var versions = _api.Services.GetRequiredService<ITemplateVersionStore>();
-        var inserted = await versions.TryInsertAsync(
-            TemplateVersionRecords.Sample(
+        // One read of the manifest the package holds feeds both representations the record
+        // carries, so the copy and its record cannot describe two different versions.
+        var read = new TemplateManifestReader().Read(new MemoryStream(manifestBytes, writable: false));
+        Assert.True(read.Succeeded, read.Reason);
+        var manifest = read.Manifest;
+        Assert.NotNull(manifest);
+        Assert.Equal(TemplateId, manifest.Id);
+        Assert.Equal(Version, manifest.Version);
+        Assert.Equal(Consumer, manifest.Owner);
+        Assert.Equal(SchemaPath, manifest.DataContract!.Schema);
+
+        var taken = TemplateVersionRecords.Sample(
                 TemplateId,
                 Version,
-                Consumer,
-                shared: true,
-                schemaRef: SchemaPath,
+                manifest.Owner!,
+                shared: manifest.Shared,
+                schemaRef: manifest.DataContract!.Schema!,
                 packageSha256: packageSha256) with
             {
                 PackageSize = bytes.Length,
                 FileCount = files.Count,
                 ObjectKey = key,
-            },
-            cancellationToken);
+                Manifest = manifest,
+                ManifestJson = read.CanonicalJson!,
+            };
+
+        // What the manifest declares and what this fixture wrote have to be one set: a copy
+        // missing a part or a stylesheet is refused by the render before it prints anything, and
+        // the refusal names no file.
+        var writtenPaths = files.Select(file => file.RelativePath).ToHashSet(StringComparer.Ordinal);
+        string?[] declaredParts =
+        [
+            manifest.Outputs?.Html?.Parts?.DocumentStart,
+            manifest.Outputs?.Html?.Parts?.GroupStart,
+            manifest.Outputs?.Html?.Parts?.Row,
+            manifest.Outputs?.Html?.Parts?.GroupEnd,
+            manifest.Outputs?.Html?.Parts?.DocumentEnd,
+            manifest.Outputs?.Pdf?.Parts?.DocumentStart,
+            manifest.Outputs?.Pdf?.Parts?.GroupStart,
+            manifest.Outputs?.Pdf?.Parts?.Row,
+            manifest.Outputs?.Pdf?.Parts?.GroupEnd,
+            manifest.Outputs?.Pdf?.Parts?.DocumentEnd,
+        ];
+        foreach (var path in declaredParts)
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                Assert.True(
+                    writtenPaths.Contains(path),
+                    $"the manifest declares '{path}', and the package written here carries no such file");
+            }
+        }
+
+        foreach (var style in manifest.Outputs?.Html?.Styles ?? [])
+        {
+            Assert.True(
+                writtenPaths.Contains(style),
+                $"the manifest declares '{style}', and the package written here carries no such file");
+        }
+
+        // The stored document is the representation every later reader gets, and it has to type
+        // into the members the render maps before this record is written.
+        var stored = TemplateManifestJson.ReadTyped(taken.ManifestJson);
+        Assert.NotNull(stored);
+        var storedOutputs = stored.Outputs;
+        Assert.NotNull(storedOutputs);
+        var storedPdf = storedOutputs.Pdf;
+        Assert.NotNull(storedPdf);
+        Assert.True(
+            storedPdf.Parts is not null || storedOutputs.Html?.Parts is not null,
+            "the stored manifest declares no parts, and a package whose manifest declares none is refused");
+        Assert.Equal(taken.Engine, stored.Engine);
+        Assert.Equal(manifest.DeclaredEngineVersion, stored.DeclaredEngineVersion);
+
+        // The package names the engine that renders it, and the record carries the version this
+        // deployment renders that engine with.
+        Assert.NotNull(manifest.Engine);
+        Assert.False(string.IsNullOrEmpty(manifest.DeclaredEngineVersion), "the package names no engine version");
+        Assert.Equal(taken.Engine, manifest.Engine);
+        Assert.Equal(TemplateEngineCatalog.VersionOf(taken.Engine), taken.EngineVersion);
+
+        var versions = _api.Services.GetRequiredService<ITemplateVersionStore>();
+        var inserted = await versions.TryInsertAsync(taken, cancellationToken);
         Assert.True(inserted.WasInserted, "the taken version had to be recorded");
     }
 
