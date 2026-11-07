@@ -235,13 +235,14 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         Assert.DoesNotContain(
             history.Events,
             entry => entry.EventType == EventType.TimerFired && entry.EventId > signal.EventId && entry.EventId < readAfterTheSignal);
-        Assert.Single(
+        var ended = Assert.Single(
             history.Events,
             entry => entry.EventType == EventType.ActivityTaskScheduled
-                && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName);
+                && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName).EventId;
         Assert.DoesNotContain(
             history.Events,
             entry => entry.EventType == EventType.ActivityTaskScheduled
+                && entry.EventId < ended
                 && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == ReportJobActivities.FailJobName);
     }
 
