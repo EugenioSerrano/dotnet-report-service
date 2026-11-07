@@ -507,19 +507,19 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         await PinnedAsync(reportJobId, cancellationToken);
         await Wait.UntilAsync(
             "the template counters of the job's step",
-            _ => Task.FromResult(counters.HasTemplateResolution(reportJobId: null)),
+            _ => Task.FromResult(counters.HasTemplateResolution(reportJobId)),
             PinDeadline,
             TimeSpan.FromMilliseconds(100),
             cancellationToken);
 
         // The counter names the form, the path and the code - constants only.
-        var resolution = Assert.Single(counters.TemplateResolutions());
+        var resolution = Assert.Single(counters.TemplateResolutions(reportJobId));
         Assert.Equal("exact", resolution.Tag("form"));
         Assert.Equal("took", resolution.Tag("path"));
         Assert.Equal(OrchestrationMetrics.NoCode, resolution.Tag("code"));
 
         // The pin's span carries the job it belongs to, the form, the path and the version.
-        var pin = Assert.Single(spans.Of("template.pin"));
+        var pin = Assert.Single(spans.Of("template.pin", reportJobId));
         Assert.Equal(reportJobId, pin.GetTagItem(JobContext.ActivityTagName) as string);
         Assert.Equal("took", pin.GetTagItem("template.path") as string);
         Assert.Equal(ByNameFixtures.Second, pin.GetTagItem("template.version") as string);
@@ -1018,8 +1018,10 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             ActivitySource.AddActivityListener(_listener);
         }
 
-        public IReadOnlyList<Activity> Of(string name) =>
-            [.. _stopped.Where(activity => string.Equals(activity.OperationName, name, StringComparison.Ordinal))];
+        public IReadOnlyList<Activity> Of(string name, string reportJobId) =>
+            [.. _stopped.Where(activity =>
+                string.Equals(activity.OperationName, name, StringComparison.Ordinal)
+                && string.Equals(activity.GetTagItem(JobContext.ActivityTagName) as string, reportJobId, StringComparison.Ordinal))];
 
         public void Dispose() => _listener.Dispose();
     }
@@ -1043,17 +1045,20 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
                 },
             };
             _listener.SetMeasurementEventCallback<long>((instrument, value, tags, state) =>
-                _measurements.Enqueue(new Measurement(instrument.Name, value, tags.ToArray())));
+                _measurements.Enqueue(new Measurement(
+                    instrument.Name,
+                    value,
+                    tags.ToArray(),
+                    Activity.Current?.GetTagItem(JobContext.ActivityTagName) as string)));
             _listener.Start();
         }
 
-        public IReadOnlyList<Measurement> TemplateResolutions() =>
-            [.. _measurements.Where(measurement => string.Equals(
-                measurement.Name,
-                OrchestrationMetrics.TemplateResolutionsInstrumentName,
-                StringComparison.Ordinal))];
+        public IReadOnlyList<Measurement> TemplateResolutions(string reportJobId) =>
+            [.. _measurements.Where(measurement =>
+                string.Equals(measurement.Name, OrchestrationMetrics.TemplateResolutionsInstrumentName, StringComparison.Ordinal)
+                && string.Equals(measurement.JobId, reportJobId, StringComparison.Ordinal))];
 
-        public bool HasTemplateResolution(string? reportJobId) => TemplateResolutions().Count > 0;
+        public bool HasTemplateResolution(string reportJobId) => TemplateResolutions(reportJobId).Count > 0;
 
         public void Dispose() => _listener.Dispose();
 
@@ -1061,7 +1066,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         public sealed record Measurement(
             string Name,
             long Value,
-            IReadOnlyList<KeyValuePair<string, object?>> Tags)
+            IReadOnlyList<KeyValuePair<string, object?>> Tags,
+            string? JobId)
         {
             public string? Tag(string key) =>
                 Tags.FirstOrDefault(tag => string.Equals(tag.Key, key, StringComparison.Ordinal)).Value as string;
