@@ -38,6 +38,8 @@ using VerificationOptions = orchestration::ReportService.Workers.Orchestration.U
 using ReportJobActivities = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobActivities;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
 using InputWaitActivities = orchestration::ReportService.Workers.Orchestration.Jobs.InputWaitActivities;
+using JobTransitionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.JobTransitionActivities;
+using TemplateResolutionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.TemplateResolutionActivities;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -215,7 +217,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         // the nudge of its waiting jobs, and that nudge is what ends the wait.
         worker.ReleaseVerification();
         await WaitForUploadAsync(uploadId, UploadStatus.Ready, cancellationToken);
-        await WaitForStageAsync(reportJobId, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
         await WaitForUploadToSettleAsync(uploadId, cancellationToken);
 
         var history = await HistoryAsync(workflowId, cancellationToken);
@@ -263,7 +265,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         // The upload settles through the product's own record operation, as a verification that
         // could not notify would leave it; no nudge is sent.
         Assert.Equal(SnapshotCommitResult.Committed, await CommitReadyAsync(uploadId, cancellationToken));
-        await WaitForStageAsync(reportJobId, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
 
         var history = await HistoryAsync(workflowId, cancellationToken);
         var fired = history.Events.Where(entry => entry.EventType == EventType.TimerFired).Select(entry => entry.EventId).ToList();
@@ -274,7 +276,28 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             .ToList();
         Assert.NotEmpty(fired);
         Assert.Contains(fired, firedId => reads.Any(readId => readId > firedId));
-        Assert.Equal("QUEUED", (await JobAsync(reportJobId, cancellationToken))!.Status);
+
+        // The lost nudge left the job where it was: the wait ended on its own timer, and
+        // nothing that writes the job's status, takes it past the wait or prepares its
+        // template was scheduled before the wait's own end step.
+        var ended = Assert.Single(
+            history.Events,
+            entry => entry.EventType == EventType.ActivityTaskScheduled
+                && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName).EventId;
+        Assert.Contains(fired, firedId => ended > firedId);
+        Assert.DoesNotContain(
+            history.Events,
+            entry => entry.EventType == EventType.WorkflowExecutionSignaled && entry.EventId < ended);
+        Assert.DoesNotContain(
+            history.Events,
+            entry => entry.EventType == EventType.ActivityTaskScheduled
+                && entry.EventId < ended
+                && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name is JobTransitionActivities.TransitionJobName
+                    or JobTransitionActivities.FinalizeJobName
+                    or TemplateResolutionActivities.PrepareTemplateName
+                    or TemplateResolutionActivities.PinTemplateName
+                    or TemplateResolutionActivities.PinBaselineName
+                    or ReportJobActivities.FailJobName);
     }
 
     [Fact]
@@ -396,7 +419,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
         // Hosting the verification work afterwards ends the wait with the upload's own outcome.
         worker.ReleaseVerification();
-        await WaitForStageAsync(reportJobId, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
         Assert.Equal("READY", await UploadStatusAsync(uploadId, cancellationToken));
     }
 
@@ -428,7 +451,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             entry => entry.EventType == EventType.WorkflowExecutionStarted);
 
         second.ReleaseVerification();
-        await WaitForStageAsync(reportJobId, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
         Assert.Equal("READY", await UploadStatusAsync(uploadId, cancellationToken));
     }
 
@@ -454,8 +477,8 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         var secondRun = (await ExecutionAsync(secondWorkflowId, cancellationToken))!.Value.RunId;
 
         worker.ReleaseVerification();
-        await WaitForStageAsync(first, stage: null, cancellationToken);
-        await WaitForStageAsync(second, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(first, cancellationToken);
+        await WaitForInputWaitToEndAsync(second, cancellationToken);
 
         // The wait has ended and the delivered build takes both jobs past it, so the nudge is
         // judged where it can be: the run that held the wait has closed, the engine refuses to
@@ -530,7 +553,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
 
         // The nudge across the continuation is not lost: the continued run still leaves the wait.
         worker.ReleaseVerification();
-        await WaitForStageAsync(reportJobId, stage: null, cancellationToken);
+        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
     }
 
     private static List<string> ActivitiesOf(WorkflowHistory history) =>
@@ -746,10 +769,31 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
 
-    private Task WaitForStageAsync(string reportJobId, string? stage, CancellationToken cancellationToken) =>
+    private Task WaitForStageAsync(string reportJobId, string stage, CancellationToken cancellationToken) =>
         Wait.UntilAsync(
-            $"the stage of {reportJobId} to be {(stage ?? "cleared")}",
+            $"the stage of {reportJobId} to read {stage}",
             async token => string.Equals((await JobAsync(reportJobId, token))?.Stage, stage, StringComparison.Ordinal),
+            WaitDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+
+    // The wait of a job ends when its own end step completes. The history keeps that step once
+    // it has run and never removes it, so the probe cannot be sampled before it and cannot miss
+    // it afterwards; the completed step is paired with the scheduled one it names.
+    private Task WaitForInputWaitToEndAsync(string reportJobId, CancellationToken cancellationToken) =>
+        Wait.UntilAsync(
+            $"the input wait of {reportJobId} to end",
+            async token =>
+            {
+                var history = await HistoryAsync(ReportJobWorkflow.WorkflowIdFor(reportJobId), token);
+                var ended = history.Events
+                    .Where(entry => entry.EventType == EventType.ActivityTaskScheduled
+                        && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName)
+                    .Select(entry => entry.EventId)
+                    .ToHashSet();
+                return history.Events.Any(entry => entry.EventType == EventType.ActivityTaskCompleted
+                    && ended.Contains(entry.ActivityTaskCompletedEventAttributes.ScheduledEventId));
+            },
             WaitDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
