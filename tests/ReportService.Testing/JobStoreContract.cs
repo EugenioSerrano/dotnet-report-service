@@ -809,6 +809,40 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ASecondPinOfAnotherShapeNeverReplacesTheFirst()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+
+        // A pin in the shape fixed before the object-store source, then one in the shape a
+        // version taken from it produces: the first committed pin is the job's, whatever
+        // shape the second attempt carries.
+        var gitAcceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(gitAcceptance, Now, cancellationToken);
+        var gitFirst = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken);
+        var storageSecond = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(2), cancellationToken);
+
+        Assert.True(gitFirst.WasWrittenByThisCall);
+        Assert.False(storageSecond.WasWrittenByThisCall);
+        Assert.Equal(gitFirst.Pin!.CommitSha, storageSecond.Pin!.CommitSha);
+        Assert.Equal(gitFirst.Pin.PackageSha256, storageSecond.Pin.PackageSha256);
+        Assert.Null(storageSecond.Pin.SourceDescriptorSha256);
+        Assert.Null(storageSecond.Pin.SourceObjects);
+
+        // And the reverse: a storage-shaped pin first, a legacy one after it.
+        var storageAcceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(storageAcceptance, Now, cancellationToken);
+        var storageFirst = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var gitSecond = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(2), cancellationToken);
+
+        Assert.True(storageFirst.WasWrittenByThisCall);
+        Assert.False(gitSecond.WasWrittenByThisCall);
+        Assert.Equal(storageFirst.Pin!.SourceDescriptorSha256, gitSecond.Pin!.SourceDescriptorSha256);
+        Assert.Equal(storageFirst.Pin.SourceObjects, gitSecond.Pin.SourceObjects);
+        Assert.Null(gitSecond.Pin.CommitSha);
+    }
+
+    [Fact]
     public async Task APinOnAJobThatEndedIsRefusedAndWritesNothing()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -857,13 +891,30 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(message, state!.Job.ErrorMessage);
     }
 
-    /// <summary>A pin of one version of the pilot template, with the values every case uses.</summary>
+    /// <summary>A pin of one version of the pilot template in the shape a version taken from the object store produces.</summary>
     /// <param name="version">The version the pin fixes.</param>
     /// <param name="hash">The package hash, when a case needs a second one.</param>
     protected static TemplatePin PinOf(string version, string? hash = null) => new(
         "pilot-grouped",
         version,
+        null,
+        TemplateVersionRecords.DescriptorSha256,
+        TemplateVersionRecords.Objects,
+        hash ?? Hash,
+        TemplateEngine.Scriban,
+        "7.5.1",
+        "schema.json",
+        Now.AddSeconds(1));
+
+    /// <summary>A pin of one version of the pilot template in the shape fixed before the object-store source.</summary>
+    /// <param name="version">The version the pin fixes.</param>
+    /// <param name="hash">The package hash, when a case needs a second one.</param>
+    protected static TemplatePin PinOfGit(string version, string? hash = null) => new(
+        "pilot-grouped",
+        version,
         "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        null,
+        null,
         hash ?? Hash,
         TemplateEngine.Scriban,
         "7.5.1",

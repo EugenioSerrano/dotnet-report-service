@@ -1,4 +1,5 @@
 using ReportService.TemplatePackages.Manifest;
+using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource.Resolution;
 using Temporalio.Activities;
 using Temporalio.Exceptions;
@@ -17,13 +18,18 @@ public sealed record ResolveTemplateVersionInput(
 /// <summary>
 /// What the caller needs from a by-name resolution: the version it may use, the
 /// values it is pinned to, and how the resolution arrived at it — never the
-/// package or its manifest.
+/// package or its manifest. The answer carries the values the job is pinned to,
+/// in the shape the record holds: the commit of a version taken before the
+/// object-store source, or the publication descriptor's hash and the verified
+/// file list of one taken from it.
 /// </summary>
 /// <param name="TemplateId">The template's identifier.</param>
 /// <param name="Version">The version the resolution chose.</param>
 /// <param name="OwnerConsumerId">The consumer the version belongs to.</param>
 /// <param name="Shared">Whether every consumer may use it.</param>
-/// <param name="CommitSha">The commit the version was read at.</param>
+/// <param name="CommitSha">The commit the version was read at; null for a version taken from the object store.</param>
+/// <param name="SourceDescriptorSha256">The SHA-256 of the publication descriptor the take verified; a version taken from the object store only.</param>
+/// <param name="SourceObjects">The files the take verified; a version taken from the object store only.</param>
 /// <param name="PackageSha256">The SHA-256 of the package's bytes, lower-case hexadecimal.</param>
 /// <param name="PackageSize">The size of the package's bytes.</param>
 /// <param name="Engine">The engine that renders it, as the record stores it.</param>
@@ -35,7 +41,9 @@ public sealed record ResolveTemplateVersionResult(
     string Version,
     string OwnerConsumerId,
     bool Shared,
-    string CommitSha,
+    string? CommitSha,
+    string? SourceDescriptorSha256,
+    TemplateSourceObject[]? SourceObjects,
     string PackageSha256,
     long PackageSize,
     string Engine,
@@ -109,6 +117,8 @@ public sealed class ResolveTemplateVersionActivity(TemplateVersionResolver resol
             record.OwnerConsumerId,
             record.Shared,
             record.CommitSha,
+            record.SourceDescriptorSha256,
+            record.SourceObjects,
             record.PackageSha256,
             record.PackageSize,
             TemplateEngineNames.ToStoredText(record.Engine),

@@ -1,3 +1,4 @@
+using ReportService.TemplatePackages.Records;
 using Temporalio.Activities;
 
 namespace ReportService.Workers.Orchestration.Jobs;
@@ -59,7 +60,9 @@ public sealed record TakeTemplateVersionStepInput(
 /// <param name="Version">The version.</param>
 /// <param name="OwnerConsumerId">The consumer the version belongs to.</param>
 /// <param name="Shared">Whether every consumer may use it.</param>
-/// <param name="CommitSha">The commit the version was read at.</param>
+/// <param name="CommitSha">The commit the version was read at; null for a version taken from the object store.</param>
+/// <param name="SourceDescriptorSha256">The SHA-256 of the publication descriptor the take verified; a version taken from the object store only.</param>
+/// <param name="SourceObjects">The files the take verified; a version taken from the object store only.</param>
 /// <param name="PackageSha256">The SHA-256 of the package's bytes.</param>
 /// <param name="PackageSize">The size of the package's bytes.</param>
 /// <param name="Engine">The engine that renders it, as the record stores it.</param>
@@ -71,7 +74,9 @@ public sealed record TakeTemplateVersionStepResult(
     string Version,
     string OwnerConsumerId,
     bool Shared,
-    string CommitSha,
+    string? CommitSha,
+    string? SourceDescriptorSha256,
+    TemplateSourceObject[]? SourceObjects,
     string PackageSha256,
     long PackageSize,
     string Engine,
@@ -93,7 +98,9 @@ public sealed record ResolveTemplateVersionStepInput(
 /// <param name="Version">The version the resolution chose.</param>
 /// <param name="OwnerConsumerId">The consumer the version belongs to.</param>
 /// <param name="Shared">Whether every consumer may use it.</param>
-/// <param name="CommitSha">The commit the version was read at.</param>
+/// <param name="CommitSha">The commit the version was read at; null for a version taken from the object store.</param>
+/// <param name="SourceDescriptorSha256">The SHA-256 of the publication descriptor the take verified; a version taken from the object store only.</param>
+/// <param name="SourceObjects">The files the take verified; a version taken from the object store only.</param>
 /// <param name="PackageSha256">The SHA-256 of the package's bytes.</param>
 /// <param name="PackageSize">The size of the package's bytes.</param>
 /// <param name="Engine">The engine that renders it, as the record stores it.</param>
@@ -105,7 +112,9 @@ public sealed record ResolveTemplateVersionStepResult(
     string Version,
     string OwnerConsumerId,
     bool Shared,
-    string CommitSha,
+    string? CommitSha,
+    string? SourceDescriptorSha256,
+    TemplateSourceObject[]? SourceObjects,
     string PackageSha256,
     long PackageSize,
     string Engine,

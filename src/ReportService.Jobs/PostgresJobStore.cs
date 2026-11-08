@@ -12,7 +12,10 @@ namespace ReportService.Jobs;
 /// explicit SQL over a pooled data source. Every statement is constant text with
 /// parameters, so no value a caller sent ever becomes part of a statement.
 /// Enumerations are written in their domain text and read back strictly, a
-/// corrupted row being a fault rather than a default. Accepting a job is one
+/// corrupted row being a fault rather than a default. A job's pin is complete in
+/// one of its two shapes - the commit of a version taken before the object-store
+/// source, or the publication descriptor's hash and verified file list of one
+/// taken from it - or absent, and never a mixture. Accepting a job is one
 /// transaction that holds the upload it reports on, so the reference is usable at
 /// the instant the job commits and is never usable and gone in the same breath. A
 /// database that cannot be reached or does not answer in time is reported as
@@ -111,6 +114,8 @@ public sealed partial class PostgresJobStore : IJobStore
                baseline_version  AS "BaselineVersion",
                resolved_version  AS "ResolvedVersion",
                commit_sha        AS "CommitSha",
+               source_descriptor_sha256 AS "SourceDescriptorSha256",
+               source_objects::text     AS "SourceObjectsJson",
                package_sha256    AS "PackageSha256",
                engine            AS "Engine",
                engine_version    AS "EngineVersion",
@@ -124,7 +129,9 @@ public sealed partial class PostgresJobStore : IJobStore
         UPDATE report_service.template_references
            SET resolved_version = @Version,
                commit_sha       = @CommitSha,
+               source_descriptor_sha256 = @SourceDescriptorSha256,
                package_sha256   = @PackageSha256,
+               source_objects   = CAST(@SourceObjectsJson AS jsonb),
                engine           = @Engine,
                engine_version   = @EngineVersion,
                schema_ref       = @SchemaRef,
@@ -328,7 +335,12 @@ public sealed partial class PostgresJobStore : IJobStore
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Writes the version a job's template is fixed to, once, in the shape the record
+    /// holds: a version taken before the object-store source carries its commit, one
+    /// taken from it carries the publication descriptor's hash and the verified file
+    /// list, and a pin is never a mixture of the two.
+    /// </summary>
     public async Task<TemplatePinState> PinTemplateAsync(
         string reportJobId,
         TemplatePin pin,
@@ -343,6 +355,10 @@ public sealed partial class PostgresJobStore : IJobStore
             ReportJobId = reportJobId,
             Version = pin.ResolvedVersion,
             pin.CommitSha,
+            pin.SourceDescriptorSha256,
+            SourceObjectsJson = pin.SourceObjects is null
+                ? null
+                : TemplateSourceObjects.Write(pin.SourceObjects),
             pin.PackageSha256,
             Engine = TemplateEngineNames.ToStoredText(pin.Engine),
             pin.EngineVersion,
@@ -524,6 +540,49 @@ public sealed partial class PostgresJobStore : IJobStore
             ? engine.Value
             : throw new InvalidOperationException("the stored template reference carries an engine this build does not know");
 
+    // The pin of a stored reference: one of the two complete shapes, never a mixture and never
+    // neither. The owner, the shared flag and the descriptor's key are the record's, not the pin's.
+    private static TemplatePin StoredPin(
+        string templateId,
+        string resolvedVersion,
+        string? commitSha,
+        string? sourceDescriptorSha256,
+        string? sourceObjectsJson,
+        string? packageSha256,
+        string? engineText,
+        string? engineVersion,
+        string? schemaRef,
+        DateTime resolvedAt)
+    {
+        if (commitSha is null && sourceDescriptorSha256 is null)
+        {
+            throw new InvalidOperationException("the stored template reference carries a pin with no source provenance");
+        }
+
+        if (commitSha is not null && sourceDescriptorSha256 is not null)
+        {
+            throw new InvalidOperationException("the stored template reference carries a pin with two source provenances");
+        }
+
+        var sourceObjects = sourceObjectsJson is null ? null : TemplateSourceObjects.Read(sourceObjectsJson);
+        if (sourceDescriptorSha256 is not null && sourceObjects is null)
+        {
+            throw new InvalidOperationException("the stored template reference carries a storage pin without its object list");
+        }
+
+        return new TemplatePin(
+            templateId,
+            resolvedVersion,
+            commitSha,
+            sourceDescriptorSha256,
+            sourceObjects,
+            packageSha256 ?? string.Empty,
+            StoredEngine(engineText),
+            engineVersion ?? string.Empty,
+            schemaRef ?? string.Empty,
+            Utc(resolvedAt));
+    }
+
     // Every instant travels to the server as the UTCDateTime of the instant it names.
     private static DateTime UtcInstant(DateTimeOffset value) => value.ToUniversalTime().UtcDateTime;
 
@@ -624,6 +683,10 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? CommitSha { get; set; }
 
+        public string? SourceDescriptorSha256 { get; set; }
+
+        public string? SourceObjectsJson { get; set; }
+
         public string? PackageSha256 { get; set; }
 
         public string? Engine { get; set; }
@@ -642,15 +705,17 @@ public sealed partial class PostgresJobStore : IJobStore
             RequestedVersion = RequestedVersion,
             BaselineVersion = BaselineVersion,
             Pin = ResolvedAt is { } resolvedAt && ResolvedVersion is not null
-                ? new TemplatePin(
+                ? StoredPin(
                     TemplateId,
                     ResolvedVersion,
-                    CommitSha ?? string.Empty,
-                    PackageSha256 ?? string.Empty,
-                    StoredEngine(Engine),
-                    EngineVersion ?? string.Empty,
-                    SchemaRef ?? string.Empty,
-                    Utc(resolvedAt))
+                    CommitSha,
+                    SourceDescriptorSha256,
+                    SourceObjectsJson,
+                    PackageSha256,
+                    Engine,
+                    EngineVersion,
+                    SchemaRef,
+                    resolvedAt)
                 : null,
         };
     }

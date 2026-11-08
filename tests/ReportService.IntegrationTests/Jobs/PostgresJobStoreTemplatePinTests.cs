@@ -12,11 +12,11 @@ namespace ReportService.IntegrationTests.Jobs;
 /// <summary>
 /// The job's template pin on the real database: the same contract the in-memory store is held
 /// to, run here on PostgreSQL 18.6 brought to the expected version by the product's own
-/// migrations, plus what only the schema can promise — a pin is complete or absent, an exact
-/// reference is pinned to exactly the version it named, a by-name pin is a release, a baseline
-/// belongs to a by-name reference alone, the pin points at a taken version, the reference as
-/// written and a pin already set are immutable, and two attempts racing to pin one job leave
-/// the first committed pin and answer it to the loser.
+/// migrations, plus what only the schema can promise — a pin is complete in one of its two
+/// shapes, or absent, never a mixture, an exact reference is pinned to exactly the version it
+/// named, a by-name pin is a release, a baseline belongs to a by-name reference alone, the pin
+/// points at a taken version, the reference as written and a pin already set are immutable, and
+/// two attempts racing to pin one job leave the first committed pin and answer it to the loser.
 /// </summary>
 public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassFixture<PostgresFixture>
 {
@@ -60,21 +60,150 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
     }
 
     [Fact]
-    public async Task TheSchemaRefusesAPinThatIsNotComplete()
+    public async Task TheSchemaRefusesAPinOfNoShape()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var version = await TakenAsync("1.1.0", cancellationToken);
         var reference = await AcceptedReferenceAsync(version: null, baseline: "1.0.0", cancellationToken: cancellationToken);
 
-        // One column of the seven is set: a pin is complete or absent, never half written.
+        // One column of the shape is set: a pin is complete in one of its two shapes, or
+        // absent, never a half-written mixture.
         var exception = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
             "UPDATE report_service.template_references SET resolved_version = @Version WHERE report_job_id = @ReportJobId",
             new { Version = version, reference.ReportJobId },
             cancellationToken));
 
         Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
-        Assert.Equal("template_references_pin_complete", exception.ConstraintName);
+        Assert.Equal("template_references_pin_shapes", exception.ConstraintName);
         Assert.Null((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
+    }
+
+    [Fact]
+    public async Task TheSchemaRefusesAPinThatMixesTheTwoShapes()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+        var reference = await AcceptedReferenceAsync(version: "1.0.0", cancellationToken: cancellationToken);
+
+        // Both sources at once: a commit says where a version was read, a descriptor says
+        // which publication was verified, and one pin is never both.
+        var exception = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            StoragePinSql("resolved_version = @Version, commit_sha = @CommitSha"),
+            BothSourcesParameters(reference.ReportJobId, version),
+            cancellationToken));
+
+        Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+        Assert.Equal("template_references_pin_shapes", exception.ConstraintName);
+        Assert.Null((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
+    }
+
+    [Fact]
+    public async Task TheSchemaRefusesAStoragePinWithoutItsObjectList()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+        var reference = await AcceptedReferenceAsync(version: "1.0.0", cancellationToken: cancellationToken);
+
+        // The descriptor names a publication whose files were verified: a storage pin
+        // without the list of those files is a row the product can never write.
+        var exception = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            """
+            UPDATE report_service.template_references
+               SET resolved_version = @Version,
+                   source_descriptor_sha256 = @SourceDescriptorSha256,
+                   package_sha256 = @PackageSha256,
+                   engine = @Engine,
+                   engine_version = @EngineVersion,
+                   schema_ref = @SchemaRef,
+                   resolved_at = now()
+             WHERE report_job_id = @ReportJobId
+            """,
+            new
+            {
+                ReportJobId = reference.ReportJobId,
+                Version = version,
+                SourceDescriptorSha256 = TemplateVersionRecords.DescriptorSha256,
+                PackageSha256 = Hash,
+                Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+                EngineVersion = "7.5.1",
+                SchemaRef = "schema.json",
+            },
+            cancellationToken));
+
+        Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+        Assert.Equal("template_references_pin_shapes", exception.ConstraintName);
+    }
+
+    [Fact]
+    public async Task AStoragePinRoundTripsWithItsPublicationProvenance()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string version = "2.0.0";
+        var record = TemplateVersionRecords.StorageSample("pilot-grouped", version, owner: Consumer, packageSha256: Hash);
+        Assert.True((await Versions!.TryInsertAsync(record, cancellationToken)).WasInserted);
+        var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
+
+        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+
+        Assert.True(state.WasWrittenByThisCall);
+        var pin = Assert.IsType<TemplatePin>((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
+        Assert.Equal(version, pin.ResolvedVersion);
+        Assert.Null(pin.CommitSha);
+        Assert.Equal(record.SourceDescriptorSha256, pin.SourceDescriptorSha256);
+        Assert.Equal(record.SourceObjects, pin.SourceObjects);
+        Assert.Equal(Hash, pin.PackageSha256);
+        Assert.Equal(TemplateEngine.Scriban, pin.Engine);
+        Assert.Equal("7.5.1", pin.EngineVersion);
+        Assert.Equal("schema.json", pin.SchemaRef);
+        Assert.Equal(Now.AddSeconds(1), pin.ResolvedAt);
+    }
+
+    [Fact]
+    public async Task AGitPinStillReadsWithItsCommitAndNoPublicationProvenance()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string version = "1.0.0";
+        await TakenAsync(version, cancellationToken);
+        var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
+
+        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken);
+
+        Assert.True(state.WasWrittenByThisCall);
+        var pin = Assert.IsType<TemplatePin>((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
+        Assert.Equal("a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", pin.CommitSha);
+        Assert.Null(pin.SourceDescriptorSha256);
+        Assert.Null(pin.SourceObjects);
+        Assert.Equal(Hash, pin.PackageSha256);
+    }
+
+    [Fact]
+    public async Task TheGuardKeepsTheNewPinColumnsSetOnce()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string version = "2.1.0";
+        var record = TemplateVersionRecords.StorageSample("pilot-grouped", version, owner: Consumer, packageSha256: Hash);
+        Assert.True((await Versions!.TryInsertAsync(record, cancellationToken)).WasInserted);
+        var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
+        var pinned = Assert.IsType<TemplatePin>(
+            (await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken)).Pin);
+
+        var descriptor = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            "UPDATE report_service.template_references SET source_descriptor_sha256 = @Other WHERE report_job_id = @ReportJobId",
+            new { Other = new string('d', 64), reference.ReportJobId },
+            cancellationToken));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, descriptor.SqlState);
+        Assert.Contains("set once", descriptor.MessageText, StringComparison.Ordinal);
+
+        var objects = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            "UPDATE report_service.template_references SET source_objects = '[]'::jsonb WHERE report_job_id = @ReportJobId",
+            new { reference.ReportJobId },
+            cancellationToken));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, objects.SqlState);
+        Assert.Contains("set once", objects.MessageText, StringComparison.Ordinal);
+
+        var stored = Assert.IsType<TemplatePin>((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
+        Assert.Equal(pinned.SourceDescriptorSha256, stored.SourceDescriptorSha256);
+        Assert.Equal(pinned.SourceObjects, stored.SourceObjects);
     }
 
     [Fact]
@@ -247,6 +376,21 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
          WHERE report_job_id = @ReportJobId
         """;
 
+    /// <summary>The statement that writes every pin column of the storage shape, as the store writes them.</summary>
+    private static string StoragePinSql(string versionAssignment) =>
+        $"""
+        UPDATE report_service.template_references
+           SET {versionAssignment},
+               source_descriptor_sha256 = @SourceDescriptorSha256,
+               package_sha256 = @PackageSha256,
+               source_objects = CAST(@SourceObjectsJson AS jsonb),
+               engine = @Engine,
+               engine_version = @EngineVersion,
+               schema_ref = @SchemaRef,
+               resolved_at = now()
+         WHERE report_job_id = @ReportJobId
+        """;
+
     /// <summary>The parameters of <see cref="PinSql"/>.</summary>
     private static object PinParameters(string reportJobId, string version) => new
     {
@@ -254,6 +398,20 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
         Version = version,
         CommitSha = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
         PackageSha256 = Hash,
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = "7.5.1",
+        SchemaRef = "schema.json",
+    };
+
+    /// <summary>The parameters of both shapes at once, for the case that proves the schema refuses the mixture.</summary>
+    private static object BothSourcesParameters(string reportJobId, string version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version,
+        CommitSha = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        SourceDescriptorSha256 = TemplateVersionRecords.DescriptorSha256,
+        PackageSha256 = Hash,
+        SourceObjectsJson = TemplateSourceObjects.Write(TemplateVersionRecords.Objects),
         Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
         EngineVersion = "7.5.1",
         SchemaRef = "schema.json",

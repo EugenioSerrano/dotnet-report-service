@@ -22,6 +22,23 @@ public static class TemplateVersionRecords
     /// <summary>The git tree of the version's folder at that commit.</summary>
     public const string SourceTreeSha = "b2c3d4e5f60718293a4b5c6d7e8f90123456789a";
 
+    /// <summary>The publication descriptor's hash a storage-taken version carries, a syntactically valid SHA-256.</summary>
+    public const string DescriptorSha256 = "d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f";
+
+    /// <summary>The two files a storage-taken version verified, in the order its writer keeps them.</summary>
+    public static TemplateSourceObject[] Objects =>
+    [
+        new("schema.json", 1_204, "e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70"),
+        new("template.yaml", 868, "f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7081"),
+    ];
+
+    /// <summary>Where the source kept the publication descriptor a storage-taken version verified.</summary>
+    /// <param name="templateId">The template's identifier.</param>
+    /// <param name="version">The version.</param>
+    public static string DescriptorKeyFor(string templateId, string version) =>
+        $"template-source/{templateId}/published/{version}/{DescriptorSha256}.json";
+
+
     /// <summary>Builds the record of a taken version, with the pilot's values unless a case replaces them.</summary>
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version.</param>
@@ -96,5 +113,51 @@ public static class TemplateVersionRecords
             Manifest: manifest,
             ManifestJson: TemplateManifestJson.Write(document),
             TakenAt: takenAt ?? new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
+    }
+
+    /// <summary>
+    /// Builds the record of a version taken from the deployment's object store:
+    /// no commit and no tree, and the publication descriptor's hash, the key it
+    /// was read from and the two files the take verified.
+    /// </summary>
+    /// <param name="templateId">The template's identifier.</param>
+    /// <param name="version">The version.</param>
+    /// <param name="owner">The consumer that owns it.</param>
+    /// <param name="shared">Whether every consumer may use it.</param>
+    /// <param name="engine">The engine that renders it.</param>
+    /// <param name="engineVersion">The version of that engine.</param>
+    /// <param name="schemaRef">The package-relative path of the schema.</param>
+    /// <param name="packageSha256">The hash of the package's bytes.</param>
+    /// <param name="takenAt">When the version was taken.</param>
+    public static TemplateVersionRecord StorageSample(
+        string templateId = "invoice-energy",
+        string version = "1.1.0",
+        string owner = "billing-system",
+        bool shared = false,
+        TemplateEngine engine = TemplateEngine.Scriban,
+        string engineVersion = "7.5.1",
+        string schemaRef = "schema/data.schema.json",
+        string packageSha256 = PackageSha256,
+        DateTimeOffset? takenAt = null)
+    {
+        var objects = Objects;
+        return Sample(
+            templateId,
+            version,
+            owner,
+            shared,
+            engine,
+            engineVersion,
+            schemaRef,
+            packageSha256,
+            takenAt) with
+        {
+            CommitSha = null,
+            SourceTreeSha = null,
+            SourceDescriptorSha256 = DescriptorSha256,
+            SourceDescriptorKey = DescriptorKeyFor(templateId, version),
+            SourceObjects = objects,
+            FileCount = objects.Length,
+        };
     }
 }

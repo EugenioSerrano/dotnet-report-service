@@ -16,11 +16,12 @@ namespace ReportService.IntegrationTests.Templates;
 
 /// <summary>
 /// The owner's metadata read against the record a take wrote, on real PostgreSQL
-/// and the API's own host: its owner reads the nine members the version is
-/// described by; another consumer, an untaken version and a malformed one are
-/// answered with the same not-found document - the request's own trace identifier
-/// aside - without a storage read; and a consumer the deployment does not know is
-/// refused before anything is read.
+/// and the API's own host: its owner reads the ten members the version is
+/// described by, with the publication provenance a storage-taken version carries
+/// and with a pre-change version's null provenance; another consumer, an untaken
+/// version and a malformed one are answered with the same not-found document -
+/// the request's own trace identifier aside - without a storage read; and a
+/// consumer the deployment does not know is refused before anything is read.
 /// </summary>
 public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
@@ -77,7 +78,43 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
     }
 
     [Fact]
-    public async Task TheOwnerReadsTheNineMembersOfTheVersionItOwns()
+    public async Task TheOwnerReadsTheTenMembersOfTheVersionItOwns()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var record = await GivenTakenVersionAsync(cancellationToken, storageTaken: true, version: "1.2.0");
+
+        using var response = await GetAsync(record.TemplateId, record.Version, Owner, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        Assert.Equal(record.TemplateId, root.GetProperty("templateId").GetString());
+        Assert.Equal(record.Version, root.GetProperty("version").GetString());
+        Assert.Equal("sha256:" + record.SourceDescriptorSha256, root.GetProperty("sourceDescriptorHash").GetString());
+        var objects = root.GetProperty("objects").EnumerateArray().ToArray();
+        Assert.Equal(record.SourceObjects!.Length, objects.Length);
+        for (var index = 0; index < objects.Length; index++)
+        {
+            Assert.Equal(record.SourceObjects[index].Path, objects[index].GetProperty("path").GetString());
+            Assert.Equal(record.SourceObjects[index].Size, objects[index].GetProperty("size").GetInt64());
+            Assert.Equal(record.SourceObjects[index].Sha256, objects[index].GetProperty("sha256").GetString());
+        }
+
+        Assert.Equal("sha256:" + record.PackageSha256, root.GetProperty("packageHash").GetString());
+        Assert.Equal("SCRIBAN", root.GetProperty("engine").GetString());
+        Assert.Equal(record.EngineVersion, root.GetProperty("engineVersion").GetString());
+        Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
+        Assert.False(root.GetProperty("shared").GetBoolean());
+        Assert.Equal(
+            record.TakenAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture),
+            root.GetProperty("takenAt").GetString());
+        Assert.Equal(10, root.EnumerateObject().Count());
+        Assert.False(root.TryGetProperty("commitSha", out _));
+    }
+
+    [Fact]
+    public async Task APreChangeVersionAnswersWithoutACommitAndWithoutPublicationProvenance()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var record = await GivenTakenVersionAsync(cancellationToken);
@@ -88,18 +125,12 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var document = JsonDocument.Parse(body);
         var root = document.RootElement;
-        Assert.Equal(record.TemplateId, root.GetProperty("templateId").GetString());
-        Assert.Equal(record.Version, root.GetProperty("version").GetString());
-        Assert.Equal(record.CommitSha, root.GetProperty("commitSha").GetString());
+        Assert.Equal(10, root.EnumerateObject().Count());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("sourceDescriptorHash").ValueKind);
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("objects").ValueKind);
+        Assert.False(root.TryGetProperty("commitSha", out _));
         Assert.Equal("sha256:" + record.PackageSha256, root.GetProperty("packageHash").GetString());
-        Assert.Equal("SCRIBAN", root.GetProperty("engine").GetString());
-        Assert.Equal(record.EngineVersion, root.GetProperty("engineVersion").GetString());
         Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
-        Assert.False(root.GetProperty("shared").GetBoolean());
-        Assert.Equal(
-            record.TakenAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture),
-            root.GetProperty("takenAt").GetString());
-        Assert.Equal(9, root.EnumerateObject().Count());
     }
 
     [Fact]
@@ -155,13 +186,22 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private async Task<TemplateVersionRecord> GivenTakenVersionAsync(CancellationToken cancellationToken)
+    private async Task<TemplateVersionRecord> GivenTakenVersionAsync(
+        CancellationToken cancellationToken,
+        bool storageTaken = false,
+        string version = "1.1.0")
     {
-        var record = TemplateVersionRecords.Sample(
-            "invoice-energy",
-            "1.1.0",
-            owner: Owner,
-            takenAt: new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
+        var record = storageTaken
+            ? TemplateVersionRecords.StorageSample(
+                "invoice-energy",
+                version,
+                owner: Owner,
+                takenAt: new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero))
+            : TemplateVersionRecords.Sample(
+                "invoice-energy",
+                version,
+                owner: Owner,
+                takenAt: new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
         var store = new PostgresTemplateVersionStore(_dataSource!);
         Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
         return record;

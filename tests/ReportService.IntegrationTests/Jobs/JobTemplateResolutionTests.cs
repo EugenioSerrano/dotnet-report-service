@@ -273,6 +273,84 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
     }
 
     [Fact]
+    public async Task AStorageTakenVersionIsPinnedWithItsPublicationProvenance()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string version = "1.3.0";
+
+        // The version was taken from the deployment's object store before the job asked for
+        // it: its record carries the publication descriptor, the verified file list and no
+        // commit, and the whole pin path runs from that record alone.
+        var record = TemplateVersionRecords.StorageSample(Template, version, owner: ConsumerA);
+        var versions = new PostgresTemplateVersionStore(_dataSource!);
+        Assert.True((await versions.TryInsertAsync(record, cancellationToken)).WasInserted);
+
+        var reportJobId = await AcceptedJobAsync(ConsumerA, Template, version, cancellationToken);
+        var pin = await PinnedAsync(reportJobId, cancellationToken);
+        Assert.Null(pin.CommitSha);
+        Assert.Equal(record.SourceDescriptorSha256, pin.SourceDescriptorSha256);
+        Assert.Equal(record.SourceObjects, pin.SourceObjects);
+
+        var reference = await ReferenceAsync(reportJobId, cancellationToken);
+        Assert.NotNull(reference);
+        Assert.Equal(version, reference!.ResolvedVersion);
+        Assert.Null(reference.CommitSha);
+        Assert.Equal(record.SourceDescriptorSha256, reference.SourceDescriptorSha256);
+        Assert.NotNull(reference.SourceObjectsJson);
+        var objects = TemplateSourceObjects.Read(reference.SourceObjectsJson!);
+        Assert.Equal(record.SourceObjects!.Length, objects.Length);
+        for (var index = 0; index < objects.Length; index++)
+        {
+            Assert.Equal(record.SourceObjects[index].Path, objects[index].Path);
+            Assert.Equal(record.SourceObjects[index].Size, objects[index].Size);
+            Assert.Equal(record.SourceObjects[index].Sha256, objects[index].Sha256);
+        }
+
+        Assert.Equal(record.PackageSha256, reference.PackageSha256);
+        Assert.Equal("SCRIBAN", reference.Engine);
+        Assert.Equal(record.EngineVersion, reference.EngineVersion);
+        Assert.Equal(record.SchemaRef, reference.SchemaRef);
+        Assert.NotNull(reference.ResolvedAt);
+
+        // The owner's answer for the same version is read from the same record: the same
+        // provenance, the two publication members, and no commit.
+        using (var api = _api!.CreateClient())
+        using (var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            new Uri($"/api/v1/templates/{Template}/versions/{version}", UriKind.Relative)))
+        {
+            request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, ConsumerA);
+            using var response = await api.SendAsync(request, cancellationToken);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = document.RootElement;
+            Assert.Equal(10, root.EnumerateObject().Count());
+            Assert.Equal("sha256:" + record.SourceDescriptorSha256, root.GetProperty("sourceDescriptorHash").GetString());
+            var answered = root.GetProperty("objects").EnumerateArray().ToArray();
+            Assert.Equal(objects.Length, answered.Length);
+            for (var index = 0; index < answered.Length; index++)
+            {
+                Assert.Equal(objects[index].Path, answered[index].GetProperty("path").GetString());
+                Assert.Equal(objects[index].Size, answered[index].GetProperty("size").GetInt64());
+                Assert.Equal(objects[index].Sha256, answered[index].GetProperty("sha256").GetString());
+            }
+
+            Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
+            Assert.False(root.TryGetProperty("commitSha", out _));
+        }
+
+        // A second step and a second read leave every value of the pin unchanged.
+        var again = await PrepareAgainAsync(reportJobId, cancellationToken);
+        var second = await PinnedAsync(reportJobId, cancellationToken);
+        Assert.Equal("Pinned", again.Outcome.ToString());
+        Assert.Equal(pin.ResolvedVersion, second.ResolvedVersion);
+        Assert.Equal(pin.ResolvedAt, second.ResolvedAt);
+        Assert.Equal(pin.SourceDescriptorSha256, second.SourceDescriptorSha256);
+        Assert.Equal(pin.SourceObjects, second.SourceObjects);
+        Assert.Null(second.CommitSha);
+    }
+
+    [Fact]
     public async Task ATakenVersionIsBoundWithoutOneRequestToTheSource()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -530,12 +608,16 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
     {
         // The caller's records are the delivered results, member for member: the engine writes
         // the PDF worker's result and the orchestration worker reads it through its own record.
+        // One answer carries the publication provenance a version taken from the object store
+        // holds, the other the commit a version taken before it holds.
         var taken = new TakeTemplateVersionResult(
             Template,
             ByNameFixtures.Second,
             Owner,
             true,
-            "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+            null,
+            TemplateVersionRecords.DescriptorSha256,
+            TemplateVersionRecords.Objects,
             new string('a', 64),
             1_024,
             "SCRIBAN",
@@ -549,6 +631,15 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         Assert.Equal(taken.OwnerConsumerId, takenMirror.OwnerConsumerId);
         Assert.Equal(taken.Shared, takenMirror.Shared);
         Assert.Equal(taken.CommitSha, takenMirror.CommitSha);
+        Assert.Equal(taken.SourceDescriptorSha256, takenMirror.SourceDescriptorSha256);
+        Assert.NotNull(taken.SourceObjects);
+        Assert.NotNull(takenMirror.SourceObjects);
+        Assert.Equal(taken.SourceObjects.Length, takenMirror.SourceObjects!.Length);
+        for (var index = 0; index < taken.SourceObjects.Length; index++)
+        {
+            Assert.Equal(taken.SourceObjects[index], takenMirror.SourceObjects[index]);
+        }
+
         Assert.Equal(taken.PackageSha256, takenMirror.PackageSha256);
         Assert.Equal(taken.PackageSize, takenMirror.PackageSize);
         Assert.Equal(taken.Engine, takenMirror.Engine);
@@ -562,6 +653,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             Owner,
             true,
             "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+            null,
+            null,
             new string('b', 64),
             2_048,
             "SCRIBAN",
@@ -575,6 +668,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         Assert.Equal(resolved.OwnerConsumerId, resolvedMirror.OwnerConsumerId);
         Assert.Equal(resolved.Shared, resolvedMirror.Shared);
         Assert.Equal(resolved.CommitSha, resolvedMirror.CommitSha);
+        Assert.Equal(resolved.SourceDescriptorSha256, resolvedMirror.SourceDescriptorSha256);
+        Assert.Equal(resolved.SourceObjects, resolvedMirror.SourceObjects);
         Assert.Equal(resolved.PackageSha256, resolvedMirror.PackageSha256);
         Assert.Equal(resolved.PackageSize, resolvedMirror.PackageSize);
         Assert.Equal(resolved.Engine, resolvedMirror.Engine);
@@ -821,8 +916,10 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             SELECT report_job_id AS "ReportJobId", template_id AS "TemplateId",
                    reference_form AS "ReferenceForm", requested_version AS "RequestedVersion",
                    baseline_version AS "BaselineVersion", resolved_version AS "ResolvedVersion",
-                   commit_sha AS "CommitSha", package_sha256 AS "PackageSha256", engine AS "Engine",
-                   engine_version AS "EngineVersion", schema_ref AS "SchemaRef", resolved_at AS "ResolvedAt"
+                   commit_sha AS "CommitSha", source_descriptor_sha256 AS "SourceDescriptorSha256",
+                   source_objects::text AS "SourceObjectsJson", package_sha256 AS "PackageSha256",
+                   engine AS "Engine", engine_version AS "EngineVersion", schema_ref AS "SchemaRef",
+                   resolved_at AS "ResolvedAt"
               FROM report_service.template_references
              WHERE report_job_id = @ReportJobId
             """,
@@ -924,6 +1021,10 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
         public string? CommitSha { get; set; }
 
+        public string? SourceDescriptorSha256 { get; set; }
+
+        public string? SourceObjectsJson { get; set; }
+
         public string? PackageSha256 { get; set; }
 
         public string? Engine { get; set; }
@@ -947,7 +1048,9 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
                 return new TemplatePin(
                     TemplateId,
                     ResolvedVersion,
-                    CommitSha!,
+                    CommitSha,
+                    SourceDescriptorSha256,
+                    SourceObjectsJson is null ? null : TemplateSourceObjects.Read(SourceObjectsJson),
                     PackageSha256!,
                     engine!.Value,
                     EngineVersion!,

@@ -1,9 +1,10 @@
 # Template version operations
 
 A consumer reads back what the service fixed when it took a template version, so
-its own tooling can show which version its jobs render with — the commit it was
-read from, the hash of the package the service keeps, the engine and the engine
-version. This page describes the read, the answer and every refusal it gives.
+its own tooling can show which version its jobs render with — the hash of the
+publication descriptor the take verified, the hash of the package the service
+keeps, the files the take verified, the engine and the engine version. This page
+describes the read, the answer and every refusal it gives.
 
 The take itself is the service's job step, not an operation of this API: a
 consumer never uploads a template and never asks for one to be taken. A version
@@ -23,7 +24,11 @@ Content-Type: application/json
 {
   "templateId": "invoice-energy",
   "version": "1.1.0",
-  "commitSha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+  "sourceDescriptorHash": "sha256:d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f",
+  "objects": [
+    { "path": "schema.json", "size": 1204, "sha256": "e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70" },
+    { "path": "template.yaml", "size": 868, "sha256": "f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7081" }
+  ],
   "packageHash": "sha256:5e88e6f1b5f8d8f0eaa2b2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4",
   "engine": "SCRIBAN",
   "engineVersion": "7.5.1",
@@ -37,7 +42,8 @@ Content-Type: application/json
 |--------|---------|
 | `templateId` | The template's identifier, as the version's folder and its manifest name it. |
 | `version` | The version, exactly as the manifest declares it; build metadata is part of the value. |
-| `commitSha` | The commit of the configured repository and branch the whole read was pinned to. |
+| `sourceDescriptorHash` | The SHA-256 of the publication descriptor the take verified, prefixed with the algorithm it was computed with; `null` for a version taken before the service read from the object store. |
+| `objects` | The files the take verified, each with its package-relative path, its size and the SHA-256 of its bytes; `null` for a version taken before the service read from the object store. |
 | `packageHash` | The SHA-256 of the package's bytes, prefixed with the algorithm it was computed with. |
 | `engine` | The engine that renders the package: `SCRIBAN`, `HANDLEBARS` or `LIQUID_FLUID`. |
 | `engineVersion` | The version of that engine this deployment renders with. |
@@ -49,7 +55,14 @@ Every member is always present, and none of them changes after the version is
 taken: the package is write-once and the record it is published through is
 inserted once, so a change to the version in the repository can never alter what
 this read answers. A changed version is a new version; the service logs the
-conflict under the old one and keeps what it has.
+conflict under the old one and keeps what it has. No answer carries a commit
+SHA.
+
+A version taken before the service read its template source from the object
+store answers `null` for `sourceDescriptorHash` and `objects`: it has no
+publication provenance to report. Its `packageHash`, `engine`, `engineVersion`,
+`owner` and `shared` are unchanged, and the jobs it was pinned to keep rendering
+from the copy it recorded.
 
 `templateId` must be a lower-case identifier: `a-z`, `0-9`, `.`, `_` and `-`,
 beginning and ending with a letter or a digit, at most 128 characters.

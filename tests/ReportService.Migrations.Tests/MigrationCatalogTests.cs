@@ -31,12 +31,14 @@ public sealed class MigrationCatalogTests
 
     private const string VersionSyntax = "0010_template-versions-version-syntax.sql";
 
+    private const string Provenance = "0011_template-version-provenance.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(VersionSyntax, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Provenance, MigrationCatalog.ExpectedVersion);
     }
 
     /// <summary>
@@ -50,14 +52,52 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(10, MigrationCatalog.Scripts.Count);
-        Assert.Equal(VersionSyntax, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(VersionSyntax, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(11, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ADD COLUMN", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The eleventh script states the publication provenance a version and a pin
+    /// carry: it relaxes the two Git columns, adds the five provenance columns,
+    /// names the four constraints, replaces the pin's completeness constraint and
+    /// the guard function, and rewrites no row — no table or column is dropped, no
+    /// value is updated, deleted or inserted. That the server applies it is a case
+    /// against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheProvenanceScriptRelaxesTwoColumnsAddsFiveAndReplacesOneConstraint()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
+
+        Assert.Equal(11, MigrationCatalog.Scripts.Count);
+        Assert.Equal(Provenance, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(Provenance, MigrationCatalog.ExpectedVersion);
+        Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN source_descriptor_sha256 text NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN source_descriptor_key text NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN source_objects jsonb NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Equal(5, CountOf(script.Sql, "ADD COLUMN"));
+        Assert.Contains("ADD CONSTRAINT template_versions_source_descriptor_sha256 CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT template_versions_provenance CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT template_references_source_descriptor_sha256 CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT template_references_pin_shapes CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.Equal(4, CountOf(script.Sql, "ADD CONSTRAINT"));
+        Assert.Contains("DROP CONSTRAINT template_references_pin_complete", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE OR REPLACE FUNCTION report_service.template_references_guard", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("DROP TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP COLUMN", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
+
+        // Three DROP tokens and no more: the two NOT NULL marks and the superseded constraint.
+        Assert.Equal(3, CountOf(script.Sql, "DROP"));
     }
 
     [Fact]
@@ -157,5 +197,18 @@ public sealed class MigrationCatalogTests
 
         Assert.Empty(scripts);
         Assert.Equal(SchemaVersion.None, MigrationCatalog.ExpectedVersionOf(scripts));
+    }
+
+    private static int CountOf(string text, string token)
+    {
+        var count = 0;
+        for (var index = text.IndexOf(token, StringComparison.Ordinal);
+             index >= 0;
+             index = text.IndexOf(token, index + token.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
     }
 }

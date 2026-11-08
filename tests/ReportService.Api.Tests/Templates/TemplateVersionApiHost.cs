@@ -82,17 +82,25 @@ internal sealed class TemplateVersionApiHost : IDisposable
     /// <param name="owner">The consumer that owns it.</param>
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version.</param>
+    /// <param name="storageTaken">Whether the version records the object-store publication provenance instead of a commit.</param>
     public TemplateVersionRecord Seed(
         DateTimeOffset? takenAt = null,
         string owner = Owner,
         string templateId = "invoice-energy",
-        string version = "1.1.0")
+        string version = "1.1.0",
+        bool storageTaken = false)
     {
-        var record = TemplateVersionRecords.Sample(
-            templateId: templateId,
-            version: version,
-            owner: owner,
-            takenAt: takenAt ?? TakenAt);
+        var record = storageTaken
+            ? TemplateVersionRecords.StorageSample(
+                templateId: templateId,
+                version: version,
+                owner: owner,
+                takenAt: takenAt ?? TakenAt)
+            : TemplateVersionRecords.Sample(
+                templateId: templateId,
+                version: version,
+                owner: owner,
+                takenAt: takenAt ?? TakenAt);
         Store.Seed(record);
         return record;
     }

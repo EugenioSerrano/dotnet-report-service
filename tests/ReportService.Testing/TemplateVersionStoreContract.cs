@@ -44,6 +44,9 @@ public abstract class TemplateVersionStoreContract
         Assert.Equal(written.SchemaRef, found.SchemaRef);
         Assert.Equal(written.CommitSha, found.CommitSha);
         Assert.Equal(written.SourceTreeSha, found.SourceTreeSha);
+        Assert.Null(found.SourceDescriptorSha256);
+        Assert.Null(found.SourceDescriptorKey);
+        Assert.Null(found.SourceObjects);
         Assert.Equal(written.PackageSha256, found.PackageSha256);
         Assert.Equal(written.PackageSize, found.PackageSize);
         Assert.Equal(written.FileCount, found.FileCount);
@@ -54,6 +57,25 @@ public abstract class TemplateVersionStoreContract
             + $"written: {written.ManifestJson}{Environment.NewLine}"
             + $"found: {found.ManifestJson}");
         Assert.Equal(written.TakenAt, found.TakenAt);
+    }
+
+    [Fact]
+    public async Task AStorageTakenVersionIsFoundWithItsPublicationProvenance()
+    {
+        var written = TemplateVersionRecords.StorageSample();
+
+        var insert = await Store.TryInsertAsync(written, TestContext.Current.CancellationToken);
+
+        Assert.True(insert.WasInserted);
+        var found = await Store.FindAsync(written.TemplateId, written.Version, TestContext.Current.CancellationToken);
+        Assert.NotNull(found);
+        Assert.Null(found.CommitSha);
+        Assert.Null(found.SourceTreeSha);
+        Assert.Equal(written.SourceDescriptorSha256, found.SourceDescriptorSha256);
+        Assert.Equal(written.SourceDescriptorKey, found.SourceDescriptorKey);
+        Assert.NotNull(found.SourceObjects);
+        Assert.Equal(written.SourceObjects, found.SourceObjects);
+        Assert.Equal(found.FileCount, found.SourceObjects!.Length);
     }
 
     [Fact]

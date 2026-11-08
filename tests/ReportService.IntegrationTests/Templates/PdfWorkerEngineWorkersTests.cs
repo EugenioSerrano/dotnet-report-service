@@ -404,7 +404,8 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
                 var row = await connection.QuerySingleOrDefaultAsync<PinRow>(new CommandDefinition(
                     """
                     SELECT template_id AS "TemplateId", resolved_version AS "ResolvedVersion",
-                           commit_sha AS "CommitSha", package_sha256 AS "PackageSha256",
+                           commit_sha AS "CommitSha", source_descriptor_sha256 AS "SourceDescriptorSha256",
+                           source_objects::text AS "SourceObjectsJson", package_sha256 AS "PackageSha256",
                            engine AS "Engine", engine_version AS "EngineVersion",
                            schema_ref AS "SchemaRef", resolved_at AS "ResolvedAt"
                       FROM report_service.template_references
@@ -486,6 +487,10 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
 
         public string CommitSha { get; set; } = string.Empty;
 
+        public string? SourceDescriptorSha256 { get; set; }
+
+        public string? SourceObjectsJson { get; set; }
+
         public string PackageSha256 { get; set; } = string.Empty;
 
         public string Engine { get; set; } = string.Empty;
@@ -502,6 +507,8 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
                 TemplateId,
                 ResolvedVersion,
                 CommitSha,
+                SourceDescriptorSha256,
+                SourceObjectsJson is null ? null : TemplateSourceObjects.Read(SourceObjectsJson),
                 PackageSha256,
                 TemplateEngine.Scriban,
                 EngineVersion,

@@ -59,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A job's template version is now fixed with the publication descriptor's hash, the package hash
+  and the verified per-file list instead of a commit; the version's metadata answer carries the
+  same provenance and no commit SHA. A version taken before the change keeps the pin it recorded
+  and keeps rendering from its copy.
 - The job's run continues past its data step: it moves the job to running, starts the
   output's own execution, and closes the job from the output's outcome. The steps are gated
   by a patch, so every history recorded before them still replays unchanged.

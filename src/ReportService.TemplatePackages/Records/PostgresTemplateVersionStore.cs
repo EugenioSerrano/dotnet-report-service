@@ -11,7 +11,10 @@ namespace ReportService.TemplatePackages.Records;
 /// written with constant SQL over a pooled data source. The insert lets the
 /// primary key decide a race: the loser reads the winner's row in the same
 /// transaction and reports it, so two takes of one version can never leave two
-/// rows. The stored manifest is kept as a JSON document and read back in the
+/// rows. A row holds one of the two source shapes: the commit and tree of a
+/// version taken before the object-store source, or the publication descriptor's
+/// hash, the key it was read from and the verified file list of one taken from
+/// it. The stored manifest is kept as a JSON document and read back in the
 /// column's own canonical text; every reader parses the document, so member
 /// order and spacing belong to the storage and never to a reader.
 /// </summary>
@@ -37,7 +40,10 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
                file_count        AS "FileCount",
                object_key        AS "ObjectKey",
                manifest::text    AS "ManifestJson",
-               taken_at          AS "TakenAt"
+               taken_at          AS "TakenAt",
+               source_descriptor_sha256 AS "SourceDescriptorSha256",
+               source_descriptor_key    AS "SourceDescriptorKey",
+               source_objects::text     AS "SourceObjectsJson"
         FROM report_service.template_versions
         """;
 
@@ -56,11 +62,12 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
         INSERT INTO report_service.template_versions
             (template_id, version, owner_consumer_id, shared, manifest_version, engine, engine_version,
              schema_ref, commit_sha, source_tree_sha, package_sha256, package_size, file_count,
-             object_key, manifest, taken_at)
+             object_key, manifest, taken_at, source_descriptor_sha256, source_descriptor_key, source_objects)
         VALUES
             (@TemplateId, @Version, @OwnerConsumerId, @Shared, @ManifestVersion, @EngineText, @EngineVersion,
              @SchemaRef, @CommitSha, @SourceTreeSha, @PackageSha256, @PackageSize, @FileCount,
-             @ObjectKey, CAST(@ManifestJson AS jsonb), @TakenAt)
+             @ObjectKey, CAST(@ManifestJson AS jsonb), @TakenAt, @SourceDescriptorSha256, @SourceDescriptorKey,
+             CAST(@SourceObjectsJson AS jsonb))
         ON CONFLICT (template_id, version) DO NOTHING
         RETURNING template_id
         """;
@@ -138,6 +145,11 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
             ObjectKey = record.ObjectKey.ToString(),
             record.ManifestJson,
             TakenAt = record.TakenAt.ToUniversalTime().UtcDateTime,
+            record.SourceDescriptorSha256,
+            record.SourceDescriptorKey,
+            SourceObjectsJson = record.SourceObjects is null
+                ? null
+                : TemplateSourceObjects.Write(record.SourceObjects),
         };
 
         try
@@ -173,8 +185,15 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
         }
     }
 
-    private static TemplateVersionRecord ToRecord(TemplateVersionRow row) =>
-        new(
+    private static TemplateVersionRecord ToRecord(TemplateVersionRow row)
+    {
+        var sourceObjects = row.SourceObjectsJson is null ? null : TemplateSourceObjects.Read(row.SourceObjectsJson);
+        if (sourceObjects is not null && sourceObjects.Length != row.FileCount)
+        {
+            throw new InvalidOperationException("the stored source objects do not match the row's file count");
+        }
+
+        return new(
             row.TemplateId,
             row.Version,
             row.OwnerConsumerId,
@@ -193,7 +212,11 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
             ObjectKey.Create(row.ObjectKey),
             TemplateManifestJson.ReadTyped(row.ManifestJson),
             row.ManifestJson,
-            new DateTimeOffset(DateTime.SpecifyKind(row.TakenAt, DateTimeKind.Utc)));
+            new DateTimeOffset(DateTime.SpecifyKind(row.TakenAt, DateTimeKind.Utc)),
+            row.SourceDescriptorSha256,
+            row.SourceDescriptorKey,
+            sourceObjects);
+    }
 
     /// <summary>One row of the table, as the statements above read it.</summary>
     internal sealed class TemplateVersionRow
@@ -222,11 +245,11 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
         /// <summary>The package-relative path of the schema.</summary>
         public string SchemaRef { get; init; } = string.Empty;
 
-        /// <summary>The commit the version was read at.</summary>
-        public string CommitSha { get; init; } = string.Empty;
+        /// <summary>The commit the version was read at; null for a version taken from the object store.</summary>
+        public string? CommitSha { get; init; }
 
-        /// <summary>The git tree of the version's folder at that commit.</summary>
-        public string SourceTreeSha { get; init; } = string.Empty;
+        /// <summary>The git tree of the version's folder at that commit; null for a version taken from the object store.</summary>
+        public string? SourceTreeSha { get; init; }
 
         /// <summary>The package's SHA-256.</summary>
         public string PackageSha256 { get; init; } = string.Empty;
@@ -245,5 +268,14 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
 
         /// <summary>When the version was taken.</summary>
         public DateTime TakenAt { get; init; }
+
+        /// <summary>The publication descriptor's hash; a version taken from the object store only.</summary>
+        public string? SourceDescriptorSha256 { get; init; }
+
+        /// <summary>Where the source kept the publication descriptor; a version taken from the object store only.</summary>
+        public string? SourceDescriptorKey { get; init; }
+
+        /// <summary>The stored verified file list; a version taken from the object store only.</summary>
+        public string? SourceObjectsJson { get; init; }
     }
 }

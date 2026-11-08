@@ -49,6 +49,8 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
         Assert.Equal(Consumer, result.OwnerConsumerId);
         Assert.False(result.Shared);
         Assert.Equal(record.CommitSha, result.CommitSha);
+        Assert.Null(result.SourceDescriptorSha256);
+        Assert.Null(result.SourceObjects);
         Assert.Equal(record.PackageSha256, result.PackageSha256);
         Assert.Equal(record.PackageSize, result.PackageSize);
         Assert.Equal(TemplateEngineNames.ToStoredText(record.Engine), result.Engine);
@@ -58,6 +60,24 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
         // The result carries no manifest and no path: the caller pins identifiers only.
         Assert.DoesNotContain(record.ObjectKey.ToString(), result.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("manifest", result.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AStorageTakenVersionIsAnsweredWithItsPublicationProvenance()
+    {
+        SeedSource("1.0.0", Version);
+        var record = TemplateVersionRecords.StorageSample(Template, Version, packageSha256: new string('d', 64));
+        _take.SeedTaken(Template, Version, record);
+
+        var result = await Resolve(Consumer);
+
+        Assert.Equal(ResolveTemplateVersionOutcomes.Resolved, result.Outcome);
+        Assert.Equal(Template, result.TemplateId);
+        Assert.Equal(Version, result.Version);
+        Assert.Null(result.CommitSha);
+        Assert.Equal(record.SourceDescriptorSha256, result.SourceDescriptorSha256);
+        Assert.Equal(record.SourceObjects, result.SourceObjects);
+        Assert.Equal(record.PackageSha256, result.PackageSha256);
     }
 
     [Fact]

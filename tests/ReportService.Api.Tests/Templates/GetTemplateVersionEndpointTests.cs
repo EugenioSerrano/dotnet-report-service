@@ -17,10 +17,10 @@ namespace ReportService.Api.Tests.Templates;
 public sealed class GetTemplateVersionEndpointTests
 {
     [Fact]
-    public async Task TheOwnerReadsWhatTheTakeFixedAboutItsVersion()
+    public async Task TheOwnerReadsTheTenMembersOfTheVersionItOwns()
     {
         using var host = new TemplateVersionApiHost();
-        var record = host.Seed();
+        var record = host.Seed(storageTaken: true);
 
         using var response = await host.Client.SendAsync(
             TemplateVersionApiHost.ReadRequest(record.TemplateId, record.Version, TemplateVersionApiHost.Owner),
@@ -32,18 +32,55 @@ public sealed class GetTemplateVersionEndpointTests
         var members = answer.EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal).ToArray();
         Assert.Equal(
             [
-                "commitSha", "engine", "engineVersion", "owner", "packageHash", "shared", "takenAt", "templateId", "version",
+                "engine", "engineVersion", "objects", "owner", "packageHash",
+                "shared", "sourceDescriptorHash", "takenAt", "templateId", "version",
             ],
             members);
         Assert.Equal("invoice-energy", answer.GetProperty("templateId").GetString());
         Assert.Equal("1.1.0", answer.GetProperty("version").GetString());
-        Assert.Equal(TemplateVersionRecords.CommitSha, answer.GetProperty("commitSha").GetString());
+        Assert.Equal("sha256:" + TemplateVersionRecords.DescriptorSha256, answer.GetProperty("sourceDescriptorHash").GetString());
+        var objects = answer.GetProperty("objects").EnumerateArray().ToArray();
+        Assert.Equal(TemplateVersionRecords.Objects.Length, objects.Length);
+        for (var index = 0; index < objects.Length; index++)
+        {
+            Assert.Equal(TemplateVersionRecords.Objects[index].Path, objects[index].GetProperty("path").GetString());
+            Assert.Equal(TemplateVersionRecords.Objects[index].Size, objects[index].GetProperty("size").GetInt64());
+            Assert.Equal(TemplateVersionRecords.Objects[index].Sha256, objects[index].GetProperty("sha256").GetString());
+        }
+
         Assert.Equal("sha256:" + TemplateVersionRecords.PackageSha256, answer.GetProperty("packageHash").GetString());
         Assert.Equal("SCRIBAN", answer.GetProperty("engine").GetString());
         Assert.Equal("7.5.1", answer.GetProperty("engineVersion").GetString());
         Assert.Equal(TemplateVersionApiHost.Owner, answer.GetProperty("owner").GetString());
         Assert.False(answer.GetProperty("shared").GetBoolean());
+        Assert.False(answer.TryGetProperty("commitSha", out _));
         Assert.Equal(1, host.Store.FindCalls);
+    }
+
+    [Fact]
+    public async Task APreChangeVersionAnswersWithoutACommitAndWithoutPublicationProvenance()
+    {
+        using var host = new TemplateVersionApiHost();
+        var record = host.Seed();
+
+        using var response = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest(record.TemplateId, record.Version, TemplateVersionApiHost.Owner),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var answer = await AnswerAsync(response);
+        var members = answer.EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(
+            [
+                "engine", "engineVersion", "objects", "owner", "packageHash",
+                "shared", "sourceDescriptorHash", "takenAt", "templateId", "version",
+            ],
+            members);
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("sourceDescriptorHash").ValueKind);
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("objects").ValueKind);
+        Assert.False(answer.TryGetProperty("commitSha", out _));
+        Assert.Equal("sha256:" + TemplateVersionRecords.PackageSha256, answer.GetProperty("packageHash").GetString());
+        Assert.Equal(TemplateVersionApiHost.Owner, answer.GetProperty("owner").GetString());
     }
 
     [Fact]

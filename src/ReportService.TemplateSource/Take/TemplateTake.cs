@@ -279,7 +279,10 @@ public sealed partial class TemplateTake
                 written.Value!,
                 candidate.Manifest,
                 manifestRead.CanonicalJson!,
-                _clock.GetUtcNow());
+                _clock.GetUtcNow(),
+                SourceDescriptorSha256: null,
+                SourceDescriptorKey: null,
+                SourceObjects: null);
 
             // 11. Visible only through the record, and only once.
             var insert = await _versions.TryInsertAsync(record, cancellationToken).ConfigureAwait(false);

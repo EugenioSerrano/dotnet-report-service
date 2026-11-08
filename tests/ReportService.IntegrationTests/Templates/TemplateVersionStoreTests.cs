@@ -135,6 +135,52 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
         Assert.Equal(record.TakenAt.ToUniversalTime(), read.TakenAt.ToUniversalTime());
     }
 
+    [Fact]
+    public async Task AStorageTakenVersionRoundTripsWithItsPublicationProvenance()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new PostgresTemplateVersionStore(_dataSource!);
+        var record = TemplateVersionRecords.StorageSample(templateId: "storage-round-trip", version: "1.1.0");
+
+        Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
+
+        var read = Assert.IsType<TemplateVersionRecord>(await store.FindAsync(record.TemplateId, record.Version, cancellationToken));
+        Assert.Null(read.CommitSha);
+        Assert.Null(read.SourceTreeSha);
+        Assert.Equal(record.SourceDescriptorSha256, read.SourceDescriptorSha256);
+        Assert.Equal(record.SourceDescriptorKey, read.SourceDescriptorKey);
+        Assert.Equal(record.SourceObjects, read.SourceObjects);
+        Assert.Equal(read.FileCount, read.SourceObjects!.Length);
+        Assert.Equal(record.PackageSha256, read.PackageSha256);
+    }
+
+    public static TheoryData<string, string> MixedTakenShapes => new()
+    {
+        { "commit_sha = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678'", "template_versions_provenance" },
+        { "source_tree_sha = 'b2c3d4e5f60718293a4b5c6d7e8f90123456789a'", "template_versions_provenance" },
+        { "source_descriptor_key = NULL", "template_versions_provenance" },
+        { "source_descriptor_sha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'", "template_versions_source_descriptor_sha256" },
+    };
+
+    [Theory]
+    [MemberData(nameof(MixedTakenShapes))]
+    public async Task TheTableRefusesAMixtureOfTheTwoTakenShapes(string assignment, string constraint)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new PostgresTemplateVersionStore(_dataSource!);
+        var templateId = "mixture-" + Guid.NewGuid().ToString("N");
+        var record = TemplateVersionRecords.StorageSample(templateId: templateId, version: "1.1.0");
+        Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
+
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        var exception = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+            $"UPDATE report_service.template_versions SET {assignment} WHERE template_id = '{templateId}'",
+            cancellationToken: cancellationToken)));
+
+        Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+        Assert.Equal(constraint, exception.ConstraintName);
+    }
+
     [Theory]
     [InlineData("UPDATE report_service.template_versions SET engine_version = 'not-a-version'")]
     [InlineData("UPDATE report_service.template_versions SET engine = 'RAZOR'")]
@@ -174,30 +220,36 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
             """,
             cancellationToken: cancellationToken));
 
-        // The pin of the change that writes it: every resolved column, tied to the record.
+        // The pin of the change that writes it: every resolved column, tied to the record,
+        // in exactly one of the two complete shapes or absent — never a mixture.
         await connection.ExecuteAsync(new CommandDefinition(
             """
             ALTER TABLE scratch_pin.template_references
-                ADD COLUMN resolved_version text        NULL,
-                ADD COLUMN commit_sha       text        NULL,
-                ADD COLUMN package_sha256   text        NULL,
-                ADD COLUMN engine           text        NULL,
-                ADD COLUMN engine_version   text        NULL,
-                ADD COLUMN schema_ref       text        NULL,
-                ADD COLUMN resolved_at      timestamptz NULL,
+                ADD COLUMN resolved_version          text        NULL,
+                ADD COLUMN commit_sha                text        NULL,
+                ADD COLUMN source_descriptor_sha256  text        NULL,
+                ADD COLUMN package_sha256            text        NULL,
+                ADD COLUMN source_objects            jsonb       NULL,
+                ADD COLUMN engine                    text        NULL,
+                ADD COLUMN engine_version            text        NULL,
+                ADD COLUMN schema_ref                text        NULL,
+                ADD COLUMN resolved_at               timestamptz NULL,
                 ADD CONSTRAINT template_references_pin_version
                     FOREIGN KEY (template_id, resolved_version)
                     REFERENCES scratch_pin.template_versions (template_id, version),
-                ADD CONSTRAINT template_references_pin_complete CHECK (
-                    (resolved_version IS NULL) = (commit_sha IS NULL) AND
-                    (resolved_version IS NULL) = (package_sha256 IS NULL) AND
-                    (resolved_version IS NULL) = (engine IS NULL) AND
-                    (resolved_version IS NULL) = (engine_version IS NULL) AND
-                    (resolved_version IS NULL) = (schema_ref IS NULL) AND
-                    (resolved_version IS NULL) = (resolved_at IS NULL));
+                ADD CONSTRAINT template_references_pin_shapes CHECK (
+                    num_nonnulls(resolved_version, commit_sha, source_descriptor_sha256, package_sha256,
+                                 source_objects, engine, engine_version, schema_ref, resolved_at) = 0
+                    OR
+                    (commit_sha IS NOT NULL AND source_descriptor_sha256 IS NULL AND source_objects IS NULL
+                     AND num_nonnulls(resolved_version, commit_sha, package_sha256, engine, engine_version,
+                                      schema_ref, resolved_at) = 7)
+                    OR
+                    (commit_sha IS NULL AND source_descriptor_sha256 IS NOT NULL AND source_objects IS NOT NULL
+                     AND num_nonnulls(resolved_version, source_descriptor_sha256, package_sha256, source_objects,
+                                      engine, engine_version, schema_ref, resolved_at) = 8));
             """,
             cancellationToken: cancellationToken));
-
     }
 
     private static async Task<TemplateVersionInsert> InsertAsync(

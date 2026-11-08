@@ -1,4 +1,5 @@
 using ReportService.TemplateSource.Take;
+using ReportService.Testing;
 using ReportService.Workers.Pdf.Templates;
 using Temporalio.Exceptions;
 using Temporalio.Testing;
@@ -27,12 +28,33 @@ public sealed class TakeTemplateVersionActivityTests
         Assert.Equal("billing-system", result.OwnerConsumerId);
         Assert.False(result.Shared);
         Assert.Equal(harness.Source.CommitSha, result.CommitSha);
+        Assert.Null(result.SourceDescriptorSha256);
+        Assert.Null(result.SourceObjects);
         Assert.Equal(64, result.PackageSha256.Length);
         Assert.True(result.PackageSize > 0);
         Assert.Equal("SCRIBAN", result.Engine);
         Assert.Equal("7.5.1", result.EngineVersion);
         Assert.Equal("schema.json", result.SchemaRef);
         Assert.Equal(TakeTemplateVersionOutcomes.Taken, result.Outcome);
+    }
+
+    [Fact]
+    public async Task AStorageTakenVersionAnswersItsPublicationProvenance()
+    {
+        await using var harness = new TakeHarness();
+        harness.Seed("invoice-energy", "1.1.0");
+        var record = TemplateVersionRecords.StorageSample("invoice-energy", "1.1.0");
+        harness.Versions.Seed(record);
+        var activity = new TakeTemplateVersionActivity(harness.Take());
+
+        // The version was already taken from the object store: the take binds the recorded
+        // copy and answers the provenance the record holds, with no commit.
+        var result = await RunAsync(activity, "invoice-energy", "1.1.0", "billing-system");
+
+        Assert.Null(result.CommitSha);
+        Assert.Equal(record.SourceDescriptorSha256, result.SourceDescriptorSha256);
+        Assert.Equal(record.SourceObjects, result.SourceObjects);
+        Assert.Equal(TakeTemplateVersionOutcomes.AlreadyTaken, result.Outcome);
     }
 
     [Fact]

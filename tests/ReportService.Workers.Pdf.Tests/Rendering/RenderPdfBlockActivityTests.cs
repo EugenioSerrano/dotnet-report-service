@@ -331,7 +331,17 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
     }
 
     private static TemplatePin Pin(string? packageSha256 = null) =>
-        new("integrity-table", "1.0.0", new string('e', 40), packageSha256 ?? new string('f', 64), TemplateEngine.Scriban, "7.5.1", "schema.json", DateTimeOffset.UnixEpoch);
+        new(
+            "integrity-table",
+            "1.0.0",
+            new string('e', 40),
+            null,
+            null,
+            packageSha256 ?? new string('f', 64),
+            TemplateEngine.Scriban,
+            "7.5.1",
+            "schema.json",
+            DateTimeOffset.UnixEpoch);
 
     private static TemplateReferenceRecord ReferenceOf(TemplatePin pin) =>
         new(JobId, pin.TemplateId, TemplateReferenceForm.Exact) { RequestedVersion = pin.ResolvedVersion, Pin = pin };
