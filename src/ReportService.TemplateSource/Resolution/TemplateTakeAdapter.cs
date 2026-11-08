@@ -29,12 +29,11 @@ public sealed class TemplateTakeAdapter : ITemplateTake
         string templateId,
         string version,
         string requestingConsumerId,
-        SourceCommit? commit,
         string? reportJobId,
         CancellationToken cancellationToken)
     {
         var outcome = await _take
-            .TakeAsync(templateId, version, requestingConsumerId, commit, reportJobId, cancellationToken)
+            .TakeAsync(templateId, version, requestingConsumerId, reportJobId, cancellationToken)
             .ConfigureAwait(false);
 
         return outcome switch

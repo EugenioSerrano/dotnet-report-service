@@ -6,11 +6,11 @@ namespace ReportService.Testing.TemplateSource;
 
 /// <summary>
 /// The take seam held in memory: each <c>(template, version)</c> is seeded with
-/// what the take would answer — a record, or one of its own refusals with the
+/// what the take would answer - a record, or one of its own refusals with the
 /// code, the text to fix and the retryable flag. Every call is logged with the
-/// template, the version, the requesting consumer, the commit and the job, so a
-/// case can prove which version was taken and which never was, and the token the
-/// resolver passes is honoured, so a walk can be cut off inside a take.
+/// template, the version, the requesting consumer and the job, so a case can
+/// prove which version was taken and which never was, and the token the resolver
+/// passes is honoured, so a walk can be cut off inside a take.
 /// </summary>
 public sealed class InMemoryTemplateTake : ITemplateTake
 {
@@ -79,7 +79,6 @@ public sealed class InMemoryTemplateTake : ITemplateTake
         string templateId,
         string version,
         string requestingConsumerId,
-        SourceCommit? commit,
         string? reportJobId,
         CancellationToken cancellationToken)
     {
@@ -87,7 +86,7 @@ public sealed class InMemoryTemplateTake : ITemplateTake
         ArgumentException.ThrowIfNullOrEmpty(version);
         ArgumentException.ThrowIfNullOrEmpty(requestingConsumerId);
 
-        var call = new TakeCall(templateId, version, requestingConsumerId, commit?.CommitSha, reportJobId);
+        var call = new TakeCall(templateId, version, requestingConsumerId, reportJobId);
         lock (_gate)
         {
             _calls.Add(call);
@@ -114,12 +113,10 @@ public sealed class InMemoryTemplateTake : ITemplateTake
     /// <param name="TemplateId">The template's identifier.</param>
     /// <param name="Version">The version.</param>
     /// <param name="RequestingConsumerId">The consumer the take ran for.</param>
-    /// <param name="CommitSha">The commit the resolution read the candidate set at, when it had one.</param>
     /// <param name="ReportJobId">The job the take ran on behalf of, when there was one.</param>
     public sealed record TakeCall(
         string TemplateId,
         string Version,
         string RequestingConsumerId,
-        string? CommitSha,
         string? ReportJobId);
 }

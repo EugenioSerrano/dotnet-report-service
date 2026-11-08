@@ -14,8 +14,6 @@ namespace ReportService.TemplateSource.Tests.Resolution.Seam;
 /// </summary>
 public sealed class TakeAttemptTests
 {
-    private static readonly SourceCommit Commit = new("a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "b2c3d4e5f60718293a4b5c6d7e8f90123456789a");
-
     [Fact]
     public void ATakenAttemptCarriesTheRecord()
     {
@@ -55,7 +53,7 @@ public sealed class TakeAttemptTests
         take.SeedRefused("invoice-energy", "1.1.0", code, "what to fix", retryable: code == "TEMPLATE_SOURCE_UNAVAILABLE");
 
         var attempt = await take.TakeAsync(
-            "invoice-energy", "1.1.0", "billing-system", Commit, "job-0001", TestContext.Current.CancellationToken);
+            "invoice-energy", "1.1.0", "billing-system", "job-0001", TestContext.Current.CancellationToken);
 
         var refused = Assert.IsType<RefusedAttempt>(attempt);
         Assert.Equal(code, refused.Code);
@@ -68,13 +66,12 @@ public sealed class TakeAttemptTests
         var take = new InMemoryTemplateTake();
         take.SeedTaken("invoice-energy", "1.1.0", TemplateVersionRecords.Sample());
 
-        await take.TakeAsync("invoice-energy", "1.1.0", "billing-system", Commit, "job-0001", TestContext.Current.CancellationToken);
+        await take.TakeAsync("invoice-energy", "1.1.0", "billing-system", "job-0001", TestContext.Current.CancellationToken);
 
         var call = Assert.Single(take.Calls);
         Assert.Equal("invoice-energy", call.TemplateId);
         Assert.Equal("1.1.0", call.Version);
         Assert.Equal("billing-system", call.RequestingConsumerId);
-        Assert.Equal(Commit.CommitSha, call.CommitSha);
         Assert.Equal("job-0001", call.ReportJobId);
     }
 
@@ -87,6 +84,6 @@ public sealed class TakeAttemptTests
         await cancelled.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => take.TakeAsync("invoice-energy", "1.1.0", "billing-system", Commit, null, cancelled.Token));
+            () => take.TakeAsync("invoice-energy", "1.1.0", "billing-system", null, cancelled.Token));
     }
 }

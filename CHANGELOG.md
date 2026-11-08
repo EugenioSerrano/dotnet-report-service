@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A template version is read from the deployment's object storage, through the
+  deployment's own store and the `template-source` class: the version's publication
+  record is opened with the hash its own name carries and the size the listing gave,
+  checked against its own rules and read with its files, and every file is streamed
+  only against the size and SHA-256 the record declares. A version that does not
+  exist, a publication that was never completed, one published more than once, an
+  invalid record and a source that cannot be read are told apart and answered with
+  the code each one means; a completed read that contradicts its record is never
+  reported as an outage. The service only reads the class: it never writes, deletes
+  or repairs it. The by-name resolution lists the class's published versions, and the
+  version's name is enforced against the record and the manifest.
+- The taken version records the publication record's hash, the key it was read from
+  and the verified file list, and its commit columns are empty; a version taken
+  before the change keeps the values it recorded.
+
 ### Added
 
 - A report job prints the PDF it reports on and publishes it, once: an accepted job over a

@@ -3,12 +3,14 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Checks;
 using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
@@ -47,11 +49,19 @@ internal sealed class TakeHarness : IAsyncDisposable
             Branch = "main",
             AllowInsecureLoopback = true,
         };
+        Source = TemplateSourceClass.CreateAsync(Path.Combine(_root, "source")).GetAwaiter().GetResult();
+        _sourceStore = new SwitchableStore(Source.Store);
     }
+
+    /// <summary>Makes the source class unreadable, as an outage does; or readable again.</summary>
+    /// <param name="unreachable">Whether the class cannot be listed or read.</param>
+    public void SetUnreachable(bool unreachable) => _sourceStore.Fail = unreachable;
 
     public LogCapture Logs { get; }
 
-    public InMemoryTemplateSource Source { get; } = new();
+    public TemplateSourceClass Source { get; private set; } = null!;
+
+    private readonly SwitchableStore _sourceStore;
 
     public InMemoryTemplateVersionStore Versions { get; } = new();
 
@@ -61,7 +71,7 @@ internal sealed class TakeHarness : IAsyncDisposable
 
     public TemplateTake Take(IEnumerable<ITemplateVersionCheck>? checks = null, ITemplateVersionStore? versions = null) =>
         new(
-            Source,
+            new StorageTemplateSource(_sourceStore, Options, new TemplateSourceMetrics(), NullLogger<StorageTemplateSource>.Instance),
             versions ?? Versions,
             Objects,
             new TemplateManifestReader(),
@@ -79,7 +89,7 @@ internal sealed class TakeHarness : IAsyncDisposable
     /// <param name="extra">One more key, when a case needs the text to differ.</param>
     public void Seed(string templateId, string version, string owner = "billing-system", string extra = "")
     {
-        Source.SeedPackage(templateId, version, new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        Source.PublishAsync(templateId, version, new Dictionary<string, byte[]>(StringComparer.Ordinal)
         {
             ["template.yaml"] = Encoding.UTF8.GetBytes(
                 $"""
@@ -98,7 +108,7 @@ internal sealed class TakeHarness : IAsyncDisposable
                 """),
             ["schema.json"] = Encoding.UTF8.GetBytes("{}"),
             ["html/row.html.sbn"] = Encoding.UTF8.GetBytes("<tr></tr>"),
-        });
+        }).GetAwaiter().GetResult();
     }
 
     /// <summary>The record of a version another process already took, with the hash the case names.</summary>
@@ -120,8 +130,9 @@ internal sealed class TakeHarness : IAsyncDisposable
     public ITemplateVersionStore Racing(string templateId, string version, string winnerSha256) =>
         new RaceOnInsertStore(Versions, TemplateVersionRecords.Sample(templateId, version, owner: "billing-system", packageSha256: winnerSha256));
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        await Source.DisposeAsync();
         _loggerFactory.Dispose();
         try
         {
@@ -132,7 +143,45 @@ internal sealed class TakeHarness : IAsyncDisposable
             // A leftover temporary directory is not a test failure.
         }
 
-        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>A store whose source read can be made to fail, as an outage does, and answer again.</summary>
+    private sealed class SwitchableStore(IObjectStore inner) : IObjectStore
+    {
+        public bool Fail { get; set; }
+
+        public StorageCapabilities Capabilities => inner.Capabilities;
+
+        public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
+            inner.WriteAsync(key, content, cancellationToken);
+
+        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<VerifiedRead>(StorageOutcome.Transient, Failure()))
+                : inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
+
+        public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<ObjectInfo>(StorageOutcome.Transient, Failure()))
+                : inner.GetInfoAsync(key, cancellationToken);
+
+        public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            inner.DeleteAsync(key, cancellationToken);
+
+        public async IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            if (Fail)
+            {
+                throw new StorageException(StorageOutcome.Transient, Failure());
+            }
+
+            await foreach (var item in inner.ListAsync(classPrefix, cancellationToken).ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+
+        private static StorageError Failure() => new("storage.transient", "The object store did not answer.");
     }
 
     /// <summary>A store that records the winner of a race the moment this take tries to commit.</summary>
@@ -151,3 +200,6 @@ internal sealed class TakeHarness : IAsyncDisposable
         }
     }
 }
+
+
+

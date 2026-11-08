@@ -27,9 +27,9 @@ public sealed class TakeTemplateVersionActivityTests
         Assert.Equal("1.1.0", result.Version);
         Assert.Equal("billing-system", result.OwnerConsumerId);
         Assert.False(result.Shared);
-        Assert.Equal(harness.Source.CommitSha, result.CommitSha);
-        Assert.Null(result.SourceDescriptorSha256);
-        Assert.Null(result.SourceObjects);
+        Assert.Null(result.CommitSha);
+        Assert.Equal(64, result.SourceDescriptorSha256!.Length);
+        Assert.NotNull(result.SourceObjects);
         Assert.Equal(64, result.PackageSha256.Length);
         Assert.True(result.PackageSize > 0);
         Assert.Equal("SCRIBAN", result.Engine);
@@ -86,7 +86,7 @@ public sealed class TakeTemplateVersionActivityTests
         harness.Seed("invoice-energy", "1.1.0");
         var activity = new TakeTemplateVersionActivity(harness.Take());
 
-        harness.Source.SetUnreachable(true);
+        harness.SetUnreachable(true);
         var retryable = await Assert.ThrowsAsync<ApplicationFailureException>(
             () => RunAsync(activity, "invoice-energy", "1.1.0", "billing-system"));
 
@@ -118,3 +118,5 @@ public sealed class TakeTemplateVersionActivityTests
         new ActivityEnvironment().RunAsync(
             () => activity.RunAsync(new TakeTemplateVersionInput(templateId, version, consumer, "job-1")));
 }
+
+

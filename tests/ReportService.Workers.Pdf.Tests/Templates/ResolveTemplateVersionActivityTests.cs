@@ -25,7 +25,7 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
     private const string Template = "invoice-energy";
     private const string Version = "1.1.0";
 
-    private readonly InMemoryTemplateSource _source = new();
+    private readonly InMemoryTemplateSourceReader _source = new();
     private readonly InMemoryTemplateVersionStore _store = new();
     private readonly InMemoryTemplateTake _take = new();
     private readonly ManualTimeProvider _time = new(new DateTimeOffset(2026, 11, 3, 12, 0, 0, TimeSpan.Zero));
@@ -163,28 +163,9 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
     {
         foreach (var version in versions)
         {
-            _source.SeedPackage(Template, version, new Dictionary<string, byte[]>(StringComparer.Ordinal)
-            {
-                ["template.yaml"] = System.Text.Encoding.UTF8.GetBytes(
-                    $"""
-                    manifestVersion: "1.0"
-                    id: {Template}
-                    version: "{version}"
-                    owner: {Consumer}
-                    shared: false
-                    engine: scriban
-                    engineVersion: "7.5.1"
-                    dataContract:
-                      version: "1.0"
-                      profile: header-items-v1
-                      schema: schema.json
-                    """),
-                ["schema.json"] = System.Text.Encoding.UTF8.GetBytes("{}"),
-                ["html/row.html.sbn"] = System.Text.Encoding.UTF8.GetBytes("<tr></tr>"),
-            });
+            _source.SeedVersionFolder(Template, version);
         }
     }
-
     /// <summary>A store that does not answer, as a database that went away mid-resolution.</summary>
     private sealed class UnavailableStore : ITemplateVersionStore
     {
@@ -198,3 +179,4 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
             Task.FromException<TemplateVersionInsert>(new TemplateStoreUnavailableException(new TimeoutException("the store did not answer")));
     }
 }
+

@@ -21,14 +21,14 @@ public sealed class TemplateTakeMetrics : IDisposable
     /// <summary>The counter of requests the take made to the source.</summary>
     public const string SourceRequestsInstrumentName = "reportservice.template.source.requests";
 
-    /// <summary>The request kind of the commit the read is pinned to.</summary>
-    public const string CommitRequest = "commit";
+    /// <summary>The request kind of one version's publication read.</summary>
+    public const string DescriptorRequest = "descriptor";
 
-    /// <summary>The request kind of a tree read.</summary>
-    public const string TreeRequest = "tree";
+    /// <summary>The request kind of one package file's bytes.</summary>
+    public const string FileRequest = "file";
 
-    /// <summary>The request kind of one file's bytes.</summary>
-    public const string BlobRequest = "blob";
+    /// <summary>The request kind of one template's published listing.</summary>
+    public const string ListingRequest = "listing";
 
     /// <summary>The status class of a request that answered.</summary>
     public const string OkStatus = "ok";
@@ -77,7 +77,7 @@ public sealed class TemplateTakeMetrics : IDisposable
     }
 
     /// <summary>Records one request the source received.</summary>
-    /// <param name="kind">A fixed kind: commit, tree or blob.</param>
+    /// <param name="kind">A fixed kind: descriptor, file or listing.</param>
     /// <param name="statusClass">A fixed status class: ok or error.</param>
     public void SourceRequest(string kind, string statusClass) =>
         _requests.Add(

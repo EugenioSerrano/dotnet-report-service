@@ -13,16 +13,18 @@ using ReportService.TemplatePackages.Records;
 using ReportService.TemplatePackages.Versioning;
 using ReportService.TemplateSource.Checks;
 using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Source;
+using SourcePackageFile = ReportService.TemplateSource.Source.SourceFile;
 
 namespace ReportService.TemplateSource.Take;
 
 /// <summary>
-/// The take: it reads one version of one template from the configured source at
-/// one commit, keeps it as one write-once object under the content-addressed key
-/// and makes it usable by an insert-once record — once. A version already taken
-/// is answered from its record without touching the source; a version this
-/// consumer may not use is answered exactly like one that does not exist, before
-/// any refusal that could name a file of the package; a version that the source
+/// The take: it reads one version of one template from the deployment's source
+/// class, keeps it as one write-once object under the content-addressed key and
+/// makes it usable by an insert-once record - once. A version already taken is
+/// answered from its record without touching the source; a version this consumer
+/// may not use is answered exactly like one that does not exist, before any
+/// refusal that could name a file of the package; a version that the source
 /// changed under a take that had already read it is logged and never replaces the
 /// copy. Nothing is written before the version's owner is known, and the scratch
 /// directory is removed on every path.
@@ -30,7 +32,8 @@ namespace ReportService.TemplateSource.Take;
 /// The requesting consumer is a parameter, not an ambient value: the take decides
 /// visibility twice, on the record it meets and on the manifest of the version it
 /// read, and the checks of the seam run only for a caller that may use the
-/// version.
+/// version. The manifest is read first and the gate runs before any other object
+/// of the version is read.
 /// </para>
 /// </summary>
 public sealed partial class TemplateTake
@@ -48,8 +51,6 @@ public sealed partial class TemplateTake
 
     private const string SourceUnavailableReason = "The template source could not be read. The version may be retried later.";
 
-    private const string SourceMisconfiguredReason = "The template source is not configured for the repository and branch this service reads. The version may be retried later.";
-
     private const string StorageReason = "The taken copy could not be stored. The version may be retried later.";
 
     private const string StoreReason = "The template version store did not answer. The take may be retried later.";
@@ -58,7 +59,7 @@ public sealed partial class TemplateTake
 
     private static readonly TimeSpan DeadlineSlack = TimeSpan.FromSeconds(1);
 
-    private readonly ITemplateSource _source;
+    private readonly ITemplateSourceReader _reader;
 
     private readonly ITemplateVersionStore _versions;
 
@@ -79,7 +80,7 @@ public sealed partial class TemplateTake
     private readonly ILogger<TemplateTake> _logger;
 
     /// <summary>Creates the take with the collaborators the process owns.</summary>
-    /// <param name="source">The configured template source.</param>
+    /// <param name="reader">The deployment's source class.</param>
     /// <param name="versions">The taken versions.</param>
     /// <param name="objects">The object store the packages are kept in.</param>
     /// <param name="manifests">The one reader of <c>template.yaml</c>.</param>
@@ -90,7 +91,7 @@ public sealed partial class TemplateTake
     /// <param name="options">The bounds one read stays inside.</param>
     /// <param name="logger">The take's log.</param>
     public TemplateTake(
-        ITemplateSource source,
+        ITemplateSourceReader reader,
         ITemplateVersionStore versions,
         IObjectStore objects,
         TemplateManifestReader manifests,
@@ -101,7 +102,7 @@ public sealed partial class TemplateTake
         IOptions<TemplateSourceOptions> options,
         ILogger<TemplateTake> logger)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(versions);
         ArgumentNullException.ThrowIfNull(objects);
         ArgumentNullException.ThrowIfNull(manifests);
@@ -112,7 +113,7 @@ public sealed partial class TemplateTake
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _source = source;
+        _reader = reader;
         _versions = versions;
         _objects = objects;
         _manifests = manifests;
@@ -128,14 +129,12 @@ public sealed partial class TemplateTake
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version to take.</param>
     /// <param name="requestingConsumerId">The consumer the version is taken for; a version it may not use is answered as missing.</param>
-    /// <param name="commit">The commit a caller already resolved, or <see langword="null"/> to read the configured branch.</param>
     /// <param name="reportJobId">The job the take runs for, when there is one.</param>
     /// <param name="cancellationToken">The caller's cancellation token.</param>
     public async Task<TemplateTakeOutcome> TakeAsync(
         string templateId,
         string version,
         string requestingConsumerId,
-        SourceCommit? commit,
         string? reportJobId,
         CancellationToken cancellationToken)
     {
@@ -150,7 +149,7 @@ public sealed partial class TemplateTake
         TemplateTakeOutcome outcome;
         try
         {
-            outcome = await TakeCoreAsync(templateId, version, requestingConsumerId, commit, reportJobId, deadline.Token)
+            outcome = await TakeCoreAsync(templateId, version, requestingConsumerId, reportJobId, deadline.Token)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -179,7 +178,6 @@ public sealed partial class TemplateTake
         string templateId,
         string version,
         string requestingConsumerId,
-        SourceCommit? commit,
         string? reportJobId,
         CancellationToken cancellationToken)
     {
@@ -201,7 +199,7 @@ public sealed partial class TemplateTake
         string? scratch = null;
         try
         {
-            var read = await ReadVersionAsync(templateId, version, commit, cancellationToken).ConfigureAwait(false);
+            var read = await ReadVersionAsync(templateId, version, cancellationToken).ConfigureAwait(false);
             if (read.Refusal is not null)
             {
                 return read.Refusal;
@@ -209,8 +207,9 @@ public sealed partial class TemplateTake
 
             var taken = read.Value!;
             scratch = taken.Scratch;
+            var publication = taken.Publication;
 
-            // 5. The manifest, read once, by the one reader of YAML.
+            // 3. The manifest, read first, by the one reader of YAML.
             using var manifestFile = File.OpenRead(Path.Combine(scratch, PackagePath.ManifestFileName));
             var manifestRead = _manifests.Read(manifestFile);
             if (!manifestRead.Succeeded)
@@ -221,11 +220,19 @@ public sealed partial class TemplateTake
             // The reader accepts one document whose root is a mapping, so this is a mapping.
             var document = (JsonObject)TemplateManifestJson.Parse(manifestRead.CanonicalJson!);
 
-            // 6. Whose version it is — before every content refusal that could name a file.
+            // 4. Whose version it is - before every content refusal that could name a file.
             var owner = await OwnerAsync(document, requestingConsumerId, cancellationToken).ConfigureAwait(false);
             if (owner.Refusal is not null)
             {
                 return owner.Refusal;
+            }
+
+            // 5. Only now are the rest of the publication's files copied, each verified
+            //    against the record that named it.
+            var copied = await CopyRemainingFilesAsync(publication, scratch, cancellationToken).ConfigureAwait(false);
+            if (copied is not null)
+            {
+                return copied;
             }
 
             var identity = owner.Value!;
@@ -238,24 +245,24 @@ public sealed partial class TemplateTake
 
             var candidate = content.Value!;
 
-            // 8. The checks of the seam run only for a caller that may use the version.
+            // 6. The checks of the seam run only for a caller that may use the version.
             var check = await TemplateVersionChecks.RunAsync(
                 _checks,
-                new TemplateCandidate(templateId, version, candidate.Manifest, scratch, taken.Commit.CommitSha),
+                new TemplateCandidate(templateId, version, candidate.Manifest, scratch, publication.DescriptorSha256),
                 cancellationToken).ConfigureAwait(false);
             if (!check.Passed)
             {
                 return TemplateTakeOutcome.Refused(check.Code!, check.Reason!, retryable: false);
             }
 
-            // 9. A take that started before another one committed meets it here.
+            // 7. A take that started before another one committed meets it here.
             var raced = await _versions.FindAsync(templateId, version, cancellationToken).ConfigureAwait(false);
             if (raced is not null)
             {
-                return BindOrAnswer(raced, requestingConsumerId, candidate, taken.Commit.CommitSha, reportJobId);
+                return BindOrAnswer(raced, requestingConsumerId, candidate, publication.DescriptorSha256, reportJobId);
             }
 
-            // 10. The copy, at its content-addressed key, written once.
+            // 8. The copy, at its content-addressed key, written once.
             var written = await StoreAsync(identity.Owner, templateId, version, candidate, cancellationToken).ConfigureAwait(false);
             if (written.Refusal is not null)
             {
@@ -271,8 +278,8 @@ public sealed partial class TemplateTake
                 candidate.Manifest.Engine!.Value,
                 TemplateEngineCatalog.VersionOf(candidate.Manifest.Engine!.Value),
                 candidate.SchemaRef,
-                taken.Commit.CommitSha,
-                taken.Folder.TreeSha,
+                CommitSha: null,
+                SourceTreeSha: null,
                 candidate.PackageSha256,
                 candidate.PackageSize,
                 candidate.FileCount,
@@ -280,15 +287,20 @@ public sealed partial class TemplateTake
                 candidate.Manifest,
                 manifestRead.CanonicalJson!,
                 _clock.GetUtcNow(),
-                SourceDescriptorSha256: null,
-                SourceDescriptorKey: null,
-                SourceObjects: null);
+                SourceDescriptorSha256: publication.DescriptorSha256,
+                SourceDescriptorKey: publication.DescriptorKey.ToString(),
+                SourceObjects:
+                [
+                    .. publication.Files
+                        .OrderBy(file => file.Path, StringComparer.Ordinal)
+                        .Select(file => new TemplateSourceObject(file.Path, file.Size, file.Sha256)),
+                ]);
 
-            // 11. Visible only through the record, and only once.
+            // 9. Visible only through the record, and only once.
             var insert = await _versions.TryInsertAsync(record, cancellationToken).ConfigureAwait(false);
             return insert.WasInserted
                 ? TemplateTakeOutcome.Taken(insert.Record)
-                : BindOrAnswer(insert.Record, requestingConsumerId, candidate, taken.Commit.CommitSha, reportJobId);
+                : BindOrAnswer(insert.Record, requestingConsumerId, candidate, publication.DescriptorSha256, reportJobId);
         }
         catch (TemplateSourceException exception)
         {
@@ -308,132 +320,137 @@ public sealed partial class TemplateTake
     /// <summary>The one document of the version's manifest is <c>1.0</c>; the record's column holds it.</summary>
     private const string ManifestVersionText = "1.0";
 
-    /// <summary>Reads the version's folder at one commit and copies its files to a scratch area.</summary>
+    /// <summary>Reads the version's publication and copies its manifest first, to a fresh scratch area.</summary>
     private async Task<Step<ReadVersion>> ReadVersionAsync(
         string templateId,
         string version,
-        SourceCommit? commit,
         CancellationToken cancellationToken)
     {
-        var pinned = commit
-            ?? await RequestAsync(TemplateTakeMetrics.CommitRequest, () => _source.ResolveBranchAsync(cancellationToken)).ConfigureAwait(false);
-
-        var folder = await RequestAsync(
-            TemplateTakeMetrics.TreeRequest,
-            () => _source.FindVersionFolderAsync(pinned, templateId, version, cancellationToken)).ConfigureAwait(false);
-        if (folder is null)
+        SourceVersionRead read;
+        try
         {
-            return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateNotFound, NotFoundReason, retryable: false));
+            read = await RequestAsync(
+                TemplateTakeMetrics.DescriptorRequest,
+                () => _reader.ReadVersionAsync(templateId, version, cancellationToken)).ConfigureAwait(false);
+        }
+        catch (TemplateSourceException exception)
+        {
+            return Step<ReadVersion>.Fail(FromSource(exception));
         }
 
-        var files = await RequestAsync(
-            TemplateTakeMetrics.TreeRequest,
-            () => _source.ListFilesAsync(folder, cancellationToken)).ConfigureAwait(false);
-
-        if (Structure(files) is { } refusal)
+        switch (read)
         {
-            return Step<ReadVersion>.Fail(refusal);
+            case SourceVersionRead.Found found:
+                break;
+            case SourceVersionRead.Absent:
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateNotFound, NotFoundReason, retryable: false));
+            case SourceVersionRead.Incomplete incomplete:
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(
+                    TemplateTakeCodes.TemplateInvalid,
+                    $"Nothing was published for this version: the source holds {incomplete.FileCount.ToString(CultureInfo.InvariantCulture)} file(s) for it and no publication record.",
+                    retryable: false));
+            case SourceVersionRead.Duplicate:
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(
+                    TemplateTakeCodes.TemplateInvalid,
+                    "The version was published more than once; publish it under a new version.",
+                    retryable: false));
+            case SourceVersionRead.Unreachable unreachable:
+                _logger.LogWarning(
+                    new EventId(EventIds.SourceUnreachable, "template.source"),
+                    "The template source could not be read: {Reason}",
+                    unreachable.Reason);
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateSourceUnavailable, SourceUnavailableReason, retryable: true));
+            case SourceVersionRead.Refused refused:
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(
+                    refused.Refusal.Kind == SourceReadRefusalKind.Unsupported
+                        ? TemplateTakeCodes.UnsupportedCapability
+                        : TemplateTakeCodes.TemplateInvalid,
+                    refused.Refusal.Reason,
+                    retryable: false));
+            default:
+                throw new InvalidOperationException("the template source answered a state the take does not know");
         }
 
+        var publication = ((SourceVersionRead.Found)read).Publication;
         var scratch = Path.Combine(Path.GetTempPath(), ScratchRootName, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(scratch);
         try
         {
-            foreach (var file in files.OrderBy(entry => entry.Path, StringComparer.Ordinal))
+            var manifest = publication.Files.FirstOrDefault(file => string.Equals(file.Path, PackagePath.ManifestFileName, StringComparison.Ordinal));
+            if (manifest is null)
             {
-                var target = Path.Combine(scratch, file.Path.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                await _source.OpenFileAsync(
-                    file,
-                    async (content, token) =>
-                    {
-                        await using var copy = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                        await content.CopyToAsync(copy, token).ConfigureAwait(false);
-                    },
-                    cancellationToken).ConfigureAwait(false);
-                _metrics.SourceRequest(TemplateTakeMetrics.BlobRequest, TemplateTakeMetrics.OkStatus);
+                Delete(scratch);
+                return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(
+                    TemplateTakeCodes.TemplateInvalid,
+                    "The publication record does not name template.yaml at the root.",
+                    retryable: false));
             }
+
+            await CopyFileAsync(publication, manifest, scratch, cancellationToken).ConfigureAwait(false);
+            return Step<ReadVersion>.Ok(new ReadVersion(publication, scratch));
         }
-        catch (TemplateSourceException exception)
+        catch (SourceReadException exception)
         {
-            _metrics.SourceRequest(TemplateTakeMetrics.BlobRequest, TemplateTakeMetrics.ErrorStatus);
             Delete(scratch);
-            return Step<ReadVersion>.Fail(FromSource(exception));
+            return Step<ReadVersion>.Fail(Map(exception));
         }
         catch
         {
             Delete(scratch);
             throw;
         }
-
-        return Step<ReadVersion>.Ok(new ReadVersion(pinned, folder, files, scratch));
     }
 
-    /// <summary>The rules that make a copy safe to store, refused without naming a file.</summary>
-    private TemplateTakeOutcome? Structure(IReadOnlyList<SourceFile> files)
+    /// <summary>Copies every other file of the publication, in ordinal path order, each verified against the record.</summary>
+    private async Task<TemplateTakeOutcome?> CopyRemainingFilesAsync(
+        SourcePublication publication,
+        string scratch,
+        CancellationToken cancellationToken)
     {
-        if (files.Count > _options.MaxFiles)
+        try
         {
-            return TemplateTakeOutcome.Refused(
-                TemplateTakeCodes.TemplateInvalid,
-                $"The package holds more files than this service takes (at most {_options.MaxFiles.ToString(CultureInfo.InvariantCulture)}).",
-                retryable: false);
+            foreach (var file in publication.Files
+                .Where(file => !string.Equals(file.Path, PackagePath.ManifestFileName, StringComparison.Ordinal))
+                .OrderBy(file => file.Path, StringComparer.Ordinal))
+            {
+                await CopyFileAsync(publication, file, scratch, cancellationToken).ConfigureAwait(false);
+            }
+
+            return null;
         }
-
-        long total = 0;
-        var paths = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var file in files)
+        catch (SourceReadException exception)
         {
-            if (file.Size > _options.MaxFileBytes)
-            {
-                return TemplateTakeOutcome.Refused(
-                    TemplateTakeCodes.TemplateInvalid,
-                    $"A file is larger than this service takes (at most {_options.MaxFileBytes.ToString(CultureInfo.InvariantCulture)} bytes).",
-                    retryable: false);
-            }
-
-            total += file.Size;
-            if (total > _options.MaxPackageBytes)
-            {
-                return TemplateTakeOutcome.Refused(
-                    TemplateTakeCodes.TemplateInvalid,
-                    $"The package is larger than this service takes (at most {_options.MaxPackageBytes.ToString(CultureInfo.InvariantCulture)} bytes).",
-                    retryable: false);
-            }
-
-            if (!PackagePath.IsValid(file.Path) || !paths.Add(file.Path))
-            {
-                return TemplateTakeOutcome.Refused(
-                    TemplateTakeCodes.TemplateInvalid,
-                    "A file's path is not one a template package may hold.",
-                    retryable: false);
-            }
+            return Map(exception);
         }
+    }
 
-        // A path that is also a folder of another entry cannot be extracted as a file.
-        foreach (var path in paths)
+    private async Task CopyFileAsync(
+        SourcePublication publication,
+        SourcePackageFile file,
+        string scratch,
+        CancellationToken cancellationToken)
+    {
+        var target = Path.Combine(scratch, file.Path.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        try
         {
-            for (var index = path.IndexOf('/', StringComparison.Ordinal); index > 0; index = path.IndexOf('/', index + 1))
-            {
-                if (paths.Contains(path[..index]))
+            await _reader.OpenFileAsync(
+                publication.TemplateId,
+                publication.Version,
+                file,
+                async (content, token) =>
                 {
-                    return TemplateTakeOutcome.Refused(
-                        TemplateTakeCodes.TemplateInvalid,
-                        "The package holds a file and a folder under the same name.",
-                        retryable: false);
-                }
-            }
+                    await using var copy = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                    await content.CopyToAsync(copy, token).ConfigureAwait(false);
+                },
+                cancellationToken).ConfigureAwait(false);
+            _metrics.SourceRequest(TemplateTakeMetrics.FileRequest, TemplateTakeMetrics.OkStatus);
         }
-
-        if (!paths.Contains(PackagePath.ManifestFileName))
+        catch (SourceReadException)
         {
-            return TemplateTakeOutcome.Refused(
-                TemplateTakeCodes.TemplateInvalid,
-                "The package has no template.yaml at its root.",
-                retryable: false);
+            _metrics.SourceRequest(TemplateTakeMetrics.FileRequest, TemplateTakeMetrics.ErrorStatus);
+            throw;
         }
-
-        return null;
     }
 
     /// <summary>The version's owner and sharing, and the gate that precedes every content refusal.</summary>
@@ -533,7 +550,7 @@ public sealed partial class TemplateTake
         {
             return Step<Candidate>.Fail(TemplateTakeOutcome.Refused(
                 TemplateTakeCodes.TemplateInvalid,
-                $"The manifest id '{Printable(manifest.Id)}' does not match the template folder '{Printable(templateId)}'.",
+                $"The manifest id '{Printable(manifest.Id)}' does not match the template '{Printable(templateId)}'.",
                 retryable: false));
         }
 
@@ -541,8 +558,8 @@ public sealed partial class TemplateTake
         {
             return Step<Candidate>.Fail(TemplateTakeOutcome.Refused(
                 TemplateTakeCodes.TemplateInvalid,
-                $"The folder templates/{Printable(templateId)}/{Printable(version)}/ does not match the version '{Printable(manifest.Version)}' declared in template.yaml. "
-                + "Rename the folder or change the version so that they are equal.",
+                $"The publication found for version '{Printable(version)}' declares version '{Printable(manifest.Version)}' in template.yaml. "
+                + "Publish the manifest under the version it declares.",
                 retryable: false));
         }
 
@@ -572,14 +589,14 @@ public sealed partial class TemplateTake
             schemaRef,
             packageSha256,
             packageSize,
-            taken.Files.Count,
+            taken.Publication.FileCount,
             taken.Scratch));
     }
 
     /// <summary>Writes the package's archive to a scratch file and hashes the bytes it wrote.</summary>
     private static async Task<(string Sha256, long Size)> ArchiveAsync(ReadVersion taken, CancellationToken cancellationToken)
     {
-        var sources = taken.Files
+        var sources = taken.Publication.Files
             .Select(file => PackageFileSource.FromFile(taken.Scratch, file.Path))
             .ToList();
 
@@ -665,13 +682,13 @@ public sealed partial class TemplateTake
         TemplateVersionRecord record,
         string requestingConsumerId,
         Candidate candidate,
-        string readCommitSha,
+        string readSourceIdentity,
         string? reportJobId)
     {
         var same = string.Equals(record.PackageSha256, candidate.PackageSha256, StringComparison.Ordinal);
         if (!same)
         {
-            _conflict.Report(record, candidate.PackageSha256, readCommitSha, reportJobId);
+            _conflict.Report(record, candidate.PackageSha256, readSourceIdentity, reportJobId);
         }
 
         if (!TemplateVersionVisibility.MayUse(record, requestingConsumerId))
@@ -687,47 +704,31 @@ public sealed partial class TemplateTake
             ? TemplateTakeOutcome.AlreadyTaken(record)
             : TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateNotFound, NotFoundReason, retryable: false);
 
+    private TemplateTakeOutcome Map(SourceReadException exception)
+    {
+        if (exception.Kind == SourceReadFailureKind.Unreachable)
+        {
+            _logger.LogWarning(
+                new EventId(EventIds.SourceUnreachable, "template.source"),
+                "The template source could not be read: {Reason}",
+                exception.Message);
+            return TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateSourceUnavailable, SourceUnavailableReason, retryable: true);
+        }
+
+        return TemplateTakeOutcome.Refused(
+            exception.Kind == SourceReadFailureKind.Unsupported ? TemplateTakeCodes.UnsupportedCapability : TemplateTakeCodes.TemplateInvalid,
+            exception.Message,
+            retryable: false);
+    }
+
     /// <summary>The answer the classification of the source's own observation gives.</summary>
     private TemplateTakeOutcome FromSource(TemplateSourceException exception)
     {
-        switch (exception.Failure)
-        {
-            case TemplateSourceFailure.Unreachable:
-                _logger.LogWarning(
-                    new EventId(EventIds.SourceUnreachable, "template.source"),
-                    "The template source could not be read: {ExceptionType}",
-                    exception.GetType().Name);
-                return TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateSourceUnavailable, SourceUnavailableReason, retryable: true);
-
-            case TemplateSourceFailure.Misconfigured:
-                _logger.LogError(
-                    new EventId(EventIds.SourceMisconfigured, "source-misconfigured"),
-                    "The template source does not serve the configured repository and branch: {ExceptionType}",
-                    exception.GetType().Name);
-                return TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateSourceUnavailable, SourceMisconfiguredReason, retryable: true);
-
-            case TemplateSourceFailure.PackageTooLarge:
-                // The client's own message names a folder; the caller gets the bound only.
-                _logger.LogInformation(
-                    new EventId(EventIds.SourceRefused, "template.source"),
-                    "The package exceeds a bound the source reports: {ClientMessage}",
-                    exception.Message);
-                return TemplateTakeOutcome.Refused(
-                    TemplateTakeCodes.TemplateInvalid,
-                    "The template folder or the package holds more entries than the source will list in one answer.",
-                    retryable: false);
-
-            default:
-                // A symbolic link or a submodule: the kind, never the path.
-                _logger.LogInformation(
-                    new EventId(EventIds.SourceRefused, "template.source"),
-                    "The package holds an entry this service does not store: {ClientMessage}",
-                    exception.Message);
-                return TemplateTakeOutcome.Refused(
-                    TemplateTakeCodes.TemplateInvalid,
-                    "The package holds an entry this service does not store (a symbolic link or a submodule).",
-                    retryable: false);
-        }
+        _logger.LogWarning(
+            new EventId(EventIds.SourceUnreachable, "template.source"),
+            "The template source could not be read: {ExceptionType}",
+            exception.GetType().Name);
+        return TemplateTakeOutcome.Refused(TemplateTakeCodes.TemplateSourceUnavailable, SourceUnavailableReason, retryable: true);
     }
 
     /// <summary>Calls the source once, counting the request and its status class.</summary>
@@ -754,15 +755,7 @@ public sealed partial class TemplateTake
         && item.All(path => AnchorPath().IsMatch(path));
 
     /// <summary>The text a message may echo: printable ASCII of at most 128 characters, or nothing.</summary>
-    private static string Printable(string? value)
-    {
-        if (value is null || value.Length > 128 || value.Any(character => character < '\u0020' || character > '\u007E'))
-        {
-            return "(omitted)";
-        }
-
-        return value;
-    }
+    private static string Printable(string? value) => PublicationChecks.Printable(value);
 
     private static void Delete(string? directory)
     {
@@ -803,10 +796,6 @@ public sealed partial class TemplateTake
 
         public const int SourceUnreachable = 4102;
 
-        public const int SourceMisconfigured = 4103;
-
-        public const int SourceRefused = 4104;
-
         public const int StorageMismatch = 4105;
 
         public const int StorageFailed = 4106;
@@ -814,8 +803,8 @@ public sealed partial class TemplateTake
         public const int StoreUnavailable = 4107;
     }
 
-    /// <summary>One version as it was read: the commit, its folder, its file count and the scratch copy.</summary>
-    private sealed record ReadVersion(SourceCommit Commit, SourceFolder Folder, IReadOnlyList<SourceFile> Files, string Scratch);
+    /// <summary>One version as it was read: its verified publication and its scratch copy.</summary>
+    private sealed record ReadVersion(SourcePublication Publication, string Scratch);
 
     /// <summary>The consumer the version belongs to, and whether every consumer may use it.</summary>
     private sealed record Identity(string Owner, bool Shared);

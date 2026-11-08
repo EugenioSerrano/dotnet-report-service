@@ -21,7 +21,7 @@ public sealed class TemplateVersionResolverTests : IDisposable
     private const string Template = "invoice-energy";
     private static readonly TimeSpan DefaultDeadline = TimeSpan.FromSeconds(240);
 
-    private readonly InMemoryTemplateSource _source = new();
+    private readonly InMemoryTemplateSourceReader _source = new();
     private readonly InMemoryTemplateVersionStore _store = new();
     private readonly InMemoryTemplateTake _take = new();
     private readonly ManualTimeProvider _time = new(new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
@@ -51,7 +51,6 @@ public sealed class TemplateVersionResolverTests : IDisposable
         Assert.Equal(["1.1.0", "1.0.0"], trace.Considered);
         var call = Assert.Single(_take.Calls);
         Assert.Equal("1.1.0", call.Version);
-        Assert.Equal(_source.CommitSha, call.CommitSha);
         Assert.Equal(Consumer, call.RequestingConsumerId);
         Assert.Equal("job-0001", call.ReportJobId);
         Assert.Equal(0, _store.InsertCalls);
@@ -101,24 +100,10 @@ public sealed class TemplateVersionResolverTests : IDisposable
 
         var (outcome, _) = await Resolve();
 
-        var refused = AssertRefused(outcome, TemplateResolutionCodes.TemplateInvalid, retryable: false);
-        Assert.Contains("has no release version", refused.Reason, StringComparison.Ordinal);
-        Assert.Contains("publish a release version", refused.Reason, StringComparison.Ordinal);
-        Assert.Empty(_take.Calls);
-    }
-
-    [Fact]
-    public async Task ATruncatedListingRefusesTheTemplateWithoutTakingOrFallingBack()
-    {
-        SeedSource(Template, "1.0.0");
-        Taken("1.0.0");
-        _source.SetListingTooLarge(Template);
-
-        var (outcome, _) = await Resolve();
-
-        var refused = AssertRefused(outcome, TemplateResolutionCodes.TemplateInvalid, retryable: false);
-        Assert.Contains("too many entries", refused.Reason, StringComparison.Ordinal);
-        Assert.Contains(Template, refused.Reason, StringComparison.Ordinal);
+        // The class read answers an empty list both for a template that does not
+        // exist and for one that holds no version: the delivered not-found answer.
+        var refused = AssertRefused(outcome, TemplateResolutionCodes.TemplateNotFound, retryable: false);
+        Assert.Equal(TemplateVersionResolver.NotFoundReason, refused.Reason);
         Assert.Empty(_take.Calls);
     }
 
@@ -266,8 +251,7 @@ public sealed class TemplateVersionResolverTests : IDisposable
     {
         SeedSource(Template, "1.0.0", "1.1.0");
         Taken("1.0.0");
-        var listingCommit = _source.CommitSha;
-        _take.SeedTaken(Template, "1.1.0", Record("1.1.0", commitSha: listingCommit));
+        _take.SeedTaken(Template, "1.1.0", Record("1.1.0"));
         var published = false;
         _take.BeforeTake = _ =>
         {
@@ -282,7 +266,7 @@ public sealed class TemplateVersionResolverTests : IDisposable
 
         AssertResolved(outcome, "1.1.0", fromTakenCopy: false);
         Assert.Equal(["1.1.0", "1.0.0"], trace.Considered);
-        Assert.Equal(listingCommit, Assert.Single(_take.Calls).CommitSha);
+        Assert.Equal("1.1.0", Assert.Single(_take.Calls).Version);
     }
 
     [Fact]
@@ -299,7 +283,7 @@ public sealed class TemplateVersionResolverTests : IDisposable
         var (outcome, _) = await Resolve();
 
         AssertResolved(outcome, "1.2.0", fromTakenCopy: false);
-        Assert.Equal(_source.CommitSha, Assert.Single(_take.Calls).CommitSha);
+        Assert.Equal("1.2.0", Assert.Single(_take.Calls).Version);
     }
 
     [Fact]

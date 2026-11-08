@@ -34,24 +34,24 @@ public sealed class TemplateVersionConflict
     /// <summary>Reports that <paramref name="taken"/> differs from what the source now holds.</summary>
     /// <param name="taken">The record of the version that was taken.</param>
     /// <param name="readPackageSha256">The package hash of what the source now holds.</param>
-    /// <param name="readCommitSha">The commit the difference was read at.</param>
+    /// <param name="readSourceIdentity">The publication identity the difference was read from.</param>
     /// <param name="reportJobId">The job whose take read the source, when one did.</param>
-    public void Report(TemplateVersionRecord taken, string readPackageSha256, string readCommitSha, string? reportJobId = null)
+    public void Report(TemplateVersionRecord taken, string readPackageSha256, string readSourceIdentity, string? reportJobId = null)
     {
         ArgumentNullException.ThrowIfNull(taken);
         ArgumentException.ThrowIfNullOrEmpty(readPackageSha256);
-        ArgumentException.ThrowIfNullOrEmpty(readCommitSha);
+        ArgumentException.ThrowIfNullOrEmpty(readSourceIdentity);
 
         _logger.LogWarning(
             new EventId(EventIds.VersionConflict, EventName),
             "{Code} template {TemplateId} version {Version} changed in the template source after it was taken; the taken copy is kept. "
-            + "Publish the change under a new version. Taken package {TakenPackageSha256}, read package {ReadPackageSha256}, read commit {ReadCommitSha}, job {ReportJobId}",
+            + "Publish the change under a new version. Taken package {TakenPackageSha256}, read package {ReadPackageSha256}, read publication {ReadSourceIdentity}, job {ReportJobId}",
             Code,
             taken.TemplateId,
             taken.Version,
             taken.PackageSha256,
             readPackageSha256,
-            readCommitSha,
+            readSourceIdentity,
             reportJobId ?? "(none)");
     }
 

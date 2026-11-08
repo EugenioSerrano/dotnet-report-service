@@ -93,7 +93,7 @@ public sealed class TakeTemplateVersionActivity(TemplateTake take)
         try
         {
             outcome = await take
-                .TakeAsync(input.TemplateId, input.Version, input.RequestingConsumerId, commit: null, input.ReportJobId, cancellationToken)
+                .TakeAsync(input.TemplateId, input.Version, input.RequestingConsumerId, input.ReportJobId, cancellationToken)
                 .ConfigureAwait(false);
         }
         finally

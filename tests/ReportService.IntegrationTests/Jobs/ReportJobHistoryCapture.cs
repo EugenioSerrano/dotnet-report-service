@@ -17,6 +17,7 @@ using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Manifest;
 using ReportService.TemplateSource.Resolution;
+using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Testing;
 using ReportService.Testing.TemplatePackages;
@@ -424,8 +425,8 @@ public sealed class ReportJobHistoryCapture
         private readonly CancellationTokenSource _stop = new();
         private readonly Task _running;
         private readonly Task _dataRunning;
-        private readonly TemplateSourceHost? _source;
-        private readonly HttpClient? _sourceClient;
+        private readonly TemplateSourceClass? _source;
+        private readonly SwitchableStore? _sourceStore;
         private readonly TemporalWorker? _templateWorker;
         private readonly Task? _templateRunning;
         private readonly Dictionary<string, string> _uploadOf = new(StringComparer.Ordinal);
@@ -448,8 +449,8 @@ public sealed class ReportJobHistoryCapture
             ManualTimeProvider clock,
             byte[] sample,
             byte[] refused,
-            TemplateSourceHost? source,
-            HttpClient? sourceClient,
+            TemplateSourceClass? source,
+            SwitchableStore? sourceStore,
             TemporalWorker? templateWorker,
             Task? templateRunning)
         {
@@ -469,7 +470,7 @@ public sealed class ReportJobHistoryCapture
             SampleDocumentBytes = sample;
             RefusedDocumentBytes = refused;
             _source = source;
-            _sourceClient = sourceClient;
+            _sourceStore = sourceStore;
             _templateWorker = templateWorker;
             _templateRunning = templateRunning;
         }
@@ -584,8 +585,8 @@ public sealed class ReportJobHistoryCapture
             // The template step and the two activities it calls on the PDF worker's queue: they
             // are registered only for the recordings of the step, so the earlier recordings keep
             // replaying the runs they were captured from.
-            TemplateSourceHost? source = null;
-            HttpClient? sourceClient = null;
+            TemplateSourceClass? source = null;
+            SwitchableStore? sourceStore = null;
             TemporalWorker? templateWorker = null;
             Task? templateRunning = null;
             if (withTemplateStep)
@@ -600,23 +601,30 @@ public sealed class ReportJobHistoryCapture
                     return package;
                 }
 
-                var stub = new GitHubTemplateSourceStub();
+                sourceStore = new SwitchableStore(objects);
+                source = TemplateSourceClass.Over(sourceStore);
                 foreach (var version in new[] { SmallestUntakenVersion, HighestReleaseVersion })
                 {
-                    stub.SeedPackage(TemplateId, version, PackageWithThePilotSchema(version));
+                    await source.PublishAsync(TemplateId, version, PackageWithThePilotSchema(version));
                 }
 
-                stub.SeedPackage(
+                await source.PublishAsync(
                     TemplateId,
                     RefusedByTheTakeVersion,
                     TemplatePackageFixtures.FolderDoesNotMatchTheVersion(TemplateId, RefusedByTheTakeVersion, RefusedByTheTakeVersion + ".1"));
-                source = await TemplateSourceHost.StartAsync(stub, CancellationToken.None);
 
-                var sourceOptions = source.Options();
-                sourceClient = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-                var client = new GitHubTemplateSource(sourceClient, sourceOptions);
+                var sourceOptions = new TemplateSourceOptions
+                {
+                    Repository = "report-service/templates",
+                    Branch = "main",
+                };
+                var reader = new StorageTemplateSource(
+                    sourceStore,
+                    sourceOptions,
+                    new TemplateSourceMetrics(),
+                    NullLogger<StorageTemplateSource>.Instance);
                 var take = new TemplateTake(
-                    client,
+                    reader,
                     versions,
                     objects,
                     new TemplateManifestReader(),
@@ -627,7 +635,7 @@ public sealed class ReportJobHistoryCapture
                     Options.Create(sourceOptions),
                     NullLogger<TemplateTake>.Instance);
                 var resolver = new TemplateVersionResolver(
-                    client,
+                    reader,
                     versions,
                     new TemplateTakeAdapter(take),
                     new TemplateByNameMetrics(),
@@ -676,13 +684,13 @@ public sealed class ReportJobHistoryCapture
                 sample,
                 refused,
                 source,
-                sourceClient,
+                sourceStore,
                 templateWorker,
                 templateRunning);
         }
 
         /// <summary>Stops answering the template source: the next resolution finds it unreachable.</summary>
-        public void StopTheSource() => _source!.Stub.Stop();
+        public void StopTheSource() => _sourceStore!.Fail = true;
 
         public string UploadOf(string reportJobId) => _uploadOf[reportJobId];
 
@@ -1012,7 +1020,6 @@ public sealed class ReportJobHistoryCapture
                 await _source.DisposeAsync();
             }
 
-            _sourceClient?.Dispose();
             try
             {
                 Directory.Delete(StorageRoot, recursive: true);
@@ -1025,7 +1032,46 @@ public sealed class ReportJobHistoryCapture
             await Task.CompletedTask;
         }
 
-        private static DescribeWorkflowExecutionRequest Describe(string workflowId) => new()        {
+        /// <summary>A store whose source read can be made to fail, as an outage does, and answer again.</summary>
+    public sealed class SwitchableStore(IObjectStore inner) : IObjectStore
+    {
+        /// <summary>Whether the source class answers an outage.</summary>
+        public bool Fail { get; set; }
+
+        public StorageCapabilities Capabilities => inner.Capabilities;
+
+        public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
+            inner.WriteAsync(key, content, cancellationToken);
+
+        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<VerifiedRead>(StorageOutcome.Transient, Failure()))
+                : inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
+
+        public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<ObjectInfo>(StorageOutcome.Transient, Failure()))
+                : inner.GetInfoAsync(key, cancellationToken);
+
+        public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            inner.DeleteAsync(key, cancellationToken);
+
+        public async IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            if (Fail)
+            {
+                throw new StorageException(StorageOutcome.Transient, Failure());
+            }
+
+            await foreach (var item in inner.ListAsync(classPrefix, cancellationToken).ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+
+        private static StorageError Failure() => new("storage.transient", "The object store did not answer.");
+    }
+    private static DescribeWorkflowExecutionRequest Describe(string workflowId) => new()        {
             Namespace = "default",
             Execution = new Temporalio.Api.Common.V1.WorkflowExecution
             {
@@ -1061,3 +1107,4 @@ public sealed class ReportJobHistoryCapture
         private static IEnumerable<Temporalio.Api.History.V1.HistoryEvent> EventsOf(WorkflowHistory history) => history.Events;
     }
 }
+

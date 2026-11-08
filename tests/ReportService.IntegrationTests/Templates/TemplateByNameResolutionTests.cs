@@ -5,14 +5,19 @@ using System.Net;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ReportService.Migrations;
 using ReportService.ServiceDefaults;
+using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
 using ReportService.TemplateSource;
+using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Resolution;
 using pdf::ReportService.Workers.Pdf.Templates;
 using Temporalio.Client;
@@ -82,7 +87,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     private int _hostPort;
     private string _connectionString = string.Empty;
     private NpgsqlDataSource? _dataSource;
-    private TemplateSourceHost? _stub;
+    private TemplateSourceClass? _source;
+    private SwitchableStore? _sourceStore;
     private WebApplicationFactory<PdfWorker>? _worker;
     private TemporalWorker? _testWorker;
     private readonly CancellationTokenSource _testWorkerStop = new();
@@ -121,8 +127,9 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         _engine = await EngineStart.StartAsync(_engineImage, "temporal-template-by-name", cancellationToken);
         _hostPort = _engine.HostPort;
 
-        var stub = new GitHubTemplateSourceStub();
-        _stub = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+        Directory.CreateDirectory(StorageRoot());
+        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        _sourceStore = new SwitchableStore(_source.Store);
 
         _client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
@@ -166,9 +173,9 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             await _engine.Container.DisposeAsync();
         }
 
-        if (_stub is not null)
+        if (_source is not null)
         {
-            await _stub.DisposeAsync();
+            await _source.DisposeAsync();
         }
 
         try
@@ -185,7 +192,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ANewerValidVersionIsTakenAndRecorded()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Second);
+        await SeedAsync(ByNameFixtures.First, ByNameFixtures.Second);
         await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
@@ -193,7 +200,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         Assert.Equal(ResolveTemplateVersionOutcomes.Resolved, result.Outcome);
         Assert.Equal(ByNameFixtures.Second, result.Version);
         var row = await RowAsync(Template, ByNameFixtures.Second, cancellationToken);
-        Assert.Equal(result.CommitSha, row.CommitSha);
+        Assert.Null(result.CommitSha);
+        Assert.Equal(result.SourceDescriptorSha256, row.SourceDescriptorSha256);
         Assert.Equal(result.PackageSha256, row.PackageSha256);
     }
 
@@ -201,7 +209,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ANewerInvalidVersionIsSkippedAndTheOlderTakenOneUsed()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Invalid);
+        await SeedAsync(ByNameFixtures.First, ByNameFixtures.Invalid);
         await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
@@ -220,7 +228,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task NothingValidEndsWithTemplateInvalidNamingTheNewestVersion()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedInvalid(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Second);
+        await SeedInvalidAsync(ByNameFixtures.First, ByNameFixtures.Second);
 
         var cause = await AssertRefusedAsync(ByNameFixtures.InvalidTemplate, TemplateResolutionCodes.TemplateInvalid, cancellationToken);
 
@@ -233,8 +241,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ATruncatedTemplateFolderEndsWithTemplateInvalidAndTakesNothing()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First);
-        _stub.Stub.SetTemplateFolderTruncated(Template);
+        await SeedAsync(ByNameFixtures.First);
+        
 
         var cause = await AssertRefusedAsync(Template, TemplateResolutionCodes.TemplateInvalid, cancellationToken);
 
@@ -247,7 +255,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task APreReleaseIsNeverChosenByName()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Second, ByNameFixtures.PreRelease);
+        await SeedAsync(ByNameFixtures.First, ByNameFixtures.Second, ByNameFixtures.PreRelease);
         await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
@@ -260,7 +268,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ATemplateWithOnlyPreReleasesEndsWithTemplateInvalid()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedPreReleases(_stub!.Stub);
+        await SeedPreReleasesAsync();
 
         var cause = await AssertRefusedAsync(ByNameFixtures.PreReleaseTemplate, TemplateResolutionCodes.TemplateInvalid, cancellationToken);
 
@@ -271,9 +279,9 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task TheSourceDownUsesTheLatestReleaseAlreadyTaken()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First);
+        await SeedAsync(ByNameFixtures.First);
         await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
-        _stub.Stub.Stop();
+        _sourceStore!.Fail = true;
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
 
@@ -289,8 +297,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task TheSourceDownWithNothingTakenEndsWithSourceUnavailable()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.Unsupported, ByNameFixtures.HighestRelease);
-        _stub.Stub.Stop();
+        await SeedAsync(ByNameFixtures.Unsupported, ByNameFixtures.HighestRelease);
+        _sourceStore!.Fail = true;
 
         var cause = await AssertRefusedAsync(Template, TemplateResolutionCodes.TemplateSourceUnavailable, cancellationToken);
 
@@ -303,8 +311,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task TheOrderIsPrecedenceAndNotText()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _stub!.Stub.SeedPackage(Template, ByNameFixtures.Invalid, ByNameFixtures.Valid(Template, ByNameFixtures.Invalid));
-        _stub.Stub.SeedPackage(Template, ByNameFixtures.HighestRelease, ByNameFixtures.Valid(Template, ByNameFixtures.HighestRelease));
+        await _source!.PublishAsync(Template, ByNameFixtures.Invalid, ByNameFixtures.Valid(Template, ByNameFixtures.Invalid));
+        await _source!.PublishAsync(Template, ByNameFixtures.HighestRelease, ByNameFixtures.Valid(Template, ByNameFixtures.HighestRelease));
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
 
@@ -317,7 +325,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task TheHigherFullVersionWinsWhenNeitherIsTaken()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedEqualPrecedence(_stub!.Stub);
+        await SeedEqualPrecedenceAsync();
 
         var result = await ResolveAsync(ByNameFixtures.EqualPrecedenceTemplate, ByNameFixtures.Owner, cancellationToken);
 
@@ -329,7 +337,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task TheVersionAlreadyTakenWinsOnEqualPrecedence()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedEqualPrecedence(_stub!.Stub);
+        await SeedEqualPrecedenceAsync();
         await TakeAsync(ByNameFixtures.EqualPrecedenceTemplate, ByNameFixtures.EqualPrecedence[0], cancellationToken);
 
         var result = await ResolveAsync(ByNameFixtures.EqualPrecedenceTemplate, ByNameFixtures.Owner, cancellationToken);
@@ -342,10 +350,10 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task AVersionAddedBetweenTwoResolutionsIsSeenOnlyByTheSecond()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First);
+        await SeedAsync(ByNameFixtures.First);
 
         var first = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
-        _stub.Stub.SeedPackage(Template, ByNameFixtures.Second, ByNameFixtures.Valid(Template, ByNameFixtures.Second));
+        await _source!.PublishAsync(Template, ByNameFixtures.Second, ByNameFixtures.Valid(Template, ByNameFixtures.Second));
         var second = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
 
         Assert.Equal(ByNameFixtures.First, first.Version);
@@ -356,9 +364,9 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ATakenVersionRemovedFromTheBranchIsStillUsed()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Second);
+        await SeedAsync(ByNameFixtures.First, ByNameFixtures.Second);
         await TakeAsync(Template, ByNameFixtures.Second, cancellationToken);
-        _stub.Stub.RemoveVersion(Template, ByNameFixtures.Second);
+        await _source!.RemoveAsync(Template, ByNameFixtures.Second);
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
 
@@ -370,7 +378,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task AnotherConsumersNonSharedVersionIsExcludedAndASharedOneIsUsable()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedForeign(_stub!.Stub);
+        await SeedForeignAsync();
 
         var result = await ResolveAsync(ByNameFixtures.ForeignTemplate, ByNameFixtures.Owner, cancellationToken);
 
@@ -382,7 +390,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task OnlyAnotherConsumersVersionAnswersTheConstantNotFound()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _stub!.Stub.SeedPackage(
+        await _source!.PublishAsync(
             ByNameFixtures.ForeignTemplate,
             ByNameFixtures.Second,
             ByNameFixtures.Valid(ByNameFixtures.ForeignTemplate, ByNameFixtures.Second, ByNameFixtures.Other, shared: false));
@@ -397,7 +405,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task AVersionTheDeploymentCannotRenderIsSkipped()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Unsupported);
+        await SeedAsync(ByNameFixtures.First, ByNameFixtures.Unsupported);
         await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
@@ -414,7 +422,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     public async Task ATemplateWhoseVersionsAreAllUnsupportedEndsWithTemplateInvalid()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        ByNameFixtures.SeedUnsupported(_stub!.Stub, ByNameFixtures.First, ByNameFixtures.Second);
+        await SeedUnsupportedAsync(ByNameFixtures.First, ByNameFixtures.Second);
 
         var cause = await AssertRefusedAsync(ByNameFixtures.UnsupportedTemplate, TemplateResolutionCodes.TemplateInvalid, cancellationToken);
 
@@ -428,7 +436,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         var cancellationToken = TestContext.Current.CancellationToken;
 
         // The version the fallback answers with, seeded before anything takes it.
-        ByNameFixtures.Seed(_stub!.Stub, ByNameFixtures.First);
+        await SeedAsync(ByNameFixtures.First);
 
         // The short-bound host is the only worker on the resolution queue: the
         // class's four-minute host is never started for this case, so the bound
@@ -439,7 +447,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         for (var index = 0; index < RefusedVersions; index++)
         {
             var version = $"1.1.{index}";
-            _stub.Stub.SeedPackage(Template, version, ByNameFixtures.InvalidPackage(Template, version));
+            await _source!.PublishAsync(Template, version, ByNameFixtures.InvalidPackage(Template, version));
         }
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, shortWorker.Queue, cancellationToken);
@@ -531,10 +539,13 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ApiBaseUrl", _stub!.BaseUrl.AbsoluteUri);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", TemplateSourceOptionsRepository());
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", GitHubTemplateSourceStub.Branch);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:AllowInsecureLoopback", "true");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IObjectStore>();
+                services.AddSingleton<IObjectStore>(_sourceStore!);
+            });
             builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ResolveDeadline", resolveDeadline);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
@@ -583,8 +594,61 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         return new ShortWorker(worker, testWorker, stop, run, DeadlineQueue);
     }
 
-    private static string TemplateSourceOptionsRepository() =>
-        GitHubTemplateSourceStub.Owner + "/" + GitHubTemplateSourceStub.Repository;
+    private async Task SeedAsync(params string[] versions)
+    {
+        foreach (var version in versions)
+        {
+            await _source!.PublishAsync(Template, version, Package(Template, version));
+        }
+    }
+
+    private async Task SeedInvalidAsync(params string[] versions)
+    {
+        foreach (var version in versions)
+        {
+            await _source!.PublishAsync(ByNameFixtures.InvalidTemplate, version, ByNameFixtures.InvalidPackage(ByNameFixtures.InvalidTemplate, version));
+        }
+    }
+
+    private async Task SeedUnsupportedAsync(params string[] versions)
+    {
+        foreach (var version in versions)
+        {
+            await _source!.PublishAsync(ByNameFixtures.UnsupportedTemplate, version, ByNameFixtures.UnsupportedPackage(ByNameFixtures.UnsupportedTemplate, version));
+        }
+    }
+
+    private async Task SeedPreReleasesAsync(params string[] versions)
+    {
+        foreach (var version in versions.Length == 0 ? ["2.0.0-beta.1", "2.0.0-rc.1"] : versions)
+        {
+            await _source!.PublishAsync(ByNameFixtures.PreReleaseTemplate, version, ByNameFixtures.Valid(ByNameFixtures.PreReleaseTemplate, version));
+        }
+    }
+
+    private async Task SeedEqualPrecedenceAsync(params string[] versions)
+    {
+        foreach (var version in versions.Length == 0 ? ByNameFixtures.EqualPrecedence : versions)
+        {
+            await _source!.PublishAsync(ByNameFixtures.EqualPrecedenceTemplate, version, ByNameFixtures.Valid(ByNameFixtures.EqualPrecedenceTemplate, version));
+        }
+    }
+
+    private async Task SeedForeignAsync(string foreignVersion = ByNameFixtures.Second, string sharedVersion = ByNameFixtures.Shared)
+    {
+        await _source!.PublishAsync(ByNameFixtures.ForeignTemplate, foreignVersion, ByNameFixtures.Valid(ByNameFixtures.ForeignTemplate, foreignVersion, ByNameFixtures.Other, shared: false));
+        await _source!.PublishAsync(ByNameFixtures.ForeignTemplate, sharedVersion, ByNameFixtures.Valid(ByNameFixtures.ForeignTemplate, sharedVersion, ByNameFixtures.Other, shared: true));
+    }
+
+    private Task SeedEmptyAsync() => Task.CompletedTask;
+
+    private static Dictionary<string, byte[]> Package(string templateId, string version) => version switch
+    {
+        ByNameFixtures.Invalid => ByNameFixtures.InvalidPackage(templateId, version),
+        ByNameFixtures.Unsupported => ByNameFixtures.UnsupportedPackage(templateId, version),
+        ByNameFixtures.NotAVersion => ByNameFixtures.Valid(templateId, "1.3.0"),
+        _ => ByNameFixtures.Valid(templateId, version),
+    };
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
 
@@ -598,7 +662,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         return await connection.QuerySingleOrDefaultAsync<StoredVersion>(new CommandDefinition(
             """
             SELECT template_id AS "TemplateId", version AS "Version", owner_consumer_id AS "OwnerConsumerId",
-                   engine AS "Engine", commit_sha AS "CommitSha", package_sha256 AS "PackageSha256",
+                   engine AS "Engine", source_descriptor_sha256 AS "SourceDescriptorSha256", package_sha256 AS "PackageSha256",
                    object_key AS "ObjectKey"
               FROM report_service.template_versions
              WHERE template_id = @TemplateId AND version = @Version
@@ -607,6 +671,44 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             cancellationToken: cancellationToken));
     }
 
+    /// <summary>A store whose source read can be made to fail, as an outage does, and answer again.</summary>
+    private sealed class SwitchableStore(IObjectStore inner) : IObjectStore
+    {
+        public bool Fail { get; set; }
+
+        public StorageCapabilities Capabilities => inner.Capabilities;
+
+        public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
+            inner.WriteAsync(key, content, cancellationToken);
+
+        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<VerifiedRead>(StorageOutcome.Transient, Failure()))
+                : inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
+
+        public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            Fail
+                ? Task.FromResult(StorageResult.Failure<ObjectInfo>(StorageOutcome.Transient, Failure()))
+                : inner.GetInfoAsync(key, cancellationToken);
+
+        public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            inner.DeleteAsync(key, cancellationToken);
+
+        public async IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            if (Fail)
+            {
+                throw new StorageException(StorageOutcome.Transient, Failure());
+            }
+
+            await foreach (var item in inner.ListAsync(classPrefix, cancellationToken).ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+
+        private static StorageError Failure() => new("storage.transient", "The object store did not answer.");
+    }
     /// <summary>One record as the table holds it.</summary>
     private sealed class StoredVersion
     {
@@ -618,7 +720,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
         public string Engine { get; set; } = string.Empty;
 
-        public string CommitSha { get; set; } = string.Empty;
+        public string? SourceDescriptorSha256 { get; set; }
 
         public string PackageSha256 { get; set; } = string.Empty;
 
@@ -671,3 +773,5 @@ public sealed class ResolveVersionForTestWorkflow
             (ResolveTemplateVersionActivity activity) => activity.RunAsync(input),
             TemplateResolutionActivityOptions.Create());
 }
+
+

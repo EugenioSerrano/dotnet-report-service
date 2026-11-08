@@ -14,6 +14,7 @@ using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
+using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Manifest;
 using ReportService.TemplateSource.Take;
 using ReportService.Testing;
@@ -214,14 +215,16 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
         IObjectStore storage,
         CancellationToken cancellationToken)
     {
-        var stub = new GitHubTemplateSourceStub();
-        stub.SeedPackage(Template, Version, PackageFiles());
-        await using var source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+        var source = TemplateSourceClass.Over(storage);
+        await source.PublishAsync(Template, Version, PackageFiles());
 
-        var options = source.Options();
-        using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        var options = new TemplateSourceOptions
+        {
+            Repository = "report-service/templates",
+            Branch = "main",
+        };
         var take = new TemplateTake(
-            new GitHubTemplateSource(client, options),
+            new StorageTemplateSource(storage, options, new TemplateSourceMetrics(), NullLogger<StorageTemplateSource>.Instance),
             versions,
             storage,
             new TemplateManifestReader(),
@@ -232,7 +235,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
             Options.Create(options),
             NullLogger<TemplateTake>.Instance);
 
-        var outcome = await take.TakeAsync(Template, Version, Consumer, commit: null, reportJobId: null, cancellationToken);
+        var outcome = await take.TakeAsync(Template, Version, Consumer, reportJobId: null, cancellationToken);
         Assert.NotNull(outcome.Record);
         Assert.Equal(Version, outcome.Record!.Version);
         Assert.Equal(Consumer, outcome.Record.OwnerConsumerId);
@@ -358,3 +361,4 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 
     private sealed record PublishedJob(string Status, string? ArtifactId, string? ObjectKey, string? Sha256, long? SizeBytes);
 }
+

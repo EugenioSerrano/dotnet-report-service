@@ -12,13 +12,13 @@ namespace ReportService.TemplateSource.Checks;
 /// <param name="Version">The version being taken.</param>
 /// <param name="Manifest">The typed view of the manifest.</param>
 /// <param name="PackageDirectory">The directory the package's files were copied to.</param>
-/// <param name="CommitSha">The commit they were read at.</param>
+/// <param name="SourceDescriptorSha256">The publication record's hash the files were verified against.</param>
 public sealed record TemplateCandidate(
     string TemplateId,
     string Version,
     TemplateManifest Manifest,
     string PackageDirectory,
-    string CommitSha);
+    string SourceDescriptorSha256);
 
 /// <summary>What one check decided.</summary>
 public sealed record TemplateCheckResult

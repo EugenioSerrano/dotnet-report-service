@@ -5,6 +5,7 @@ using ReportService.ServiceDefaults.Temporal;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Resolution;
+using ReportService.TemplateSource.Source;
 
 namespace ReportService.Workers.Pdf.Templates;
 
@@ -32,7 +33,7 @@ public static class TemplateResolutionRegistration
         builder.Services.AddSingleton<ITemplateTake>(services => services.GetRequiredService<TemplateTakeAdapter>());
         builder.Services.AddSingleton<TemplateByNameMetrics>();
         builder.Services.AddSingleton(services => new TemplateVersionResolver(
-            services.GetRequiredService<ITemplateSource>(),
+            services.GetRequiredService<ITemplateSourceReader>(),
             services.GetRequiredService<ITemplateVersionStore>(),
             services.GetRequiredService<ITemplateTake>(),
             services.GetRequiredService<TemplateByNameMetrics>(),

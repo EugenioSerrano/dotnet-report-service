@@ -64,7 +64,7 @@ public sealed class YamlIsolationTests
         // The package path rule names it once, and the reader and the take name it
         // in the reason of a refusal; nothing else opens it.
         Assert.Equal(
-            ["ManifestReadResult.cs", "PackagePath.cs", Reader, "TemplateTake.cs"],
+            ["ManifestReadResult.cs", "PackagePath.cs", "PublicationChecks.cs", "PublicationDescriptor.cs", Reader, "TemplateTake.cs"],
             [.. namers.Order(StringComparer.Ordinal)]);
     }
 

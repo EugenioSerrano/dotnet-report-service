@@ -6,7 +6,7 @@ namespace ReportService.TemplateSource.Resolution;
 /// key, a package path or a manifest value.
 /// </summary>
 /// <param name="TemplateId">The template's identifier.</param>
-/// <param name="CommitSha">The commit the candidate set was read at, or <see langword="null"/> when the branch could not be resolved.</param>
+/// <param name="SourceDescriptorSha256">The publication record's hash the chosen version was read from, or <see langword="null"/> when the source could not be checked.</param>
 /// <param name="SourceVersions">How many names the source listed at the commit.</param>
 /// <param name="TakenVersions">How many records the store holds for the template.</param>
 /// <param name="Considered">The considered candidates, newest first.</param>
@@ -16,7 +16,7 @@ namespace ReportService.TemplateSource.Resolution;
 /// <param name="DeadlineReached">True when the configured deadline was reached before a decision.</param>
 public sealed record TemplateResolutionTrace(
     string TemplateId,
-    string? CommitSha,
+    string? SourceDescriptorSha256,
     int SourceVersions,
     int TakenVersions,
     IReadOnlyList<string> Considered,

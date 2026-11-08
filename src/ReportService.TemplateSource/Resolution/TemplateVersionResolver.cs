@@ -3,17 +3,20 @@ using Microsoft.Extensions.Logging;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplatePackages.Versioning;
 using ReportService.TemplateSource.Checks;
+using ReportService.TemplateSource.Source;
 
 namespace ReportService.TemplateSource.Resolution;
 
 /// <summary>
-/// Chooses the version a by-name reference uses: the version folders of the
-/// template at one commit plus the versions already taken, release versions
-/// only, newest first by semantic-version precedence. Each candidate is taken
-/// newest first through the take seam; what the take refuses is logged with what
-/// to fix and skipped, so a broken newest version never fails the jobs that
-/// name the template only. A resolution writes nothing: the take owns what it
-/// records, and this class only reads the store and the source.
+/// Chooses the version a by-name reference uses: the versions the source class
+/// publishes plus the versions already taken, release versions only, newest first
+/// by semantic-version precedence. Each candidate is taken newest first through
+/// the take seam; what the take refuses is logged with what to fix and skipped, so
+/// a broken newest version never fails the jobs that name the template only. A
+/// resolution writes nothing: the take owns what it records, and this class only
+/// reads the store and the source. The listing is an enumeration, never an
+/// authority: a name it returns is a candidate only when a verified record stands
+/// behind it, and the walk that turns a candidate into a record is the take's.
 /// </summary>
 public sealed partial class TemplateVersionResolver
 {
@@ -26,7 +29,7 @@ public sealed partial class TemplateVersionResolver
     /// <summary>The answer of a source that could not be checked and a template with no release version already taken.</summary>
     public const string SourceUnavailableReason = "The template source could not be checked; try again later.";
 
-    private readonly ITemplateSource _source;
+    private readonly ITemplateSourceReader _reader;
     private readonly ITemplateVersionStore _store;
     private readonly ITemplateTake _take;
     private readonly TemplateByNameMetrics _metrics;
@@ -35,7 +38,7 @@ public sealed partial class TemplateVersionResolver
     private readonly TimeSpan _resolveDeadline;
 
     /// <summary>Creates a resolver over the source, the store and the take seam.</summary>
-    /// <param name="source">The configured template source.</param>
+    /// <param name="reader">The deployment's template source class.</param>
     /// <param name="store">The taken versions.</param>
     /// <param name="take">The take seam a candidate is taken through.</param>
     /// <param name="metrics">The instruments of the by-name path.</param>
@@ -43,7 +46,7 @@ public sealed partial class TemplateVersionResolver
     /// <param name="logger">The log the resolution writes to.</param>
     /// <param name="resolveDeadline">How long the whole resolution may take.</param>
     public TemplateVersionResolver(
-        ITemplateSource source,
+        ITemplateSourceReader reader,
         ITemplateVersionStore store,
         ITemplateTake take,
         TemplateByNameMetrics metrics,
@@ -51,7 +54,7 @@ public sealed partial class TemplateVersionResolver
         ILogger logger,
         TimeSpan resolveDeadline)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(take);
         ArgumentNullException.ThrowIfNull(metrics);
@@ -62,7 +65,7 @@ public sealed partial class TemplateVersionResolver
             throw new ArgumentOutOfRangeException(nameof(resolveDeadline), "the resolution deadline must be positive");
         }
 
-        _source = source;
+        _reader = reader;
         _store = store;
         _take = take;
         _metrics = metrics;
@@ -94,8 +97,8 @@ public sealed partial class TemplateVersionResolver
             return Finish(
                 templateId ?? string.Empty,
                 TemplateResolutionOutcome.Refused(TemplateResolutionCodes.TemplateNotFound, NotFoundReason, retryable: false),
-                commit: null,
                 sourceVersions: 0,
+                sourceDescriptorSha256: null,
                 takenVersions: 0,
                 considered: [],
                 skipped: [],
@@ -115,36 +118,13 @@ public sealed partial class TemplateVersionResolver
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         var token = linked.Token;
 
-        SourceCommit? commit = null;
-        SourceTemplateVersions? listing = null;
+        IReadOnlyList<PublishedVersion>? published = null;
         TemplateSourceException? sourceFailure = null;
         var deadlineReached = false;
 
         try
         {
-            commit = await _source.ResolveBranchAsync(token).ConfigureAwait(false);
-            listing = await _source.ListVersionsAsync(commit, templateId, token).ConfigureAwait(false);
-        }
-        catch (TemplateSourceException exception) when (exception.Failure == TemplateSourceFailure.PackageTooLarge)
-        {
-            // The source answered, so the candidate set would simply be
-            // incomplete: the template is refused, never the outage fallback.
-            return Finish(
-                templateId,
-                TemplateResolutionOutcome.Refused(
-                    TemplateResolutionCodes.TemplateInvalid,
-                    $"The template folder has too many entries to list; reduce the number of version folders under templates/{templateId}/.",
-                    retryable: false),
-                commit,
-                sourceVersions: 0,
-                takenVersions: 0,
-                considered: [],
-                skipped: [],
-                examined: 0,
-                sourceCut: false,
-                deadlineReached: false,
-                reportJobId,
-                startedAt);
+            published = await _reader.ListPublishedVersionsAsync(templateId, token).ConfigureAwait(false);
         }
         catch (TemplateSourceException exception)
         {
@@ -165,8 +145,7 @@ public sealed partial class TemplateVersionResolver
             return Unchecked(
                 templateId,
                 requestingConsumerId,
-                commit,
-                listing,
+                published,
                 taken,
                 TemplateVersionCandidates.Build([], taken, requestingConsumerId),
                 examined: 0,
@@ -176,16 +155,17 @@ public sealed partial class TemplateVersionResolver
                 startedAt);
         }
 
-        var candidates = TemplateVersionCandidates.Build(listing?.Names ?? [], taken, requestingConsumerId);
-        if (listing is null && taken.Count == 0)
+        var names = published!.Select(entry => entry.Version).ToArray();
+        var candidates = TemplateVersionCandidates.Build(names, taken, requestingConsumerId);
+        if (names.Length == 0 && taken.Count == 0)
         {
-            // The template folder does not exist and no version of it was ever
+            // The template has no publication and no version of it was ever
             // taken: absent, which is not the same as invalid.
             return Finish(
                 templateId,
                 TemplateResolutionOutcome.Refused(TemplateResolutionCodes.TemplateNotFound, NotFoundReason, retryable: false),
-                commit,
                 sourceVersions: 0,
+                sourceDescriptorSha256: null,
                 takenVersions: 0,
                 candidates.Considered.Select(candidate => candidate.Version).ToArray(),
                 candidates.Skipped,
@@ -222,7 +202,7 @@ public sealed partial class TemplateVersionResolver
             try
             {
                 attempt = await _take
-                    .TakeAsync(templateId, candidate.Version, requestingConsumerId, commit, reportJobId, token)
+                    .TakeAsync(templateId, candidate.Version, requestingConsumerId, reportJobId, token)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -240,8 +220,8 @@ public sealed partial class TemplateVersionResolver
                     walkSkipped.Add(new CandidateSkip(candidate.Version, CandidateSkipReasons.Refused, refusal.Code, refusal.Reason));
                     continue;
                 case RefusedAttempt refusal when refusal.Code == TemplateResolutionCodes.TemplateNotFound:
-                    // At the resolution's commit a listed folder cannot be
-                    // absent, so this is the take's foreign-owner answer.
+                    // A published version cannot be absent at the read, so this is
+                    // the take's foreign-owner answer.
                     walkSkipped.Add(new CandidateSkip(candidate.Version, CandidateSkipReasons.NotVisible, null, null));
                     continue;
                 case RefusedAttempt refusal when refusal.Code == TemplateResolutionCodes.TemplateSourceUnavailable:
@@ -261,22 +241,22 @@ public sealed partial class TemplateVersionResolver
         if (outcome is not null)
         {
             return Finish(
-                templateId, outcome, commit, listing!.Names.Count, taken.Count,
+                templateId, outcome, names.Length, outcome is ResolvedOutcome resolved ? resolved.Record.SourceDescriptorSha256 : null, taken.Count,
                 considered, skipped, examined, sourceCut: false, deadlineReached: false, reportJobId, startedAt);
         }
 
         if (sourceFailure is not null || deadlineReached)
         {
             return Unchecked(
-                templateId, requestingConsumerId, commit, listing, taken,
+                templateId, requestingConsumerId, published, taken,
                 candidates, examined, sourceFailure, deadlineReached, reportJobId, startedAt, skipped);
         }
 
         return Finish(
             templateId,
             NothingUsable(templateId, skipped),
-            commit,
-            listing!.Names.Count,
+            names.Length,
+            sourceDescriptorSha256: null,
             taken.Count,
             considered,
             skipped,
@@ -309,9 +289,9 @@ public sealed partial class TemplateVersionResolver
             return TemplateResolutionOutcome.Refused(TemplateResolutionCodes.TemplateNotFound, NotFoundReason, retryable: false);
         }
 
-        // The folder exists but holds no release candidate (only pre-releases,
-        // only non-version names, or nothing), or it is gone while every taken
-        // version is excluded: the author publishes a release version. The
+        // The template has no release candidate (only pre-releases, only
+        // non-version names, or nothing), or every version is gone while the
+        // taken ones are excluded: the author publishes a release version. The
         // newest version found is named, so the author knows where to start.
         var reason = $"Template {templateId} has no release version; publish a release version (a pre-release is used only when a job names it exactly).";
         var newest = skipped
@@ -335,8 +315,7 @@ public sealed partial class TemplateVersionResolver
     private (TemplateResolutionOutcome Outcome, TemplateResolutionTrace Trace) Unchecked(
         string templateId,
         string requestingConsumerId,
-        SourceCommit? commit,
-        SourceTemplateVersions? listing,
+        IReadOnlyList<PublishedVersion>? published,
         IReadOnlyList<TemplateVersionRecord> taken,
         TemplateVersionCandidates candidates,
         int examined,
@@ -361,8 +340,8 @@ public sealed partial class TemplateVersionResolver
         return Finish(
             templateId,
             outcome,
-            commit,
-            sourceVersions: listing?.Names.Count ?? 0,
+            sourceVersions: published?.Count ?? 0,
+            sourceDescriptorSha256: fallback.Record?.SourceDescriptorSha256,
             takenVersions: taken.Count,
             considered: candidates.Considered.Select(candidate => candidate.Version).ToArray(),
             skipped: skipped ?? [],
@@ -377,8 +356,8 @@ public sealed partial class TemplateVersionResolver
     private (TemplateResolutionOutcome Outcome, TemplateResolutionTrace Trace) Finish(
         string templateId,
         TemplateResolutionOutcome outcome,
-        SourceCommit? commit,
         int sourceVersions,
+        string? sourceDescriptorSha256,
         int takenVersions,
         IReadOnlyList<string> considered,
         IReadOnlyList<CandidateSkip> skipped,
@@ -391,7 +370,7 @@ public sealed partial class TemplateVersionResolver
     {
         var trace = new TemplateResolutionTrace(
             templateId,
-            commit?.CommitSha,
+            sourceDescriptorSha256,
             sourceVersions,
             takenVersions,
             considered,
@@ -412,10 +391,10 @@ public sealed partial class TemplateVersionResolver
 
         _logger.LogInformation(
             new EventId(EventIds.ByName, "template.by_name"),
-            "template.by_name template {TemplateId} requested {RequestedForm}, commit {CommitSha}, source versions {SourceVersions}, taken versions {TakenVersions}, considered {Considered}, examined {Examined}, outcome {Outcome}, code {Code}, duration {DurationMs} ms, job {ReportJobId}",
+            "template.by_name template {TemplateId} requested {RequestedForm}, publication {SourceDescriptorSha256}, source versions {SourceVersions}, taken versions {TakenVersions}, considered {Considered}, examined {Examined}, outcome {Outcome}, code {Code}, duration {DurationMs} ms, job {ReportJobId}",
             templateId,
             RequestedForm,
-            commit?.CommitSha ?? "(none)",
+            sourceDescriptorSha256 ?? "(none)",
             sourceVersions,
             takenVersions,
             considered.Count,
@@ -453,20 +432,12 @@ public sealed partial class TemplateVersionResolver
 
         if (sourceCut)
         {
-            var kind = sourceFailure is null
-                ? "deadline"
-                : sourceFailure.Failure switch
-                {
-                    TemplateSourceFailure.Misconfigured => "misconfigured",
-                    TemplateSourceFailure.PackageTooLarge => "unreachable",
-                    _ => "unreachable",
-                };
             _logger.LogWarning(
                 new EventId(EventIds.Unchecked, "template.by_name.unchecked"),
-                "template.by_name.unchecked template {TemplateId}, the template source could not be checked, kind {Kind}, commit {CommitSha}, examined {Examined}, answered version {Version}",
+                "template.by_name.unchecked template {TemplateId}, the template source could not be checked, kind {Kind}, publication {SourceDescriptorSha256}, examined {Examined}, answered version {Version}",
                 templateId,
-                kind,
-                commit?.CommitSha ?? "(none)",
+                sourceFailure is null ? "deadline" : "unreachable",
+                sourceDescriptorSha256 ?? "(none)",
                 examined,
                 answeredVersion);
         }
