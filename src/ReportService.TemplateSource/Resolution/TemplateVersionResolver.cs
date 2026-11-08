@@ -32,6 +32,7 @@ public sealed partial class TemplateVersionResolver
     private readonly ITemplateSourceReader _reader;
     private readonly ITemplateVersionStore _store;
     private readonly ITemplateTake _take;
+    private readonly TemplateVersionConflict _conflict;
     private readonly TemplateByNameMetrics _metrics;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger _logger;
@@ -41,6 +42,7 @@ public sealed partial class TemplateVersionResolver
     /// <param name="reader">The deployment's template source class.</param>
     /// <param name="store">The taken versions.</param>
     /// <param name="take">The take seam a candidate is taken through.</param>
+    /// <param name="conflict">The warning a version's changed publication produces.</param>
     /// <param name="metrics">The instruments of the by-name path.</param>
     /// <param name="timeProvider">The clock the deadline and the duration are read from.</param>
     /// <param name="logger">The log the resolution writes to.</param>
@@ -49,6 +51,7 @@ public sealed partial class TemplateVersionResolver
         ITemplateSourceReader reader,
         ITemplateVersionStore store,
         ITemplateTake take,
+        TemplateVersionConflict conflict,
         TemplateByNameMetrics metrics,
         TimeProvider timeProvider,
         ILogger logger,
@@ -57,6 +60,7 @@ public sealed partial class TemplateVersionResolver
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(take);
+        ArgumentNullException.ThrowIfNull(conflict);
         ArgumentNullException.ThrowIfNull(metrics);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(logger);
@@ -68,6 +72,7 @@ public sealed partial class TemplateVersionResolver
         _reader = reader;
         _store = store;
         _take = take;
+        _conflict = conflict;
         _metrics = metrics;
         _timeProvider = timeProvider;
         _logger = logger;
@@ -154,6 +159,11 @@ public sealed partial class TemplateVersionResolver
                 reportJobId,
                 startedAt);
         }
+
+        // A version already taken whose listed publication record differs from the
+        // one it was taken with is observed before the walk: two identities are
+        // compared, no file is read, and the resolution proceeds as it always did.
+        ObservePublishedRecords(published!, taken, reportJobId);
 
         var names = published!.Select(entry => entry.Version).ToArray();
         var candidates = TemplateVersionCandidates.Build(names, taken, requestingConsumerId);
@@ -265,6 +275,31 @@ public sealed partial class TemplateVersionResolver
             deadlineReached: false,
             reportJobId,
             startedAt);
+    }
+
+    /// <summary>
+    /// Draws the one observation of the listing: a taken version the source now
+    /// lists with a different publication record. The comparison has the listing
+    /// and the record only, so no file of a package is read; it refuses nothing,
+    /// so the resolution that follows answers exactly as it would without it. Two
+    /// records under one version text are the walk's own duplicate rule and are
+    /// never observed here.
+    /// </summary>
+    private void ObservePublishedRecords(
+        IReadOnlyList<PublishedVersion> published,
+        IReadOnlyList<TemplateVersionRecord> taken,
+        string? reportJobId)
+    {
+        foreach (var record in taken)
+        {
+            var listed = published
+                .Where(entry => string.Equals(entry.Version, record.Version, StringComparison.Ordinal))
+                .ToArray();
+            if (listed.Length == 1)
+            {
+                _conflict.ObservePublication(record, listed[0], reportJobId);
+            }
+        }
     }
 
     private static TemplateResolutionOutcome NothingUsable(

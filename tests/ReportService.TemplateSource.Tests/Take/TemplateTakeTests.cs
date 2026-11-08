@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
+using ReportService.TemplatePackages.Keys;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
@@ -130,11 +131,16 @@ public sealed class TemplateTakeTests : IAsyncDisposable
     {
         await _source.PublishAsync(Template, Version, Package());
         await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken);
-        var writes = _source.Writes.Count;
 
-        var outcome = await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken);
+        // The source is counted, so the zero is proved rather than assumed.
+        var operations = new OperationStore(_source.Store);
+        var writes = _source.Writes.Count;
+        var outcome = await Take(reader: new StorageTemplateSource(operations, _options, new TemplateSourceMetrics(), NullLogger<StorageTemplateSource>.Instance))
+            .TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken);
 
         Assert.IsType<AlreadyTakenVersion>(outcome);
+        Assert.Empty(operations.Opened);
+        Assert.Equal(0, operations.ListCalls);
         Assert.Equal(writes, _source.Writes.Count);
         Assert.Single(_versions.Records);
     }
@@ -142,11 +148,18 @@ public sealed class TemplateTakeTests : IAsyncDisposable
     [Fact]
     public async Task ATakenVersionWithNoSourceIsStillUsed()
     {
-        _versions.Seed(TemplateVersionRecords.StorageSample(Template, Version));
+        var taken = TemplateVersionRecords.StorageSample(Template, Version);
+        _versions.Seed(taken);
 
-        var outcome = await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken);
+        // The class cannot be listed or read at all: the copy answers from the record.
+        var operations = new OperationStore(new FailingStore());
+        var outcome = await Take(reader: new StorageTemplateSource(operations, _options, new TemplateSourceMetrics(), NullLogger<StorageTemplateSource>.Instance))
+            .TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken);
 
-        Assert.IsType<AlreadyTakenVersion>(outcome);
+        var again = Assert.IsType<AlreadyTakenVersion>(outcome);
+        Assert.Equal(taken, again.Version);
+        Assert.Empty(operations.Opened);
+        Assert.Equal(0, operations.ListCalls);
         Assert.Empty(_source.Writes);
     }
 
@@ -344,6 +357,122 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         Assert.Empty(_source.Writes);
     }
 
+    [Fact]
+    public async Task ATakeWhoseInsertFailsAfterTheObjectWasWrittenConvergesOnOneRowAndOneKey()
+    {
+        await _source.PublishAsync(Template, Version, Package());
+        var failing = new FirstInsertFailsStore(_versions);
+
+        var first = await Take(store: failing).TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
+
+        // The copy was written, and the record is what makes the version usable.
+        var refused = Assert.IsType<RefusedVersion>(first);
+        Assert.Equal(TemplateTakeCodes.ExecutionFailed, refused.Code);
+        Assert.True(refused.Retryable);
+        Assert.Empty(_versions.Records);
+        var writtenKey = Assert.Single(await KeysAsync(TemplatePackageKeys.ClassPrefix));
+        Assert.StartsWith($"templates/{Consumer}/{Template}/{Version}/", writtenKey, StringComparison.Ordinal);
+
+        // The retry converges on one row and the key the copy already sits under.
+        var record = AssertTaken(await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken));
+        Assert.Equal(writtenKey, record.ObjectKey.ToString());
+        Assert.Single(_versions.Records);
+        Assert.Single(await KeysAsync(TemplatePackageKeys.ClassPrefix));
+
+        var again = Assert.IsType<AlreadyTakenVersion>(
+            await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken));
+        Assert.Equal(record, again.Version);
+
+        var read = await _source.Store.OpenReadAsync(record.ObjectKey, record.PackageSize, record.PackageSha256, TestContext.Current.CancellationToken);
+        Assert.True(read.Succeeded, read.Error?.Message);
+        await using (var verified = read.Value!)
+        {
+            await verified.Content.CopyToAsync(Stream.Null, TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task ARecordsFileOrderIsNormalisedToTheWritersPathOrder()
+    {
+        var manifest = Encoding.UTF8.GetBytes(ManifestText(Consumer, Version, schema: "schema.json"));
+        var schema = Encoding.UTF8.GetBytes("{}");
+        var extra = Encoding.UTF8.GetBytes("[]");
+        await _source.WriteFileAsync(Template, Version, "template.yaml", manifest);
+        await _source.WriteFileAsync(Template, Version, "schema.json", schema);
+        await _source.WriteFileAsync(Template, Version, "a.json", extra);
+
+        // The publisher's own order: the manifest first, the two others after it —
+        // never the ordinal order the record is normalised to.
+        await _source.WriteRecordAsync(Template, Version, Encoding.UTF8.GetBytes(
+            $$"""
+            {"descriptorVersion":"1.0","templateId":"{{Template}}","version":"{{Version}}","files":[
+            {"path":"template.yaml","size":{{manifest.Length}},"sha256":"{{TemplateSourceClass.Sha256(manifest)}}"},
+            {"path":"schema.json","size":{{schema.Length}},"sha256":"{{TemplateSourceClass.Sha256(schema)}}"},
+            {"path":"a.json","size":{{extra.Length}},"sha256":"{{TemplateSourceClass.Sha256(extra)}}"}],
+            "fileCount":3,"totalSize":{{manifest.Length + schema.Length + extra.Length}}}
+            """));
+
+        var record = AssertTaken(await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken));
+
+        Assert.Equal(["a.json", "schema.json", "template.yaml"], record.SourceObjects!.Select(file => file.Path));
+        Assert.Equal(3, record.FileCount);
+    }
+
+    [Fact]
+    public async Task AVersionWithBuildMetadataIsTakenAndItsKeySegmentIsEncoded()
+    {
+        const string Build = "1.0.0+build.1";
+        await _source.PublishAsync(Template, Build, Package(manifestVersion: Build));
+
+        var record = AssertTaken(await Take().TakeAsync(Template, Build, Consumer, null, TestContext.Current.CancellationToken));
+
+        Assert.Equal(Build, record.Version);
+        Assert.StartsWith("h-", record.ObjectKey.Segments[3], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ATemplateIdAtAndPastTheRawSegmentBoundaryKeepsItsKey()
+    {
+        var raw = new string('a', KeySegmentEncoding.MaxRawLength);
+        var encoded = new string('a', KeySegmentEncoding.MaxRawLength + 1);
+        await _source.PublishAsync(raw, Version, Package(templateId: raw));
+        await _source.PublishAsync(encoded, Version, Package(templateId: encoded));
+
+        var rawRecord = AssertTaken(await Take().TakeAsync(raw, Version, Consumer, null, TestContext.Current.CancellationToken));
+        var encodedRecord = AssertTaken(await Take().TakeAsync(encoded, Version, Consumer, null, TestContext.Current.CancellationToken));
+
+        Assert.Equal(raw, rawRecord.ObjectKey.Segments[2]);
+        Assert.StartsWith(KeySegmentEncoding.HashedPrefix, encodedRecord.ObjectKey.Segments[2], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APackageWhoseOnlyFileIsTheManifestIsRefusedNamingTheSchema()
+    {
+        var manifest = Package()["template.yaml"];
+        await _source.PublishAsync(
+            Template,
+            Version,
+            new Dictionary<string, byte[]>(StringComparer.Ordinal) { ["template.yaml"] = manifest });
+
+        var refused = Assert.IsType<RefusedVersion>(
+            await Take().TakeAsync(Template, Version, Consumer, null, TestContext.Current.CancellationToken));
+
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, refused.Code);
+        Assert.Contains("schema", refused.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(_versions.Records);
+    }
+
+    private async Task<IReadOnlyList<string>> KeysAsync(string prefix)
+    {
+        var keys = new List<string>();
+        await foreach (var info in _source.Store.ListAsync(prefix, TestContext.Current.CancellationToken))
+        {
+            keys.Add(info.Key.ToString());
+        }
+
+        return keys;
+    }
+
     private TemplateTake Take(
         ITemplateVersionStore? store = null,
         StorageTemplateSource? reader = null) =>
@@ -365,38 +494,48 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         return taken.Version;
     }
 
-    private static Dictionary<string, byte[]> Package(string owner = Consumer, string manifestVersion = Version) => new(StringComparer.Ordinal)
+    private static Dictionary<string, byte[]> Package(
+        string owner = Consumer,
+        string manifestVersion = Version,
+        string templateId = Template) => new(StringComparer.Ordinal)
     {
-        ["template.yaml"] = Encoding.UTF8.GetBytes(
-            $"""
-            manifestVersion: "1.0"
-            id: {Template}
-            version: "{manifestVersion}"
-            owner: {owner}
-            shared: false
-            engine: scriban
-            engineVersion: "7.5.1"
-            dataContract:
-              version: "1.0"
-              profile: header-items-v1
-              schema: schema.json
-            outputs:
-              html:
-                parts:
-                  documentStart: html/document-start.html.sbn
-                  row: html/row.html.sbn
-                  documentEnd: html/document-end.html.sbn
-            """),
+        ["template.yaml"] = Encoding.UTF8.GetBytes(ManifestText(owner, manifestVersion, "schema.json", templateId)),
         ["schema.json"] = Encoding.UTF8.GetBytes("{}"),
         ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes("<html><body>"),
         ["html/row.html.sbn"] = Encoding.UTF8.GetBytes("<tr></tr>"),
         ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</body></html>"),
     };
 
-    /// <summary>A store that records every object the take opened, in order.</summary>
+    private static string ManifestText(
+        string owner,
+        string manifestVersion,
+        string schema,
+        string templateId = Template) =>
+        $"""
+        manifestVersion: "1.0"
+        id: {templateId}
+        version: "{manifestVersion}"
+        owner: {owner}
+        shared: false
+        engine: scriban
+        engineVersion: "7.5.1"
+        dataContract:
+          version: "1.0"
+          profile: header-items-v1
+          schema: {schema}
+        outputs:
+          html:
+            parts:
+              documentStart: html/document-start.html.sbn
+              row: html/row.html.sbn
+              documentEnd: html/document-end.html.sbn
+        """;
+
+    /// <summary>A store that records every object the take opened or listed, in order.</summary>
     private sealed class OperationStore(IObjectStore inner) : IObjectStore
     {
         private readonly List<string> _opened = [];
+        private int _listCalls;
 
         public IReadOnlyList<string> Opened
         {
@@ -408,6 +547,9 @@ public sealed class TemplateTakeTests : IAsyncDisposable
                 }
             }
         }
+
+        /// <summary>How many listings reached the store; a take that answers from a record never lists.</summary>
+        public int ListCalls => Volatile.Read(ref _listCalls);
 
         public StorageCapabilities Capabilities => inner.Capabilities;
 
@@ -430,8 +572,11 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
             inner.DeleteAsync(key, cancellationToken);
 
-        public IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, CancellationToken cancellationToken) =>
-            inner.ListAsync(classPrefix, cancellationToken);
+        public IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref _listCalls);
+            return inner.ListAsync(classPrefix, cancellationToken);
+        }
     }
 
     /// <summary>A store that answers the outage the take keeps apart from absence.</summary>
@@ -462,6 +607,29 @@ public sealed class TemplateTakeTests : IAsyncDisposable
 
         private static StorageException Failure() =>
             new(StorageOutcome.Transient, new StorageError("storage.transient", "The object store did not answer."));
+    }
+
+    /// <summary>A store whose first insert does not answer, as an outage does once, and answers after it.</summary>
+    private sealed class FirstInsertFailsStore(ITemplateVersionStore inner) : ITemplateVersionStore
+    {
+        private bool _failed;
+
+        public Task<TemplateVersionRecord?> FindAsync(string templateId, string version, CancellationToken cancellationToken) =>
+            inner.FindAsync(templateId, version, cancellationToken);
+
+        public Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken) =>
+            inner.ListByTemplateAsync(templateId, cancellationToken);
+
+        public Task<TemplateVersionInsert> TryInsertAsync(TemplateVersionRecord record, CancellationToken cancellationToken)
+        {
+            if (!_failed)
+            {
+                _failed = true;
+                throw new TemplateStoreUnavailableException("the insert did not answer", new TimeoutException());
+            }
+
+            return inner.TryInsertAsync(record, cancellationToken);
+        }
     }
 
     /// <summary>A store whose insert meets the record another take committed first, with other bytes.</summary>

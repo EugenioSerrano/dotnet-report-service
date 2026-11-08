@@ -237,6 +237,22 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
     }
 
     [Fact]
+    public async Task ATakenVersionIsAnsweredAgainWithTheSourceUnreadable()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync(Version, TemplatePackageFixtures.Valid(Template, Version, Owner));
+        await TakeAsync(Template, Version, Owner, cancellationToken);
+
+        // The class cannot be listed or read: the record answers and the source is not reached.
+        _sourceStore!.Fail = true;
+        var again = await TakeAsync(Template, Version, Owner, cancellationToken);
+        _sourceStore.Fail = false;
+
+        Assert.Equal(TakeTemplateVersionOutcomes.AlreadyTaken, again.Outcome);
+        Assert.Equal(Version, again.Version);
+    }
+
+    [Fact]
     public async Task AVersionNotTakenWithTheSourceDownEndsWithTheRetryableCodeAndWritesNothing()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

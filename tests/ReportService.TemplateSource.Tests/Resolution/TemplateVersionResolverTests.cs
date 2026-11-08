@@ -27,11 +27,15 @@ public sealed class TemplateVersionResolverTests : IDisposable
     private readonly ManualTimeProvider _time = new(new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
     private readonly LogCapture _logs = new();
     private readonly ILoggerFactory _loggerFactory;
+    private readonly TemplateVersionConflict _conflict;
 
-    public TemplateVersionResolverTests() =>
+    public TemplateVersionResolverTests()
+    {
         _loggerFactory = LoggerFactory.Create(builder => builder
             .SetMinimumLevel(LogLevel.Trace)
             .AddProvider(_logs));
+        _conflict = new TemplateVersionConflict(_loggerFactory.CreateLogger(TemplateVersionConflict.LogCategory));
+    }
 
     /// <inheritdoc />
     public void Dispose() => _loggerFactory.Dispose();
@@ -444,6 +448,95 @@ public sealed class TemplateVersionResolverTests : IDisposable
         Assert.Equal(0, _store.ListCalls);
         Assert.Empty(_take.Calls);
         Assert.Empty(trace.Considered);
+        Assert.Empty(ConflictLines());
+    }
+
+    [Fact]
+    public async Task ATakenVersionWhoseListedPublicationChangedIsObservedOnceAndTheCopyStillAnswers()
+    {
+        SeedSource(Template, "1.1.0");
+        var listed = InMemoryTemplateSourceReader.DescriptorHash(Template, "1.1.0");
+        var taken = TemplateVersionRecords.StorageSample(Template, "1.1.0");
+        Assert.NotEqual(taken.SourceDescriptorSha256, listed, StringComparer.Ordinal);
+        _store.Seed(taken);
+
+        var (outcome, trace) = await Resolve();
+
+        // The taken copy answers, no job is refused and nothing is taken again.
+        AssertResolved(outcome, "1.1.0", fromTakenCopy: false);
+        Assert.Empty(_take.Calls);
+        Assert.Empty(trace.Skipped);
+
+        // One warning, naming both publications and the reason.
+        var line = Assert.Single(ConflictLines());
+        Assert.Contains(taken.SourceDescriptorSha256!, line, StringComparison.Ordinal);
+        Assert.Contains(listed, line, StringComparison.Ordinal);
+        Assert.Contains($"Observation {TemplateVersionConflict.Observations.PublicationChanged}", line, StringComparison.Ordinal);
+        Assert.Contains("job-0001", line, StringComparison.Ordinal);
+
+        // The comparison is two identities: the listing is the only source call,
+        // and no file of the package is opened.
+        Assert.DoesNotContain(_source.RequestLog, request => request.Step == "file");
+        Assert.All(_source.RequestLog, request => Assert.NotEqual("1.1.0", request.Version));
+    }
+
+    [Fact]
+    public async Task AListedPublicationEqualToTheOneTheVersionWasTakenWithCarriesNoWarning()
+    {
+        SeedSource(Template, "1.1.0");
+        var listed = InMemoryTemplateSourceReader.DescriptorHash(Template, "1.1.0");
+        _store.Seed(TemplateVersionRecords.StorageSample(Template, "1.1.0") with
+        {
+            SourceDescriptorSha256 = listed,
+            SourceDescriptorKey = $"template-source/{Template}/published/1.1.0/{listed}.json",
+        });
+
+        var (outcome, _) = await Resolve();
+
+        AssertResolved(outcome, "1.1.0", fromTakenCopy: false);
+        Assert.Empty(ConflictLines());
+    }
+
+    [Fact]
+    public async Task AVersionTakenBeforeTheObjectStoreIsNeverCompared()
+    {
+        SeedSource(Template, "1.1.0");
+        Taken("1.1.0");
+
+        var (outcome, _) = await Resolve();
+
+        AssertResolved(outcome, "1.1.0", fromTakenCopy: false);
+        Assert.Empty(ConflictLines());
+    }
+
+    [Fact]
+    public async Task ADuplicatePublicationIsTheWalksSkipAndCarriesNoObservation()
+    {
+        SeedSource(Template, "1.1.0");
+        _source.SeedDuplicatePublication(Template, "1.1.0");
+        _store.Seed(TemplateVersionRecords.StorageSample(Template, "1.1.0"));
+
+        var (outcome, trace) = await Resolve();
+
+        // Two records under one version text are not "the record the version was
+        // taken with differs": the observation compares only a single one.
+        AssertResolved(outcome, "1.1.0", fromTakenCopy: false);
+        Assert.Empty(ConflictLines());
+        Assert.Empty(trace.Skipped);
+    }
+
+    [Fact]
+    public async Task AnUnreachableSourceNeverReachesTheObservation()
+    {
+        SeedSource(Template, "1.1.0");
+        _store.Seed(TemplateVersionRecords.StorageSample(Template, "1.1.0"));
+        _source.SetUnreachable(true);
+
+        var (outcome, trace) = await Resolve();
+
+        AssertResolved(outcome, "1.1.0", fromTakenCopy: true);
+        Assert.True(trace.SourceUnreachable);
+        Assert.Empty(ConflictLines());
     }
 
     [Fact]
@@ -460,10 +553,15 @@ public sealed class TemplateVersionResolverTests : IDisposable
         _source,
         _store,
         _take,
+        _conflict,
         new TemplateByNameMetrics(),
         _time,
         _loggerFactory.CreateLogger("ReportService.TemplateSource.Resolution"),
         deadline ?? DefaultDeadline);
+
+    /// <summary>Every line of the conflict warning the case captured, whichever reason it carries.</summary>
+    private IReadOnlyList<string> ConflictLines() =>
+        [.. _logs.Lines.Where(line => line.Contains(TemplateVersionConflict.Code, StringComparison.Ordinal))];
 
     private Task<(TemplateResolutionOutcome Outcome, TemplateResolutionTrace Trace)> Resolve(
         string templateId = Template,

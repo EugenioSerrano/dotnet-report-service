@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The taken version records the publication record's hash, the key it was read from
   and the verified file list, and its commit columns are empty; a version taken
   before the change keeps the values it recorded.
+- A version already taken is watched where the by-name path reads the template
+  source: when the source lists a publication record other than the one the
+  version was taken with, the service logs `TEMPLATE_VERSION_CONFLICT` once,
+  naming both record hashes and asking for a version bump, keeps the taken copy
+  and its metadata, and refuses no job. The comparison reads the listing only —
+  never a file of the package — and a version taken before the object store has no
+  publication identity, so it is never compared. The take's own log line now names
+  the publication it read and, when a conflict was recorded, which observation
+  produced it.
 
 ### Added
 

@@ -30,6 +30,7 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
     private readonly InMemoryTemplateTake _take = new();
     private readonly ManualTimeProvider _time = new(new DateTimeOffset(2026, 11, 3, 12, 0, 0, TimeSpan.Zero));
     private readonly TemplateByNameMetrics _metrics = new();
+    private readonly TemplateVersionConflict _conflict = new(NullLogger<TemplateVersionConflict>.Instance);
 
     public void Dispose() => _metrics.Dispose();
 
@@ -149,6 +150,7 @@ public sealed class ResolveTemplateVersionActivityTests : IDisposable
             _source,
             store ?? _store,
             _take,
+            _conflict,
             _metrics,
             _time,
             NullLogger<TemplateVersionResolver>.Instance,

@@ -2,6 +2,7 @@ extern alias pdf;
 
 using System.Globalization;
 using System.Net;
+using System.Text;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -186,6 +187,43 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         {
             // A leftover temporary directory is not a test failure.
         }
+    }
+
+    [Fact]
+    public async Task ATakenVersionsPublicationChangedKeepsTheCopyAndWarnsWithoutReadingAFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAsync(ByNameFixtures.First);
+        await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
+        var taken = await RowAsync(Template, ByNameFixtures.First, cancellationToken);
+
+        // The publisher replaces the version's publication record under the same
+        // version text: one record, with another hash, and the old one removed.
+        var republished = new Dictionary<string, byte[]>(ByNameFixtures.Valid(Template, ByNameFixtures.First), StringComparer.Ordinal)
+        {
+            ["docs/readme.md"] = Encoding.UTF8.GetBytes("The package gained a file nobody pinned."),
+        };
+        await _source!.PublishAsync(Template, ByNameFixtures.First, republished);
+        await _source.DeleteAsync(TemplateSourceKeys.Descriptor(Template, ByNameFixtures.First, taken.SourceDescriptorSha256!));
+        _sourceStore!.ClearOpened();
+
+        var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
+
+        // The taken copy answers, no job is refused, and no file of the package is opened.
+        Assert.Equal(ResolveTemplateVersionOutcomes.Resolved, result.Outcome);
+        Assert.Equal(ByNameFixtures.First, result.Version);
+        Assert.Equal(taken.SourceDescriptorSha256, result.SourceDescriptorSha256);
+        Assert.DoesNotContain(_sourceStore.Opened, key => key.Contains("/files/", StringComparison.Ordinal));
+
+        // Exactly one warning, naming both publications and the reason.
+        var warning = Assert.Single(_logs.Lines, line => line.Contains(TemplateVersionConflict.Code, StringComparison.Ordinal));
+        Assert.Contains(taken.SourceDescriptorSha256!, warning, StringComparison.Ordinal);
+        Assert.Contains(TemplateVersionConflict.Observations.PublicationChanged, warning, StringComparison.Ordinal);
+
+        // The taken copy and its metadata are unchanged.
+        var after = await RowAsync(Template, ByNameFixtures.First, cancellationToken);
+        Assert.Equal(taken.PackageSha256, after.PackageSha256);
+        Assert.Equal(taken.SourceDescriptorSha256, after.SourceDescriptorSha256);
     }
 
     [Fact]
@@ -674,17 +712,47 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     /// <summary>A store whose source read can be made to fail, as an outage does, and answer again.</summary>
     private sealed class SwitchableStore(IObjectStore inner) : IObjectStore
     {
+        private readonly List<string> _opened = [];
+
         public bool Fail { get; set; }
 
+        /// <summary>Every key the read opened, so a case can prove no file of a package was read.</summary>
+        public IReadOnlyList<string> Opened
+        {
+            get
+            {
+                lock (_opened)
+                {
+                    return [.. _opened];
+                }
+            }
+        }
+
         public StorageCapabilities Capabilities => inner.Capabilities;
+
+        /// <summary>Forgets the keys opened so far, so a case can observe one resolution only.</summary>
+        public void ClearOpened()
+        {
+            lock (_opened)
+            {
+                _opened.Clear();
+            }
+        }
 
         public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
             inner.WriteAsync(key, content, cancellationToken);
 
-        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken) =>
-            Fail
+        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken)
+        {
+            lock (_opened)
+            {
+                _opened.Add(key.ToString());
+            }
+
+            return Fail
                 ? Task.FromResult(StorageResult.Failure<VerifiedRead>(StorageOutcome.Transient, Failure()))
                 : inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
+        }
 
         public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
             Fail

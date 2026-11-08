@@ -12,12 +12,12 @@ namespace ReportService.Workers.Pdf.Templates;
 /// <summary>
 /// What the by-name resolution registers on the queue this worker declares: the
 /// resolution itself, holding the settings of the configured source, the taken
-/// versions and the take; the adapter over the real take as the one seam the
-/// resolution receives; the resolution's instruments; and the activity on
-/// <c>report-pdf-rendering</c>, on the worker the take already serves and under
-/// the same rule — one activity at a time. The source's settings are validated at
-/// start, so a missing repository stops the process naming the setting instead of
-/// failing at the first resolution.
+/// versions, the take and the conflict warning; the adapter over the real take as
+/// the one seam the resolution receives; the resolution's instruments; and the
+/// activity on <c>report-pdf-rendering</c>, on the worker the take already serves
+/// and under the same rule — one activity at a time. The source's settings are
+/// validated at start, so a missing repository stops the process naming the
+/// setting instead of failing at the first resolution.
 /// </summary>
 public static class TemplateResolutionRegistration
 {
@@ -36,6 +36,7 @@ public static class TemplateResolutionRegistration
             services.GetRequiredService<ITemplateSourceReader>(),
             services.GetRequiredService<ITemplateVersionStore>(),
             services.GetRequiredService<ITemplateTake>(),
+            services.GetRequiredService<TemplateVersionConflict>(),
             services.GetRequiredService<TemplateByNameMetrics>(),
             services.GetRequiredService<TimeProvider>(),
             services.GetRequiredService<ILoggerFactory>().CreateLogger<TemplateVersionResolver>(),

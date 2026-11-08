@@ -162,7 +162,7 @@ public sealed partial class TemplateTake
         _logger.Log(
             outcome is RefusedVersion refusal ? LogLevel.Warning : LogLevel.Information,
             new EventId(EventIds.Take, "template.take"),
-            "{Level} template {TemplateId} version {Version} for consumer {RequestingConsumerId} ended {Outcome} {Code} in {DurationMs} ms, job {ReportJobId}",
+            "{Level} template {TemplateId} version {Version} for consumer {RequestingConsumerId} ended {Outcome} {Code} in {DurationMs} ms, publication {Publication}, observation {Observation}, job {ReportJobId}",
             outcome is RefusedVersion ? "refused" : "accepted",
             templateId,
             version,
@@ -170,6 +170,8 @@ public sealed partial class TemplateTake
             outcome.Name,
             (outcome as RefusedVersion)?.Code ?? TemplateTakeMetrics.NoCode,
             (long)elapsed.TotalMilliseconds,
+            outcome.Record?.SourceDescriptorSha256 ?? "(none)",
+            outcome is ConflictLoggedVersion ? TemplateVersionConflict.Observations.Race : "(none)",
             reportJobId ?? "(none)");
         return outcome;
     }

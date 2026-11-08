@@ -18,6 +18,7 @@ namespace ReportService.Testing.TemplateSource;
 public sealed class InMemoryTemplateSourceReader : ITemplateSourceReader
 {
     private readonly Dictionary<string, List<string>> _published = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _duplicates = new(StringComparer.Ordinal);
     private readonly List<SourceRequest> _requestLog = [];
 
     /// <summary>A syntactically valid git commit the resolver cases use for their records.</summary>
@@ -63,6 +64,19 @@ public sealed class InMemoryTemplateSourceReader : ITemplateSourceReader
     /// <param name="version">The version.</param>
     public void Publish(string templateId, string version) => SeedVersionFolder(templateId, version);
 
+    /// <summary>
+    /// Lists the version twice, as a publisher that published one version text
+    /// twice does: the enumeration reports both records and groups neither, so a
+    /// caller that decides a repeated version is a duplicate meets the real shape.
+    /// </summary>
+    /// <param name="templateId">The template's identifier.</param>
+    /// <param name="version">The version both records name.</param>
+    public void SeedDuplicatePublication(string templateId, string version)
+    {
+        SeedVersionFolder(templateId, version);
+        _duplicates.Add(templateId + "/" + version);
+    }
+
     /// <summary>Removes a version, as a publisher removing its folder.</summary>
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version.</param>
@@ -99,16 +113,25 @@ public sealed class InMemoryTemplateSourceReader : ITemplateSourceReader
     public Task<IReadOnlyList<PublishedVersion>> ListPublishedVersionsAsync(string templateId, CancellationToken cancellationToken)
     {
         Step("list", templateId, version: null);
-        IReadOnlyList<PublishedVersion> versions = (_published.TryGetValue(templateId, out var names) ? names : [])
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .Select(name => new PublishedVersion(
-                name,
-                TemplateSourceKeys.Descriptor(templateId, name, DescriptorHash(templateId, name)),
-                DescriptorHash(templateId, name),
-                1))
-            .ToArray();
-        return Task.FromResult(versions);
+        var names = _published.TryGetValue(templateId, out var versions) ? versions : new List<string>();
+        var listed = new List<PublishedVersion>(names.Count);
+        foreach (var name in names.OrderBy(name => name, StringComparer.Ordinal))
+        {
+            listed.Add(Listed(templateId, name, DescriptorHash(templateId, name)));
+            if (_duplicates.Contains(templateId + "/" + name))
+            {
+                // The second record of one version text: a different name, so a
+                // different hash, and the enumeration reports both.
+                listed.Add(Listed(templateId, name, DescriptorHash(templateId, name + "#second")));
+            }
+        }
+
+        IReadOnlyList<PublishedVersion> answer = listed;
+        return Task.FromResult(answer);
     }
+
+    private static PublishedVersion Listed(string templateId, string version, string descriptorHash) =>
+        new(version, TemplateSourceKeys.Descriptor(templateId, version, descriptorHash), descriptorHash, 1);
 
     /// <inheritdoc />
     public Task OpenFileAsync(

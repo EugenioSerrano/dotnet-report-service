@@ -638,6 +638,7 @@ public sealed class ReportJobHistoryCapture
                     reader,
                     versions,
                     new TemplateTakeAdapter(take),
+                    new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
                     new TemplateByNameMetrics(),
                     clock,
                     NullLogger<TemplateVersionResolver>.Instance,
