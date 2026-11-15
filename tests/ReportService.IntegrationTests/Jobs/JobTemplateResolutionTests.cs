@@ -11,6 +11,9 @@ using System.Text.Json;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ReportService.Api.Consumers;
@@ -55,10 +58,10 @@ namespace ReportService.IntegrationTests.Jobs;
 /// <summary>
 /// The template of a report job, from the request to the pin, against real dependencies: one
 /// PostgreSQL 18.6 database brought to the expected version by the product's migrations, one
-/// Temporal 1.9.1 engine, one storage root, and the template source served over real HTTP on a
-/// loopback port, seeded with the delivered fixture families. The API, the orchestration worker
-/// and the PDF worker are hosted in this process on their own registrations, so what answers is
-/// the product's own graph.
+/// Temporal 1.9.1 engine, one storage root, and the deployment's template source - that root,
+/// read through the source class and published with the delivered fixture families. The API,
+/// the orchestration worker and the PDF worker are hosted in this process on their own
+/// registrations, so what answers is the product's own graph.
 /// <para>
 /// Every case submits through the API and reads the outcome from the store: the reference as
 /// written, the baseline recorded at acceptance, the pin with its commit, package hash, engine,
@@ -99,16 +102,21 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
     private readonly LogCapture _logs = new();
 
+    // The class's own root: kept short because the source class's keys - a template, a
+    // version and a 64-hex record name each within a segment - are resolved under it by the
+    // filesystem provider, which refuses a resolved path longer than its bound.
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
-        "report-service-template-resolution-it",
-        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        "rstr",
+        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
 
     private EngineStart.Engine? _engine;
 
     private int _hostPort;
 
-    private TemplateSourceHost? _source;
+    private TemplateSourceClass? _source;
+
+    private SourceClassStore? _sourceStore;
 
     private string? _database;
 
@@ -168,15 +176,15 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         _client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
 
-        var stub = new GitHubTemplateSourceStub();
-        ByNameFixtures.Seed(stub, ByNameFixtures.First, ByNameFixtures.Second, ByNameFixtures.HighestRelease);
-        stub.SeedPackage(Template, ByNameFixtures.PreRelease, ByNameFixtures.Valid(Template, ByNameFixtures.PreRelease));
-        ByNameFixtures.SeedPreReleases(stub);
-        ByNameFixtures.SeedForeign(stub, foreignVersion: "1.0.0", sharedVersion: ByNameFixtures.Shared);
-        ByNameFixtures.SeedInvalid(stub, ByNameFixtures.Invalid);
-        ByNameFixtures.SeedUnsupported(stub, ByNameFixtures.Unsupported);
-        stub.SeedPackage(Pilot, "1.2.0", TemplatePackageFixtures.Valid(Pilot, "1.2.0", owner: ConsumerA, shared: true));
-        _source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        _sourceStore = new SourceClassStore(_source.Store);
+        await ByNameFixtures.SeedAsync(_source, ByNameFixtures.First, ByNameFixtures.Second, ByNameFixtures.HighestRelease);
+        await _source.PublishAsync(Template, ByNameFixtures.PreRelease, ByNameFixtures.Valid(Template, ByNameFixtures.PreRelease));
+        await ByNameFixtures.SeedPreReleasesAsync(_source);
+        await ByNameFixtures.SeedForeignAsync(_source, foreignVersion: "1.0.0", sharedVersion: ByNameFixtures.Shared);
+        await ByNameFixtures.SeedInvalidAsync(_source, ByNameFixtures.Invalid);
+        await ByNameFixtures.SeedUnsupportedAsync(_source, ByNameFixtures.Unsupported);
+        await _source.PublishAsync(Pilot, "1.2.0", TemplatePackageFixtures.Valid(Pilot, "1.2.0", owner: ConsumerA, shared: true));
 
         _api = Api();
         _orchestration = Orchestration();
@@ -357,14 +365,14 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
         var first = await AcceptedJobAsync(Owner, Template, ByNameFixtures.Second, cancellationToken);
         var firstPin = await PinnedAsync(first, cancellationToken);
-        _source!.Stub.Stop();
-        var requests = _source.Stub.RequestCount;
+        _sourceStore!.Fail = true;
+        var requests = _sourceStore.SourceOperations.Count;
 
         var second = await AcceptedJobAsync(Owner, Template, ByNameFixtures.Second, cancellationToken);
         var secondPin = await PinnedAsync(second, cancellationToken);
 
         // A taken version is bound by the store alone: the source is never read for it.
-        Assert.Equal(requests, _source.Stub.RequestCount);
+        Assert.Equal(requests, _sourceStore.SourceOperations.Count);
         Assert.Equal(firstPin.ResolvedVersion, secondPin.ResolvedVersion);
         Assert.Equal(firstPin.CommitSha, secondPin.CommitSha);
         Assert.Equal(firstPin.PackageSha256, secondPin.PackageSha256);
@@ -458,8 +466,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         // owner: both are the take's own structural refusals, and both end the job with the
         // take's message. The file-naming half (a syntax error inside html/row.html.sbn) is
         // carried: the take registers no content checks, so it is not attempted here.
-        _source!.Stub.SeedPackage(Pilot, "1.3.0", TemplatePackageFixtures.FolderDoesNotMatchTheVersion(Pilot, "1.3.0", "1.3.1"));
-        _source.Stub.SeedPackage(Pilot, "1.5.0", TemplatePackageFixtures.OwnerMissing(Pilot, "1.5.0"));
+        await _source!.PublishAsync(Pilot, "1.3.0", TemplatePackageFixtures.FolderDoesNotMatchTheVersion(Pilot, "1.3.0", "1.3.1"));
+        await _source.PublishAsync(Pilot, "1.5.0", TemplatePackageFixtures.OwnerMissing(Pilot, "1.5.0"));
 
         foreach (var (version, expected) in new[] { ("1.3.0", "1.3.1"), ("1.5.0", "owner") })
         {
@@ -500,7 +508,7 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
         // The source is unreachable when the step finally runs: the baseline wins, never the
         // version taken later.
-        _source!.Stub.Stop();
+        _sourceStore!.Fail = true;
         _orchestration = Orchestration();
         await WaitForHealthyAsync(_orchestration.CreateClient(), ReadyDeadline, cancellationToken);
 
@@ -554,7 +562,7 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         Assert.Equal(ByNameFixtures.HighestRelease, first.ResolvedVersion);
 
         // A newer version is published and taken by another job after this one was pinned.
-        _source!.Stub.SeedPackage(Template, "1.11.0", ByNameFixtures.Valid(Template, "1.11.0"));
+        await _source!.PublishAsync(Template, "1.11.0", ByNameFixtures.Valid(Template, "1.11.0"));
         var newer = await AcceptedJobAsync(Owner, Template, "1.11.0", cancellationToken);
         await PinnedAsync(newer, cancellationToken);
 
@@ -791,10 +799,13 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ApiBaseUrl", _source!.BaseUrl.AbsoluteUri);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", GitHubTemplateSourceStub.Owner + "/" + GitHubTemplateSourceStub.Repository);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", GitHubTemplateSourceStub.Branch);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:AllowInsecureLoopback", "true");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IObjectStore>();
+                services.AddSingleton<IObjectStore>(_sourceStore!);
+            });
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 
@@ -1067,7 +1078,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
         public string Version { get; set; } = string.Empty;
 
-        public string CommitSha { get; set; } = string.Empty;
+        // A version taken from the deployment's object store has no commit: the column is nullable.
+        public string? CommitSha { get; set; }
 
         public string PackageSha256 { get; set; } = string.Empty;
 

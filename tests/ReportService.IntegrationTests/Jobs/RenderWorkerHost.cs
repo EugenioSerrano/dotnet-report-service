@@ -16,14 +16,15 @@ namespace ReportService.IntegrationTests.Jobs;
 
 /// <summary>
 /// The render worker of one class's composition: the product's own PDF process, on the same
-/// engine, metadata database and storage root the class's other hosts use, beside the loopback
-/// template source it reads. The process declares the queue the printing path schedules its
-/// render on, so the work a case drives is served instead of waited on, exactly as
-/// <see cref="PrintingRig"/> and <c>JobTemplateResolutionTests</c> already compose it.
+/// engine, metadata database and storage root the class's other hosts use, reading the
+/// deployment's template source - the composition's own root, through the source class. The
+/// process declares the queue the printing path schedules its render on, so the work a case
+/// drives is served instead of waited on, exactly as <see cref="PrintingRig"/> and
+/// <c>JobTemplateResolutionTests</c> already compose it.
 /// <para>
-/// The source is the delivered double, unchanged and with no credential, seeded with the sample
-/// package of the one template the class prints. It lives as long as the worker that reads it and
-/// is disposed after it.
+/// The source class is published into that root before the worker starts, with the sample
+/// package of the one template the class prints: the source serves what the class's jobs may
+/// ask for and nothing else. It lives as long as the worker and is disposed after it.
 /// </para>
 /// </summary>
 internal sealed class RenderWorkerHost : IAsyncDisposable
@@ -33,17 +34,18 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
 
     private readonly WebApplicationFactory<PdfWorker> _worker;
 
-    private readonly TemplateSourceHost _source;
+    private readonly TemplateSourceClass _source;
 
-    private RenderWorkerHost(WebApplicationFactory<PdfWorker> worker, TemplateSourceHost source)
+    private RenderWorkerHost(WebApplicationFactory<PdfWorker> worker, TemplateSourceClass source)
     {
         _worker = worker;
         _source = source;
     }
 
     /// <summary>
-    /// Starts the template source and the render worker on the caller's own composition, waits
-    /// for the worker's health check and answers the host to dispose.
+    /// Publishes the class's sample package into the composition's storage root, starts the
+    /// render worker on that composition, waits for the worker's health check and answers the
+    /// host to dispose.
     /// </summary>
     /// <param name="enginePort">The port the class's workflow engine listens on.</param>
     /// <param name="connectionString">The class's metadata database.</param>
@@ -62,14 +64,13 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         var (version, files) = SamplePackage(templateId);
-        var stub = new GitHubTemplateSourceStub();
-        stub.SeedPackage(templateId, version, files);
-        var source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+        var source = await TemplateSourceClass.CreateAsync(storageRoot);
+        await source.PublishAsync(templateId, version, files);
 
         WebApplicationFactory<PdfWorker>? worker = null;
         try
         {
-            worker = Worker(enginePort, connectionString, storageRoot, source, logs);
+            worker = Worker(enginePort, connectionString, storageRoot, logs);
             using var client = worker.CreateClient();
             await Wait.UntilAsync(
                 "the render worker answering its health check",
@@ -110,7 +111,6 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         int enginePort,
         string connectionString,
         string storageRoot,
-        TemplateSourceHost source,
         LogCapture? logs) =>
         new WebApplicationFactory<PdfWorker>().WithWebHostBuilder(builder =>
         {
@@ -121,10 +121,8 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ApiBaseUrl", source.BaseUrl.AbsoluteUri);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", GitHubTemplateSourceStub.Owner + "/" + GitHubTemplateSourceStub.Repository);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", GitHubTemplateSourceStub.Branch);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:AllowInsecureLoopback", "true");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
             if (logs is not null)
             {
                 builder.ConfigureLogging(logging => logging.AddProvider(logs));
@@ -132,7 +130,7 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         });
 
     // The sample template's own files, every one except the sample document, under the version
-    // its manifest declares: the source serves what the class's jobs may ask for and nothing else.
+    // its manifest declares.
     private static (string Version, IReadOnlyDictionary<string, byte[]> Files) SamplePackage(string templateId)
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", templateId);

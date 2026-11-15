@@ -4,12 +4,12 @@ namespace ReportService.Testing.TemplatePackages;
 
 /// <summary>
 /// The template family a by-name resolution is exercised against, built by this
-/// helper into the template-source double and never checked in: a repository
-/// whose version folders are the cases of the resolution — the numeric order,
-/// the invalid newer version, the pre-release, the name that is no version at
-/// all, the version this deployment cannot render, two versions of equal
-/// precedence, another consumer's version, and a template folder with no version
-/// underneath it.
+/// helper into the template source class - or, for the client's own cases, into
+/// the delivered Git double - and never checked in: a repository whose version
+/// folders are the cases of the resolution — the numeric order, the invalid newer
+/// version, the pre-release, the name that is no version at all, the version this
+/// deployment cannot render, two versions of equal precedence, another consumer's
+/// version, and a template folder with no version underneath it.
 /// <para>
 /// The family lists what it <b>can</b> seed, not a state every case sees: the
 /// case's own Given decides which versions it seeds, so a criterion is never
@@ -151,6 +151,86 @@ public static class ByNameFixtures
     {
         ArgumentNullException.ThrowIfNull(stub);
         stub.SeedTemplateFolder(EmptyTemplate);
+    }
+
+    /// <summary>Publishes the named versions of <see cref="Template"/> into the source class, each in the shape its name means.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="versions">The versions this case publishes.</param>
+    public static async Task SeedAsync(TemplateSourceClass source, params string[] versions)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        foreach (var version in versions)
+        {
+            await source.PublishAsync(Template, version, Package(Template, version)).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Publishes the two builds of one version of <see cref="EqualPrecedenceTemplate"/> into the source class.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="versions">The versions this case publishes; both builds when none is named.</param>
+    public static async Task SeedEqualPrecedenceAsync(TemplateSourceClass source, params string[] versions)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        foreach (var version in versions.Length == 0 ? EqualPrecedence : versions)
+        {
+            await source.PublishAsync(EqualPrecedenceTemplate, version, Valid(EqualPrecedenceTemplate, version))
+                .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Publishes pre-releases only into the source class, each holding a valid package.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="versions">The versions this case publishes; two pre-releases when none is named.</param>
+    public static async Task SeedPreReleasesAsync(TemplateSourceClass source, params string[] versions)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        foreach (var version in versions.Length == 0 ? new[] { "2.0.0-beta.1", "2.0.0-rc.1" } : versions)
+        {
+            await source.PublishAsync(PreReleaseTemplate, version, Valid(PreReleaseTemplate, version))
+                .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Publishes every version of a template the take's own rules refuse into the source class.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="versions">The versions this case publishes.</param>
+    public static async Task SeedInvalidAsync(TemplateSourceClass source, params string[] versions)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        foreach (var version in versions)
+        {
+            await source.PublishAsync(InvalidTemplate, version, InvalidPackage(InvalidTemplate, version))
+                .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Publishes every version of a template that declares an engine this deployment does not render.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="versions">The versions this case publishes.</param>
+    public static async Task SeedUnsupportedAsync(TemplateSourceClass source, params string[] versions)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        foreach (var version in versions)
+        {
+            await source.PublishAsync(UnsupportedTemplate, version, UnsupportedPackage(UnsupportedTemplate, version))
+                .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Publishes one version another consumer owns and does not share, beside one every consumer may use.</summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="foreignVersion">The version another consumer owns.</param>
+    /// <param name="sharedVersion">The version every consumer may use.</param>
+    public static async Task SeedForeignAsync(
+        TemplateSourceClass source,
+        string foreignVersion = Second,
+        string sharedVersion = Shared)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        await source.PublishAsync(ForeignTemplate, foreignVersion, Valid(ForeignTemplate, foreignVersion, Other, shared: false))
+            .ConfigureAwait(false);
+        await source.PublishAsync(ForeignTemplate, sharedVersion, Valid(ForeignTemplate, sharedVersion, Other, shared: true))
+            .ConfigureAwait(false);
     }
 
     /// <summary>A package the product's own rules accept.</summary>

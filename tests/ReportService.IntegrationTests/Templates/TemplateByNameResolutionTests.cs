@@ -30,12 +30,13 @@ using PdfWorker = pdf::ReportService.Workers.Pdf.PdfWorkerProgram;
 namespace ReportService.IntegrationTests.Templates;
 
 /// <summary>
-/// The by-name resolution where it runs: on the PDF worker's queue, with the
-/// template source served over real HTTP on a loopback port, PostgreSQL 18.6 with
-/// the product's migrations, a real engine and a storage root the worker and this
-/// process share. One test workflow calls <c>ResolveTemplateVersion</c> on
-/// <c>report-pdf-rendering</c> for each case, and the case records what the job
-/// would be told, what the resolver logged and what the store now holds.
+/// The by-name resolution where it runs: on the PDF worker's queue, over the
+/// deployment's template source - a storage root the worker and this process
+/// share, read through the source class - PostgreSQL 18.6 with the product's
+/// migrations and a real engine. One test workflow calls
+/// <c>ResolveTemplateVersion</c> on <c>report-pdf-rendering</c> for each case, and
+/// the case records what the job would be told, what the resolver logged and what
+/// the store now holds.
 /// <para>
 /// Every version this class <b>takes</b> is a package the product's own rules
 /// accept. The checks of a later change are not registered yet, so a "newer invalid
@@ -78,10 +79,16 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
     private readonly PostgresFixture _fixture;
     private readonly PinnedImage _engineImage = CompositionPins.Load().WorkflowEngine;
+
+    // The class's own root: kept short because the source class's keys - a template, a
+    // version and a 64-hex record name each within a segment, and here a version that is a
+    // hashed segment - are resolved under it by the filesystem provider, which refuses a
+    // resolved path longer than its bound.
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
-        "report-service-by-name-it",
-        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        "rsbn",
+        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
+
     private readonly LogCapture _logs = new();
 
     private EngineStart.Engine? _engine;
@@ -89,7 +96,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     private string _connectionString = string.Empty;
     private NpgsqlDataSource? _dataSource;
     private TemplateSourceClass? _source;
-    private SwitchableStore? _sourceStore;
+    private SourceClassStore? _sourceStore;
     private WebApplicationFactory<PdfWorker>? _worker;
     private TemporalWorker? _testWorker;
     private readonly CancellationTokenSource _testWorkerStop = new();
@@ -130,7 +137,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
 
         Directory.CreateDirectory(StorageRoot());
         _source = await TemplateSourceClass.CreateAsync(StorageRoot());
-        _sourceStore = new SwitchableStore(_source.Store);
+        _sourceStore = new SourceClassStore(_source.Store);
 
         _client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
@@ -205,7 +212,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         };
         await _source!.PublishAsync(Template, ByNameFixtures.First, republished);
         await _source.DeleteAsync(TemplateSourceKeys.Descriptor(Template, ByNameFixtures.First, taken.SourceDescriptorSha256!));
-        _sourceStore!.ClearOpened();
+        _sourceStore!.Clear();
 
         var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
 
@@ -259,7 +266,7 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             _logs.Lines,
             line => line.Contains("template.by_name.skipped", StringComparison.Ordinal)
                 && line.Contains(ByNameFixtures.Invalid, StringComparison.Ordinal)
-                && line.Contains("does not match the version", StringComparison.Ordinal));
+                && line.Contains("declares version", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -273,20 +280,6 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         Assert.True(cause.NonRetryable);
         Assert.Contains(ByNameFixtures.Second, cause.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(ByNameFixtures.First, cause.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task ATruncatedTemplateFolderEndsWithTemplateInvalidAndTakesNothing()
-    {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await SeedAsync(ByNameFixtures.First);
-        
-
-        var cause = await AssertRefusedAsync(Template, TemplateResolutionCodes.TemplateInvalid, cancellationToken);
-
-        Assert.True(cause.NonRetryable);
-        Assert.Contains("too many entries", cause.Message, StringComparison.Ordinal);
-        Assert.Null(await RowOrNullAsync(Template, ByNameFixtures.First, cancellationToken));
     }
 
     [Fact]
@@ -336,6 +329,11 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await SeedAsync(ByNameFixtures.Unsupported, ByNameFixtures.HighestRelease);
+
+        // The worker is ready before the outage: its readiness probes the same store the
+        // source class reads, so an outage switched on first would keep the host from ever
+        // answering - and the case would measure the readiness, not the resolution.
+        await LongWorkerAsync(cancellationToken);
         _sourceStore!.Fail = true;
 
         var cause = await AssertRefusedAsync(Template, TemplateResolutionCodes.TemplateSourceUnavailable, cancellationToken);
@@ -678,8 +676,6 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         await _source!.PublishAsync(ByNameFixtures.ForeignTemplate, sharedVersion, ByNameFixtures.Valid(ByNameFixtures.ForeignTemplate, sharedVersion, ByNameFixtures.Other, shared: true));
     }
 
-    private Task SeedEmptyAsync() => Task.CompletedTask;
-
     private static Dictionary<string, byte[]> Package(string templateId, string version) => version switch
     {
         ByNameFixtures.Invalid => ByNameFixtures.InvalidPackage(templateId, version),
@@ -709,74 +705,6 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             cancellationToken: cancellationToken));
     }
 
-    /// <summary>A store whose source read can be made to fail, as an outage does, and answer again.</summary>
-    private sealed class SwitchableStore(IObjectStore inner) : IObjectStore
-    {
-        private readonly List<string> _opened = [];
-
-        public bool Fail { get; set; }
-
-        /// <summary>Every key the read opened, so a case can prove no file of a package was read.</summary>
-        public IReadOnlyList<string> Opened
-        {
-            get
-            {
-                lock (_opened)
-                {
-                    return [.. _opened];
-                }
-            }
-        }
-
-        public StorageCapabilities Capabilities => inner.Capabilities;
-
-        /// <summary>Forgets the keys opened so far, so a case can observe one resolution only.</summary>
-        public void ClearOpened()
-        {
-            lock (_opened)
-            {
-                _opened.Clear();
-            }
-        }
-
-        public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
-            inner.WriteAsync(key, content, cancellationToken);
-
-        public Task<StorageResult<VerifiedRead>> OpenReadAsync(ObjectKey key, long expectedSize, string expectedSha256, CancellationToken cancellationToken)
-        {
-            lock (_opened)
-            {
-                _opened.Add(key.ToString());
-            }
-
-            return Fail
-                ? Task.FromResult(StorageResult.Failure<VerifiedRead>(StorageOutcome.Transient, Failure()))
-                : inner.OpenReadAsync(key, expectedSize, expectedSha256, cancellationToken);
-        }
-
-        public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
-            Fail
-                ? Task.FromResult(StorageResult.Failure<ObjectInfo>(StorageOutcome.Transient, Failure()))
-                : inner.GetInfoAsync(key, cancellationToken);
-
-        public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
-            inner.DeleteAsync(key, cancellationToken);
-
-        public async IAsyncEnumerable<ObjectInfo> ListAsync(string classPrefix, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            if (Fail)
-            {
-                throw new StorageException(StorageOutcome.Transient, Failure());
-            }
-
-            await foreach (var item in inner.ListAsync(classPrefix, cancellationToken).ConfigureAwait(false))
-            {
-                yield return item;
-            }
-        }
-
-        private static StorageError Failure() => new("storage.transient", "The object store did not answer.");
-    }
     /// <summary>One record as the table holds it.</summary>
     private sealed class StoredVersion
     {

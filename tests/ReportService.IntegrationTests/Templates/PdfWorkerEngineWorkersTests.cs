@@ -44,11 +44,12 @@ namespace ReportService.IntegrationTests.Templates;
 /// template is taken after the return is pinned.
 /// <para>
 /// The PDF worker is hosted in this process on its real registrations, beside the API and the
-/// orchestration worker the last case needs; the template source is the delivered loopback
-/// double. (d) - a registration on an undeclared queue stops start-up naming the queue - is the
-/// delivered <c>TemplateTakeRegistrationTests</c> case, re-run unchanged by the integration
-/// cycle that covers this queue's work, and the take's own classes plus
-/// <c>JointTemplateTakeTests</c> are re-run there as the regression.
+/// orchestration worker the last case needs; the template source is the deployment's object
+/// store, the composition's own root read through the source class. (d) - a registration on an
+/// undeclared queue stops start-up naming the queue - is the delivered
+/// <c>TemplateTakeRegistrationTests</c> case, re-run unchanged by the integration cycle that
+/// covers this queue's work, and the take's own classes plus <c>JointTemplateTakeTests</c> are
+/// re-run there as the regression.
 /// </para>
 /// </summary>
 public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>, IAsyncLifetime
@@ -82,7 +83,7 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
 
     private int _hostPort;
 
-    private TemplateSourceHost? _source;
+    private TemplateSourceClass? _source;
 
     private string? _connectionString;
 
@@ -129,9 +130,11 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
 
         await StartEngineAsync(cancellationToken);
 
-        var stub = new GitHubTemplateSourceStub();
-        stub.SeedPackage(Template, Version, TemplatePackageFixtures.Valid(Template, Version, owner: Consumer, shared: true));
-        _source = await TemplateSourceHost.StartAsync(stub, cancellationToken);
+        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        await _source.PublishAsync(
+            Template,
+            Version,
+            TemplatePackageFixtures.Valid(Template, Version, owner: Consumer, shared: true));
 
         _api = Api();
         _orchestration = Orchestration();
@@ -457,10 +460,8 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ApiBaseUrl", _source!.BaseUrl.AbsoluteUri);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", GitHubTemplateSourceStub.Owner + "/" + GitHubTemplateSourceStub.Repository);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", GitHubTemplateSourceStub.Branch);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:AllowInsecureLoopback", "true");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 
@@ -485,7 +486,8 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
 
         public string ResolvedVersion { get; set; } = string.Empty;
 
-        public string CommitSha { get; set; } = string.Empty;
+        // A version taken from the deployment's object store has no commit: the column is nullable.
+        public string? CommitSha { get; set; }
 
         public string? SourceDescriptorSha256 { get; set; }
 

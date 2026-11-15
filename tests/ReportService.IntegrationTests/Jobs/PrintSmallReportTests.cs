@@ -8,7 +8,8 @@ namespace ReportService.IntegrationTests.Jobs;
 /// A small report printed as one PDF, driven as a real job through the product's own API and
 /// its own processes: one PostgreSQL 18.6 database, one Temporal 1.9.1 engine, one storage
 /// root, the product's API, orchestration worker and render worker on their real
-/// registrations, and the template served from the delivered loopback double at two versions.
+/// registrations, and the template published into that root and read through the source class
+/// at two versions.
 /// <para>
 /// Every case asserts what the composition recorded: the job's terminal status, its output's,
 /// the one artifact and the part commit that names the same object, and - where a consumer
@@ -184,8 +185,8 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
 
         // The source is made unreachable. The rendering path never reads it, and the take finds
         // the version already kept.
-        rig.Source.Stop();
-        var requestsBefore = rig.Source.Requests.Count;
+        rig.StopTheSource();
+        var readsBefore = rig.SourceOperations.Count;
 
         var reportJobId = await rig.SubmitAsync(
             await rig.ReadyUploadAsync(PrintingRig.Snapshot(25), cancellationToken),
@@ -196,9 +197,9 @@ public sealed class PrintSmallReportTests : IClassFixture<PostgresFixture>
         Assert.Equal("SUCCEEDED", job.Status);
         Assert.NotNull(job.ArtifactId);
 
-        // A version already taken is used without consulting the source: the double recorded no
-        // request of any kind while the job ran.
-        Assert.Equal(requestsBefore, rig.Source.Requests.Count);
+        // A version already taken is used without consulting the source: the class recorded no
+        // operation of any kind while the job ran.
+        Assert.Equal(readsBefore, rig.SourceOperations.Count);
     }
 
     [Fact]

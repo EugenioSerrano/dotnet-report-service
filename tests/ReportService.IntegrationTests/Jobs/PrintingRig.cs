@@ -9,6 +9,9 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ReportService.Api.Consumers;
@@ -38,8 +41,9 @@ namespace ReportService.IntegrationTests.Jobs;
 /// dependencies: a PostgreSQL 18.6 database brought to the expected version by the product's
 /// migrations, a Temporal 1.9.1 engine, one storage root, and the product's own API,
 /// orchestration worker and render worker hosted on their real registrations. The template
-/// source is the delivered loopback double, seeded with the sample template at two versions
-/// and with the two versions a job must refuse.
+/// source is the deployment's object store - the composition's own root, read through the
+/// source class - seeded with the sample template at two versions and with the two versions a
+/// job must refuse.
 /// <para>
 /// The rig is the shared grounding of the worker-level cases: each case drives jobs through
 /// the product's own API, waits for the terminal status from the composition's database - no
@@ -88,7 +92,7 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private int _hostPort;
 
-    private TemplateSourceHost? _source;
+    private SourceClassStore? _sourceStore;
 
     private string? _connectionString;
 
@@ -102,8 +106,11 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private PrintingRig(PostgresFixture fixture) => _fixture = fixture;
 
-    /// <summary>The double every take and resolution of these cases reads.</summary>
-    public GitHubTemplateSourceStub Source { get; private set; } = null!;
+    /// <summary>The source class every take and resolution of these cases reads, publishing into the composition's own root.</summary>
+    public TemplateSourceClass Source { get; private set; } = null!;
+
+    /// <summary>Every operation the template source class performed, in order.</summary>
+    public IReadOnlyList<SourceClassStore.SourceOperation> SourceOperations => _sourceStore!.SourceOperations;
 
     /// <summary>The storage the composition writes to.</summary>
     public IObjectStore Objects { get; private set; } = null!;
@@ -147,6 +154,9 @@ internal sealed class PrintingRig : IAsyncDisposable
         _orchestration ??= Orchestration();
         await WaitForHealthyAsync(_orchestration.CreateClient(), ReadyDeadline, cancellationToken);
     }
+
+    /// <summary>Stops answering the template source, as an outage of the deployment's store does.</summary>
+    public void StopTheSource() => _sourceStore!.Fail = true;
 
     /// <summary>Creates a ready upload of <paramref name="document"/> and answers its identifier.</summary>
     /// <param name="document">The snapshot's bytes.</param>
@@ -375,11 +385,6 @@ internal sealed class PrintingRig : IAsyncDisposable
             await _engine.Container.DisposeAsync();
         }
 
-        if (_source is not null)
-        {
-            await _source.DisposeAsync();
-        }
-
         try
         {
             Directory.Delete(_directory, recursive: true);
@@ -447,9 +452,9 @@ internal sealed class PrintingRig : IAsyncDisposable
 
         await StartEngineAsync(cancellationToken);
 
-        Source = new GitHubTemplateSourceStub();
-        SeedSource(Source);
-        _source = await TemplateSourceHost.StartAsync(Source, cancellationToken);
+        _sourceStore = new SourceClassStore(Objects);
+        Source = TemplateSourceClass.Over(_sourceStore);
+        await SeedSourceAsync(Source);
 
         _api = Api();
         _pdf = Pdf();
@@ -465,15 +470,15 @@ internal sealed class PrintingRig : IAsyncDisposable
     // The four versions of the sample template: the release, one later release that prints its
     // own version in its header, one that declares no field it prints as it is, and one that
     // declares page subtotals.
-    private static void SeedSource(GitHubTemplateSourceStub stub)
+    private static async Task SeedSourceAsync(TemplateSourceClass source)
     {
         foreach (var version in new[] { First, Second })
         {
-            stub.SeedPackage(Template, version, Package(version, declaresAnchors: true, pageTotals: false));
+            await source.PublishAsync(Template, version, Package(version, declaresAnchors: true, pageTotals: false));
         }
 
-        stub.SeedPackage(Template, NoAnchors, Package(NoAnchors, declaresAnchors: false, pageTotals: false));
-        stub.SeedPackage(Template, PageTotals, Package(PageTotals, declaresAnchors: true, pageTotals: true));
+        await source.PublishAsync(Template, NoAnchors, Package(NoAnchors, declaresAnchors: false, pageTotals: false));
+        await source.PublishAsync(Template, PageTotals, Package(PageTotals, declaresAnchors: true, pageTotals: true));
     }
 
     private static Dictionary<string, byte[]> Package(string version, bool declaresAnchors, bool pageTotals)
@@ -582,10 +587,13 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ApiBaseUrl", _source!.BaseUrl.AbsoluteUri);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", GitHubTemplateSourceStub.Owner + "/" + GitHubTemplateSourceStub.Repository);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", GitHubTemplateSourceStub.Branch);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:AllowInsecureLoopback", "true");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
+            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IObjectStore>();
+                services.AddSingleton<IObjectStore>(_sourceStore!);
+            });
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 
