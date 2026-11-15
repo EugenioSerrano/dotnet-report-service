@@ -1,8 +1,10 @@
 extern alias orchestration;
 
+using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -26,6 +28,7 @@ using ReportService.Storage.Filesystem;
 using ReportService.Testing;
 using ReportService.Uploads;
 using Temporalio.Api.Enums.V1;
+using Temporalio.Api.History.V1;
 using Temporalio.Client;
 using Temporalio.Common;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
@@ -515,46 +518,269 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var uploadId = await GivenUploadAsync(ValidBody(), UploadContentEncoding.None, deadline: TimeSpan.FromHours(6), cancellationToken);
-        var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
-        var workflowId = ReportJobWorkflow.WorkflowIdFor(reportJobId);
+
+        // The confirmation wrote the verification request; withdrawing it before any worker
+        // exists holds the upload where the subject needs it — verifying, with nothing able to
+        // claim the request — and the nudge is sent only when the case asks for it.
+        await WithdrawVerificationRequestAsync(uploadId, cancellationToken);
 
         var settings = new Settings()
             .WithBackstop(TimeSpan.FromSeconds(1))
             .WithContinueAsNewAfter(2);
-        await using var worker = Worker(settings);
-        using var workerClient = worker.CreateClient();
-        await WaitForStatusAsync(workerClient, HttpStatusCode.OK, cancellationToken);
+
+        // The job's run is executed by the product's own orchestration worker in a process of
+        // its own: the wait's bounds are process-wide, so only a process of its own can hold a
+        // bound no other host of this test process publishes over.
+        await using var worker = await OrchestrationWorkerProcess.StartAsync(
+            _hostPort,
+            _connectionString!,
+            StorageRoot(),
+            settings,
+            ReadyDeadline,
+            WorkerLogPath(),
+            cancellationToken);
+        await WaitForStatusAsync(worker.Client, HttpStatusCode.OK, cancellationToken);
+
+        var reportJobId = await AcceptJobAsync(uploadId, cancellationToken);
+        var workflowId = ReportJobWorkflow.WorkflowIdFor(reportJobId);
         await WaitForStageAsync(reportJobId, InputWaitStage.WaitingForInput, cancellationToken);
 
-        var description = (RunId: string.Empty, FirstRunId: await FirstRunIdAsync(workflowId, cancellationToken));
+        var client = await EngineClientAsync(cancellationToken);
+        try
+        {
+            // The dispatcher records the execution reference after it starts the run, so the
+            // baseline is waited for, bounded, and an unreadable reference fails the case: a
+            // changed run id alone is never evidence of a continuation.
+            var firstRunId = await FirstRunIdAsync(workflowId, cancellationToken);
+            Assert.NotNull(firstRunId);
+
+            // The write a neighbour host performs when it starts, forced inside the first run's
+            // window: the bound the process publishes is the delivered default, and the run in
+            // the child must still take the case's own two checks.
+            PublishTheDeliveredDefaults("the first run's window");
+
+            var currentRunId = await WaitForAContinuationAsync(client, workflowId, firstRunId, cancellationToken);
+
+            // The same write again, inside the continued run's wait — and then the release,
+            // before the histories are read, so the verification's nudge arrives inside the
+            // window the continued run's own bound leaves open.
+            PublishTheDeliveredDefaults("the continued run's wait");
+            await RequestVerificationAsync(uploadId, cancellationToken);
+
+            // The continuation is the engine's record and nothing else: the first run closed by
+            // one continuation naming the current run, with the case's two checks before it.
+            var firstRun = await HistoryAsync(workflowId, firstRunId, cancellationToken);
+            var continuation = AssertTheContinuedAsNewEvent(firstRun, currentRunId);
+            AssertTheTwoChecksBeforeTheContinuation(firstRun, continuation.EventId);
+            AssertInsideTheHistoryBound(firstRun);
+
+            // The second run began from the first one, under the same workflow identifier.
+            var secondRun = await HistoryAsync(workflowId, currentRunId, cancellationToken);
+            AssertTheContinuationStarted(secondRun, firstRunId);
+            AssertInsideTheHistoryBound(secondRun);
+
+            Assert.Equal("QUEUED", (await JobAsync(reportJobId, cancellationToken))!.Status);
+            Assert.Equal(InputWaitStage.WaitingForInput, (await JobAsync(reportJobId, cancellationToken))!.Stage);
+
+            await WriteTheContinuationEvidenceAsync(workflowId, firstRunId, currentRunId, firstRun, secondRun, continuation, cancellationToken);
+
+            // The nudge across the continuation is not lost: the continued run leaves the wait,
+            // and the read it made is the one the workflow task that consumed the signal scheduled.
+            await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
+            var woken = await HistoryAsync(workflowId, currentRunId, cancellationToken);
+            var wakeUp = AssertTheWakeUpAcrossTheContinuation(woken);
+            await WriteTheWakeUpEvidenceAsync(woken, wakeUp, cancellationToken);
+        }
+        finally
+        {
+            // The child is about to be gone, so no later case of the class may inherit a run
+            // whose worker no longer exists. The termination is cleanup and no evidence.
+            await TerminateTheRunAsync(client, workflowId);
+        }
+    }
+
+    // The exact publication a neighbour orchestration worker host performs when it starts,
+    // with the delivered defaults. The assertion proves the write took effect in this process,
+    // so the child's bound is the only one its run can use.
+    private static void PublishTheDeliveredDefaults(string window)
+    {
+        ReportJobWorkflow.Configure(InputWaitOptions.DefaultBackstop, InputWaitOptions.DefaultContinueAsNewAfter);
+        var published = ReportJobWorkflow.CurrentSettings();
+        Assert.True(
+            published == (InputWaitOptions.DefaultBackstop, InputWaitOptions.DefaultContinueAsNewAfter),
+            $"the publication a neighbour worker performs did not take effect in {window}: "
+            + $"the process reads {published.Backstop} / {published.ContinueAsNewAfter.ToString(CultureInfo.InvariantCulture)}");
+    }
+
+    private async Task<string> WaitForAContinuationAsync(
+        TemporalClient client,
+        string workflowId,
+        string firstRunId,
+        CancellationToken cancellationToken)
+    {
+        var currentRunId = firstRunId;
         await Wait.UntilAsync(
             $"the run of {workflowId} to continue as a new one",
             async token =>
             {
-                var client = await EngineClientAsync(token);
                 var current = await client.GetWorkflowHandle(workflowId).DescribeAsync().WaitAsync(token);
-                description = (current.RunId, description.FirstRunId);
-                return !string.Equals(current.RunId, description.FirstRunId, StringComparison.Ordinal);
+                currentRunId = current.RunId;
+                return !string.Equals(current.RunId, firstRunId, StringComparison.Ordinal);
             },
             WaitDeadline,
             TimeSpan.FromMilliseconds(250),
             cancellationToken);
+        return currentRunId;
+    }
 
-        Assert.NotEqual(description.FirstRunId, description.RunId);
-        Assert.Equal("QUEUED", (await JobAsync(reportJobId, cancellationToken))!.Status);
-        Assert.Equal(InputWaitStage.WaitingForInput, (await JobAsync(reportJobId, cancellationToken))!.Stage);
+    // The first run closed by exactly one continuation, naming the run the engine now reports,
+    // and by nothing else.
+    private static HistoryEvent AssertTheContinuedAsNewEvent(WorkflowHistory firstRun, string currentRunId)
+    {
+        var continuation = Assert.Single(firstRun.Events, entry => entry.EventType == EventType.WorkflowExecutionContinuedAsNew);
+        Assert.Equal(currentRunId, continuation.WorkflowExecutionContinuedAsNewEventAttributes.NewExecutionRunId);
+        Assert.DoesNotContain(firstRun.Events, entry => entry.EventType is EventType.WorkflowExecutionCompleted
+            or EventType.WorkflowExecutionFailed
+            or EventType.WorkflowExecutionCanceled
+            or EventType.WorkflowExecutionTerminated);
+        return continuation;
+    }
 
-        // Each run's history stays inside the relationship the configured limit promises, and no
-        // run continued after another run was started.
-        foreach (var runId in new[] { description.FirstRunId, description.RunId })
+    // The run used the case's own bound: exactly two loop checks sit between the step that
+    // records the wait and the continuation. The run's initial resolution precedes the step.
+    private static void AssertTheTwoChecksBeforeTheContinuation(WorkflowHistory firstRun, long continuationEventId)
+    {
+        var begun = Assert.Single(firstRun.Events, entry => entry.EventType == EventType.ActivityTaskScheduled
+            && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.BeginName);
+        var checks = firstRun.Events.Count(entry => entry.EventType == EventType.ActivityTaskScheduled
+            && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == ReportJobActivities.ResolveInputName
+            && entry.EventId > begun.EventId
+            && entry.EventId < continuationEventId);
+        Assert.Equal(2, checks);
+    }
+
+    // The second run is a continuation of the first: the engine names the run it continued from,
+    // under the same workflow identifier.
+    private static void AssertTheContinuationStarted(WorkflowHistory secondRun, string firstRunId)
+    {
+        var started = Assert.Single(secondRun.Events, entry => entry.EventType == EventType.WorkflowExecutionStarted);
+        Assert.Equal(EventType.WorkflowExecutionStarted, secondRun.Events.First().EventType);
+        Assert.Equal(firstRunId, started.WorkflowExecutionStartedEventAttributes.ContinuedExecutionRunId);
+    }
+
+    private static void AssertInsideTheHistoryBound(WorkflowHistory run) =>
+        Assert.True(
+            run.Events.Count <= (2 * InputWaitHistoryBudget.WorstCaseEventsPerPass) + InputWaitHistoryBudget.PrefixEvents,
+            $"the run carries {run.Events.Count} events, past the relationship its configured checks promise");
+
+    // The nudge reached the continued run and its own workflow task made the check that ended
+    // the wait: the read is scheduled by the task that consumed the signal, and the end step
+    // follows it and completes. A timer of the run's own backstop may land in that same task;
+    // it is recorded, never failed on.
+    private static (long SignalEventId, IReadOnlyList<long> TimersBeforeTheRead) AssertTheWakeUpAcrossTheContinuation(
+        WorkflowHistory woken)
+    {
+        var signal = Assert.Single(woken.Events, entry => entry.EventType == EventType.WorkflowExecutionSignaled
+            && string.Equals(
+                entry.WorkflowExecutionSignaledEventAttributes.SignalName,
+                ReportJobWorkflow.InputChangedSignal,
+                StringComparison.Ordinal));
+
+        var read = woken.Events.FirstOrDefault(entry => entry.EventId > signal.EventId
+            && entry.EventType == EventType.ActivityTaskScheduled
+            && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == ReportJobActivities.ResolveInputName);
+        Assert.NotNull(read);
+
+        var consumer = woken.Events.First(entry => entry.EventId > signal.EventId && entry.EventType == EventType.WorkflowTaskCompleted);
+        var producer = woken.Events.Last(entry => entry.EventId < read!.EventId && entry.EventType == EventType.WorkflowTaskCompleted);
+        Assert.Equal(consumer.EventId, producer.EventId);
+
+        var timers = woken.Events
+            .Where(entry => entry.EventId > signal.EventId
+                && entry.EventId < read!.EventId
+                && entry.EventType == EventType.TimerFired)
+            .Select(entry => entry.EventId)
+            .ToArray();
+
+        var ended = woken.Events.First(entry => entry.EventId > read!.EventId
+            && entry.EventType == EventType.ActivityTaskScheduled
+            && entry.ActivityTaskScheduledEventAttributes.ActivityType.Name == InputWaitActivities.EndName);
+        Assert.Contains(woken.Events, entry => entry.EventType == EventType.ActivityTaskCompleted
+            && entry.ActivityTaskCompletedEventAttributes.ScheduledEventId == ended.EventId);
+
+        return (signal.EventId, timers);
+    }
+
+    private async Task WriteTheContinuationEvidenceAsync(
+        string workflowId,
+        string firstRunId,
+        string currentRunId,
+        WorkflowHistory firstRun,
+        WorkflowHistory secondRun,
+        HistoryEvent continuation,
+        CancellationToken cancellationToken)
+    {
+        await File.WriteAllTextAsync(EvidencePath("continue-as-new-first-run.json"), firstRun.ToJson(), cancellationToken);
+        await File.WriteAllTextAsync(EvidencePath("continue-as-new-second-run.json"), secondRun.ToJson(), cancellationToken);
+        var summary = string.Join(
+            Environment.NewLine,
+            $"workflow-id: {workflowId}",
+            $"first-run-id: {firstRunId}",
+            $"second-run-id: {currentRunId}",
+            $"continuation-event: {continuation.EventId} new-execution-run-id: {continuation.WorkflowExecutionContinuedAsNewEventAttributes.NewExecutionRunId}",
+            $"first-run-events: {firstRun.Events.Count}",
+            $"second-run-events-at-the-continuation: {secondRun.Events.Count}");
+        await File.WriteAllTextAsync(EvidencePath("continue-as-new-continuation.txt"), summary + Environment.NewLine, cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine(summary);
+    }
+
+    private async Task WriteTheWakeUpEvidenceAsync(
+        WorkflowHistory woken,
+        (long SignalEventId, IReadOnlyList<long> TimersBeforeTheRead) wakeUp,
+        CancellationToken cancellationToken)
+    {
+        await File.WriteAllTextAsync(EvidencePath("continue-as-new-woken-run.json"), woken.ToJson(), cancellationToken);
+        var timers = wakeUp.TimersBeforeTheRead.Count == 0
+            ? "(none)"
+            : string.Join(", ", wakeUp.TimersBeforeTheRead.Select(entry => entry.ToString(CultureInfo.InvariantCulture)));
+        var summary = string.Join(
+            Environment.NewLine,
+            $"signal-event: {wakeUp.SignalEventId} signal: {ReportJobWorkflow.InputChangedSignal}",
+            $"timer-fired-before-the-read: {timers}",
+            $"woken-run-events: {woken.Events.Count}");
+        await File.WriteAllTextAsync(EvidencePath("continue-as-new-wake-up.txt"), summary + Environment.NewLine, cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine(summary);
+    }
+
+    // The run's own evidence goes into the run's folder when the runner gave the process one,
+    // and into the class's temporary directory when a case is run by hand.
+    private string EvidencePath(string fileName)
+    {
+        var folder = _directory;
+        if (RunEnvironment.RunDirectory is { } run)
         {
-            var run = await HistoryAsync(workflowId, runId, cancellationToken);
-            Assert.True(run.Events.Count <= (2 * InputWaitHistoryBudget.WorstCaseEventsPerPass) + InputWaitHistoryBudget.PrefixEvents);
+            folder = Path.Combine(run, RunEnvironment.EvidenceFolderName);
+            Directory.CreateDirectory(folder);
         }
 
-        // The nudge across the continuation is not lost: the continued run still leaves the wait.
-        worker.ReleaseVerification();
-        await WaitForInputWaitToEndAsync(reportJobId, cancellationToken);
+        return Path.Combine(folder, fileName);
+    }
+
+    private string WorkerLogPath() => Path.Combine(_directory, "continue-as-new-worker.log");
+
+    // Cleanup, never evidence: the run's worker process is about to be gone, and a later case of
+    // the class polls the class's own engine.
+    private static async Task TerminateTheRunAsync(TemporalClient client, string workflowId)
+    {
+        try
+        {
+            await client.GetWorkflowHandle<ReportJobWorkflow>(workflowId)
+                .TerminateAsync("the case ended and no worker of its own remains");
+        }
+        catch (Temporalio.Exceptions.RpcException exception) when ((int)exception.Code == 5)
+        {
+            // The run has already ended: nothing is left to clean up.
+        }
     }
 
     private static List<string> ActivitiesOf(WorkflowHistory history) =>
@@ -625,6 +851,22 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         await connection.ExecuteAsync(new CommandDefinition(
             "DELETE FROM report_service.intents WHERE kind = 'start-upload-verification' AND subject_id = @UploadId",
             new { UploadId = uploadId },
+            cancellationToken: cancellationToken));
+    }
+
+    // The release, through the product's own record: the row the confirmation writes, inserted
+    // again once the continuation has been observed. The worker's dispatcher claims it, the
+    // verification runs, and its own signaller nudges the job.
+    private async Task RequestVerificationAsync(string uploadId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(
+            """
+            INSERT INTO report_service.intents (kind, subject_id, status, attempts, created_at, next_attempt_at)
+            VALUES ('start-upload-verification', @UploadId, 'PENDING', 0, @CompletedAt, @CompletedAt)
+            ON CONFLICT (kind, subject_id) DO NOTHING
+            """,
+            new { UploadId = uploadId, CompletedAt = DateTimeOffset.UtcNow },
             cancellationToken: cancellationToken));
     }
 
@@ -972,11 +1214,25 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
     }
 
     // The run the dispatcher recorded when it started the job, which is the first run of the
-    // execution: a continuation keeps the workflow identifier and changes the run.
-    private async Task<string> FirstRunIdAsync(string workflowId, CancellationToken cancellationToken)
+    // execution: a continuation keeps the workflow identifier and changes the run. The
+    // reference is written after the start, so the case waits for it, bounded, and answers
+    // null when it never appears — an unreadable reference is a failure, never a run.
+    private async Task<string?> FirstRunIdAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        string? runId = null;
+        await Wait.UntilAsync(
+            $"the execution reference of {workflowId} in report_service.execution_references",
+            async token => (runId = await ReadFirstRunIdAsync(workflowId, token)) is not null,
+            DispatchDeadline,
+            TimeSpan.FromMilliseconds(250),
+            cancellationToken);
+        return runId;
+    }
+
+    private async Task<string?> ReadFirstRunIdAsync(string workflowId, CancellationToken cancellationToken)
     {
         await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
-        return await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+        return await connection.ExecuteScalarAsync<string?>(new CommandDefinition(
             """
             SELECT run_id
               FROM report_service.execution_references
@@ -985,7 +1241,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
              LIMIT 1
             """,
             new { WorkflowId = workflowId },
-            cancellationToken: cancellationToken)) ?? string.Empty;
+            cancellationToken: cancellationToken));
     }
 
     /// <summary>
@@ -1037,6 +1293,246 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         public void ReleaseVerification() => _gate.Release();
 
         public ValueTask DisposeAsync() => _factory.DisposeAsync();
+    }
+
+    /// <summary>
+    /// The product's own orchestration worker as a process of its own, started with the case's
+    /// settings: the wait's bounds are process-wide, so the job's run is executed where no other
+    /// host of this test process can publish over them. The child loads the worker project's own
+    /// settings (the test output carries the API's), is killed tree-wide on disposal, and writes
+    /// its log into the class's directory and, when the runner gave the process one, into the
+    /// run's evidence folder.
+    /// </summary>
+    private sealed class OrchestrationWorkerProcess : IAsyncDisposable
+    {
+        private const string AssemblyName = "ReportService.Workers.Orchestration.dll";
+
+        private readonly Process _process;
+        private readonly HttpClient _client;
+        private readonly string _logPath;
+        private readonly LogSink _log;
+
+        private OrchestrationWorkerProcess(Process process, HttpClient client, string logPath, LogSink log)
+        {
+            _process = process;
+            _client = client;
+            _logPath = logPath;
+            _log = log;
+        }
+
+        public HttpClient Client => _client;
+
+        public static async Task<OrchestrationWorkerProcess> StartAsync(
+            int enginePort,
+            string connectionString,
+            string storageRoot,
+            Settings settings,
+            TimeSpan readyDeadline,
+            string logPath,
+            CancellationToken cancellationToken)
+        {
+            var port = FreeLoopbackPort();
+            var start = new ProcessStartInfo("dotnet")
+            {
+                WorkingDirectory = AppContext.BaseDirectory,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+            start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, AssemblyName));
+            start.Environment["ASPNETCORE_URLS"] = $"http://127.0.0.1:{port.ToString(CultureInfo.InvariantCulture)}";
+
+            // The worker's own settings file is at the project, not beside the test's assembly:
+            // the output's appsettings.json belongs to the API and carries no dispatcher.
+            start.Environment["ASPNETCORE_CONTENTROOT"] = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Workers.Orchestration");
+            start.Environment["Temporal__Address"] = $"127.0.0.1:{enginePort.ToString(CultureInfo.InvariantCulture)}";
+            start.Environment["Temporal__Namespace"] = "default";
+            start.Environment["Storage__Provider"] = "filesystem";
+            start.Environment["Storage__Filesystem__Root"] = storageRoot;
+            start.Environment["Storage__Filesystem__CreateIfMissing"] = "true";
+            start.Environment[EnvironmentKey(DatabaseOptions.ConnectionStringSetting)] = connectionString;
+            start.Environment[EnvironmentKey(DatabaseOptions.ExpectedSchemaVersionSetting)] = MigrationCatalog.ExpectedVersion;
+            foreach (var (setting, value) in settings.Values)
+            {
+                start.Environment[EnvironmentKey(setting)] = value;
+            }
+
+            // The release of the verification is claimed at once instead of up to a second later.
+            start.Environment["Dispatcher__PollInterval"] = "00:00:00.100";
+            start.Environment.Remove("OTEL_EXPORTER_OTLP_ENDPOINT");
+            start.Environment.Remove("OTEL_EXPORTER_OTLP_PROTOCOL");
+            start.Environment.Remove("Telemetry__OtlpEndpoint");
+
+            var log = new LogSink(logPath);
+            var process = new Process { StartInfo = start };
+            process.OutputDataReceived += (_, entry) => log.Write(entry.Data);
+            process.ErrorDataReceived += (_, entry) => log.Write(entry.Data);
+
+            HttpClient? client = null;
+            try
+            {
+                if (!process.Start())
+                {
+                    throw new InvalidOperationException("the orchestration worker process did not start");
+                }
+
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                client = new HttpClient
+                {
+                    BaseAddress = new Uri($"http://127.0.0.1:{port.ToString(CultureInfo.InvariantCulture)}", UriKind.Absolute),
+                    Timeout = TimeSpan.FromSeconds(30),
+                };
+                var probe = client;
+                await Wait.UntilAsync(
+                    "the orchestration worker process answering its health check",
+                    async token =>
+                    {
+                        using var response = await probe.GetAsync(new Uri("/health", UriKind.Relative), token);
+                        return response.StatusCode == HttpStatusCode.OK;
+                    },
+                    readyDeadline,
+                    TimeSpan.FromMilliseconds(500),
+                    cancellationToken);
+                return new OrchestrationWorkerProcess(process, client, logPath, log);
+            }
+            catch (Exception exception)
+            {
+                Kill(process);
+                client?.Dispose();
+                log.Dispose();
+                if (exception is OperationCanceledException)
+                {
+                    throw;
+                }
+
+                throw new InvalidOperationException(
+                    $"the orchestration worker process did not answer its health check: {exception.Message}"
+                    + $"{Environment.NewLine}{LogTail(logPath)}",
+                    exception);
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            Kill(_process);
+            try
+            {
+                await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            }
+            catch (Exception exception) when (exception is TimeoutException or InvalidOperationException)
+            {
+                // The killed process did not report its exit; the class is ending either way.
+            }
+
+            _process.Dispose();
+            _client.Dispose();
+            _log.Dispose();
+
+            if (RunEnvironment.RunDirectory is { } run)
+            {
+                var evidence = Path.Combine(run, RunEnvironment.EvidenceFolderName);
+                Directory.CreateDirectory(evidence);
+                try
+                {
+                    File.Copy(_logPath, Path.Combine(evidence, "continue-as-new-worker.log"), overwrite: true);
+                }
+                catch (IOException)
+                {
+                    // A log that cannot be copied costs the record, never the case.
+                }
+            }
+        }
+
+        private static string EnvironmentKey(string setting) => setting.Replace(":", "__", StringComparison.Ordinal);
+
+        private static int FreeLoopbackPort()
+        {
+            using var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+
+        private static void Kill(Process process)
+        {
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(30_000);
+                }
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+            {
+                // The process was already gone: nothing is left to stop.
+            }
+        }
+
+        private static string LogTail(string path)
+        {
+            try
+            {
+                return File.Exists(path)
+                    ? string.Join(Environment.NewLine, File.ReadAllLines(path).TakeLast(20))
+                    : "(the child wrote no log)";
+            }
+            catch (IOException)
+            {
+                return "(the child's log could not be read)";
+            }
+        }
+
+        /// <summary>The file the child's own output is appended to, written from its readers.</summary>
+        private sealed class LogSink : IDisposable
+        {
+            private readonly StreamWriter _writer;
+            private readonly object _gate = new();
+            private bool _closed;
+
+            public LogSink(string path)
+            {
+                _writer = new StreamWriter(
+                    new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read),
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
+                {
+                    AutoFlush = true,
+                };
+            }
+
+            public void Write(string? line)
+            {
+                if (line is null)
+                {
+                    return;
+                }
+
+                lock (_gate)
+                {
+                    if (_closed)
+                    {
+                        return;
+                    }
+
+                    _writer.WriteLine(line);
+                }
+            }
+
+            public void Dispose()
+            {
+                lock (_gate)
+                {
+                    if (_closed)
+                    {
+                        return;
+                    }
+
+                    _closed = true;
+                    _writer.Dispose();
+                }
+            }
+        }
     }
 
     /// <summary>The gate the verification's data work waits on until the case opens it.</summary>

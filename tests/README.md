@@ -209,6 +209,11 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   state each worker reports for each of its queues — which is the work the service
   registers — and a change that registers work on a queue updates that table in the
   same change.
+- **The continue-as-new case runs its job in a worker process of its own**, started
+  from the product's own orchestration assembly with the case's own settings: the
+  wait's two bounds are process-wide, so a host started beside the case in this test
+  process would publish over them. See
+  `JobInputWaitTests.AWaitThatOutlastsItsChecksContinuesAsANewRunAndIsStillWoken`.
 - Test names describe behaviour.
 
 ## What goes here
