@@ -8,14 +8,15 @@ namespace ReportService.TemplatePackages.Records;
 
 /// <summary>
 /// The taken template versions in the application's own database, read and
-/// written with constant SQL over a pooled data source. The insert lets the
-/// primary key decide a race: the loser reads the winner's row in the same
-/// transaction and reports it, so two takes of one version can never leave two
-/// rows. A row holds one of the two source shapes: the commit and tree of a
-/// version taken before the object-store source, or the publication descriptor's
-/// hash, the key it was read from and the verified file list of one taken from
-/// it. The stored manifest is kept as a JSON document and read back in the
-/// column's own canonical text; every reader parses the document, so member
+/// written with constant SQL over a pooled data source. The insert answers every
+/// unique index the table declares — the identity's row and the package key — so
+/// a race on either is answered instead of raised: the loser reads the winner's
+/// row in the same transaction and reports it, and two takes of one version can
+/// never leave two rows. A row holds one of the two source shapes: the commit and
+/// tree of a version taken before the object-store source, or the publication
+/// descriptor's hash, the key it was read from and the verified file list of one
+/// taken from it. The stored manifest is kept as a JSON document and read back in
+/// the column's own canonical text; every reader parses the document, so member
 /// order and spacing belong to the storage and never to a reader.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Runs only against a real PostgreSQL server; covered by the integration suite.")]
@@ -68,7 +69,7 @@ public sealed class PostgresTemplateVersionStore : ITemplateVersionStore
              @SchemaRef, @CommitSha, @SourceTreeSha, @PackageSha256, @PackageSize, @FileCount,
              @ObjectKey, CAST(@ManifestJson AS jsonb), @TakenAt, @SourceDescriptorSha256, @SourceDescriptorKey,
              CAST(@SourceObjectsJson AS jsonb))
-        ON CONFLICT (template_id, version) DO NOTHING
+        ON CONFLICT DO NOTHING
         RETURNING template_id
         """;
 

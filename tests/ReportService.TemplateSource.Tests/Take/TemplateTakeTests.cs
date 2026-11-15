@@ -348,6 +348,24 @@ public sealed class TemplateTakeTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnIdenticalTakeThatWinsTheInsertIsTheCopyTheLoserUses()
+    {
+        await _source.PublishAsync(Template, Version, Package());
+        var identical = new IdenticalInsertStore(_versions);
+
+        var outcome = await Take(store: identical).TakeAsync(Template, Version, Consumer, "job-8", TestContext.Current.CancellationToken);
+
+        // The store answered with the row an identical take had just committed: the caller's
+        // own bytes, at the same key and with the same hash, both computed from the package
+        // that was published. The job uses that copy, and the lost race is not a refusal.
+        var taken = Assert.IsType<AlreadyTakenVersion>(outcome);
+        Assert.NotNull(identical.Answered);
+        Assert.Equal(identical.Answered, taken.Version);
+        Assert.Equal(identical.Answered!.PackageSha256, taken.Version.PackageSha256);
+        Assert.IsNotType<RefusedVersion>(outcome);
+    }
+
+    [Fact]
     public async Task AnInvalidNameIsNotFoundWithoutReadingTheSource()
     {
         var outcome = await Take().TakeAsync(Template, "not a version", Consumer, null, TestContext.Current.CancellationToken);
@@ -645,6 +663,24 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         {
             inner.TryInsertAsync(winner, cancellationToken).GetAwaiter().GetResult();
             return inner.TryInsertAsync(record, cancellationToken);
+        }
+    }
+
+    /// <summary>A store whose insert meets the identical record another take committed a microsecond earlier.</summary>
+    private sealed class IdenticalInsertStore(ITemplateVersionStore inner) : ITemplateVersionStore
+    {
+        public TemplateVersionRecord? Answered { get; private set; }
+
+        public Task<TemplateVersionRecord?> FindAsync(string templateId, string version, CancellationToken cancellationToken) =>
+            inner.FindAsync(templateId, version, cancellationToken);
+
+        public Task<IReadOnlyList<TemplateVersionRecord>> ListByTemplateAsync(string templateId, CancellationToken cancellationToken) =>
+            inner.ListByTemplateAsync(templateId, cancellationToken);
+
+        public Task<TemplateVersionInsert> TryInsertAsync(TemplateVersionRecord record, CancellationToken cancellationToken)
+        {
+            Answered = record;
+            return Task.FromResult(TemplateVersionInsert.Existing(record));
         }
     }
 }
