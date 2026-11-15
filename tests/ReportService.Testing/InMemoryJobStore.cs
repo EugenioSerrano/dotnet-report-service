@@ -164,7 +164,11 @@ public sealed partial class InMemoryJobStore : IJobStore
                 acceptance.UploadId,
                 ReportJobStatus.Queued,
                 instant,
-                instant);
+                instant)
+            {
+                Culture = acceptance.Culture,
+                TimeZone = acceptance.TimeZone,
+            };
             _jobs.Add(job.ReportJobId, job);
             _progress.Add(job.ReportJobId, JobProgress.Empty);
             _outputs.Add(acceptance.OutputId, new ReportOutputRecord(
@@ -174,6 +178,8 @@ public sealed partial class InMemoryJobStore : IJobStore
             {
                 RequestedVersion = acceptance.RequestedVersion,
                 BaselineVersion = acceptance.BaselineVersion,
+                Culture = acceptance.Culture,
+                TimeZone = acceptance.TimeZone,
             });
             _intents.Add(new RecordedJobIntent(StartJobKind, job.ReportJobId, instant));
             return new JobAcceptanceResult.Accepted(job);

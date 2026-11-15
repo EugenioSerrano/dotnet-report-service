@@ -46,9 +46,10 @@ public sealed partial class PostgresJobStore : IJobStore
     private const string InsertJobSql = """
         INSERT INTO report_service.report_jobs
             (report_job_id, consumer_id, upload_id, status, stage, report_clock, error_code,
-             error_reason, created_at, started_at, finished_at)
+             error_reason, culture, time_zone, created_at, started_at, finished_at)
         VALUES
-            (@ReportJobId, @ConsumerId, @UploadId, 'QUEUED', NULL, @Now, NULL, NULL, @Now, NULL, NULL)
+            (@ReportJobId, @ConsumerId, @UploadId, 'QUEUED', NULL, @Now, NULL, NULL,
+             @Culture, @TimeZone, @Now, NULL, NULL)
         """;
 
     private const string InsertOutputSql = """
@@ -80,6 +81,8 @@ public sealed partial class PostgresJobStore : IJobStore
                j.error_code       AS "ErrorCode",
                j.error_reason     AS "ErrorReason",
                j.error_message    AS "ErrorMessage",
+               j.culture          AS "Culture",
+               j.time_zone        AS "TimeZone",
                j.created_at       AS "CreatedAt",
                j.started_at       AS "StartedAt",
                j.finished_at      AS "FinishedAt",
@@ -107,22 +110,25 @@ public sealed partial class PostgresJobStore : IJobStore
         """;
 
     private const string SelectReferenceSql = """
-        SELECT report_job_id     AS "ReportJobId",
-               template_id       AS "TemplateId",
-               reference_form    AS "ReferenceForm",
-               requested_version AS "RequestedVersion",
-               baseline_version  AS "BaselineVersion",
-               resolved_version  AS "ResolvedVersion",
-               commit_sha        AS "CommitSha",
-               source_descriptor_sha256 AS "SourceDescriptorSha256",
-               source_objects::text     AS "SourceObjectsJson",
-               package_sha256    AS "PackageSha256",
-               engine            AS "Engine",
-               engine_version    AS "EngineVersion",
-               schema_ref        AS "SchemaRef",
-               resolved_at       AS "ResolvedAt"
-        FROM report_service.template_references
-        WHERE report_job_id = @ReportJobId
+        SELECT r.report_job_id     AS "ReportJobId",
+               r.template_id       AS "TemplateId",
+               r.reference_form    AS "ReferenceForm",
+               r.requested_version AS "RequestedVersion",
+               r.baseline_version  AS "BaselineVersion",
+               r.resolved_version  AS "ResolvedVersion",
+               r.commit_sha        AS "CommitSha",
+               r.source_descriptor_sha256 AS "SourceDescriptorSha256",
+               r.source_objects::text     AS "SourceObjectsJson",
+               r.package_sha256    AS "PackageSha256",
+               r.engine            AS "Engine",
+               r.engine_version    AS "EngineVersion",
+               r.schema_ref        AS "SchemaRef",
+               r.resolved_at       AS "ResolvedAt",
+               j.culture           AS "Culture",
+               j.time_zone         AS "TimeZone"
+        FROM report_service.template_references r
+        JOIN report_service.report_jobs j ON j.report_job_id = r.report_job_id
+        WHERE r.report_job_id = @ReportJobId
         """;
 
     private const string PinTemplateSql = """
@@ -206,6 +212,8 @@ public sealed partial class PostgresJobStore : IJobStore
             ReferenceForm = JobWireValues.ToStoredText(acceptance.ReferenceForm),
             acceptance.RequestedVersion,
             acceptance.BaselineVersion,
+            acceptance.Culture,
+            acceptance.TimeZone,
             Now = UtcInstant(now),
         };
 
@@ -274,7 +282,11 @@ public sealed partial class PostgresJobStore : IJobStore
                 acceptance.UploadId,
                 ReportJobStatus.Queued,
                 decidedAt,
-                decidedAt));
+                decidedAt)
+            {
+                Culture = acceptance.Culture,
+                TimeZone = acceptance.TimeZone,
+            });
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -625,6 +637,10 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? ErrorMessage { get; set; }
 
+        public string? Culture { get; set; }
+
+        public string? TimeZone { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? StartedAt { get; set; }
@@ -654,6 +670,8 @@ public sealed partial class PostgresJobStore : IJobStore
                 ErrorCode = ErrorCode,
                 ErrorReason = ErrorReason,
                 ErrorMessage = ErrorMessage,
+                Culture = Culture,
+                TimeZone = TimeZone,
                 StartedAt = StartedAt is { } started ? Utc(started) : null,
                 FinishedAt = FinishedAt is { } finished ? Utc(finished) : null,
             },
@@ -697,6 +715,10 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public DateTime? ResolvedAt { get; set; }
 
+        public string? Culture { get; set; }
+
+        public string? TimeZone { get; set; }
+
         public TemplateReferenceRecord ToRecord() => new(
             ReportJobId,
             TemplateId,
@@ -704,6 +726,8 @@ public sealed partial class PostgresJobStore : IJobStore
         {
             RequestedVersion = RequestedVersion,
             BaselineVersion = BaselineVersion,
+            Culture = Culture,
+            TimeZone = TimeZone,
             Pin = ResolvedAt is { } resolvedAt && ResolvedVersion is not null
                 ? StoredPin(
                     TemplateId,

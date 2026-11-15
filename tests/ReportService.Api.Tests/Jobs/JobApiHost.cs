@@ -203,19 +203,22 @@ internal sealed class JobApiHost : IDisposable
     /// <param name="profile">The declared data profile.</param>
     /// <param name="outputs">The outputs, as the JSON array's elements.</param>
     /// <param name="templateId">The template's identifier.</param>
+    /// <param name="render">The presentation, as the JSON value of the member; null sends none.</param>
     public static string Body(
         string uploadId,
         string? version = "1.0.0",
         string profile = UploadWireValues.HeaderItemsV1,
         string outputs = "\"pdf\"",
-        string templateId = "pilot-grouped")
+        string templateId = "pilot-grouped",
+        string? render = null)
     {
         var reference = version is null
             ? $"\"id\": \"{templateId}\""
             : $"\"id\": \"{templateId}\", \"version\": \"{version}\"";
+        var presentation = render is null ? string.Empty : $", \"render\": {render}";
         return $"{{ \"template\": {{ {reference} }}, "
             + $"\"data\": {{ \"uploadId\": \"{uploadId}\", \"profile\": \"{profile}\" }}, "
-            + $"\"outputs\": [ {outputs} ] }}";
+            + $"\"outputs\": [ {outputs} ]{presentation} }}";
     }
 
     /// <summary>The request that creates a job, declared as <paramref name="consumerId"/>.</summary>

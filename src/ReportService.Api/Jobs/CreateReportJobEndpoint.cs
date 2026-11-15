@@ -122,6 +122,29 @@ public static class CreateReportJobEndpoint
                         capability.Reason);
                 }
 
+                // The presentation is decided before any template or data work: a request whose
+                // report could never be written in the values it names is refused at once, and
+                // no job is created for it.
+                var presentation = RequestedLocale.TryCreate(accepted.Request.Culture, accepted.Request.TimeZone);
+                if (presentation is RequestedLocale.Result.Rejected rejectedPresentation)
+                {
+                    return Refuse(
+                        context,
+                        metrics,
+                        logger,
+                        ErrorCodes.RequestInvalid,
+                        StatusCodes.Status400BadRequest,
+                        RequestInvalidDetails.Title,
+                        rejectedPresentation.Problem.Detail,
+                        rejectedPresentation.Problem.Reason,
+                        rejectedPresentation.Problem.Extensions);
+                }
+
+                if (presentation is not RequestedLocale.Result.Accepted acceptedPresentation)
+                {
+                    throw new InvalidOperationException("unhandled presentation result " + presentation.GetType().Name);
+                }
+
                 // The reference's syntax is decided before the database is touched, and a
                 // value that cannot name a template this service could ever take is answered
                 // with the one problem of a template that was not found.
@@ -147,6 +170,7 @@ public static class CreateReportJobEndpoint
                     clock,
                     logger,
                     consumerId,
+                    acceptedPresentation.Locale,
                     accepted.Request).ConfigureAwait(false);
 
             default:
@@ -162,6 +186,7 @@ public static class CreateReportJobEndpoint
         TimeProvider clock,
         ILogger logger,
         string consumerId,
+        RequestedLocale presentation,
         CreateReportJobRequest request)
     {
         // A value that cannot be an identifier refers to an upload that cannot exist: it is
@@ -221,6 +246,8 @@ public static class CreateReportJobEndpoint
             request.TemplateVersion)
         {
             BaselineVersion = availability.BaselineVersion,
+            Culture = presentation.Culture,
+            TimeZone = presentation.TimeZone,
         };
 
         JobAcceptanceResult result;
