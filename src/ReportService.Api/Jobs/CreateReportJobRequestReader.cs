@@ -6,7 +6,7 @@ namespace ReportService.Api.Jobs;
 
 /// <summary>
 /// Reads the document that creates a report job:
-/// <c>{ "template": { "id", "version" }, "data": { "uploadId", "profile" }, "outputs": [ ] }</c>.
+/// <c>{ "template": { "id", "version" }, "data": { "uploadId", "profile" }, "outputs": [ ], "render": { "culture", "timeZone" } }</c>.
 /// The document is read here, explicitly and within a bound, instead of through
 /// automatic model binding, whose failures would answer with framework errors
 /// carrying no stable code. Reading it is strict on purpose — one JSON object, only
@@ -32,6 +32,9 @@ public static class CreateReportJobRequestReader
     /// <summary>The member carrying the requested outputs.</summary>
     public const string OutputsMember = "outputs";
 
+    /// <summary>The member carrying the presentation the report is written in.</summary>
+    public const string RenderMember = "render";
+
     /// <summary>The member of the template object carrying its identifier.</summary>
     public const string IdMember = "id";
 
@@ -43,6 +46,12 @@ public static class CreateReportJobRequestReader
 
     /// <summary>The member of the data object carrying the declared profile.</summary>
     public const string ProfileMember = "profile";
+
+    /// <summary>The member of the presentation object carrying the culture.</summary>
+    public const string RenderCultureMember = "culture";
+
+    /// <summary>The member of the presentation object carrying the time zone.</summary>
+    public const string RenderTimeZoneMember = "timeZone";
 
     /// <summary>The field path of the template's identifier.</summary>
     public const string TemplateIdPath = "template.id";
@@ -56,11 +65,28 @@ public static class CreateReportJobRequestReader
     /// <summary>The field path of the declared profile.</summary>
     public const string ProfilePath = "data.profile";
 
+    /// <summary>The field path of the culture the report is written in.</summary>
+    public const string RenderCulturePath = "render.culture";
+
+    /// <summary>The field path of the time zone the report is read as.</summary>
+    public const string RenderTimeZonePath = "render.timeZone";
+
     /// <summary>What an answer says when the request names no output.</summary>
     public const string EmptyOutputsDetail = "The field 'outputs' must name at least one output.";
 
     /// <summary>What an answer says when the request names an output twice.</summary>
     public const string RepeatedOutputDetail = "The field 'outputs' must not name the same output twice.";
+
+    /// <summary>What an answer says when the culture is not a bounded printable value.</summary>
+    public const string RenderCultureFormatDetail =
+        "The field 'render.culture' must be 1 to 64 printable ASCII characters without whitespace.";
+
+    /// <summary>What an answer says when the time zone is not a bounded printable value.</summary>
+    public const string RenderTimeZoneFormatDetail =
+        "The field 'render.timeZone' must be 1 to 64 printable ASCII characters without whitespace.";
+
+    /// <summary>The longest presentation value a request may carry.</summary>
+    public const int MaxRenderValueLength = 64;
 
     private const string StringType = "string";
 
@@ -79,6 +105,9 @@ public static class CreateReportJobRequestReader
         DataMember,
         UploadIdPath,
         ProfilePath,
+        RenderMember,
+        RenderCulturePath,
+        RenderTimeZonePath,
         OutputsMember,
     ];
 
@@ -257,6 +286,30 @@ public static class CreateReportJobRequestReader
 
                         break;
 
+                    case RenderMember:
+                        Count(counts, kinds, name, reader.TokenType);
+                        if (reader.TokenType == JsonTokenType.StartObject
+                            && !TryReadObject(
+                                ref reader,
+                                counts,
+                                kinds,
+                                values,
+                                new Dictionary<string, string>(StringComparer.Ordinal)
+                                {
+                                    [RenderCultureMember] = RenderCulturePath,
+                                    [RenderTimeZoneMember] = RenderTimeZonePath,
+                                },
+                                ref unknown))
+                        {
+                            return new Result.Rejected(InvalidRequestBody.MalformedJson());
+                        }
+                        else if (reader.TokenType == JsonTokenType.StartArray)
+                        {
+                            reader.Skip();
+                        }
+
+                        break;
+
                     default:
                         // An unknown member is unknown once however it is written, and its name is
                         // caller text: the count is all an answer may say about it.
@@ -324,11 +377,14 @@ public static class CreateReportJobRequestReader
                  {
                      (TemplateMember, ObjectType),
                      (DataMember, ObjectType),
+                     (RenderMember, ObjectType),
                      (OutputsMember, ArrayType),
                      (TemplateIdPath, StringType),
                      (TemplateVersionPath, StringType),
                      (UploadIdPath, StringType),
                      (ProfilePath, StringType),
+                     (RenderCulturePath, StringType),
+                     (RenderTimeZonePath, StringType),
                  })
         {
             // A member that was not sent at all is not of a wrong type: the optional one is the
@@ -336,6 +392,21 @@ public static class CreateReportJobRequestReader
             if (kinds.TryGetValue(path, out var kind) && kind != ExpectedToken(expected))
             {
                 return new Result.Rejected(InvalidRequestBody.WrongType(path, expected));
+            }
+        }
+
+        foreach (var (path, detail) in new[]
+                 {
+                     (RenderCulturePath, RenderCultureFormatDetail),
+                     (RenderTimeZonePath, RenderTimeZoneFormatDetail),
+                 })
+        {
+            // The presentation's two members are words, not free text: a bounded printable
+            // value without whitespace. What the value means is decided later, by the
+            // runtime's own tables.
+            if (values.TryGetValue(path, out var value) && !IsRenderValue(value))
+            {
+                return new Result.Rejected(InvalidRequestBody.InvalidFormat(path, detail));
             }
         }
 
@@ -359,7 +430,29 @@ public static class CreateReportJobRequestReader
             values.TryGetValue(TemplateVersionPath, out var version) ? version : null,
             values[UploadIdPath],
             values[ProfilePath],
-            outputs));
+            outputs,
+            values.TryGetValue(RenderCulturePath, out var culture) ? culture : null,
+            values.TryGetValue(RenderTimeZonePath, out var timeZone) ? timeZone : null));
+    }
+
+    // A presentation value is a word of the ASCII range with no whitespace in it: bounded,
+    // printable, and never a value that would need quoting to be read back.
+    private static bool IsRenderValue(string value)
+    {
+        if (value.Length is 0 or > MaxRenderValueLength)
+        {
+            return false;
+        }
+
+        foreach (var character in value)
+        {
+            if (character is < '!' or > '~')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static void Count(

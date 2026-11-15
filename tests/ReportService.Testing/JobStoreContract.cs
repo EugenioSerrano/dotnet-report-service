@@ -786,6 +786,77 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AJobAcceptedWithAPresentationKeepsItInTheSpellingItWasGiven()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken)) with
+        {
+            Culture = "en-us",
+            TimeZone = "America/Argentina/Buenos_Aires",
+        };
+
+        var result = await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var accepted = Assert.IsType<JobAcceptanceResult.Accepted>(result);
+        Assert.Equal("en-us", accepted.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", accepted.Job.TimeZone);
+
+        // The job read and the step's own read of the reference agree: a value is stored once,
+        // as the request wrote it, and both reads answer it unchanged.
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("en-us", state!.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", state.Job.TimeZone);
+
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("en-us", reference!.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", reference.TimeZone);
+    }
+
+    [Fact]
+    public async Task AJobAcceptedWithoutAPresentationCarriesNone()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(state!.Job.Culture);
+        Assert.Null(state.Job.TimeZone);
+
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(reference!.Culture);
+        Assert.Null(reference.TimeZone);
+    }
+
+    [Fact]
+    public async Task APresentationOfTheShortestAndLongestLengthIsStoredWhole()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var shortest = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken)) with
+        {
+            Culture = "a",
+            TimeZone = "z",
+        };
+        var longest = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken)) with
+        {
+            Culture = new string('c', 64),
+            TimeZone = new string('z', 64),
+        };
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(shortest, Now, cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(longest, Now, cancellationToken));
+
+        var one = await Store.FindForWorkflowAsync(shortest.ReportJobId, cancellationToken);
+        Assert.Equal("a", one!.Job.Culture);
+        Assert.Equal("z", one.Job.TimeZone);
+
+        var sixtyFour = await Store.FindForWorkflowAsync(longest.ReportJobId, cancellationToken);
+        Assert.Equal(new string('c', 64), sixtyFour!.Job.Culture);
+        Assert.Equal(new string('z', 64), sixtyFour.Job.TimeZone);
+    }
+
+    [Fact]
     public async Task TheFirstPinIsTheOneTheJobKeeps()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

@@ -28,4 +28,16 @@ public sealed record JobAcceptance(
     /// exact reference and for a by-name one whose template has no usable release taken.
     /// </summary>
     public string? BaselineVersion { get; init; }
+
+    /// <summary>
+    /// The culture the report is presented in, as the request named it; null when the request
+    /// named none, in which case the template the job takes supplies it.
+    /// </summary>
+    public string? Culture { get; init; }
+
+    /// <summary>
+    /// The time zone the report is presented in, as the request named it; null when the request
+    /// named none, in which case the template the job takes supplies it.
+    /// </summary>
+    public string? TimeZone { get; init; }
 }

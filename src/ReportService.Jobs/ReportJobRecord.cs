@@ -25,6 +25,18 @@ public sealed record ReportJobRecord(
     /// <summary>The step the job is in; null while no step has begun.</summary>
     public string? Stage { get; init; }
 
+    /// <summary>
+    /// The culture the report is presented in, as the request wrote it or as the template the
+    /// job took declares it; null until it is known. It is set once and never changes after.
+    /// </summary>
+    public string? Culture { get; init; }
+
+    /// <summary>
+    /// The time zone the report is presented in, as the request wrote it or as the template the
+    /// job took declares it; null until it is known. It is set once and never changes after.
+    /// </summary>
+    public string? TimeZone { get; init; }
+
     /// <summary>Why the job ended failed; null unless it failed.</summary>
     public string? ErrorCode { get; init; }
 

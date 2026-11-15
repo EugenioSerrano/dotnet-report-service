@@ -33,12 +33,42 @@ public sealed class MigrationCatalogTests
 
     private const string Provenance = "0011_template-version-provenance.sql";
 
+    private const string Locale = "0012_report-job-locale.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(Provenance, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Locale, MigrationCatalog.ExpectedVersion);
+    }
+
+    /// <summary>
+    /// The twelfth script states the presentation a job is accepted with: two nullable
+    /// columns with their length checks, and the guard that refuses a change of a value
+    /// already set. It adds no table, drops nothing, backfills nothing and rewrites no
+    /// row. That the server applies it, and refuses what it says it refuses, is a case
+    /// against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheLocaleScriptAddsTwoColumnsAndTheSetOnceGuardAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Locale);
+
+        Assert.Contains("ALTER TABLE report_service.report_jobs", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN culture   text NULL CHECK (char_length(culture) BETWEEN 1 AND 64)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN time_zone text NULL CHECK (char_length(time_zone) BETWEEN 1 AND 64)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE FUNCTION report_service.report_jobs_locale_guard()", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("the job culture is set once", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("the job time zone is set once", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE TRIGGER report_jobs_locale_guard", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("BEFORE UPDATE ON report_service.report_jobs", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE report_service", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("NOT NULL DEFAULT", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -52,7 +82,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(11, MigrationCatalog.Scripts.Count);
+        Assert.Equal(12, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -73,9 +103,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(11, MigrationCatalog.Scripts.Count);
-        Assert.Equal(Provenance, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(Provenance, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(12, MigrationCatalog.Scripts.Count);
+        Assert.Equal(Locale, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(Locale, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);

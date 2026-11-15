@@ -262,7 +262,7 @@ public sealed class CreateReportJobEndpointTests : IDisposable
     }
 
     [Theory]
-    [InlineData("\"render\":{\"culture\":\"en-GB\"}")]
+    [InlineData("\"render\":{\"paper\":\"a4\"}")]
     [InlineData("\"metadata\":{\"a\":\"b\"}")]
     public async Task AMemberThisOperationDoesNotAcceptIsRefused(string extra)
     {
@@ -281,6 +281,137 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Equal(0, _host.Jobs.AcceptCalls);
     }
 
+    [Theory]
+    [InlineData("""{"culture":"xx-notreal"}""", "render.culture", RequestedLocale.UnsupportedCultureDetail)]
+    [InlineData("""{"timeZone":"Mars/Olympus"}""", "render.timeZone", RequestedLocale.UnsupportedTimeZoneDetail)]
+    public async Task APresentationTheRuntimeDoesNotHaveIsRefusedAtOnceAndNothingIsStored(
+        string render,
+        string field,
+        string detail)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var body = JobApiHost.Body(uploadId, render: render);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
+        var problem = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestInvalid, problem.GetProperty("code").GetString());
+        Assert.Equal(RequestInvalidDetails.Title, problem.GetProperty("title").GetString());
+        Assert.Equal(field, problem.GetProperty("field").GetString());
+        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.GetProperty("reason").GetString());
+        Assert.Equal(detail, problem.GetProperty("detail").GetString());
+
+        // No job was created, and neither the job store nor the taken versions were touched.
+        Assert.Equal(0, _host.Jobs.AcceptCalls);
+        Assert.Equal(0, _host.Versions.FindCalls);
+        Assert.Equal(0, _host.Versions.ListCalls);
+        Assert.Empty(_host.Jobs.Jobs);
+        Assert.Empty(_host.Jobs.Intents);
+        Assert.DoesNotContain("xx-notreal", problem.GetRawText(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Mars/Olympus", problem.GetRawText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APresentationIsDecidedAfterTheCapabilityAndBeforeTheReferenceSyntax()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        const string render = """{"culture":"xx-notreal"}""";
+
+        // A presentation that cannot be honoured is refused before any template or data work:
+        // after the capability, which is about whether this deployment can serve the request at
+        // all, and before the reference's syntax, which is about the template.
+        using var capability = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(
+                JobApiHost.Consumer,
+                JobApiHost.Body(uploadId, outputs: "\"xlsx\"", render: render)),
+            cancellationToken);
+        using var reference = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(
+                JobApiHost.Consumer,
+                JobApiHost.Body(uploadId, version: "^1.0.0", render: render)),
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, capability.StatusCode);
+        Assert.Equal(
+            ErrorCodes.UnsupportedCapability,
+            (await JobApiHost.AnswerAsync(capability)).GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.BadRequest, reference.StatusCode);
+        Assert.Equal(
+            ErrorCodes.RequestInvalid,
+            (await JobApiHost.AnswerAsync(reference)).GetProperty("code").GetString());
+        Assert.Empty(_host.Jobs.Jobs);
+    }
+
+    [Fact]
+    public async Task ARequestThatNamesItsPresentationStoresItWithTheJobAndItsReference()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(
+                JobApiHost.Consumer,
+                JobApiHost.Body(
+                    uploadId,
+                    render: """{"culture":"es-AR","timeZone":"America/Argentina/Buenos_Aires"}""")),
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var job = Assert.Single(_host.Jobs.Jobs);
+        Assert.Equal("es-AR", job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", job.TimeZone);
+
+        // The step's own read carries the presentation with the reference, in one round trip.
+        var reference = _host.Jobs.ReferenceOf(job.ReportJobId);
+        Assert.NotNull(reference);
+        Assert.Equal("es-AR", reference!.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", reference.TimeZone);
+        Assert.Null(reference.Pin);
+    }
+
+    [Fact]
+    public async Task ARequestWithoutAPresentationStoresNone()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var job = Assert.Single(_host.Jobs.Jobs);
+        Assert.Null(job.Culture);
+        Assert.Null(job.TimeZone);
+        var reference = _host.Jobs.ReferenceOf(job.ReportJobId);
+        Assert.Null(reference!.Culture);
+        Assert.Null(reference.TimeZone);
+    }
+
+    [Fact]
+    public async Task APresentationIsStoredInTheSpellingTheRequestUsed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(
+                JobApiHost.Consumer,
+                JobApiHost.Body(uploadId, render: """{"culture":"en-us","timeZone":"UTC"}""")),
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var job = Assert.Single(_host.Jobs.Jobs);
+
+        // A tag is case-insensitive to every reader, so the service keeps the spelling it was
+        // given rather than inventing one of its own.
+        Assert.Equal("en-us", job.Culture);
+        Assert.Equal("UTC", job.TimeZone);
+    }
+
     [Fact]
     public async Task AnIdempotencyKeyHeaderIsIgnoredAndTheJobIsCreated()
     {
@@ -295,7 +426,6 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Single(_host.Jobs.Jobs);
         Assert.Single(_host.Jobs.Intents);
     }
-
     [Fact]
     public async Task AClientThatLeavesAfterItsBodyDoesNotCancelTheJob()
     {

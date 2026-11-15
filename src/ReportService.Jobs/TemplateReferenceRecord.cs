@@ -10,6 +10,8 @@ namespace ReportService.Jobs;
 /// template, the form and the version the consumer named - never changes; the
 /// baseline is written with the job and the pin is written once, so a reader of
 /// the record can always say which version a job uses or that it has none yet.
+/// The record also carries the presentation of the job it belongs to, because the
+/// step that fixes the template needs it in the same round trip.
 /// </summary>
 /// <param name="ReportJobId">The job the reference belongs to.</param>
 /// <param name="TemplateId">The template's identifier, in its key grammar.</param>
@@ -30,4 +32,18 @@ public sealed record TemplateReferenceRecord(
 
     /// <summary>The version the job is fixed to, once its template step has pinned it; null before.</summary>
     public TemplatePin? Pin { get; init; }
+
+    /// <summary>
+    /// The culture the job is presented in, read from the job itself so the template step gets
+    /// it with the reference in one round trip; null while the request named none and no
+    /// template has supplied it.
+    /// </summary>
+    public string? Culture { get; init; }
+
+    /// <summary>
+    /// The time zone the job is presented in, read from the job itself so the template step
+    /// gets it with the reference in one round trip; null while the request named none and no
+    /// template has supplied it.
+    /// </summary>
+    public string? TimeZone { get; init; }
 }
