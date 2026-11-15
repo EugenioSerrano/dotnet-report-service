@@ -49,12 +49,17 @@ public sealed class TemplateVersionProvenanceMigrationTests : IClassFixture<Post
         var database = await _fixture.CreateDatabaseAsync(cancellationToken);
         _connectionString = _fixture.Application(database);
 
+        // The boundary of the change: the provenance script's place in the shipped order, so
+        // the pre-change state is every script before it and the rest is the change itself.
+        var catalog = MigrationCatalog.Scripts.ToArray();
+        var boundary = Array.FindIndex(catalog, script => string.Equals(script.Name, Provenance, StringComparison.Ordinal));
+        Assert.True(boundary > 0, $"the shipped set carries '{Provenance}' after the scripts that precede it");
+
         // The database of the previous product: every script before the provenance one.
-        var previous = MigrationCatalog.Scripts
-            .TakeWhile(script => string.CompareOrdinal(script.Name, Provenance) < 0)
-            .ToArray();
+        var previous = catalog[..boundary];
         var before = await MigrationRunner.RunAsync(_connectionString, previous, cancellationToken);
         Assert.True(before.Succeeded, string.Join("; ", before.ErrorLines));
+        Assert.Equal(previous[^1].Name, before.CurrentVersion);
 
         _dataSource = NpgsqlDataSource.Create(_connectionString);
 
@@ -93,14 +98,13 @@ public sealed class TemplateVersionProvenanceMigrationTests : IClassFixture<Post
         _versionBefore = await VersionAsync("1.0.0", cancellationToken);
         _pinBefore = await ReferenceAsync(_preChangeJobId, cancellationToken);
 
-        // The migration itself: the rest of the shipped set.
-        var rest = MigrationCatalog.Scripts
-            .SkipWhile(script => string.CompareOrdinal(script.Name, Provenance) < 0)
-            .ToArray();
-        var migration = await MigrationRunner.RunAsync(_connectionString, MigrationCatalog.Scripts, cancellationToken);
+        // The migration itself: the provenance script and every script shipped after it,
+        // which the one run from the pre-change state has to apply, in the shipped order.
+        var rest = catalog[boundary..];
+        var migration = await MigrationRunner.RunAsync(_connectionString, catalog, cancellationToken);
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
-        Assert.Equal([Provenance], rest.Select(script => script.Name));
-        Assert.Equal([Provenance], migration.Applied);
+        Assert.Equal(Provenance, migration.Applied[0]);
+        Assert.Equal(rest.Select(script => script.Name), migration.Applied);
     }
 
     /// <inheritdoc />
