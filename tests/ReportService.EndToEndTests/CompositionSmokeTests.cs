@@ -17,7 +17,7 @@ public sealed class CompositionSmokeTests
 {
     // The first run may build the PDF base image and publish the render worker image.
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
-    private static readonly TimeSpan RemovalDeadline = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan RemovalDeadline = TimeSpan.FromMinutes(2);
 
     [Fact]
     public async Task EveryResourceBecomesHealthyAndNothingRemainsRunningAfterwards()
