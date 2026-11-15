@@ -73,20 +73,39 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
 
         // The worker runs: the job records that it waits and the verification settles the
         // upload. Neither the upload's outcome nor the wait's end is read before the product
-        // reached it — the case waits for the state, it never assumes it.
+        // reached it — the case waits for the state, it never assumes it. One pass reads all
+        // three facts — the job first, because its stage is the only one that moves in both
+        // directions — and the assertions below rest on what that pass saw.
         await commands.ExecuteCommandAsync(Resource(app, "orchestration-worker"), KnownResourceCommands.StartCommand, cancellationToken);
+        JobRow? observedJob = null;
+        long? observedReferences = null;
+        string? observedUpload = null;
         await Wait.UntilAsync(
-            $"the upload {uploadId} to be ready",
-            async token => string.Equals(await UploadStatusAsync(api, uploadId, token), "ready", StringComparison.Ordinal),
-            OutcomeDeadline,
-            TimeSpan.FromMilliseconds(500),
-            cancellationToken);
-        await Wait.UntilAsync(
-            $"the job {reportJobId} to leave the wait",
+            $"the job {reportJobId} observed settled: QUEUED, no stage, exactly one start-job reference, upload ready",
             async token =>
             {
                 var job = await JobAsync(connectionString, reportJobId, token);
-                return job is { Status: "QUEUED", Stage: null };
+                if (job is not { Status: "QUEUED", Stage: null })
+                {
+                    return false;
+                }
+
+                var references = await ReferencesAsync(connectionString, reportJobId, token);
+                if (references != 1)
+                {
+                    return false;
+                }
+
+                var upload = await UploadStatusAsync(api, uploadId, token);
+                if (!string.Equals(upload, "ready", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                observedJob = job;
+                observedReferences = references;
+                observedUpload = upload;
+                return true;
             },
             OutcomeDeadline,
             TimeSpan.FromMilliseconds(500),
@@ -94,12 +113,11 @@ public sealed class ReportJobInputWaitEndToEndTests : IDisposable
 
         // The stored row is what the consumer's status read will project; that read is a later
         // increment's endpoint, so the case asserts the row it is served from.
-        var after = await JobAsync(connectionString, reportJobId, cancellationToken);
-        Assert.NotNull(after);
-        Assert.Equal("QUEUED", after!.Status);
-        Assert.Null(after.Stage);
-        Assert.Equal("ready", await UploadStatusAsync(api, uploadId, cancellationToken));
-        Assert.Equal(1, await ReferencesAsync(connectionString, reportJobId, cancellationToken));
+        Assert.NotNull(observedJob);
+        Assert.Equal("QUEUED", observedJob!.Status);
+        Assert.Null(observedJob.Stage);
+        Assert.Equal("ready", observedUpload);
+        Assert.Equal(1L, observedReferences!.Value);
     }
 
     [Fact]
