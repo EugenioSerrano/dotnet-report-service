@@ -55,8 +55,10 @@ public sealed class CompositionTopologyTests
     /// The state each worker reports for each of its queues, in one place: the
     /// orchestration worker registers the job workflow and its metadata steps on
     /// <c>report-orchestration</c> and the verification and partitioning activities on
-    /// <c>report-data</c>, so both report a running worker, and the rendering queue
-    /// carries no registered work yet. Stated together, a queue that stops being declared
+    /// <c>report-data</c>, so both report a running worker, and the render worker
+    /// registers the take (<c>TakeTemplateVersion</c>) and the by-name resolution
+    /// (<c>ResolveTemplateVersion</c>) on <c>report-pdf-rendering</c>, so that queue
+    /// reports a running worker too. Stated together, a queue that stops being declared
     /// fails by name rather than disappearing; a change that registers work on a queue
     /// updates this table in the same change.
     /// </summary>
@@ -64,7 +66,7 @@ public sealed class CompositionTopologyTests
     [
         new("orchestration-worker", "report-orchestration", WorkerRunning),
         new("orchestration-worker", "report-data", WorkerRunning),
-        new("render-worker", "report-pdf-rendering", NoRegisteredWork),
+        new("render-worker", "report-pdf-rendering", WorkerRunning),
     ];
 
     [Fact]
