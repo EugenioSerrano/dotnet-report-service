@@ -4,12 +4,11 @@ namespace ReportService.Testing.TemplatePackages;
 
 /// <summary>
 /// The template family a by-name resolution is exercised against, built by this
-/// helper into the template source class - or, for the client's own cases, into
-/// the delivered Git double - and never checked in: a repository whose version
-/// folders are the cases of the resolution — the numeric order, the invalid newer
-/// version, the pre-release, the name that is no version at all, the version this
-/// deployment cannot render, two versions of equal precedence, another consumer's
-/// version, and a template folder with no version underneath it.
+/// helper into the template source class and never checked in: a store whose
+/// published versions are the cases of the resolution — the numeric order, the
+/// invalid newer version, the pre-release, the name that is no version at all, the
+/// version this deployment cannot render, two versions of equal precedence, another
+/// consumer's version, and a template that holds no version.
 /// <para>
 /// The family lists what it <b>can</b> seed, not a state every case sees: the
 /// case's own Given decides which versions it seeds, so a criterion is never
@@ -73,85 +72,6 @@ public static class ByNameFixtures
 
     /// <summary>The two builds of one version the equal-precedence cases read.</summary>
     public static readonly IReadOnlyList<string> EqualPrecedence = ["1.1.0+build.1", "1.1.0+build.2"];
-
-    /// <summary>Seeds the named versions of <see cref="Template"/>, each in the shape its name means.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="versions">The versions this case seeds.</param>
-    public static void Seed(GitHubTemplateSourceStub stub, params string[] versions)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        foreach (var version in versions)
-        {
-            stub.SeedPackage(Template, version, Package(Template, version));
-        }
-    }
-
-    /// <summary>Seeds the two builds of one version of <see cref="EqualPrecedenceTemplate"/>.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="versions">The versions this case seeds; both builds when none is named.</param>
-    public static void SeedEqualPrecedence(GitHubTemplateSourceStub stub, params string[] versions)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        foreach (var version in versions.Length == 0 ? EqualPrecedence : versions)
-        {
-            stub.SeedPackage(EqualPrecedenceTemplate, version, Valid(EqualPrecedenceTemplate, version));
-        }
-    }
-
-    /// <summary>Seeds pre-releases only, each folder holding a valid package.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="versions">The versions this case seeds; two pre-releases when none is named.</param>
-    public static void SeedPreReleases(GitHubTemplateSourceStub stub, params string[] versions)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        foreach (var version in versions.Length == 0 ? new[] { "2.0.0-beta.1", "2.0.0-rc.1" } : versions)
-        {
-            stub.SeedPackage(PreReleaseTemplate, version, Valid(PreReleaseTemplate, version));
-        }
-    }
-
-    /// <summary>Seeds every version of a template refused by the take's own rules.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="versions">The versions this case seeds.</param>
-    public static void SeedInvalid(GitHubTemplateSourceStub stub, params string[] versions)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        foreach (var version in versions)
-        {
-            stub.SeedPackage(InvalidTemplate, version, InvalidPackage(InvalidTemplate, version));
-        }
-    }
-
-    /// <summary>Seeds every version of a template that declares an engine this deployment does not render.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="versions">The versions this case seeds.</param>
-    public static void SeedUnsupported(GitHubTemplateSourceStub stub, params string[] versions)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        foreach (var version in versions)
-        {
-            stub.SeedPackage(UnsupportedTemplate, version, UnsupportedPackage(UnsupportedTemplate, version));
-        }
-    }
-
-    /// <summary>Seeds one version another consumer owns and does not share, beside one every consumer may use.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    /// <param name="foreignVersion">The version another consumer owns.</param>
-    /// <param name="sharedVersion">The version every consumer may use.</param>
-    public static void SeedForeign(GitHubTemplateSourceStub stub, string foreignVersion = Second, string sharedVersion = Shared)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        stub.SeedPackage(ForeignTemplate, foreignVersion, Valid(ForeignTemplate, foreignVersion, Other, shared: false));
-        stub.SeedPackage(ForeignTemplate, sharedVersion, Valid(ForeignTemplate, sharedVersion, Other, shared: true));
-    }
-
-    /// <summary>Seeds a template folder that holds no version folder.</summary>
-    /// <param name="stub">The template source the cases read from.</param>
-    public static void SeedEmpty(GitHubTemplateSourceStub stub)
-    {
-        ArgumentNullException.ThrowIfNull(stub);
-        stub.SeedTemplateFolder(EmptyTemplate);
-    }
 
     /// <summary>Publishes the named versions of <see cref="Template"/> into the source class, each in the shape its name means.</summary>
     /// <param name="source">The template source class the cases read.</param>

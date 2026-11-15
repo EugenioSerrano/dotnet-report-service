@@ -20,7 +20,7 @@ dotnet-report-service/
 │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
 │   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
-│   ├── ReportService.TemplateSource/            The template source: its settings, the client and the class read of the deployment's object storage, the publication record and its checks, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
+│   ├── ReportService.TemplateSource/            The template source: its settings, the class read of the deployment's object storage, the publication record and its checks, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
 │   ├── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban adapter, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
 │   ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
 │   ├── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
@@ -35,7 +35,7 @@ dotnet-report-service/
 │   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── ReportService.Uploads.Tests/        Unit tests of the shared upload library (hermetic)
 │   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax and precedence, the package archive and its reader, the manifest, the ownership predicate (hermetic)
-│   ├── ReportService.TemplateSource.Tests/      Unit/component tests of the template source: settings, the object-store class read and its four states, the publication record and its checks, the key grammar, the client against an in-process source, the changed-version warning, the by-name resolution, the manifest reader and the take (hermetic)
+│   ├── ReportService.TemplateSource.Tests/      Unit/component tests of the template source: settings, the object-store class read and its four states, the publication record and its checks, the key grammar, the changed-version warning, the by-name resolution, the manifest reader and the take (hermetic)
 │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
 │   ├── ReportService.Templates.Tests/         Unit/component tests of the composer: the adapter, the context, escaping, the guards, the block mode and the cache (hermetic)
 │   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)

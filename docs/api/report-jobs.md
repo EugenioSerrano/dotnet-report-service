@@ -216,10 +216,12 @@ version is taken.
 - A version **already taken** and usable is bound with one read of the service's own
   records, and the template source is not read at all — a job naming such a version
   runs even while the source is unreachable.
-- A version that is **not taken** is taken by the PDF worker from the configured
-  repository and branch, and the version it read is recorded on the job with the
-  commit, the package hash, the engine, the engine's version, the schema the records
-  are checked against and the instant it was resolved.
+- A version that is **not taken** is taken by the PDF worker from the deployment's
+  template source — the object store, read through the publication record the version
+  was published with — and the version it read is recorded on the job with the
+  publication descriptor's hash, the verified file list, the package hash, the engine,
+  the engine's version, the schema the records are checked against and the instant it
+  was resolved.
 - A reference **by name** resolves the highest release version the source holds. If the
   source cannot be checked, the job uses the release version recorded when it was
   accepted and logs that the source could not be checked; a by-name job accepted while

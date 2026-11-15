@@ -125,32 +125,13 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
     renderWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
 }
 
-// The template source the worker reads a version from: one repository and branch for
-// the deployment, from its own configuration, and the read-only credential as a secret
-// parameter. No repository is named here — the deployment's is its own — so a
-// composition without one stops the worker naming the setting instead of reading a
-// repository nobody chose. One by-name resolution is given the same bound in the
-// composition's documentation and in the process.
-var templateSourceRepository = builder.Configuration["TemplateSource:Repository"] ?? string.Empty;
-var templateSourceBranch = builder.Configuration["TemplateSource:Branch"] ?? "main";
+// The template source the worker reads a version from is the deployment's object store,
+// which this composition already mounts into the worker. The one setting it takes from
+// here is the bound of a by-name resolution, which the composition documents and gives
+// the process the same value of.
 var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
-
-// The source's address and the one exception to its transport rule are forwarded so a local
-// run can serve templates itself. The composition is a development tool on a developer's
-// machine: it is never deployed and never shipped in an image, so nothing a consumer reaches
-// changes here. The address defaults to the public API and the exception to off; the worker
-// still refuses a plain-text address that is not loopback, and the credential below is still
-// a secret the process reads and sends only to the configured address.
-var templateSourceApiBaseUrl = builder.Configuration["TemplateSource:ApiBaseUrl"] ?? "https://api.github.com/";
-var templateSourceAllowInsecureLoopback = builder.Configuration["TemplateSource:AllowInsecureLoopback"] ?? "false";
-var templateSourceToken = builder.AddParameter("template-source-token", secret: true);
 renderWorker
-    .WithEnvironment("TemplateSource__Repository", templateSourceRepository)
-    .WithEnvironment("TemplateSource__Branch", templateSourceBranch)
-    .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline)
-    .WithEnvironment("TemplateSource__ApiBaseUrl", templateSourceApiBaseUrl)
-    .WithEnvironment("TemplateSource__AllowInsecureLoopback", templateSourceAllowInsecureLoopback)
-    .WithEnvironment("TemplateSource__Token", templateSourceToken);
+    .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline);
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.

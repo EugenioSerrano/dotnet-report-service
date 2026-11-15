@@ -303,7 +303,7 @@ Three further classes of the same project:
 ## The template suites
 
 `ReportService.TemplateSource.Tests` holds the template source and the take: the
-settings, the client against an in-process source, the version listing, the
+settings, the object-store class read and its four states, the version listing, the
 by-name resolution and its take seam, the manifest reader, the take itself, and
 the adapter that presents the take to the resolution. `ReportService.Workers.Pdf.Tests`
 holds that worker's two activities as plain classes and the registration of the
@@ -312,14 +312,16 @@ take and of the by-name resolution on `report-pdf-rendering`.
 The integration project carries them against real dependencies:
 `TemplateVersionStoreTests` and `TemplateVersionReadTests` (the record and its
 read on PostgreSQL), `TemplateTakeWorkerTests` (the take on its queue over a real
-engine, database, storage root and template-source double), `TemplateByNameResolutionTests`
-(the by-name resolution on the same queue, one workflow per case),
-`GitHubTemplateSourceLiveTests` (the client against the public fixture
-repository, including the listing of a real template folder) and
-`JointTemplateTakeTests` (the job-level group, on a build that carries the job
-step). The template-source double's fixture families are built by
-`ReportService.Testing`: `TemplatePackageFixtures` for the take and
-`ByNameFixtures` for the resolution, never checked in.
+engine, database and storage root, and the source class over the composition's
+own root), `TemplateByNameResolutionTests` (the by-name resolution on the same
+queue, one workflow per case), `TemplateSourceClassConformanceTests` (the source
+class on the real Filesystem provider: the paged listing, the verified record and
+file, a flipped byte, a missing object, a truncated object and a create-only write
+the class refuses) and `JointTemplateTakeTests` (the job-level group, on a build
+that carries the job step). The fixtures are built by `ReportService.Testing`:
+`TemplateSourceClass` publishes a version into a store the way the owner's
+pipeline does, and `TemplatePackageFixtures` and `ByNameFixtures` supply the
+packages and the families, never checked in.
 
 ## The report job suite
 

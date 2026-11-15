@@ -107,7 +107,7 @@ carries no exception, connection or SQL detail.
 
 ## What this operation does not do
 
-- It does not read the template repository, and no request to this API can: the
+- It does not read the template source, and no request to this API can: the
   API holds the taken version's record only, and the source is read by the PDF
   worker's take step.
 - It does not return the package, its files or its storage key; a version is used

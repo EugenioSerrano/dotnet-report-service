@@ -460,8 +460,6 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 

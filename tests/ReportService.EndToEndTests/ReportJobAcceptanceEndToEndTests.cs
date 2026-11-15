@@ -499,11 +499,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         var source = TemplateSourceClass.Over(storage);
         await source.PublishAsync(Template, Version, PackageFiles());
 
-        var options = new TemplateSourceOptions
-        {
-            Repository = "report-service/templates",
-            Branch = "main",
-        };
+        var options = new TemplateSourceOptions();
         var take = new TemplateTake(
             new StorageTemplateSource(storage, options, new TemplateSourceMetrics(), NullLogger<StorageTemplateSource>.Instance),
             versions,

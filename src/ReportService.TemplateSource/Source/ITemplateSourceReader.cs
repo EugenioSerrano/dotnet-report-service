@@ -3,11 +3,10 @@ using ReportService.Storage;
 namespace ReportService.TemplateSource.Source;
 
 /// <summary>
-/// The deployment's template source, read and listed only. It is a port over the
-/// object store, not a reshaped <see cref="ITemplateSource"/>: the Git client keeps
-/// its own interface until the change that retires it. The <c>template-source</c>
-/// key prefix keeps the two classes apart, and no member of this port writes or
-/// deletes.
+/// The deployment's template source, read and listed only: a port over the object
+/// store, and the one way a take or a by-name resolution reads a version. The
+/// <c>template-source</c> key prefix is the class's own layout, and no member of
+/// this port writes or deletes.
 /// </summary>
 public interface ITemplateSourceReader
 {

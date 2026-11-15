@@ -56,12 +56,7 @@ public sealed class TemplateTakeTests : IAsyncDisposable
 
     private readonly TemplateSourceClass _source;
 
-    private readonly TemplateSourceOptions _options = new()
-    {
-        Repository = "report-service/templates",
-        Branch = "main",
-        AllowInsecureLoopback = true,
-    };
+    private readonly TemplateSourceOptions _options = new();
 
     public TemplateTakeTests()
     {

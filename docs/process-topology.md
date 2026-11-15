@@ -165,7 +165,7 @@ never changes the database's answer. An outage does not stop the process — the
 check reports it and recovers on its own when the database returns, and it logs the
 change of state once in each direction.
 
-The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It also reads the configured template source, and its start stops naming a missing `TemplateSource:Repository` or `TemplateSource:Branch`. Its queue serves two steps at one activity at a time: `TakeTemplateVersion`, which reads one named version and keeps it, and `ResolveTemplateVersion`, which chooses the version of a template a job names without one by reading the branch's version folders and the versions already taken. One resolution is bounded by `TemplateSource:ResolveDeadline`, which fits inside the step's own 300 s.
+The PDF worker carries the `metadata-database` check: a taken version is published by a record it writes, so the process needs the database and its migrations. It reads the deployment's template source — the object store the process already mounts — and no template credential. Its queue serves two steps at one activity at a time: `TakeTemplateVersion`, which reads one named version and keeps it, and `ResolveTemplateVersion`, which chooses the version of a template a job names without one by listing the published versions in that class and the versions already taken. One resolution is bounded by `TemplateSource:ResolveDeadline`, which fits inside the step's own 300 s.
 
 ### The template step of a job
 

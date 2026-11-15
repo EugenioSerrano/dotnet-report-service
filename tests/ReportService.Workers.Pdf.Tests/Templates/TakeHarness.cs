@@ -43,12 +43,7 @@ internal sealed class TakeHarness : IAsyncDisposable
             Path.Combine(_root, "storage"),
             TimeProvider.System,
             NullLogger<FilesystemObjectStore>.Instance);
-        Options = new TemplateSourceOptions
-        {
-            Repository = "report-service/templates",
-            Branch = "main",
-            AllowInsecureLoopback = true,
-        };
+        Options = new TemplateSourceOptions();
         Source = TemplateSourceClass.CreateAsync(Path.Combine(_root, "source")).GetAwaiter().GetResult();
         _sourceStore = new SwitchableStore(Source.Store);
     }

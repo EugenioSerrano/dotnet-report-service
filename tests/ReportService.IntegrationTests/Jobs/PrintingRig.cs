@@ -587,8 +587,6 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IObjectStore>();

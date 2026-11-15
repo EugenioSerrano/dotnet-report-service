@@ -613,11 +613,7 @@ public sealed class ReportJobHistoryCapture
                     RefusedByTheTakeVersion,
                     TemplatePackageFixtures.FolderDoesNotMatchTheVersion(TemplateId, RefusedByTheTakeVersion, RefusedByTheTakeVersion + ".1"));
 
-                var sourceOptions = new TemplateSourceOptions
-                {
-                    Repository = "report-service/templates",
-                    Branch = "main",
-                };
+                var sourceOptions = new TemplateSourceOptions();
                 var reader = new StorageTemplateSource(
                     sourceStore,
                     sourceOptions,

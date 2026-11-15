@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The template source: the configured repository and branch a version is
-    read from, the client that reads it at one commit, the warning a changed
-    taken version produces, and the seam the take-time checks plug into. Only
-    the PDF worker references this project: the API answers the owner's
-    metadata read from the record, never from the source.
+    The template source: the deployment's object store read as a version's
+    publication, the warning a changed taken version produces, and the seam the
+    take-time checks plug into. Only the PDF worker references this project: the
+    API answers the owner's metadata read from the record, never from the source.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>

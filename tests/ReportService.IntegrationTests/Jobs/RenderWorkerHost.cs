@@ -121,8 +121,6 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Repository", "report-service/templates");
-            builder.UseSetting($"{TemplateSourceOptions.SectionPath}:Branch", "main");
             if (logs is not null)
             {
                 builder.ConfigureLogging(logging => logging.AddProvider(logs));

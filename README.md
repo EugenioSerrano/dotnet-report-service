@@ -72,7 +72,7 @@ even if a worker crashed in the middle.
 | **Bounded memory** | No component ever loads, deserialises or retains the whole input JSON. Data is read sequentially, cut into bounded *blocks* (~1 000 records), and each block is rendered on its own. Memory is a function of configured limits, not of dataset size. |
 | **Durability** | An accepted job is persisted together with a durable "start this" intent before the API answers. Workflows run on [Temporal](https://temporal.io); restarts and transient failures retry from the last committed block without losing or duplicating pages or outputs. |
 | **Accounting-grade pagination** | Page subtotals, group subtotals, carried-forward totals and "Page X of Y" are computed on the rows that *actually* landed on each page after layout, with decimal arithmetic — never estimated. |
-| **Reproducibility** | A job is pinned to an immutable template package (ID + version + package hash + commit SHA), a fixed snapshot hash, a fixed culture, time zone and *report clock*. Re-running produces the same document; changing the template repository afterwards changes nothing. |
+| **Reproducibility** | A job is pinned to an immutable template package (ID + version + the publication descriptor's hash + package hash), a fixed snapshot hash, a fixed culture, time zone and *report clock*. Re-running produces the same document; publishing a new version of the template afterwards changes nothing. |
 | **Templates as code** | Templates live in a Git repository, are validated by CI and published as immutable versions. The render path never reads GitHub. |
 | **One snapshot, many formats** | PDF, HTML, XLSX and Markdown come from the same data and the same template; only the requested renderers run. |
 

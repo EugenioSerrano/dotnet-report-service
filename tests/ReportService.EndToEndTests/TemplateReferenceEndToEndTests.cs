@@ -1,48 +1,59 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
+using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 
 namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The template of a report job over the whole composition: the API, the orchestration worker
-/// and the PDF worker in their own containers, the real metadata database and the public
-/// fixture repository the render worker reads. A job that names one version is pinned to it
-/// after the <c>202</c>; a job that names only its template is pinned to the highest release the
-/// fixture holds; a range is refused at once and creates no job.
+/// and the PDF worker in their own containers, the real metadata database, and a version
+/// published in the composition's own object store. A job that names one version is pinned to
+/// it after the <c>202</c>; a job that names only its template is pinned to the highest release
+/// the store holds; a range is refused at once and creates no job.
 /// <para>
 /// The pin is read from the composition's database, because the status read does not show it.
-/// The class stays small on purpose: the anonymous client's hourly allowance is shared with the
-/// delivered live class. A branch that moved is a change to record, never one to read past: the
-/// recorded commit is asserted beside the pin, and a repository that no longer holds the version
-/// is a stop of the run, never a silent rewrite.
+/// The versions the class reads are published into the root the three processes share before
+/// the composition starts, under a template identifier of this run's own, so nothing a previous
+/// run left behind decides what this one asserts.
 /// </para>
 /// </summary>
 public sealed class TemplateReferenceEndToEndTests : IDisposable
 {
-    /// <summary>The repository the fixtures live in.</summary>
-    public const string Repository = "EugenioSerrano/dotnet-report-service-templates";
+    /// <summary>The consumer the composition accepts jobs for.</summary>
+    private const string Consumer = "consumer-a";
 
-    /// <summary>The branch the fixtures are published on.</summary>
-    public const string Branch = "main";
+    /// <summary>The version the exact job names, and the highest release a by-name job resolves to.</summary>
+    private const string Version = "1.1.0";
 
-    /// <summary>The commit the fixtures of the delivered live class were published at.</summary>
-    public const string PinnedCommit = "e464d10d459b143cbde2cfced0be063e1b93a423";
+    /// <summary>The release published beside <see cref="Version"/>, which a by-name job must not pick.</summary>
+    private const string EarlierVersion = "1.0.0";
 
-    /// <summary>The template the fixtures hold.</summary>
-    public const string Template = "invoice-energy";
+    /// <summary>The setting the render worker keeps: the bound of one by-name resolution.</summary>
+    private const string ResolveDeadlineKey = "TemplateSource__ResolveDeadline";
 
-    /// <summary>The version the fixtures hold, and the highest release a by-name job resolves to.</summary>
-    public const string Version = "1.1.0";
+    /// <summary>The template-source settings the product no longer reads.</summary>
+    private static readonly string[] RemovedKeys =
+    [
+        "TemplateSource__Repository",
+        "TemplateSource__Branch",
+        "TemplateSource__ApiBaseUrl",
+        "TemplateSource__AllowInsecureLoopback",
+        "TemplateSource__Token",
+    ];
 
     private const string Registry = """
         { "consumers": [ { "consumerId": "consumer-a", "displayName": "Consumer A", "active": true } ] }
@@ -59,6 +70,8 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         "report-service-e2e-template",
         Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
 
+    private readonly string _template = "invoice-energy-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+
     /// <summary>Creates the directory the temporary registry lives in.</summary>
     public TemplateReferenceEndToEndTests() => Directory.CreateDirectory(_directory);
 
@@ -74,26 +87,28 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         var connectionString = await ConnectionStringAsync(app, cancellationToken);
         var uploadId = await ReadyUploadAsync(api, cancellationToken);
 
-        // An exact reference: the version is taken from the fixture repository and pinned with
-        // the values the take read.
+        // An exact reference: the version is taken from the composition's own store and pinned
+        // with the values the take read.
         var exact = await AcceptedJobAsync(api, uploadId, Version, cancellationToken);
         var exactPin = await PinnedAsync(connectionString, exact, cancellationToken);
         Assert.Equal(Version, exactPin.ResolvedVersion);
-        Assert.True(
-            string.Equals(PinnedCommit, exactPin.CommitSha, StringComparison.Ordinal),
-            $"the fixtures this class reads are published at commit {PinnedCommit}; the composition pinned {exactPin.CommitSha} — a branch that moved is a change to record, never one to read past");
-        Assert.Equal(40, exactPin.CommitSha.Length);
+        Assert.Null(exactPin.CommitSha);
+        Assert.Equal(64, exactPin.SourceDescriptorSha256!.Length);
         Assert.Equal(64, exactPin.PackageSha256.Length);
         Assert.Equal("SCRIBAN", exactPin.Engine);
         Assert.Equal("schema.json", exactPin.SchemaRef);
         Assert.True(exactPin.ResolvedAt > DateTimeOffset.MinValue);
+        Assert.Matches("^[0-9a-f]{64}$", exactPin.SourceDescriptorSha256);
+        AssertThePublishedFiles(exactPin);
+        Assert.Equal(_template, exactPin.TemplateId);
 
-        // By name: the highest release the fixture holds, never a pre-release, and never the
+        // By name: the highest release the store holds, never a pre-release, and never the
         // version a previous job happened to name.
         var byName = await AcceptedJobAsync(api, uploadId, version: null, cancellationToken);
         var byNamePin = await PinnedAsync(connectionString, byName, cancellationToken);
         Assert.Equal(Version, byNamePin.ResolvedVersion);
         Assert.Equal(exactPin.PackageSha256, byNamePin.PackageSha256);
+        Assert.Equal(exactPin.SourceDescriptorSha256, byNamePin.SourceDescriptorSha256);
 
         // The version a job uses never changes: the first job's pin is the same after the second.
         var again = await PinnedAsync(connectionString, exact, cancellationToken);
@@ -105,7 +120,17 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
     public async Task ARangeIsRefusedAndNoJobIsCreated()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (app, api) = await StartAsync(cancellationToken);
+
+        // The composition is started with the template-source settings the product no longer
+        // reads, and a planted credential-shaped value among them: they are inert, and nothing
+        // of them reaches the worker.
+        var (app, api) = await StartAsync(
+            cancellationToken,
+            "--TemplateSource:Repository=report-service/templates",
+            "--TemplateSource:Branch=main",
+            "--TemplateSource:ApiBaseUrl=http://127.0.0.1:9/",
+            "--TemplateSource:AllowInsecureLoopback=true",
+            "--TemplateSource:Token=ghp_plantedTokenValueNeverLoaded1234567890");
         await using var composition = app;
         var connectionString = await ConnectionStringAsync(app, cancellationToken);
         var uploadId = await ReadyUploadAsync(api, cancellationToken);
@@ -122,15 +147,49 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         Assert.Equal(before, await JobCountAsync(connectionString, cancellationToken));
     }
 
-    private async Task<(DistributedApplication App, HttpClient Api)> StartAsync(CancellationToken cancellationToken)
+    private static async Task AssertTheCompositionCarriesNoTemplateSourceSettingAsync(
+        DistributedApplication app,
+        string scenario,
+        CancellationToken cancellationToken)
     {
+        var environment = await EffectiveEnvironmentAsync(app, cancellationToken);
+        Assert.True(
+            environment.ContainsKey(ResolveDeadlineKey),
+            $"{scenario}: the render worker is not given {ResolveDeadlineKey}, the one template-source setting a by-name resolution reads.");
+        foreach (var key in RemovedKeys)
+        {
+            Assert.False(
+                environment.ContainsKey(key),
+                $"{scenario}: the render worker is given '{key}', a template-source setting the product no longer reads.");
+        }
+    }
+
+    private static async Task<IReadOnlyDictionary<string, object>> EffectiveEnvironmentAsync(
+        DistributedApplication app,
+        CancellationToken cancellationToken)
+    {
+        var model = app.Services.GetRequiredService<DistributedApplicationModel>();
+        var resource = model.Resources.Single(candidate => string.Equals(candidate.Name, TestComposition.RenderWorkerName, StringComparison.Ordinal));
+        var execution = app.Services.GetRequiredService<DistributedApplicationExecutionContext>();
+        var environment = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (var callback in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
+        {
+            await callback.Callback(new EnvironmentCallbackContext(execution, resource, environment, cancellationToken));
+        }
+
+        return environment;
+    }
+
+    private async Task<(DistributedApplication App, HttpClient Api)> StartAsync(
+        CancellationToken cancellationToken,
+        params string[] arguments)
+    {
+        await PublishAsync(cancellationToken);
         var registry = Path.Combine(_directory, "consumers.json");
         await File.WriteAllTextAsync(registry, Registry, cancellationToken);
         var appHost = await TestComposition.CreateAsync(
             cancellationToken,
-            $"--Consumers:File={registry}",
-            $"--TemplateSource:Repository={Repository}",
-            $"--TemplateSource:Branch={Branch}");
+            [$"--Consumers:File={registry}", .. arguments]);
         var app = await appHost.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
@@ -139,8 +198,45 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
             await app.ResourceNotifications.WaitForResourceHealthyAsync("api", deadline.Token);
         }
 
+        await AssertTheCompositionCarriesNoTemplateSourceSettingAsync(app, "the composition under test", cancellationToken);
         return (app, app.CreateHttpClient("api"));
     }
+
+    private async Task PublishAsync(CancellationToken cancellationToken)
+    {
+        var root = Path.Combine(RepositoryPaths.Root, ".storage");
+        Directory.CreateDirectory(root);
+        var source = await TemplateSourceClass.CreateAsync(root);
+        try
+        {
+            await source.PublishAsync(_template, EarlierVersion, TemplatePackageFixtures.Valid(_template, EarlierVersion, Consumer));
+            await source.PublishAsync(_template, Version, TemplatePackageFixtures.Valid(_template, Version, Consumer));
+        }
+        finally
+        {
+            await source.DisposeAsync();
+        }
+    }
+
+    private void AssertThePublishedFiles(PinRow pin)
+    {
+        var expected = PublishedFiles();
+        Assert.NotNull(pin.SourceObjects);
+        Assert.Equal(expected.Count, pin.SourceObjects!.Length);
+        for (var index = 0; index < expected.Count; index++)
+        {
+            Assert.Equal(expected[index].Path, pin.SourceObjects[index].Path);
+            Assert.Equal(expected[index].Size, pin.SourceObjects[index].Size);
+            Assert.Equal(expected[index].Sha256, pin.SourceObjects[index].Sha256);
+        }
+    }
+
+    // The files the case publishes for the version it reads, ordered by their package path — the
+    // order the take records them in — with the size and SHA-256 the publication record declares.
+    private List<(string Path, long Size, string Sha256)> PublishedFiles() =>
+        [.. TemplatePackageFixtures.Valid(_template, Version, Consumer)
+            .OrderBy(file => file.Key, StringComparer.Ordinal)
+            .Select(file => (file.Key, (long)file.Value.Length, Convert.ToHexStringLower(SHA256.HashData(file.Value))))];
 
     private static async Task<string> ConnectionStringAsync(DistributedApplication app, CancellationToken cancellationToken) =>
         await app.GetConnectionStringAsync("reportservice", cancellationToken)
@@ -208,7 +304,7 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         return document.RootElement.GetProperty("uploadId").GetString()!;
     }
 
-    private static async Task<string> AcceptedJobAsync(
+    private async Task<string> AcceptedJobAsync(
         HttpClient api,
         string uploadId,
         string? version,
@@ -221,15 +317,15 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         return document.RootElement.GetProperty("reportJobId").GetString()!;
     }
 
-    private static Task<HttpResponseMessage> SendJobAsync(
+    private Task<HttpResponseMessage> SendJobAsync(
         HttpClient api,
         string uploadId,
         string? version,
         CancellationToken cancellationToken)
     {
         var template = version is null
-            ? $$"""{"id":"{{Template}}"}"""
-            : $$"""{"id":"{{Template}}","version":"{{version}}"}""";
+            ? $$"""{"id":"{{_template}}"}"""
+            : $$"""{"id":"{{_template}}","version":"{{version}}"}""";
         var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
@@ -255,6 +351,8 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
                     SELECT template_id AS "TemplateId", reference_form AS "ReferenceForm",
                            requested_version AS "RequestedVersion", baseline_version AS "BaselineVersion",
                            resolved_version AS "ResolvedVersion", commit_sha AS "CommitSha",
+                           source_descriptor_sha256 AS "SourceDescriptorSha256",
+                           source_objects::text AS "SourceObjectsJson",
                            package_sha256 AS "PackageSha256", engine AS "Engine",
                            engine_version AS "EngineVersion", schema_ref AS "SchemaRef",
                            resolved_at AS "ResolvedAt"
@@ -280,8 +378,6 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
             cancellationToken: cancellationToken));
     }
 
-    private static string Consumer => "consumer-a";
-
     /// <summary>One reference row, as the composition's database holds it.</summary>
     private sealed class PinRow
     {
@@ -295,7 +391,14 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
 
         public string ResolvedVersion { get; set; } = string.Empty;
 
-        public string CommitSha { get; set; } = string.Empty;
+        public string? CommitSha { get; set; }
+
+        public string? SourceDescriptorSha256 { get; set; }
+
+        public string? SourceObjectsJson { get; set; }
+
+        public TemplateSourceObject[]? SourceObjects =>
+            SourceObjectsJson is null ? null : TemplateSourceObjects.Read(SourceObjectsJson);
 
         public string PackageSha256 { get; set; } = string.Empty;
 

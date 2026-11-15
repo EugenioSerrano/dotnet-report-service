@@ -100,8 +100,6 @@ public sealed class TemplateTakeRegistrationTests
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Development" });
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)
         {
-            ["TemplateSource:Repository"] = "report-service/templates",
-            ["TemplateSource:Branch"] = "main",
             [DatabaseOptions.ConnectionStringSetting] = "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=1",
             [DatabaseOptions.ExpectedSchemaVersionSetting] = "0000",
         });

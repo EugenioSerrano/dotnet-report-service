@@ -36,12 +36,7 @@ public sealed class TemplateTakeAdapterTests : IAsyncDisposable
 
     private readonly FixedTimeProvider _clock = new(new DateTimeOffset(2026, 11, 3, 12, 0, 0, TimeSpan.Zero));
     private readonly InMemoryTemplateVersionStore _versions = new();
-    private readonly TemplateSourceOptions _options = new()
-    {
-        Repository = "report-service/templates",
-        Branch = "main",
-        AllowInsecureLoopback = true,
-    };
+    private readonly TemplateSourceOptions _options = new();
 
     private readonly TemplateVersionConflict _conflict;
     private readonly TemplateSourceClass _source;
