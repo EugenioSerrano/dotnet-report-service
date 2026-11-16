@@ -24,6 +24,9 @@ failed.
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 | **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance` |
 
+
+Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level runs under; the deadline is one for the whole attempt, covering the prepare step, the build and every project. `performance` requires it until a run of that level is recorded, because no recorded span justifies a deadline for it.
+
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
   is run with every change. Its mechanics — one build, the invocations without
   building, the bounded degree, the coverage role of a pair and the sequential

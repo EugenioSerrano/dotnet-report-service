@@ -32,8 +32,8 @@ internal sealed record HermeticOptions(string Mode, int? Degree, string? Reason,
     public bool CollectsCoverage => string.Equals(CoverageRole, MeasureRole, StringComparison.Ordinal);
 }
 
-/// <summary>The command a caller asked for: the level, whether the printing classes are left out, and the hermetic execution options.</summary>
-internal sealed record RunnerCommand(string Level, bool WithoutPrinting, HermeticOptions? Execution);
+/// <summary>The command a caller asked for: the level, whether the printing classes are left out, the hermetic execution options, and the deadline.</summary>
+internal sealed record RunnerCommand(string Level, bool WithoutPrinting, HermeticOptions? Execution, int? TimeoutSeconds = null);
 
 /// <summary>
 /// The hermetic level's execution mechanics: the options of one run, the single
@@ -51,10 +51,17 @@ internal static partial class HermeticExecution
     public const string BuildLogFileName = "hermetic-build.log";
 
     /// <summary>The command line of the level, as the usage message states it.</summary>
-    public const string UsageLine = "Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|rendering|e2e|performance [--without-printing]";
+    public const string UsageLine = "Usage: dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic|integration|rendering|e2e|performance [--without-printing] [--timeout <mm:ss>]";
+
+    /// <summary>The line of the usage message that states the performance level's exception.</summary>
+    public const string UsagePerformance = "       performance: --timeout <mm:ss> is required until a run of this level is recorded";
 
     /// <summary>The options the hermetic level accepts, as the usage message states them.</summary>
     public const string UsageOptions = "       hermetic: [--degree <n>] [--sequential --reason \"<text>\"] [--coverage-role <measure|verification>]";
+
+    /// <summary>The message of the performance level, which has no recorded run to justify a deadline.</summary>
+    public const string PerformanceNeedsTimeout =
+        "The performance level has no recorded run, so no deadline can be justified for it; give --timeout <mm:ss> for this run.";
 
     /// <summary>The message of <c>--without-printing</c> on the hermetic level, which has no printing classes.</summary>
     public const string WithoutPrintingOnHermetic =
@@ -87,6 +94,7 @@ internal static partial class HermeticExecution
         var sequential = false;
         string? reason = null;
         string? coverageRole = null;
+        int? timeoutSeconds = null;
 
         for (var index = 0; index < args.Count; index++)
         {
@@ -155,6 +163,26 @@ internal static partial class HermeticExecution
                     reason = reasonText;
                     break;
 
+                case "--timeout":
+                    if (timeoutSeconds is not null)
+                    {
+                        error = $"{argument} is given more than once.";
+                        return false;
+                    }
+
+                    if (!TryReadValue(args, ref index, argument, out var timeoutText, out error))
+                    {
+                        return false;
+                    }
+
+                    if (!TryReadTimeout(timeoutText, out var deadline, out error))
+                    {
+                        return false;
+                    }
+
+                    timeoutSeconds = deadline;
+                    break;
+
                 case "--coverage-role":
                     if (coverageRole is not null)
                     {
@@ -200,6 +228,12 @@ internal static partial class HermeticExecution
             return false;
         }
 
+        if (level == "performance" && timeoutSeconds is null)
+        {
+            error = PerformanceNeedsTimeout;
+            return false;
+        }
+
         if (level == "performance" && withoutPrinting)
         {
             error = WithoutPrintingOnPerformance;
@@ -215,7 +249,7 @@ internal static partial class HermeticExecution
                 return false;
             }
 
-            command = new RunnerCommand(level, withoutPrinting, null);
+            command = new RunnerCommand(level, withoutPrinting, null, timeoutSeconds);
             return true;
         }
 
@@ -248,7 +282,7 @@ internal static partial class HermeticExecution
             sequential ? null : degree ?? HermeticOptions.DefaultDegree,
             sequential ? reason : null,
             coverageRole ?? HermeticOptions.MeasureRole);
-        command = new RunnerCommand(level, withoutPrinting, execution);
+        command = new RunnerCommand(level, withoutPrinting, execution, timeoutSeconds);
         return true;
     }
 
@@ -407,6 +441,47 @@ internal static partial class HermeticExecution
         }
 
         return [.. projects];
+    }
+
+    /// <summary>
+    /// Reads <c>&lt;mm:ss&gt;</c>: one to three digits of minutes, exactly two of seconds
+    /// from 00 to 59, greater than zero and at most 180:00.
+    /// </summary>
+    private static bool TryReadTimeout(string text, out int seconds, out string? error)
+    {
+        seconds = 0;
+        error = null;
+        var colon = text.IndexOf(':', StringComparison.Ordinal);
+        var minutes = colon < 0 ? string.Empty : text[..colon];
+        var rest = colon < 0 ? string.Empty : text[(colon + 1)..];
+        if (colon < 0 || minutes.Length is < 1 or > 3 || !minutes.All(char.IsAsciiDigit) || rest.Length != 2 || !rest.All(char.IsAsciiDigit))
+        {
+            error = $"--timeout takes <mm:ss>, with one to three digits for the minutes and exactly two for the seconds; '{text}' is not one.";
+            return false;
+        }
+
+        var mm = int.Parse(minutes, CultureInfo.InvariantCulture);
+        var ss = int.Parse(rest, CultureInfo.InvariantCulture);
+        if (ss > 59)
+        {
+            error = $"--timeout takes seconds from 00 to 59; '{text}' is not one.";
+            return false;
+        }
+
+        seconds = (mm * 60) + ss;
+        if (seconds == 0)
+        {
+            error = "--timeout needs a deadline greater than 00:00.";
+            return false;
+        }
+
+        if (seconds > 10800)
+        {
+            error = $"--timeout takes at most 180:00; '{text}' is longer.";
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryReadValue(IReadOnlyList<string> args, ref int index, string option, out string value, out string? error)

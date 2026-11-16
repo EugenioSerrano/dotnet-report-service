@@ -16,7 +16,11 @@ internal sealed record ProjectRun(
     string Log,
     string? CoverageReport,
     string? Problem,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? DurationSeconds = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? DurationSeconds = null,
+    string State = "succeeded");
+
+/// <summary>The deadline one attempt was given, and where the value came from.</summary>
+internal sealed record DeadlineRecord(int Seconds, string Source);
 
 /// <summary>The one build that preceded the hermetic level's invocations.</summary>
 internal sealed record BuildRecord(
@@ -41,7 +45,7 @@ internal sealed record ImageEvidence(string Reference, string? Digest, string? I
 internal sealed record RunRecord(
     string Level,
     string StartedAt,
-    string FinishedAt,
+    string? FinishedAt,
     string ProductCommit,
     bool ProductWorktreeClean,
     string ReferenceEnvironment,
@@ -53,7 +57,12 @@ internal sealed record RunRecord(
     IReadOnlyList<ImageEvidence>? Images,
     IReadOnlyList<string>? ContainersBefore,
     IReadOnlyList<string>? ContainersAfter,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExecutionRecord? Execution = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExecutionRecord? Execution = null,
+    string State = "finished",
+    string? OpenPhase = null,
+    DeadlineRecord? Deadline = null,
+    string ProcessOwnership = "job-runner",
+    string? Problem = null);
 
 /// <summary>Where a run writes its evidence, and how the header is written.</summary>
 internal static partial class RunEvidence
@@ -117,8 +126,27 @@ internal static partial class RunEvidence
 
     public static string Timestamp(DateTimeOffset value) => value.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
 
-    public static void Write(string runDirectory, RunRecord record) =>
-        File.WriteAllText(Path.Combine(runDirectory, "run.json"), JsonSerializer.Serialize(record, JsonOptions) + "\n");
+    // One write at a time: the hermetic level runs its projects in parallel and every
+    // start, every end and the verdict all rewrite the same record.
+    private static readonly object WriteGate = new();
+
+    /// <summary>
+    /// Writes the record through a temporary file in the same directory and a move over
+    /// <c>run.json</c>, so a reader never sees half a record and a writer never loses one
+    /// to another. A failure to write is reported to the caller, which reaps the level's
+    /// processes regardless.
+    /// </summary>
+    public static void Write(string runDirectory, RunRecord record)
+    {
+        var path = Path.Combine(runDirectory, "run.json");
+        var temporary = path + ".tmp";
+        var payload = JsonSerializer.Serialize(record, JsonOptions) + "\n";
+        lock (WriteGate)
+        {
+            File.WriteAllText(temporary, payload);
+            File.Move(temporary, path, overwrite: true);
+        }
+    }
 
     [GeneratedRegex(@"^\*\*Page revision:\*\*\s*(?<revision>\d+)", RegexOptions.CultureInvariant)]
     private static partial Regex PageRevision();
