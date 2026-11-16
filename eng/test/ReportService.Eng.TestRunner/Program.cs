@@ -445,9 +445,12 @@ internal static partial class Program
         recordPassed = exitCode == ExitPassed;
 
         // The record's own code is the sentinel: the attempt reached no verdict. The
-        // process code says which kind of failure it was. Every expiry sets a problem, in
-        // whichever phase it fired.
-        recordExit = recordProblem is not null ? -1 : exitCode;
+        // process code says which kind of failure it was. An expiry is either a run-level
+        // problem — a prepare step, a build, a closing capture — or a project entry marked
+        // timed-out, so both count.
+        recordExit = recordProblem is not null || runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal))
+            ? -1
+            : exitCode;
         if (!expired)
         {
             openPhase = null;
