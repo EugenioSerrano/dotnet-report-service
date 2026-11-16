@@ -247,6 +247,14 @@ internal static partial class Program
         {
             lock (recordGate)
             {
+                if (string.Equals(finished.State, "timed-out", StringComparison.Ordinal))
+                {
+                    // The record the reap is preceded by is the finished, failing one.
+                    recordState = "finished";
+                    recordFinished = RunEvidence.Timestamp(DateTimeOffset.Now);
+                    recordExit = -1;
+                }
+
                 var index = runs.FindIndex(run => string.Equals(run.Name, finished.Name, StringComparison.Ordinal));
                 if (index >= 0)
                 {
@@ -282,7 +290,7 @@ internal static partial class Program
 
         var startCapture = await RunCaptureAsync(root, "git", ["rev-parse", "HEAD"], deadlineSource.Token).ConfigureAwait(false);
         var statusCapture = await RunCaptureAsync(root, "git", ["status", "--porcelain", "--untracked-files=no"], deadlineSource.Token).ConfigureAwait(false);
-        productCommit = startCapture.Output.Trim() is { Length: > 0 } captured ? captured : "unknown";
+        productCommit = startCapture.ExitCode == 0 && startCapture.Output.Trim() is { Length: > 0 } captured ? captured : "unknown";
         productWorktreeClean = statusCapture.ExitCode == 0 && statusCapture.Output.Trim().Length == 0;
         Persist();
 
@@ -299,6 +307,9 @@ internal static partial class Program
                 build = await HermeticExecution.BuildAsync(root, runDirectory, projects, deadlineSource.Token, () =>
                 {
                     recordProblem ??= $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
+                    recordState = "finished";
+                    recordFinished = RunEvidence.Timestamp(DateTimeOffset.Now);
+                    recordExit = -1;
                     Persist();
                 }).ConfigureAwait(false);
             }
@@ -341,6 +352,9 @@ internal static partial class Program
                 var prepared = await PrepareRenderWorkerImageAsync(root, runDirectory, deadlineSource.Token, deadlineText, text =>
                 {
                     recordProblem = text;
+                    recordState = "finished";
+                    recordFinished = RunEvidence.Timestamp(DateTimeOffset.Now);
+                    recordExit = -1;
                     Persist();
                 }).ConfigureAwait(false);
                 if (prepared.State == "timed-out")
@@ -387,6 +401,14 @@ internal static partial class Program
 
         // The attempt expired when something was recorded as expired — not merely because
         // the token fired: a child that ended as the deadline elapsed keeps its own verdict.
+        // A deadline that fired before any phase recorded anything — during the start
+        // captures, typically — is an expiry too: without this, an attempt that ran nothing
+        // would be recorded passed, because All over an empty set is true.
+        if (deadlineSource.IsCancellationRequested && recordProblem is null && !runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal)))
+        {
+            recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, before its first phase ran to its end";
+        }
+
         var expired = recordProblem is not null || runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal));
         var exitCode = expired
             ? recordProblem is not null ? ExitBuildFailed : ExitTestsFailed
@@ -661,7 +683,7 @@ internal static partial class Program
 
     private static async Task<IReadOnlyList<string>?> ListSuiteContainersAsync(string root, CancellationToken cancellationToken = default)
     {
-        var result = await RunCaptureAsync(root, "docker", ["ps", "--all", "--filter", "name=report-service-it-", "--format", "{{.Names}} {{.Image}} {{.Status}}"]).ConfigureAwait(false);
+        var result = await RunCaptureAsync(root, "docker", ["ps", "--all", "--filter", "name=report-service-it-", "--format", "{{.Names}} {{.Image}} {{.Status}}"], cancellationToken).ConfigureAwait(false);
         return result.ExitCode == 0
             ? [.. result.Output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]
             : [$"docker ps failed: {result.Output.Trim()}"];
@@ -673,7 +695,7 @@ internal static partial class Program
         var references = ReadPinnedReferences(root);
         if (level is "e2e" or "rendering")
         {
-            var listed = await RunCaptureAsync(root, "docker", ["image", "ls", "--format", "{{.Repository}}:{{.Tag}}"]).ConfigureAwait(false);
+            var listed = await RunCaptureAsync(root, "docker", ["image", "ls", "--format", "{{.Repository}}:{{.Tag}}"], cancellationToken).ConfigureAwait(false);
             references.AddRange(listed.Output
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(r => r.Contains("report-service-render-worker:", StringComparison.Ordinal)
@@ -685,7 +707,7 @@ internal static partial class Program
         var images = new List<ImageEvidence>();
         foreach (var reference in references)
         {
-            var inspected = await RunCaptureAsync(root, "docker", ["image", "inspect", "--format", "{{json .RepoDigests}}|{{.Id}}", reference]).ConfigureAwait(false);
+            var inspected = await RunCaptureAsync(root, "docker", ["image", "inspect", "--format", "{{json .RepoDigests}}|{{.Id}}", reference], cancellationToken).ConfigureAwait(false);
             if (inspected.ExitCode != 0)
             {
                 images.Add(new ImageEvidence(reference, null, null));
@@ -774,12 +796,12 @@ internal static partial class Program
 
             // The record states the failure before the tree is reaped, so a reap that raced
             // it could not lose the only evidence the attempt existed.
-            beforeReap?.Invoke();
             lock (gate)
             {
-                log.WriteLine($"the deadline expired at {RunEvidence.Timestamp(DateTimeOffset.Now)}; the record was written and the tree is reaped");
+                log.WriteLine($"the deadline expired at {RunEvidence.Timestamp(DateTimeOffset.Now)}; the caller records the failure, then this tree is reaped");
             }
 
+            beforeReap?.Invoke();
             Reap(process);
             throw;
         }
