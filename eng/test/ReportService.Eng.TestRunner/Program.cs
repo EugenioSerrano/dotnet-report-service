@@ -988,9 +988,29 @@ internal static partial class Program
         [SupportedOSPlatform("windows")]
         public static void Assign(Process process)
         {
-            if (job != IntPtr.Zero && !AssignProcessToJobObject(job, process.Handle))
+            if (job == IntPtr.Zero)
             {
-                Console.WriteLine($"The child {process.Id.ToString(CultureInfo.InvariantCulture)} could not be assigned to the job (error {Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture)}); it may outlive the runner.");
+                return;
+            }
+
+            try
+            {
+                // A child that has already exited has no handle to assign, and that is not a
+                // failure: it leaves nothing behind. Reading the handle throws in that case.
+                if (!AssignProcessToJobObject(job, process.Handle))
+                {
+                    Console.WriteLine($"The child {process.Id.ToString(CultureInfo.InvariantCulture)} could not be assigned to the job (error {Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture)}); it may outlive the runner.");
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // The process ended before its handle could be read: nothing to own.
+            }
+            catch (Win32Exception)
+            {
+                // The handle exists but the assignment was refused: the child is named above
+                // only when the call returns false, so this path says nothing and the scan
+                // of the attempt's survivors is what reports it.
             }
         }
 
