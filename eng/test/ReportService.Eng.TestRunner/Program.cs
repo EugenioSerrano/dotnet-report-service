@@ -180,7 +180,7 @@ internal static partial class Program
         string? openPhase = null;
         string? recordProblem = null;
         var recordState = "running";
-        var recordExit = ExitConfiguration;
+        var recordExit = -1;
         var recordPassed = false;
         string? recordFinished = null;
         IReadOnlyList<string>? coverageOptions = null;
@@ -424,7 +424,7 @@ internal static partial class Program
         int exitCode;
         try
         {
-            await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+            await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
                 exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken).ConfigureAwait(false);
@@ -510,7 +510,7 @@ internal static partial class Program
         string? problem = null;
         try
         {
-            await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+            await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync(line).ConfigureAwait(false);
                 exitCode = await RunStreamingAsync(root, "dotnet", arguments, environment, writer, cancellationToken).ConfigureAwait(false);

@@ -319,7 +319,7 @@ internal static partial class HermeticExecution
         Console.WriteLine(line);
         var stopwatch = Stopwatch.StartNew();
         var exitCode = -1;
-        await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n" })
+        await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
         {
             await writer.WriteLineAsync(line).ConfigureAwait(false);
             exitCode = await Program.RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer).ConfigureAwait(false);
