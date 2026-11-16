@@ -5,7 +5,7 @@ temporary disk, rendering time) states the machine and the software it ran
 on. This page describes that **reference environment** and the convention
 every measurement follows when it is reported.
 
-**Page revision:** 3 (2026-11-01; revision 2 on 2026-10-21, revision 1 the same day before the PDF base image and the local development registry existed). Revision 3 changes only the container runtime: Rancher Desktop was replaced by Docker Desktop 4.97.0 on 2026-11-01. A change to anything below — hardware, operating system, container runtime, toolchain or a pinned component — creates a new revision of this page; a measurement always cites the revision it ran on.
+**Page revision:** 4 (2026-11-15; revision 3 on 2026-11-01, revision 2 on 2026-10-21, revision 1 the same day before the PDF base image and the local development registry existed). Revision 4 changes only the Aspire line of the toolchain, from 13.6.2 to 13.6.5. Revision 3 changes only the container runtime: Rancher Desktop was replaced by Docker Desktop 4.97.0 on 2026-11-01. A change to anything below — hardware, operating system, container runtime, toolchain or a pinned component — creates a new revision of this page; a measurement always cites the revision it ran on.
 
 ## Machine
 
@@ -42,7 +42,7 @@ every measurement follows when it is reported.
 |------|-------|
 | .NET SDK | 10.0.402 (selected by `global.json`) |
 | .NET runtime | Microsoft.NETCore.App 10.0.13, Microsoft.AspNetCore.App 10.0.13 |
-| Aspire | 13.6.2 (AppHost SDK and hosting packages, restored from NuGet) |
+| Aspire | 13.6.5 (AppHost SDK and hosting packages, restored from NuGet) |
 | Microsoft.Playwright | 1.63.0 |
 
 ## Pinned components as run
