@@ -293,7 +293,7 @@ internal static partial class HermeticExecution
     /// The output goes to the run's build log and to the console; a failing build
     /// names the project its error lines point at.
     /// </summary>
-    public static async Task<BuildRecord> BuildAsync(string root, string runDirectory, IReadOnlyList<string> projects)
+    public static async Task<BuildRecord> BuildAsync(string root, string runDirectory, IReadOnlyList<string> projects, CancellationToken cancellationToken = default)
     {
         var projectFile = Path.Combine(runDirectory, TraversalFileName);
         var log = Path.Combine(runDirectory, BuildLogFileName);
@@ -322,7 +322,7 @@ internal static partial class HermeticExecution
         await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
         {
             await writer.WriteLineAsync(line).ConfigureAwait(false);
-            exitCode = await Program.RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer).ConfigureAwait(false);
+            exitCode = await Program.RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken).ConfigureAwait(false);
         }
 
         stopwatch.Stop();

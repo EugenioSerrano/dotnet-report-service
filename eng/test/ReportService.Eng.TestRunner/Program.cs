@@ -164,12 +164,6 @@ internal static partial class Program
         }
 
         var deadline = DeadlineFor(level, command.TimeoutSeconds);
-        var startCapture = await RunCaptureAsync(root, "git", ["rev-parse", "HEAD"]).ConfigureAwait(false);
-        var statusCapture = await RunCaptureAsync(root, "git", ["status", "--porcelain", "--untracked-files=no"]).ConfigureAwait(false);
-        var productCommit = startCapture.Output.Trim() is { Length: > 0 } captured ? captured : "unknown";
-        var productWorktreeClean = statusCapture.ExitCode == 0 && statusCapture.Output.Trim().Length == 0;
-        var referenceEnvironment = RunEvidence.ReadReferenceEnvironment(root);
-
         var runDirectory = RunEvidence.CreateRunDirectory(root, startedAt);
         Console.WriteLine($"Running the {level} level{(withoutPrinting ? " without the classes that need the printing steps" : string.Empty)}; evidence in {Path.GetRelativePath(root, runDirectory)}");
 
@@ -190,6 +184,12 @@ internal static partial class Program
         ExecutionRecord? executionRecord = null;
         var recordWriteFailed = false;
         IReadOnlyList<string>? containersBefore = null;
+
+        // Read before the record is written and rewritten once the captures below know
+        // the truth: a kill in the first instant records `unknown` rather than nothing.
+        var productCommit = "unknown";
+        var productWorktreeClean = false;
+        var referenceEnvironment = RunEvidence.ReadReferenceEnvironment(root);
 
         void Persist()
         {
@@ -258,8 +258,9 @@ internal static partial class Program
                 }
 
                 // The expired phase keeps its name: it is the only field that can say
-                // where a killed or timed-out attempt was.
-                if (finished.State != "timed-out")
+                // where a killed or timed-out attempt was. A project that ended by itself
+                // clears only its own name, never another's.
+                if (finished.State != "timed-out" && openPhase == "project:" + finished.Name)
                 {
                     openPhase = null;
                 }
@@ -268,21 +269,37 @@ internal static partial class Program
             Persist();
         }
 
-        containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
+        // The record exists before the first child: the captures below are children too.
         Persist();
 
-        // One deadline for the whole attempt: the prepare step, the build and every
-        // project are inside the window, because the spans it is justified against are
+        // One deadline for the whole attempt — the start captures, the prepare step, the
+        // build and every project — because the spans it is justified against are
         // whole-run spans.
         using var deadlineSource = new CancellationTokenSource(TimeSpan.FromSeconds(deadline.Seconds));
         var deadlineText = $"{deadline.Seconds / 60:00}:{deadline.Seconds % 60:00}";
+
+        var startCapture = await RunCaptureAsync(root, "git", ["rev-parse", "HEAD"], deadlineSource.Token).ConfigureAwait(false);
+        var statusCapture = await RunCaptureAsync(root, "git", ["status", "--porcelain", "--untracked-files=no"], deadlineSource.Token).ConfigureAwait(false);
+        productCommit = startCapture.Output.Trim() is { Length: > 0 } captured ? captured : "unknown";
+        productWorktreeClean = statusCapture.ExitCode == 0 && statusCapture.Output.Trim().Length == 0;
+        Persist();
+
+        containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
+        Persist();
 
         BuildRecord? build = null;
         if (level == "hermetic")
         {
             openPhase = "build";
             Persist();
-            build = await HermeticExecution.BuildAsync(root, runDirectory, projects).ConfigureAwait(false);
+            try
+            {
+                build = await HermeticExecution.BuildAsync(root, runDirectory, projects, deadlineSource.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                build = null;
+            }
             if (deadlineSource.IsCancellationRequested)
             {
                 recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
@@ -313,7 +330,11 @@ internal static partial class Program
                 // the classes run concurrently and must never publish it themselves.
                 openPhase = "prepare";
                 Persist();
-                var prepared = await PrepareRenderWorkerImageAsync(root, runDirectory, deadlineSource.Token, deadlineText).ConfigureAwait(false);
+                var prepared = await PrepareRenderWorkerImageAsync(root, runDirectory, deadlineSource.Token, deadlineText, text =>
+                {
+                    recordProblem = text;
+                    Persist();
+                }).ConfigureAwait(false);
                 if (prepared.State == "timed-out")
                 {
                     recordProblem = prepared.Problem;
@@ -332,7 +353,7 @@ internal static partial class Program
                 if (level == "hermetic")
                 {
                     var results = await HermeticExecution
-                        .RunAsync(projects, execution!, project => RunProjectAsync(root, runDirectory, project, level, withoutPrinting, execution, Begin, deadlineSource.Token, deadlineText))
+                        .RunAsync(projects, execution!, project => RunProjectAsync(root, runDirectory, project, level, withoutPrinting, execution, Begin, Settle, deadlineSource.Token, deadlineText))
                         .ConfigureAwait(false);
                     foreach (var result in results)
                     {
@@ -350,7 +371,7 @@ internal static partial class Program
                             break;
                         }
 
-                        Settle(await RunProjectAsync(root, runDirectory, project, level, withoutPrinting, null, Begin, deadlineSource.Token, deadlineText).ConfigureAwait(false));
+                        Settle(await RunProjectAsync(root, runDirectory, project, level, withoutPrinting, null, Begin, Settle, deadlineSource.Token, deadlineText).ConfigureAwait(false));
                     }
                 }
             }
@@ -381,7 +402,10 @@ internal static partial class Program
         recordState = "finished";
         recordFinished = RunEvidence.Timestamp(DateTimeOffset.Now);
         recordPassed = exitCode == ExitPassed;
-        recordExit = exitCode;
+
+        // The record's own code is the sentinel: the attempt reached no verdict. The
+        // process code says which kind of failure it was.
+        recordExit = expired ? -1 : exitCode;
         if (!expired)
         {
             openPhase = null;
@@ -407,7 +431,7 @@ internal static partial class Program
         return exitCode;
     }
 
-    private static async Task<ProjectRun> PrepareRenderWorkerImageAsync(string root, string runDirectory, CancellationToken cancellationToken, string deadlineText)
+    private static async Task<ProjectRun> PrepareRenderWorkerImageAsync(string root, string runDirectory, CancellationToken cancellationToken, string deadlineText, Action<string>? onExpired = null)
     {
         const string name = "ReportService.AppHost";
         var log = Path.Combine(runDirectory, "render-worker-image.log");
@@ -424,10 +448,11 @@ internal static partial class Program
         int exitCode;
         try
         {
+            var problem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the prepare step";
             await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
-                exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken).ConfigureAwait(false);
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken, () => onExpired?.Invoke(problem)).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -458,7 +483,7 @@ internal static partial class Program
             exitCode == 0 ? "succeeded" : "failed");
     }
 
-    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level, bool withoutPrinting, HermeticOptions? execution, Action<ProjectRun> onStart, CancellationToken cancellationToken, string deadlineText)
+    private static async Task<ProjectRun> RunProjectAsync(string root, string runDirectory, string project, string level, bool withoutPrinting, HermeticOptions? execution, Action<ProjectRun> onStart, Action<ProjectRun> onExpired, CancellationToken cancellationToken, string deadlineText)
     {
         var name = Path.GetFileNameWithoutExtension(project);
         var resultsDirectory = Path.Combine(runDirectory, name);
@@ -504,6 +529,19 @@ internal static partial class Program
 
         var stopwatch = Stopwatch.StartNew();
 
+        // The expiry's entry is written by the caller before the tree is reaped.
+        Action beforeReap = () => onExpired(new ProjectRun(
+            name,
+            project,
+            arguments,
+            -1,
+            false,
+            Path.GetRelativePath(root, log),
+            null,
+            $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during this project",
+            null,
+            "timed-out"));
+
         // A project that cannot start, or whose log cannot be written, is one failed
         // entry with its problem: the record stays complete and the other projects run.
         var exitCode = -1;
@@ -513,7 +551,7 @@ internal static partial class Program
             await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync(line).ConfigureAwait(false);
-                exitCode = await RunStreamingAsync(root, "dotnet", arguments, environment, writer, cancellationToken).ConfigureAwait(false);
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, environment, writer, cancellationToken, beforeReap).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -669,7 +707,8 @@ internal static partial class Program
         IReadOnlyList<string> arguments,
         IReadOnlyDictionary<string, string> environment,
         StreamWriter log,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action? beforeReap = null)
     {
         var startInfo = CreateStartInfo(workingDirectory, fileName, arguments);
         foreach (var (key, value) in environment)
@@ -678,6 +717,14 @@ internal static partial class Program
         }
 
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"Could not start {fileName}.");
+        if (OperatingSystem.IsWindows() && ProcessOwnership.Mechanism == "per-child-job")
+        {
+            // The runner could not join the job itself, so each child is assigned as it
+            // starts; a child created before the assignment can escape, and a survivor is
+            // reported rather than reaped.
+            ProcessOwnership.Assign(process);
+        }
+
         var gate = new object();
         void Write(string? line)
         {
@@ -703,14 +750,27 @@ internal static partial class Program
         }
         catch (OperationCanceledException)
         {
-            // The wait is aborted; the tree is not. The caller records the expiry and the
-            // job owns whatever the reaping below misses.
-            Reap(process);
-            lock (gate)
+            // A child that ended between the deadline and this check is not expired: it is
+            // recorded with its own exit code and the deadline did not catch it.
+            if (process.HasExited)
             {
-                log.WriteLine($"the deadline expired at {RunEvidence.Timestamp(DateTimeOffset.Now)}; the process tree was reaped");
+                lock (gate)
+                {
+                    log.WriteLine($"exit code {process.ExitCode.ToString(CultureInfo.InvariantCulture)} (it ended as the deadline elapsed)");
+                }
+
+                return process.ExitCode;
             }
 
+            // The record states the failure before the tree is reaped, so a reap that raced
+            // it could not lose the only evidence the attempt existed.
+            beforeReap?.Invoke();
+            lock (gate)
+            {
+                log.WriteLine($"the deadline expired at {RunEvidence.Timestamp(DateTimeOffset.Now)}; the record was written and the tree is reaped");
+            }
+
+            Reap(process);
             throw;
         }
 
@@ -765,7 +825,7 @@ internal static partial class Program
         };
     }
 
-    private static async Task<(int ExitCode, string Output)> RunCaptureAsync(string workingDirectory, string fileName, IReadOnlyList<string> arguments)
+    private static async Task<(int ExitCode, string Output)> RunCaptureAsync(string workingDirectory, string fileName, IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -773,7 +833,7 @@ internal static partial class Program
                 ?? throw new InvalidOperationException($"Could not start {fileName}.");
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync().ConfigureAwait(false);
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             return (process.ExitCode, await output.ConfigureAwait(false) + await error.ConfigureAwait(false));
         }
         catch (Win32Exception exception)
@@ -848,8 +908,12 @@ internal static partial class Program
 
             if (!AssignProcessToJobObject(job, GetCurrentProcess()))
             {
-                error = $"The runner could not join its own job (error {Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture)}).";
-                return false;
+                // A host that forbids nested jobs: each child is assigned as it starts, and
+                // a child created before its assignment can escape the job — the scan
+                // reports any survivor instead of claiming there is none.
+                Mechanism = "per-child-job";
+                Console.WriteLine("The runner could not join its own job; each child is assigned to it as it starts, and a survivor is reported rather than reaped.");
+                return true;
             }
 
             Mechanism = "job-runner";
@@ -905,6 +969,16 @@ internal static partial class Program
         [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static partial bool AssignProcessToJobObject(IntPtr jobHandle, IntPtr processHandle);
+
+        /// <summary>Assigns one child to the job, on the fallback where the runner could not join it.</summary>
+        [SupportedOSPlatform("windows")]
+        public static void Assign(Process process)
+        {
+            if (job != IntPtr.Zero && !AssignProcessToJobObject(job, process.Handle))
+            {
+                Console.WriteLine($"The child {process.Id.ToString(CultureInfo.InvariantCulture)} could not be assigned to the job (error {Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture)}); it may outlive the runner.");
+            }
+        }
 
         [SupportedOSPlatform("windows")]
         [LibraryImport("kernel32.dll")]
