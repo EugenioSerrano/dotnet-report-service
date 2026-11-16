@@ -406,7 +406,7 @@ internal static partial class Program
         // would be recorded passed, because All over an empty set is true.
         if (deadlineSource.IsCancellationRequested && recordProblem is null && !runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal)))
         {
-            recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, before its first phase ran to its end";
+            recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, while no phase was running under this attempt's control";
         }
 
         var expired = recordProblem is not null || runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal));
@@ -480,11 +480,13 @@ internal static partial class Program
         int exitCode;
         try
         {
-            var problem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the prepare step";
+            // Built when the deadline fires, never before: an eager sentence would name the
+            // prepare's start as the expiry instant in the record the reap is preceded by.
+            Func<string> problem = () => $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the prepare step";
             await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
-                exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken, () => onExpired?.Invoke(problem)).ConfigureAwait(false);
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken, () => onExpired?.Invoke(problem())).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -863,6 +865,13 @@ internal static partial class Program
         {
             using var process = Process.Start(CreateStartInfo(workingDirectory, fileName, arguments))
                 ?? throw new InvalidOperationException($"Could not start {fileName}.");
+            if (OperatingSystem.IsWindows() && ProcessOwnership.Mechanism == "per-child-job")
+            {
+                // On the fallback no child inherits the job, so the capture children — a
+                // class the survivor scan names — are assigned like the level's own.
+                ProcessOwnership.Assign(process);
+            }
+
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
