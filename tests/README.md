@@ -22,7 +22,10 @@ failed.
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
-| **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance` |
+| **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
+
+
+Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level runs under; the deadline is one for the whole attempt, covering the prepare step, the build and every project. `performance` requires it until a run of that level is recorded, because no recorded span justifies a deadline for it.
 
 - The **hermetic** level needs only the .NET SDK — no container runtime. It
   is run with every change. Its mechanics — one build, the invocations without

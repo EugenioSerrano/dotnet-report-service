@@ -7,6 +7,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <!--
+      The job object that owns the processes the runner starts is declared with
+      LibraryImport, whose generated marshalling is unsafe by construction: without this
+      the compiler emits CS0227 and the build stops. No analyzer is suppressed for it.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 </Project>
