@@ -11,8 +11,8 @@ namespace ReportService.PdfOracle;
 /// </summary>
 internal static class BboxText
 {
-    /// <summary>Reads the text tool's word output; <paramref name="reportedPages"/> comes from the file's own information.</summary>
-    public static PdfExtraction Parse(Stream stream, int reportedPages)
+    /// <summary>Reads the text tool's word output; <paramref name="reportedPages"/> and <paramref name="rotations"/> come from the file's own information.</summary>
+    public static PdfExtraction Parse(Stream stream, int reportedPages, IReadOnlyList<int>? rotations = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
 
@@ -68,7 +68,7 @@ internal static class BboxText
             throw new OracleInstrumentException("The text tool reported no page.");
         }
 
-        return new PdfExtraction(sizes.Count, reportedPages, sizes, words);
+        return new PdfExtraction(sizes.Count, reportedPages, sizes, words, rotations);
     }
 
     private static double Edge(XmlReader reader, string name)
@@ -103,7 +103,7 @@ internal static class PopplerText
         ArgumentException.ThrowIfNullOrWhiteSpace(pdfPath);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var reportedPages = await PageCountAsync(pdfPath, timeout, cancellationToken).ConfigureAwait(false);
+        var (reportedPages, rotations) = await PageInfoAsync(pdfPath, timeout, cancellationToken).ConfigureAwait(false);
 
         var startInfo = new ProcessStartInfo("pdftotext")
         {
@@ -123,7 +123,7 @@ internal static class PopplerText
         try
         {
             var error = process.StandardError.ReadToEndAsync(limit.Token);
-            var extraction = BboxText.Parse(process.StandardOutput.BaseStream, reportedPages);
+            var extraction = BboxText.Parse(process.StandardOutput.BaseStream, reportedPages, rotations);
             await process.WaitForExitAsync(limit.Token).ConfigureAwait(false);
             if (process.ExitCode != 0)
             {
@@ -147,7 +147,7 @@ internal static class PopplerText
         }
     }
 
-    private static async Task<int> PageCountAsync(string pdfPath, TimeSpan timeout, CancellationToken cancellationToken)
+    private static async Task<(int Pages, IReadOnlyList<int> Rotations)> PageInfoAsync(string pdfPath, TimeSpan timeout, CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo("pdfinfo")
         {
@@ -155,7 +155,10 @@ internal static class PopplerText
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        startInfo.ArgumentList.Add(pdfPath);
+        foreach (var argument in new[] { "-f", "1", "-l", "100000", pdfPath })
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
 
         using var process = Start(startInfo, "The file information tool");
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -172,7 +175,8 @@ internal static class PopplerText
                     $"The file information tool ended with code {process.ExitCode.ToString(CultureInfo.InvariantCulture)}: {Truncate(await error.ConfigureAwait(false))}");
             }
 
-            return PageCount(await output.ConfigureAwait(false));
+            var text = await output.ConfigureAwait(false);
+            return (PageCount(text), Rotations(text));
         }
         catch (OperationCanceledException) when (limit.IsCancellationRequested)
         {
@@ -186,6 +190,28 @@ internal static class PopplerText
         {
             Stop(process);
         }
+    }
+
+    /// <summary>Each page's rotation as the file information reports it, in page order.</summary>
+    internal static IReadOnlyList<int> Rotations(string output)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+
+        var rotations = new SortedDictionary<int, int>();
+        foreach (var line in output.Split('\n'))
+        {
+            var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 4
+                && string.Equals(parts[0], "Page", StringComparison.Ordinal)
+                && string.Equals(parts[2], "rot:", StringComparison.Ordinal)
+                && int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var page)
+                && int.TryParse(parts[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out var rotation))
+            {
+                rotations[page] = rotation;
+            }
+        }
+
+        return rotations.Count == 0 ? [] : [.. rotations.Values];
     }
 
     /// <summary>The page count the file's own information reports.</summary>

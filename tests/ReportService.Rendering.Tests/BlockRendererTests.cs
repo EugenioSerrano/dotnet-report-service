@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using ReportService.Pdf.Verification;
 using ReportService.Templates;
 
@@ -15,6 +16,12 @@ public sealed class BlockRendererTests : IDisposable
 {
     /// <summary>The table document the rendering suite keeps as its reader regression case.</summary>
     private const string PrintedDocument = "s2-table-s2-T300u-split-t1.00-f0.90-on-r1.pdf";
+
+    private const string A4Portrait = """{"paper":"A4","orientation":"portrait","marginMm":{"top":15,"right":12,"bottom":18,"left":12}}""";
+
+    private const string A4Landscape = """{"paper":"A4","orientation":"landscape","marginMm":{"top":20,"right":15,"bottom":20,"left":15}}""";
+
+    private const string LetterPortrait = """{"paper":"Letter","orientation":"portrait","marginMm":{"top":25.4,"right":19.05,"bottom":25.4,"left":19.05}}""";
 
     private readonly string work = Path.Combine(Path.GetTempPath(), "block-renderer-" + Guid.NewGuid().ToString("N"));
 
@@ -97,6 +104,79 @@ public sealed class BlockRendererTests : IDisposable
         Assert.Equal(1, outcome.Verification.RecordOrdinal);
         Assert.Null(outcome.PdfPath);
         Assert.False(Directory.Exists(work) && Directory.EnumerateFiles(work, "*.pdf").Any());
+    }
+
+    [Fact]
+    public async Task AnUnusablePageSettingIsRefusedBeforeAnythingIsComposedOrPrinted()
+    {
+        var manifest = Manifest(
+            pageTotals: false,
+            anchors: VerificationAnchors.None,
+            pdfOutput: """{"orientation":"portrait","marginMm":{"top":15,"right":12,"bottom":18,"left":12}}""");
+        var printer = new RecordingPrinter();
+
+        var outcome = await Renderer(printer).RenderAsync(
+            Request(manifest, "<p>nothing</p>"),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(VerificationReasons.PageSettingsInvalid, outcome.Verification.Reason);
+        Assert.Equal("outputs.pdf.paper", outcome.Verification.Field);
+        Assert.Equal(0, outcome.ComposeMs);
+        Assert.False(printer.Called);
+        Assert.Null(outcome.PdfPath);
+        Assert.False(Directory.Exists(Path.Combine(work, "printed")));
+    }
+
+    [Fact]
+    public async Task ThePageRuleOfTheResolvedPageIsGivenToThePrinter()
+    {
+        var printer = new RecordingPrinter();
+
+        await Renderer(printer).RenderAsync(
+            Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None, pdfOutput: A4Landscape), ComposedTextOfTheDocument()),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(printer.Called);
+        Assert.Equal(
+            "@page { size: 297mm 210mm !important; margin: 20mm 15mm 20mm 15mm !important; }",
+            printer.Rule!.Css);
+        Assert.EndsWith("<style>" + printer.Rule.Css + "</style>", printer.Document, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheHtmlControlActsAfterThePageRuleWasAppended()
+    {
+        const string control = "<link rel=\"stylesheet\" href=\"https://report.invalid/html/controls/wrong-size.css\">";
+        var printer = new RecordingPrinter();
+
+        await Renderer(printer).RenderAsync(
+            Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None), ComposedTextOfTheDocument()),
+            blockMutation: null,
+            htmlMutation: new AppendingControl(control),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(printer.Called);
+        Assert.EndsWith(control, printer.Document, StringComparison.Ordinal);
+        Assert.True(
+            printer.Document!.IndexOf("<style>" + printer.Rule!.Css, StringComparison.Ordinal) < printer.Document.IndexOf(control, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ThePrintedPageIsCheckedAgainstTheResolvedPageNotTheComposedOne()
+    {
+        var manifest = Manifest(pageTotals: false, anchors: VerificationAnchors.None, pdfOutput: LetterPortrait);
+
+        var outcome = await Renderer(new PrintingPrinter()).RenderAsync(
+            Request(manifest, ComposedTextOfTheDocument()),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(VerificationReasons.PageSize, outcome.Verification.Reason);
+        Assert.Equal(1, outcome.Verification.Page);
+        Assert.Equal("Letter", outcome.Verification.Paper);
+        Assert.Equal("portrait", outcome.Verification.Orientation);
+        Assert.Null(outcome.PdfPath);
     }
 
     /// <summary>
@@ -183,7 +263,7 @@ public sealed class BlockRendererTests : IDisposable
             Path.Combine(work, "printed"));
     }
 
-    private static RenderManifest Manifest(bool pageTotals, VerificationAnchors? anchors) =>
+    private static RenderManifest Manifest(bool pageTotals, VerificationAnchors? anchors, string pdfOutput = A4Portrait) =>
         new(
             "scriban",
             "7.5.1",
@@ -191,15 +271,49 @@ public sealed class BlockRendererTests : IDisposable
             [],
             new PdfSettings("A4", "portrait", new PageMarginsMm(15, 12, 18, 12), pageTotals, anchors),
             new LocaleDefaults(null, null),
-            GroupKey: null);
+            GroupKey: null,
+            PdfOutput: Pdf(pdfOutput));
+
+    private static JsonElement Pdf(string text)
+    {
+        using var document = JsonDocument.Parse(text);
+        return document.RootElement.Clone();
+    }
 
     /// <summary>A printer that writes the kept document, so the verification runs on a real one.</summary>
     private sealed class PrintingPrinter : IPdfPrinter
     {
-        public Task<PrintOutcome> PrintAsync(string html, ITemplatePackageFiles files, string pdfPath, CancellationToken cancellationToken = default)
+        public Task<PrintOutcome> PrintAsync(string document, PageRule pageRule, ITemplatePackageFiles files, string pdfPath, CancellationToken cancellationToken = default)
         {
             File.Copy(DocumentPath, pdfPath, overwrite: true);
             return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.Zero));
         }
+    }
+
+    /// <summary>A printer that records the document and the rule it was given, and writes the kept document.</summary>
+    private sealed class RecordingPrinter : IPdfPrinter
+    {
+        public bool Called { get; private set; }
+
+        public string? Document { get; private set; }
+
+        public PageRule? Rule { get; private set; }
+
+        public Task<PrintOutcome> PrintAsync(string document, PageRule pageRule, ITemplatePackageFiles files, string pdfPath, CancellationToken cancellationToken = default)
+        {
+            Called = true;
+            Document = document;
+            Rule = pageRule;
+            File.Copy(DocumentPath, pdfPath, overwrite: true);
+            return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.Zero));
+        }
+    }
+
+    /// <summary>The test-only control that acts on the served document after the page rule.</summary>
+    private sealed class AppendingControl(string html) : IComposedHtmlMutation
+    {
+        public string Name => "TestAppendedStyle";
+
+        public string Apply(string document) => document + html;
     }
 }

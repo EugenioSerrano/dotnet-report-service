@@ -1,0 +1,24 @@
+{
+  "paper": "Letter",
+  "widthMm": 279.4,
+  "heightMm": 215.9,
+  "marginMm": { "top": 19.05, "right": 25.4, "bottom": 19.05, "left": 25.4 },
+  "columns": [
+    { "column": "sequence", "startMm": 25.4, "endMm": 39.4 },
+    { "column": "date", "startMm": 39.4, "endMm": 61.4 },
+    { "column": "description", "startMm": 61.4, "endMm": 224 },
+    { "column": "amount", "startMm": 224, "endMm": 254 }
+  ],
+  "rowKey": "sequence",
+  "amountColumn": "amount",
+  "headRow": ["Secuencia", "Fecha", "Descripción", "Importe"],
+  "headerAnchors": ["$.reportTitle", "$.customer.name", "$.customer.id", "$.currency"],
+  "trail": "$.totals.recordCount",
+  "grouped": false,
+  "blockTotal": false,
+  "pageFrame": true,
+  "pageHeader": "Estado de cuenta — prueba de marco",
+  "pageFooter": "Documento interno · uso de prueba",
+  "pageNumbering": "Hoja {X} de {Y}",
+  "repeatHeadRow": true
+}

@@ -10,13 +10,15 @@ namespace ReportService.Rendering;
 /// </summary>
 public interface IPdfPrinter
 {
-    /// <summary>Prints <paramref name="html"/> to <paramref name="pdfPath"/>.</summary>
-    /// <param name="html">The composed document.</param>
+    /// <summary>Prints <paramref name="document"/> to <paramref name="pdfPath"/>.</summary>
+    /// <param name="document">The document to serve: the composed document followed by the page rule.</param>
+    /// <param name="pageRule">The page rule the document carries, which the served policy allows by its hash.</param>
     /// <param name="files">The files of the taken package.</param>
     /// <param name="pdfPath">The file the document is printed into.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
     Task<PrintOutcome> PrintAsync(
-        string html,
+        string document,
+        PageRule pageRule,
         ITemplatePackageFiles files,
         string pdfPath,
         CancellationToken cancellationToken = default);

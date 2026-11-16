@@ -41,8 +41,8 @@ internal static class ExtractionControls
             return [new ControlOutcome("base", "a document with a detail row", "a row to act on", false, Described(baseVerdict))];
         }
 
-        return
-        [
+        var controls = new List<ControlOutcome>
+        {
             DeleteADescriptionWord(passing, fixture, expectation, classified),
             RepeatALine(passing, fixture, expectation, placed, classified),
             DeleteARow(passing, fixture, expectation, classified),
@@ -51,8 +51,208 @@ internal static class ExtractionControls
             DuplicateARow(passing, fixture, expectation, classified),
             BlankAPage(passing, fixture, expectation),
             PrintARecordTheDataDoesNotHold(passing, fixture, expectation, placed),
-        ];
+        };
+        if (expectation.PageFrame)
+        {
+            controls.AddRange(PageFrameControls(passing, fixture, expectation, placed));
+        }
+
+        return controls;
     }
+
+    /// <summary>
+    /// The controls of the page frame: a page of another size, a content word pushed
+    /// into the margin, a wrong position, a wrong page count, a footer removed from one
+    /// page and the column headers removed from a continued page.
+    /// </summary>
+    private static IEnumerable<ControlOutcome> PageFrameControls(
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        PlacedDocument placed)
+    {
+        yield return ResizeAPage(passing, fixture, expectation);
+        yield return PushAWordIntoTheMargin(passing, fixture, expectation, placed);
+        yield return ChangeThePosition(passing, fixture, expectation);
+        yield return ChangeThePageCount(passing, fixture, expectation);
+        yield return RemoveTheFooter(passing, fixture, expectation);
+        yield return RemoveTheColumnHeaders(passing, fixture, expectation, placed);
+    }
+
+    private static ControlOutcome ResizeAPage(PdfExtraction passing, FixtureSource fixture, ExpectationDocument expectation)
+    {
+        if (passing.Pages == 0)
+        {
+            return NotEvaluable("E9", "make one page two points wider", "page-geometry-wrong");
+        }
+
+        var sizes = passing.PageSizes.ToList();
+        sizes[0] = (sizes[0].Width + 2.0, sizes[0].Height);
+        var verdict = IntegrityRules.Judge(passing.WithPageSizes(sizes), fixture, expectation, "E9");
+        var behaved = verdict.Failures.Any(failure => failure.Rule == "TI-9" && failure.Class == "page-geometry-wrong");
+
+        return new ControlOutcome("E9", "make page 1 two points wider", "page-geometry-wrong", behaved, Described(verdict));
+    }
+
+    private static ControlOutcome PushAWordIntoTheMargin(
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        PlacedDocument placed)
+    {
+        var word = placed.Lines
+            .Where(line => line.Page == 1)
+            .SelectMany(line => line.Words)
+            .FirstOrDefault(candidate => candidate.XMin > ExpectationDocument.Points.Of(expectation.LeftMm) + 10.0);
+        if (word is null)
+        {
+            return NotEvaluable("E10", "push a content word into the left margin", "frame-wrong");
+        }
+
+        var left = ExpectationDocument.Points.Of(expectation.LeftMm);
+        var delta = word.XMin - (left - 3.0);
+        var moved = word with { XMin = word.XMin - delta, XMax = word.XMax - delta };
+
+        return Evaluate(
+            "E10",
+            "push a content word three points into the left margin",
+            "frame-wrong",
+            null,
+            passing,
+            fixture,
+            expectation,
+            list =>
+            {
+                var at = list.FindIndex(candidate => ReferenceEquals(candidate, word));
+                if (at >= 0)
+                {
+                    list[at] = moved;
+                }
+            });
+    }
+
+    private static ControlOutcome ChangeThePosition(PdfExtraction passing, FixtureSource fixture, ExpectationDocument expectation)
+    {
+        if (passing.Pages < 2)
+        {
+            return NotEvaluable("E11", "print a wrong position on page 2", "numbering-wrong");
+        }
+
+        var word = NumberingWord(passing, expectation, page: 2, after: "Hoja");
+        if (word is null || !int.TryParse(word.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var position))
+        {
+            return NotEvaluable("E11", "print a wrong position on page 2", "numbering-wrong");
+        }
+
+        return ReplaceWordText("E11", $"print position {position + 1} on page 2", "numbering-wrong", passing, fixture, expectation, word, (position + 1).ToString(CultureInfo.InvariantCulture));
+    }
+
+    private static ControlOutcome ChangeThePageCount(PdfExtraction passing, FixtureSource fixture, ExpectationDocument expectation)
+    {
+        var page = passing.Pages;
+        var word = NumberingWord(passing, expectation, page, after: "de");
+        if (word is null || !int.TryParse(word.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var pages))
+        {
+            return NotEvaluable("E12", "print a wrong page count on the last page", "numbering-wrong");
+        }
+
+        return ReplaceWordText("E12", $"print page count {pages + 1} on the last page", "numbering-wrong", passing, fixture, expectation, word, (pages + 1).ToString(CultureInfo.InvariantCulture));
+    }
+
+    private static ControlOutcome RemoveTheFooter(PdfExtraction passing, FixtureSource fixture, ExpectationDocument expectation)
+    {
+        var page = passing.Pages >= 2 ? 2 : 1;
+        var words = passing.Words
+            .Where(word => word.Page == page && word.YCentre > expectation.ContentBottomPt)
+            .ToList();
+        if (words.Count == 0)
+        {
+            return NotEvaluable("E13", "remove the footer from one page", "footer-wrong");
+        }
+
+        return Evaluate(
+            "E13",
+            $"remove the footer from page {page}",
+            "footer-wrong",
+            null,
+            passing,
+            fixture,
+            expectation,
+            list => list.RemoveAll(candidate => words.Any(word => ReferenceEquals(word, candidate))));
+    }
+
+    private static ControlOutcome RemoveTheColumnHeaders(
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        PlacedDocument placed)
+    {
+        var headRow = Normalisation.N(string.Join(' ', expectation.HeadRow));
+        var page = 3;
+        var words = placed.Lines
+            .Where(line => line.Page == page && Normalisation.N(line.Text) == headRow)
+            .SelectMany(line => line.Words)
+            .ToList();
+        if (words.Count == 0)
+        {
+            return NotEvaluable("E14", "remove the column headers from page 3", "column-header-missing");
+        }
+
+        return Evaluate(
+            "E14",
+            "remove the column headers from page 3",
+            "column-header-missing",
+            null,
+            passing,
+            fixture,
+            expectation,
+            list => list.RemoveAll(candidate => words.Any(word => ReferenceEquals(word, candidate))));
+    }
+
+    // The word that prints the number after <paramref name="after"/> in the header band
+    // of one page, read left to right: the position after the numbering's first word and
+    // the page count after its last.
+    private static PdfWord? NumberingWord(PdfExtraction passing, ExpectationDocument expectation, int page, string after)
+    {
+        if (expectation.PageNumbering is null)
+        {
+            return null;
+        }
+
+        var band = passing.Words
+            .Where(word => word.Page == page && word.YCentre < expectation.ContentTopPt)
+            .OrderBy(word => word.YCentre)
+            .ThenBy(word => word.XMin)
+            .ToList();
+        var index = band.FindLastIndex(word => string.Equals(word.Text, after, StringComparison.Ordinal));
+        return index >= 0 && index + 1 < band.Count ? band[index + 1] : null;
+    }
+
+    private static ControlOutcome ReplaceWordText(
+        string id,
+        string mutation,
+        string expectedClass,
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        PdfWord word,
+        string text) =>
+        Evaluate(
+            id,
+            mutation,
+            expectedClass,
+            null,
+            passing,
+            fixture,
+            expectation,
+            list =>
+            {
+                var at = list.FindIndex(candidate => ReferenceEquals(candidate, word));
+                if (at >= 0)
+                {
+                    list[at] = word with { Text = text };
+                }
+            });
 
     /// <summary>The failures of a verdict as rule, kind and place — never a value.</summary>
     public static IReadOnlyList<string> Described(Verdict verdict)

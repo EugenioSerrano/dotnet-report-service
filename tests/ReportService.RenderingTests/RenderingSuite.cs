@@ -49,6 +49,9 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <summary>Where the printed documents, their readings and their verdicts are written.</summary>
     public string OutputDirectory => Path.Combine(root, "out");
 
+    /// <summary>The packages the suite prints: the test library's folders and one folder per page-frame geometry.</summary>
+    public string PackagesDirectory => Path.Combine(root, "packages");
+
     /// <summary>The two template packages the suite prints.</summary>
     public static string TemplatesDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "Templates");
 
@@ -63,6 +66,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     {
         Directory.CreateDirectory(OutputDirectory);
         WriteFixtures();
+        PreparePackages();
         await BuildImagesAsync().ConfigureAwait(false);
     }
 
@@ -91,28 +95,75 @@ public sealed class RenderingSuite : IAsyncLifetime
         var stem = name ?? (mutation is null ? $"{fixtureId}-{package}" : $"{fixtureId}-{package}-{mutation}");
         var command = new List<string>
         {
-            "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out",
+            "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out", "--name", stem,
         };
         if (mutation is not null)
         {
             command.AddRange(["--mutation", mutation]);
         }
 
-        var exit = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (TemplatesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
-        var resultPath = Path.Combine(OutputDirectory, (mutation is null ? fixtureId : $"{fixtureId}-{mutation}") + ".json");
+        var exit = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
+        var resultPath = Path.Combine(OutputDirectory, stem + ".json");
         if (exit != 0)
         {
             throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; the manifest of the run is in {resultPath}.");
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
-        var pdf = Path.Combine(OutputDirectory, document.RootElement.GetProperty("pdf").GetString()!);
-        var verdict = document.RootElement.GetProperty("verificationPassed").GetBoolean();
-        var reason = document.RootElement.TryGetProperty("verificationReason", out var reported) && reported.ValueKind == JsonValueKind.String
-            ? reported.GetString()
-            : null;
-        return new RenderOutcome(fixtureId, package, mutation, pdf, verdict, reason);
+        return ReadOutcome(document.RootElement, fixtureId, package, mutation, OutputDirectory);
     }
+
+    /// <summary>
+    /// Asks the host for <paramref name="fixtureId"/> with a manifest that lost its
+    /// paper size: the renderer's own guard must refuse it, and nothing may be printed.
+    /// </summary>
+    public async Task<RenderOutcome> RenderWithoutPageSettingsAsync(string fixtureId, string package)
+    {
+        const string stem = "page-settings-unset";
+        var exit = await RunContainerAsync(
+            HostImage,
+            [
+                "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out",
+                "--name", stem, "--page-settings-unset",
+            ],
+            new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
+        var resultPath = Path.Combine(OutputDirectory, stem + ".json");
+        if (exit != 0)
+        {
+            throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; the manifest of the run is in {resultPath}.");
+        }
+
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
+        return ReadOutcome(document.RootElement, fixtureId, package, mutation: null, OutputDirectory);
+    }
+
+    private static RenderOutcome ReadOutcome(JsonElement result, string fixtureId, string package, string? mutation, string outputDirectory)
+    {
+        var reported = result.TryGetProperty("pdf", out var pdfName) && pdfName.ValueKind == JsonValueKind.String ? pdfName.GetString() : null;
+        var reason = result.TryGetProperty("verificationReason", out var reportedReason) && reportedReason.ValueKind == JsonValueKind.String
+            ? reportedReason.GetString()
+            : null;
+        var field = result.TryGetProperty("verificationField", out var reportedField) && reportedField.ValueKind == JsonValueKind.String
+            ? reportedField.GetString()
+            : null;
+        return new RenderOutcome(
+            fixtureId,
+            package,
+            mutation,
+            reported is null ? null : Path.Combine(outputDirectory, reported),
+            result.GetProperty("verificationPassed").GetBoolean(),
+            reason,
+            field,
+            ExpectationOf(package));
+    }
+
+    /// <summary>The declaration file of the package: the page frame's geometries are filed under their own names.</summary>
+    /// <param name="package">The package id.</param>
+    public static string ExpectationOf(string package) =>
+        string.Equals(package, PageFramePackage, StringComparison.Ordinal) ? PageFramePackage + "-a4-portrait" : package;
+
+    /// <summary>The package id of the page frame's canonical declaration.</summary>
+    public const string PageFramePackage = "page-frame";
 
     /// <summary>
     /// Prints the shipped sample <paramref name="sampleId"/> from its own folder with
@@ -155,6 +206,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <summary>Reads <paramref name="pdf"/> with the judge and returns its verdict.</summary>
     public async Task<Verdict> JudgeAsync(RenderOutcome render)
     {
+        Assert.NotNull(render.Pdf);
         var stem = Path.GetFileNameWithoutExtension(render.Pdf);
         var verdictPath = Path.Combine(OutputDirectory, stem + ".verdict.json");
         var readingPath = Path.Combine(OutputDirectory, stem + ".reading.json");
@@ -163,7 +215,7 @@ public sealed class RenderingSuite : IAsyncLifetime
             [
                 "verdict", "--pdf", $"/out/{Path.GetFileName(render.Pdf)}",
                 "--fixture", $"/fixtures/{render.Fixture}.json",
-                "--expectation", $"/expectations/{render.Package}.json",
+                "--expectation", $"/expectations/{render.Expectation}.json",
                 "--out", $"/out/{Path.GetFileName(verdictPath)}",
                 "--reading", $"/out/{Path.GetFileName(readingPath)}",
             ],
@@ -220,6 +272,41 @@ public sealed class RenderingSuite : IAsyncLifetime
 
         var generator = new FixtureGenerator(FixtureDataset.Load(dataset, Path.Combine(datasets, FixtureGenerator.SumsFileName)));
         generator.WriteFolder(FixturesDirectory);
+    }
+
+    // The packages the suite prints: the library's folders, plus one folder per page
+    // geometry of the page frame. A geometry's folder is a copy of the one source the
+    // page-frame package keeps, with its own declaration in place of the canonical one,
+    // so the four geometries never drift into four sets of files.
+    private void PreparePackages()
+    {
+        Directory.CreateDirectory(PackagesDirectory);
+        foreach (var folder in Directory.GetDirectories(TemplatesDirectory))
+        {
+            CopyFolder(folder, Path.Combine(PackagesDirectory, Path.GetFileName(folder)));
+        }
+
+        foreach (var variant in new[] { PageFramePackage + "-a4-landscape", PageFramePackage + "-letter-portrait", PageFramePackage + "-letter-landscape" })
+        {
+            var target = Path.Combine(PackagesDirectory, variant);
+            CopyFolder(Path.Combine(TemplatesDirectory, PageFramePackage), target);
+            var declaration = Path.Combine(TemplatesDirectory, PageFramePackage, "manifests", variant[(PageFramePackage.Length + 1)..] + ".yaml");
+            File.Copy(declaration, Path.Combine(target, "template.yaml"), overwrite: true);
+        }
+    }
+
+    private static void CopyFolder(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+        foreach (var file in Directory.GetFiles(source))
+        {
+            File.Copy(file, Path.Combine(target, Path.GetFileName(file)), overwrite: true);
+        }
+
+        foreach (var folder in Directory.GetDirectories(source))
+        {
+            CopyFolder(folder, Path.Combine(target, Path.GetFileName(folder)));
+        }
     }
 
     private async Task BuildImagesAsync()
@@ -320,14 +407,20 @@ public sealed class RenderingSuite : IAsyncLifetime
 /// <param name="Fixture">The fixture the block was read from.</param>
 /// <param name="Package">The package it was composed with.</param>
 /// <param name="Mutation">The control applied, or null for none.</param>
-/// <param name="Pdf">The PDF the print wrote.</param>
+/// <param name="Pdf">The PDF the print wrote, or null when the renderer refused before printing.</param>
+/// <param name="VerificationPassed">What the product's verification said about it.</param>
+/// <param name="VerificationReason">The reason its verification refused it with, or null.</param>
+/// <param name="VerificationField">The manifest path of a page-setting refusal, or null.</param>
+/// <param name="Expectation">The declaration file the judge reads it against.</param>
 public sealed record RenderOutcome(
     string Fixture,
     string Package,
     string? Mutation,
-    string Pdf,
+    string? Pdf,
     bool VerificationPassed,
-    string? VerificationReason);
+    string? VerificationReason,
+    string? VerificationField,
+    string Expectation);
 
 /// <summary>One printed shipped sample: where the document is and what the product's verification said about it.</summary>
 /// <param name="Pdf">The PDF the print wrote.</param>

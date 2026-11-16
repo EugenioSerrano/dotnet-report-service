@@ -1,0 +1,7 @@
+/*
+  A known-bad package stylesheet: it is linked after the service's page rule and,
+  being later with the same importance, it prints the document on another page.
+*/
+@page {
+  size: 148mm 210mm !important;
+}

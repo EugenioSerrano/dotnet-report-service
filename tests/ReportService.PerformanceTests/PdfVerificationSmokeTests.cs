@@ -10,6 +10,7 @@ using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using ReportService.Data;
 using ReportService.Pdf.Verification;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.Templates;
 using ReportService.Testing;
 using ReportService.Testing.Fixtures;
@@ -318,7 +319,15 @@ public sealed class PdfVerificationSmokeTests
 
             var (composed, text, source) = Compose(fixture, package, manifest, fixtures);
             var verifier = new BlockVerifier();
-            var margins = PlacementConvention.FromMillimetres(manifest.Pdf.MarginMm);
+            var settings = PdfPageSettingsRules.Resolve(manifest.PdfOutput).Settings
+                ?? throw new InvalidOperationException("the package declares no usable page");
+            var frame = PageFrame.FromMillimetres(
+                (double)settings.WidthMm,
+                (double)settings.HeightMm,
+                (double)settings.MarginTopMm,
+                (double)settings.MarginRightMm,
+                (double)settings.MarginBottomMm,
+                (double)settings.MarginLeftMm);
 
             // The verification runs on the thread the worker's activity runs on: an ordinary
             // thread of the pool, with the process's own stack. A block of this size that
@@ -336,12 +345,12 @@ public sealed class PdfVerificationSmokeTests
                     {
                         for (var warmUp = 0; warmUp < WarmUps; warmUp++)
                         {
-                            Measure(verifier, pdf, margins, composed, text, source, out _, out _);
+                            Measure(verifier, pdf, frame, composed, text, source, out _, out _);
                         }
 
                         for (var run = 0; run < Runs; run++)
                         {
-                            Measure(verifier, pdf, margins, composed, text, source, out var sourceMs, out var readAndAlignMs, out var verification);
+                            Measure(verifier, pdf, frame, composed, text, source, out var sourceMs, out var readAndAlignMs, out var verification);
                             last = verification;
                             Assert.True(
                                 verification.Passed,
@@ -377,7 +386,7 @@ public sealed class PdfVerificationSmokeTests
     private static void Measure(
         BlockVerifier verifier,
         string pdf,
-        PageMargins margins,
+        PageFrame frame,
         ComposedBlock composed,
         ExtractedText text,
         SourceCheckInput source,
@@ -387,20 +396,20 @@ public sealed class PdfVerificationSmokeTests
     {
         var checks = verifier.CheckSource(source, out sourceMs);
         Assert.True(checks.Passed, $"the source checks refused the composed block with {checks.Reason}");
-        verification = verifier.Verify(new PrintedCheckInput(pdf, 0, margins, composed, text, sourceMs));
+        verification = verifier.Verify(new PrintedCheckInput(pdf, 0, frame, composed, text, sourceMs));
         readAndAlignMs = verification.ReadAndAlignMs;
     }
 
     private static void Measure(
         BlockVerifier verifier,
         string pdf,
-        PageMargins margins,
+        PageFrame frame,
         ComposedBlock composed,
         ExtractedText text,
         SourceCheckInput source,
         out long sourceMs,
         out long readAndAlignMs) =>
-        Measure(verifier, pdf, margins, composed, text, source, out sourceMs, out readAndAlignMs, out _);
+        Measure(verifier, pdf, frame, composed, text, source, out sourceMs, out readAndAlignMs, out _);
 
     // The composition of the fixture with the package, in process, exactly as the worker does
     // it: the block read with the data contract's reader, its values mapped to the render

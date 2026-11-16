@@ -84,6 +84,43 @@ public sealed class RenderManifestMappingTests
     }
 
     [Fact]
+    public void TheStoredPdfElementIsCarriedAsItWasStored()
+    {
+        var record = Record(FullManifest()) with
+        {
+            ManifestJson = """{"outputs":{"pdf":{"paper":"Letter","orientation":"landscape","marginMm":{"top":"15","right":12.5,"bottom":18,"left":12}}}}""",
+        };
+
+        var manifest = RenderManifestMapping.From(record);
+
+        Assert.Equal(System.Text.Json.JsonValueKind.String, manifest.PdfOutput.GetProperty("marginMm").GetProperty("top").ValueKind);
+        var result = PdfPageSettingsRules.Resolve(manifest.PdfOutput);
+        Assert.False(result.Resolved);
+        Assert.Equal("outputs.pdf.marginMm.top", result.UnusableField);
+    }
+
+    [Fact]
+    public void AStoredManifestWithoutAPdfElementCarriesNone()
+    {
+        var record = Record(FullManifest()) with { ManifestJson = """{"outputs":{"html":{}}}""" };
+
+        var manifest = RenderManifestMapping.From(record);
+
+        Assert.Equal(System.Text.Json.JsonValueKind.Undefined, manifest.PdfOutput.ValueKind);
+    }
+
+    [Fact]
+    public void ADeclarationWrittenInMemoryCarriesItsPdfElement()
+    {
+        var manifest = RenderManifestMapping.From(FullManifest(), TemplateEngine.Scriban, "7.5.1");
+
+        var result = PdfPageSettingsRules.Resolve(manifest.PdfOutput);
+
+        Assert.True(result.Resolved, result.UnusableField);
+        Assert.Equal(15m, result.Settings!.MarginTopMm);
+    }
+
+    [Fact]
     public void AManifestWithoutADocumentIsRefused()
     {
         Assert.Throws<TemplatePackageException>(() => RenderManifestMapping.From(Record(new TemplateManifest { Engine = TemplateEngine.Scriban })));

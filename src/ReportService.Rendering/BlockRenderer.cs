@@ -1,4 +1,5 @@
 using ReportService.Pdf.Verification;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.Templates;
 
 namespace ReportService.Rendering;
@@ -102,6 +103,23 @@ public sealed class BlockRenderer(
             return Refused(blockIndex, VerificationReasons.AnchorsUndeclared);
         }
 
+        // The page is resolved before anything is composed: an absent or unusable page
+        // setting prints nothing, and no page is guessed.
+        var pageSettings = PdfPageSettingsRules.Resolve(request.Manifest.PdfOutput);
+        if (pageSettings.Settings is not { } settings)
+        {
+            return Refused(blockIndex, VerificationReasons.PageSettingsInvalid, pageSettings.UnusableField);
+        }
+
+        var pageRule = PageRule.From(settings);
+        var frame = PageFrame.FromMillimetres(
+            (double)settings.WidthMm,
+            (double)settings.HeightMm,
+            (double)settings.MarginTopMm,
+            (double)settings.MarginRightMm,
+            (double)settings.MarginBottomMm,
+            (double)settings.MarginLeftMm);
+
         var composed = Compose(request, cancellationToken, out var composeMs);
         if (blockMutation is not null)
         {
@@ -147,7 +165,9 @@ public sealed class BlockRenderer(
                     Pages: 0,
                     Words: 0,
                     ReadAndAlignMs: 0,
-                    SourceChecksMs: sourceChecksMs))
+                    SourceChecksMs: sourceChecksMs,
+                    Paper: settings.PaperName,
+                    Orientation: settings.OrientationName))
             {
                 ComposeMs = composeMs,
             };
@@ -155,13 +175,21 @@ public sealed class BlockRenderer(
 
         Directory.CreateDirectory(request.WorkDirectory);
         var pdfPath = Path.Combine(request.WorkDirectory, "block-" + blockIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".pdf");
-        var html = htmlMutation is null ? composed.Text : htmlMutation.Apply(composed.Text);
+
+        // The page rule is the last element of the document the service serves, so it
+        // follows every package stylesheet in the cascade. The test-only HTML control
+        // acts after it, which is how a known-bad stylesheet can override the page.
+        var html = pageRule.AppendTo(composed.Text);
+        if (htmlMutation is not null)
+        {
+            html = htmlMutation.Apply(html);
+        }
 
         PrintOutcome print;
         using (var printSpan = Source.StartActivity("print"))
         {
             printSpan?.SetTag("block.index", blockIndex);
-            print = await printer.PrintAsync(html, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
+            print = await printer.PrintAsync(html, pageRule, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
             printSpan?.SetTag("print.aborted_requests", print.AbortedRequests);
             printSpan?.SetTag("print.console_errors", print.ConsoleErrors);
         }
@@ -173,10 +201,14 @@ public sealed class BlockRenderer(
             verification = verifier.Verify(new PrintedCheckInput(
                 pdfPath,
                 blockIndex,
-                PlacementConvention.FromMillimetres(request.Manifest.Pdf.MarginMm),
+                frame,
                 composed,
                 text,
-                sourceChecksMs));
+                sourceChecksMs)) with
+            {
+                Paper = settings.PaperName,
+                Orientation = settings.OrientationName,
+            };
             verifySpan?.SetTag("verification.passed", verification.Passed);
             verifySpan?.SetTag("verification.pages", verification.Pages);
             if (verification.Reason is { } reason)
@@ -222,7 +254,7 @@ public sealed class BlockRenderer(
         }
     }
 
-    private static BlockRenderOutcome Refused(int blockIndex, string reason) =>
+    private static BlockRenderOutcome Refused(int blockIndex, string reason, string? field = null) =>
         new(
             PdfPath: null,
             SizeBytes: 0,
@@ -240,7 +272,8 @@ public sealed class BlockRenderer(
                 Pages: 0,
                 Words: 0,
                 ReadAndAlignMs: 0,
-                SourceChecksMs: 0));
+                SourceChecksMs: 0,
+                Field: field));
 
     private static void Delete(string path)
     {

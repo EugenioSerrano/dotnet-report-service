@@ -50,6 +50,12 @@ public static class VerificationReasons
 
     /// <summary>The package declares page subtotals, which this increment cannot print.</summary>
     public const string PageAccounting = "page-accounting";
+
+    /// <summary>The page settings the manifest declares are absent or unusable, so nothing was printed.</summary>
+    public const string PageSettingsInvalid = "page-settings-invalid";
+
+    /// <summary>A printed page is not the page the template declared.</summary>
+    public const string PageSize = "page-size";
 }
 
 /// <summary>What one alignment pass found.</summary>

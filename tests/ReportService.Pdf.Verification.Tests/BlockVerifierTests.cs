@@ -79,7 +79,7 @@ public sealed class BlockVerifierTests
         var result = new BlockVerifier().Verify(new PrintedCheckInput(
             Path.Combine(Path.GetTempPath(), "missing-" + Guid.NewGuid().ToString("N") + ".pdf"),
             0,
-            PageMargins.None,
+            PageFrame.None,
             composition,
             new TextUnitExtractor().Extract(composition),
             SourceChecksMs: 3));
@@ -99,7 +99,7 @@ public sealed class BlockVerifierTests
         var result = new BlockVerifier().Verify(new PrintedCheckInput(
             path,
             0,
-            PlacementConvention.FromMillimetres(new PageMarginsMm(15, 12, 18, 10)),
+            PageFrame.FromMillimetres(210, 297, 15, 12, 18, 10),
             composition,
             new TextUnitExtractor().Extract(composition),
             SourceChecksMs: 1));
@@ -113,6 +113,46 @@ public sealed class BlockVerifierTests
     }
 
     [Fact]
+    public void ADocumentOfTheDeclaredPagePassesTheGeometryCheck()
+    {
+        var composition = Sample.Rows("one");
+        var text = new TextUnitExtractor().Extract(composition);
+        var path = Path.Combine(AppContext.BaseDirectory, "PdfCases", "s2-table-s2-T300u-split-t1.00-f0.90-on-r1.pdf");
+
+        var result = new BlockVerifier().Verify(new PrintedCheckInput(
+            path,
+            0,
+            PageFrame.FromMillimetres(210, 297, 15, 12, 18, 12),
+            composition,
+            text,
+            SourceChecksMs: 0));
+
+        Assert.NotEqual(VerificationReasons.PageSize, result.Reason);
+    }
+
+    [Fact]
+    public void ADocumentOfAnotherPageFailsWithItsMeasuredSize()
+    {
+        var composition = Sample.Rows("one");
+        var text = new TextUnitExtractor().Extract(composition);
+        var path = Path.Combine(AppContext.BaseDirectory, "PdfCases", "s2-table-s2-T300u-split-t1.00-f0.90-on-r1.pdf");
+
+        var result = new BlockVerifier().Verify(new PrintedCheckInput(
+            path,
+            0,
+            PageFrame.FromMillimetres(215.9, 279.4, 25.4, 19.05, 25.4, 19.05),
+            composition,
+            text,
+            SourceChecksMs: 0));
+
+        Assert.False(result.Passed);
+        Assert.Equal(VerificationReasons.PageSize, result.Reason);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(594.96, result.MeasuredWidthPt!.Value, 2);
+        Assert.Equal(612.0, result.ExpectedWidthPt!.Value, 2);
+    }
+
+    [Fact]
     public void ADocumentWithNoPageFailsBeforeAnythingIsCompared()
     {
         var composition = Sample.Rows("one");
@@ -120,7 +160,7 @@ public sealed class BlockVerifierTests
         var result = verifier.Verify(new PrintedCheckInput(
             Path.Combine(Path.GetTempPath(), "missing-" + Guid.NewGuid().ToString("N") + ".pdf"),
             2,
-            PageMargins.None,
+            PageFrame.None,
             composition,
             new TextUnitExtractor().Extract(composition),
             SourceChecksMs: 0));

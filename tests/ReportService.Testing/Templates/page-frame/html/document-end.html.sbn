@@ -1,0 +1,6 @@
+</tbody>
+</table>
+</main>
+<p class="closing">{{ header.totals.recordCount }}</p>
+</body>
+</html>

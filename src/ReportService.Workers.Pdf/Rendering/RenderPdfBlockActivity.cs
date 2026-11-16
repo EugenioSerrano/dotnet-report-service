@@ -210,7 +210,6 @@ public sealed class RenderPdfBlockActivity(
             {
                 throw VerificationFailed(input, outcome);
             }
-
             var attempt = ActivityExecutionContext.Current.Info;
             var attemptId = RenderPdfBlockOptions.AttemptId(
                 attempt.WorkflowId ?? string.Empty,
@@ -255,10 +254,12 @@ public sealed class RenderPdfBlockActivity(
                 case PartCommitOutcome.Committed:
                 case PartCommitOutcome.AlreadyCommitted when commit.Existing is not null:
                     logger.LogInformation(
-                        "Block {BlockIndex} of output {OutputId} printed: {PageCount} pages, verified in {VerificationMs} ms",
+                        "Block {BlockIndex} of output {OutputId} printed: {PageCount} pages on {Paper} {Orientation}, verified in {VerificationMs} ms",
                         input.BlockIndex,
                         input.OutputId,
                         outcome.Verification.Pages,
+                        outcome.Verification.Paper,
+                        outcome.Verification.Orientation,
                         outcome.Verification.ReadAndAlignMs + outcome.Verification.SourceChecksMs);
                     return ResultOf(commit.Existing!);
                 default:
@@ -309,13 +310,44 @@ public sealed class RenderPdfBlockActivity(
                 nonRetryable: true);
         }
 
-        logger.LogInformation(
-            "Block {BlockIndex} of output {OutputId} failed verification: {FailureClass} on page {Page}, record {Ordinal}",
-            input.BlockIndex,
-            input.OutputId,
-            verification.Reason,
-            verification.Page,
-            verification.RecordOrdinal);
+        if (string.Equals(verification.Reason, VerificationReasons.PageSettingsInvalid, StringComparison.Ordinal))
+        {
+            // The member's path is configuration, never a value of the consumer's data.
+            logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} not printed: page settings invalid at {Field}",
+                input.BlockIndex,
+                input.OutputId,
+                verification.Field);
+            return new ApplicationFailureException(
+                PaginationFailed + " reason=" + verification.Reason + " field=" + verification.Field,
+                errorType: PaginationFailed,
+                nonRetryable: true);
+        }
+
+        if (string.Equals(verification.Reason, VerificationReasons.PageSize, StringComparison.Ordinal))
+        {
+            // Layout facts only: the page's number and the size it was read at.
+            logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} failed verification: {FailureClass} on page {Page}, measured {MeasuredWidth} x {MeasuredHeight} pt, expected {ExpectedWidth} x {ExpectedHeight} pt",
+                input.BlockIndex,
+                input.OutputId,
+                verification.Reason,
+                verification.Page,
+                verification.MeasuredWidthPt,
+                verification.MeasuredHeightPt,
+                verification.ExpectedWidthPt,
+                verification.ExpectedHeightPt);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Block {BlockIndex} of output {OutputId} failed verification: {FailureClass} on page {Page}, record {Ordinal}",
+                input.BlockIndex,
+                input.OutputId,
+                verification.Reason,
+                verification.Page,
+                verification.RecordOrdinal);
+        }
 
         var message = new System.Text.StringBuilder(PaginationFailed);
         Append(message, "reason", verification.Reason);

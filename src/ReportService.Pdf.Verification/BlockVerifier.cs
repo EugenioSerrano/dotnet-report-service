@@ -17,6 +17,7 @@ public sealed class BlockVerifier
     private readonly RowTextCheck rowText = new();
     private readonly AnchorCheck anchors = new();
     private readonly PageCheck pages = new();
+    private readonly PageGeometryCheck geometry = new();
     private readonly ContentOrderAligner aligner;
 
     /// <summary>Creates a verifier whose alignment spends at most <paramref name="alignmentBudget"/> comparisons per block.</summary>
@@ -74,7 +75,7 @@ public sealed class BlockVerifier
         PdfReading reading;
         try
         {
-            reading = PdfWordReader.Read(input.PdfPath, input.Margins);
+            reading = PdfWordReader.Read(input.PdfPath, input.Frame.Margins);
         }
         catch (PdfUnreadableException)
         {
@@ -87,6 +88,27 @@ public sealed class BlockVerifier
         {
             return VerificationResult.Failed(
                 pageCheck.Reason!, input.BlockIndex, null, null, null, reading.Pages.Count, reading.WordCount, Elapsed(started), input.SourceChecksMs);
+        }
+
+        // A page of another size makes every comparison against it unreliable, so the
+        // page's own geometry is checked before the text it holds.
+        var pageGeometry = geometry.Check(reading, input.Frame);
+        if (!pageGeometry.Passed)
+        {
+            return VerificationResult.Failed(
+                VerificationReasons.PageSize,
+                input.BlockIndex,
+                pageGeometry.Page,
+                null,
+                null,
+                reading.Pages.Count,
+                reading.WordCount,
+                Elapsed(started),
+                input.SourceChecksMs,
+                pageGeometry.MeasuredWidthPt,
+                pageGeometry.MeasuredHeightPt,
+                pageGeometry.ExpectedWidthPt,
+                pageGeometry.ExpectedHeightPt);
         }
 
         foreach (var page in reading.Pages)
