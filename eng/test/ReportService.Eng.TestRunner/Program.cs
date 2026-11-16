@@ -429,6 +429,15 @@ internal static partial class Program
 
         images = usesContainers ? await InspectImagesAsync(root, level, deadlineSource.Token).ConfigureAwait(false) : null;
         containersAfter = level == "integration" ? await ListSuiteContainersAsync(root, deadlineSource.Token).ConfigureAwait(false) : null;
+
+        // The closing captures take the deadline too, and a cancelled capture returns rather
+        // than throwing. A token that fired while they ran is still an attempt that did not
+        // finish within its bound, and must not be recorded a pass with a partial record.
+        if (deadlineSource.IsCancellationRequested && recordProblem is null && !runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal)))
+        {
+            recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, while the attempt's closing captures ran";
+            exitCode = ExitBuildFailed;
+        }
         executionRecord = level == "hermetic" ? new ExecutionRecord(execution!.Mode, execution.Degree, execution.Reason, execution.CoverageRole, build!) : null;
 
         recordState = "finished";
@@ -436,8 +445,9 @@ internal static partial class Program
         recordPassed = exitCode == ExitPassed;
 
         // The record's own code is the sentinel: the attempt reached no verdict. The
-        // process code says which kind of failure it was.
-        recordExit = expired ? -1 : exitCode;
+        // process code says which kind of failure it was. Every expiry sets a problem, in
+        // whichever phase it fired.
+        recordExit = recordProblem is not null ? -1 : exitCode;
         if (!expired)
         {
             openPhase = null;
