@@ -259,10 +259,12 @@ internal static partial class Program
 
                 // The expired phase keeps its name: it is the only field that can say
                 // where a killed or timed-out attempt was. A project that ended by itself
-                // clears only its own name, never another's.
+                // hands the phase to the next project still started, or to nothing.
                 if (finished.State != "timed-out" && openPhase == "project:" + finished.Name)
                 {
-                    openPhase = null;
+                    openPhase = runs.FirstOrDefault(run => string.Equals(run.State, "started", StringComparison.Ordinal)) is { } next
+                        ? "project:" + next.Name
+                        : null;
                 }
             }
 
@@ -284,7 +286,7 @@ internal static partial class Program
         productWorktreeClean = statusCapture.ExitCode == 0 && statusCapture.Output.Trim().Length == 0;
         Persist();
 
-        containersBefore = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
+        containersBefore = level == "integration" ? await ListSuiteContainersAsync(root, deadlineSource.Token).ConfigureAwait(false) : null;
         Persist();
 
         BuildRecord? build = null;
@@ -294,15 +296,21 @@ internal static partial class Program
             Persist();
             try
             {
-                build = await HermeticExecution.BuildAsync(root, runDirectory, projects, deadlineSource.Token).ConfigureAwait(false);
+                build = await HermeticExecution.BuildAsync(root, runDirectory, projects, deadlineSource.Token, () =>
+                {
+                    recordProblem ??= $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
+                    Persist();
+                }).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
                 build = null;
             }
-            if (deadlineSource.IsCancellationRequested)
+            // A build that was cancelled is null; one that finished keeps its record, even
+            // if it finished as the deadline elapsed.
+            if (build is null)
             {
-                recordProblem = $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
+                recordProblem ??= $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
             }
             else
             {
@@ -377,7 +385,9 @@ internal static partial class Program
             }
         }
 
-        var expired = deadlineSource.IsCancellationRequested;
+        // The attempt expired when something was recorded as expired — not merely because
+        // the token fired: a child that ended as the deadline elapsed keeps its own verdict.
+        var expired = recordProblem is not null || runs.Any(run => string.Equals(run.State, "timed-out", StringComparison.Ordinal));
         var exitCode = expired
             ? recordProblem is not null ? ExitBuildFailed : ExitTestsFailed
             : buildFailed
@@ -395,8 +405,8 @@ internal static partial class Program
             }
         }
 
-        images = usesContainers ? await InspectImagesAsync(root, level).ConfigureAwait(false) : null;
-        containersAfter = level == "integration" ? await ListSuiteContainersAsync(root).ConfigureAwait(false) : null;
+        images = usesContainers ? await InspectImagesAsync(root, level, deadlineSource.Token).ConfigureAwait(false) : null;
+        containersAfter = level == "integration" ? await ListSuiteContainersAsync(root, deadlineSource.Token).ConfigureAwait(false) : null;
         executionRecord = level == "hermetic" ? new ExecutionRecord(execution!.Mode, execution.Degree, execution.Reason, execution.CoverageRole, build!) : null;
 
         recordState = "finished";
@@ -649,7 +659,7 @@ internal static partial class Program
         await File.WriteAllTextAsync(Path.Combine(runDirectory, "coverage-summary.txt"), string.Join('\n', lines) + "\n").ConfigureAwait(false);
     }
 
-    private static async Task<List<string>?> ListSuiteContainersAsync(string root)
+    private static async Task<IReadOnlyList<string>?> ListSuiteContainersAsync(string root, CancellationToken cancellationToken = default)
     {
         var result = await RunCaptureAsync(root, "docker", ["ps", "--all", "--filter", "name=report-service-it-", "--format", "{{.Names}} {{.Image}} {{.Status}}"]).ConfigureAwait(false);
         return result.ExitCode == 0
@@ -658,7 +668,7 @@ internal static partial class Program
     }
 
     // Reads the identities of the images the level starts; it only inspects, it never removes or prunes anything.
-    private static async Task<List<ImageEvidence>> InspectImagesAsync(string root, string level)
+    private static async Task<IReadOnlyList<ImageEvidence>?> InspectImagesAsync(string root, string level, CancellationToken cancellationToken = default)
     {
         var references = ReadPinnedReferences(root);
         if (level is "e2e" or "rendering")
@@ -839,6 +849,10 @@ internal static partial class Program
         catch (Win32Exception exception)
         {
             return (-1, $"{fileName} is not available: {exception.Message}");
+        }
+        catch (OperationCanceledException)
+        {
+            return (-1, $"{fileName} was cancelled: the attempt's deadline elapsed while it ran.");
         }
     }
 
