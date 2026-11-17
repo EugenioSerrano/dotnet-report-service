@@ -101,6 +101,76 @@ before it becomes a key.
   read-write-many volume). Network file systems with weaker rename or flush
   semantics are not supported.
 
+### The path budget
+
+The resolved path of an object is `<root>` + one separator + the key. The
+provider accepts a resolved path of **at most 248 characters** and refuses any
+longer one with `storage.path-too-long`. The key's own grammar admits 512
+characters and a root is configuration with no length rule of its own, so
+neither of them knows the other: a deployment has to leave room for the class of
+object it stores, and the figures below say how much.
+
+A write streams to a temporary sibling in the target directory, named `.` + the
+object's file name + `.tmp-` + 32 hexadecimal characters, so it is **38
+characters longer** than the resolved path. The 248 leaves 12 of the operating
+system's own 260, which covers only part of that suffix: where the runtime does
+not extend paths beyond the operating system's bound, a **write** needs the
+resolved path within **222** (260 less the 38), while 248 stays the bound on
+every path a read resolves.
+
+| Class | Longest key | At a root of 111 | Read root | Write root |
+|---|---|---|---|---|
+| `staging` (an upload's bytes) | 55 | 167 | 192 | 166 |
+| `staging` (the health probe) | 67 | 179 | 180 | 154 |
+| `snapshots` | 114 | 226 | 133 | 107 |
+| `block` | 109 | 221 | 138 | 112 |
+| `index` | 109 | 221 | 138 | 112 |
+| `outputs` | 109 | 221 | 138 | 112 |
+| `templates` | 179 | 291 — refused | 68 | 42 |
+| `template-source` (publication record) | 165 | 277 — refused | 82 | the service never writes it |
+| `template-source` (a version's file) | 371 | 483 — refused | none: the key alone is over 248 | — |
+
+**Read root** is the longest storage root that still takes a read of that class
+(248 − 1 − the key) and **write root** the longest that takes a write
+(222 − 1 − the key). A value over 248 in the third column is what that class
+does under the root named at the top of it: today the store refuses it.
+
+How the figures are obtained, and how exact they are:
+
+- The six pipeline compositions are **exact**, because their segments are
+  fixed-width identifiers: a job id is `job-` and 32 hexadecimal characters
+  (36), an output id is `output-` and 32 (39), an upload id is `upload-` and 32
+  (39), and an attempt identity is a SHA-256 in lower-case hexadecimal. A
+  published part is `outputs/` + 36 + `/` + 39 + `/` + a **24-character**
+  attempt identity, the first 96 bits of that digest: 109 characters, and 221
+  under a root of 111.
+- The `staging` class's longest key is the **health probe's**
+  (`staging/probe/<process>/<32 hex>`, 67 with `orchestration-worker`, the
+  longest of the three process names the product ships), not an upload's (55).
+- The two template classes are **maxima**, not fixed widths, and a real key can
+  be shorter. `templates` is `templates/` + three values encoded to at most 34
+  characters each + `/` + the package's 64-character hash: 179, the class's own
+  declared maximum. `template-source` is 165 for a publication record (two
+  encoded values of at most 34, the `published` segment and a 69-character
+  record name) and 371 for a version's file (the same, then at most eight
+  package-path segments each encoded to 34). An encoded segment is 34
+  characters whether its own text is one character or a hundred: a value that
+  does not read as a key segment is replaced by `h-` and 32 hexadecimal
+  characters, so a short path segment can *expand*. That is why the path's own
+  240-character limit does not bound the key.
+
+What that means for a deployment:
+
+- a storage root of **up to 133 characters** takes every key a job's pipeline
+  composes, and **up to 107** every write it makes — except the published
+  part's own write, which fits **112**;
+- `templates` needs a root of **68** for a read and **42** for a write, and the
+  `template-source` publication record **82**; **no** root takes the
+  `template-source` file key, whose 371 characters exceed the provider's bound
+  even at a root of zero. A deployment that takes template versions from this
+  store must keep its root within those figures;
+- a job running under a root of 111 resolves its published part at 221.
+
 ### Configuration
 
 | Setting | Required | Meaning |

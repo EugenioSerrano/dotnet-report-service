@@ -67,7 +67,8 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         var second = RenderPdfBlockOptions.AttemptId("job", "run", "activity", 1);
         var other = RenderPdfBlockOptions.AttemptId("job", "run", "activity", 2);
 
-        Assert.Equal(64, first.Length);
+        Assert.Equal(24, first.Length);
+        Assert.Equal("da3a81fb2ffbb2550df8b0f7", first);   // the first 96 bits of the documented digest
         Assert.Equal(first, second);
         Assert.NotEqual(first, other);
         Assert.All(first, character => Assert.True(char.IsAsciiHexDigitLower(character)));

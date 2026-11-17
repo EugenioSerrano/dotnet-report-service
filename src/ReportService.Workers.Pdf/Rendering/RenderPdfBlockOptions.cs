@@ -38,6 +38,13 @@ public static class RenderPdfBlockOptions
     /// <summary>How many attempts one render gets.</summary>
     public const int MaximumAttempts = 3;
 
+    /// <summary>
+    /// The length of the attempt identity an object key carries: the first 96 bits of the
+    /// digest, in lower-case hexadecimal. It keeps the published part's key inside the
+    /// storage provider's path bound under a long deployment root.
+    /// </summary>
+    public const int AttemptIdLength = 24;
+
     /// <summary>A constant summary of the policy, as the recorded execution reference states it.</summary>
     public const string RetryPolicySummary = "render: heartbeat 5s/30s, start-to-close 300s, backoff 2s x2 max 60s, 3 attempts";
 
@@ -78,6 +85,7 @@ public static class RenderPdfBlockOptions
     public static string AttemptId(string workflowId, string workflowRunId, string activityId, int attempt)
     {
         var text = $"{workflowId}\n{workflowRunId}\n{activityId}\n{attempt}";
-        return Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+        var digest = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+        return digest[..AttemptIdLength];
     }
 }
