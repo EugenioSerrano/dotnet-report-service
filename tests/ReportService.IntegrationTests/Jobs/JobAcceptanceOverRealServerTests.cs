@@ -458,6 +458,7 @@ public sealed class JobAcceptanceOverRealServerTests : IClassFixture<PostgresFix
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory, "storage"));
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("Retention:Outputs", "01:00:00");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
         });

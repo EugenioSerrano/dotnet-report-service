@@ -1265,6 +1265,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
                 builder.UseSetting("Storage:Provider", "filesystem");
                 builder.UseSetting("Storage:Filesystem:Root", owner.StorageRoot());
                 builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+                builder.UseSetting("Retention:Outputs", "01:00:00");
                 builder.UseSetting(DatabaseOptions.ConnectionStringSetting, owner._connectionString);
                 builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
                 foreach (var (setting, value) in settings.Values)
@@ -1351,6 +1352,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
             start.Environment["Storage__Provider"] = "filesystem";
             start.Environment["Storage__Filesystem__Root"] = storageRoot;
             start.Environment["Storage__Filesystem__CreateIfMissing"] = "true";
+            start.Environment["Retention__Outputs"] = "01:00:00";
             start.Environment[EnvironmentKey(DatabaseOptions.ConnectionStringSetting)] = connectionString;
             start.Environment[EnvironmentKey(DatabaseOptions.ExpectedSchemaVersionSetting)] = MigrationCatalog.ExpectedVersion;
             foreach (var (setting, value) in settings.Values)

@@ -343,6 +343,7 @@ public sealed class UploadVerificationDeadlineTests : IClassFixture<PostgresFixt
             builder.UseSetting($"{ObjectStorageSettings.SectionPath}:{nameof(ObjectStorageSettings.Provider)}", FilesystemObjectStore.ProviderName);
             builder.UseSetting($"{FilesystemStorageOptions.SectionPath}:{nameof(FilesystemStorageOptions.Root)}", root);
             builder.UseSetting($"{FilesystemStorageOptions.SectionPath}:{nameof(FilesystemStorageOptions.CreateIfMissing)}", "true");
+            builder.UseSetting("Retention:Outputs", "01:00:00");
             builder.UseSetting(
                 $"{UploadVerificationOptions.SectionPath}:{UploadVerificationOptions.StartToCloseSetting}",
                 Duration(StartToClose));

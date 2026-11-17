@@ -69,6 +69,7 @@ public sealed class StorageHealthTests : IDisposable
             builder.UseSetting("Temporal:Namespace", "default");
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", _root);
+            builder.UseSetting("Retention:Outputs", "01:00:00");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
             builder.ConfigureTestServices(services => MetadataDatabaseStub.UseHealthy(services));

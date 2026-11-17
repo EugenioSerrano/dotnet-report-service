@@ -105,6 +105,7 @@ public sealed class WorkerReadinessTests : IAsyncLifetime
         {
             builder.UseSetting("Temporal:Address", $"127.0.0.1:{_hostPort}");
             builder.UseSetting("Temporal:Namespace", "default");
+            builder.UseSetting("Retention:Outputs", "01:00:00");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
