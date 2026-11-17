@@ -185,6 +185,7 @@ caller text like any other value:
 | Setting | Meaning |
 |---------|---------|
 | `Uploads__SessionLifetime` | How long a new session accepts data. Required, longer than zero and at most seven days; the shipped value is `1.00:00:00` (24 hours). A value outside that range stops the service at start, naming the setting and never the value. |
+| `Retention__Outputs` | How long a published file stays downloadable, on the orchestration worker. Required, longer than zero and at most 3650 days; it is written with every file at publication and never recomputed, so a change applies to the files published after it and moves no existing file's expiry. No shipped settings file carries it — a deployment states it, and the local composition passes seven days. The worker refuses to start without a usable value, naming the setting and never the value. |
 
 ## Streaming the content
 

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A job's published files can be listed and downloaded, verified to the last byte:
+  `GET /api/v1/report-jobs/{id}/artifacts` answers the job's owner with each file's
+  identifier, format, media type, size, SHA-256 and expiry, and
+  `GET /api/v1/report-jobs/{id}/artifacts/{artifactId}/download` streams that file
+  through the verifying reader, aborting the transfer — never delivering it — when the
+  stored bytes no longer match their size or their hash. The downloaded name is built
+  from the job's identifier, the length is declared up front, and the content is never
+  held whole.
+- Each published file has an expiry, recorded with it at publication from the
+  orchestration worker's `Retention__Outputs` setting: the publication instant plus the
+  configured retention, never recomputed at read time. Once it has passed, the download
+  answers `410 ARTIFACT_EXPIRED` from the service's records alone — the stored object is
+  not read, the job stays `succeeded` and nothing is written — while the file stays in
+  the listing with its past instant. The worker refuses to start without a usable value,
+  and the local composition supplies seven days.
+
 ### Changed
 
 - A template version is read from the deployment's object storage, through the

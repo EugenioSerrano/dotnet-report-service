@@ -6,8 +6,8 @@ job it can follow. This page describes the creation operation, the answer, every
 refusal it gives, and what the service guarantees about the connection and about
 the work that follows.
 
-The job's outputs and their download are not offered yet. The status read
-described below is.
+The job's published files are listed and downloaded through the two operations
+described below, after the status read that follows them.
 
 ## Follow a job
 
@@ -84,7 +84,96 @@ answer would show counters going back. Poll at about one request per second
 while the job runs; at that rate a poll costs one indexed read of the service's
 own database. An inactive consumer may read its own jobs.
 
-## Create a job
+## List a job's files
+
+```http
+GET /api/v1/report-jobs/job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a/artifacts
+X-Consumer-Id: dev-consumer
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+{
+  "reportJobId": "job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a",
+  "artifacts": [
+    {
+      "artifactId": "artifact-9a1c4e0b7d2f4a3c8e6b5d4c3b2a1f0e",
+      "format": "pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 38211,
+      "sha256": "71ab0c9f4d2e8b6a1f3c5e7d9b0a2c4e6f8d1b3a5c7e9f0b2d4a6c8e1f3b5d7a",
+      "expiresAt": "2026-11-08T12:03:41.512Z"
+    }
+  ]
+}
+```
+
+Every member is always present. The list is empty — `"artifacts": []` — while the
+job has published nothing, and exactly one entry appears once its PDF exists.
+
+| Member | Meaning |
+|--------|---------|
+| `reportJobId` | The job the files belong to. |
+| `artifacts[].artifactId` | The identifier the download names. |
+| `artifacts[].format` | The form the file was produced in: `pdf`, `html`, `xlsx` or `markdown`. |
+| `artifacts[].mimeType` | The media type the download answers with. |
+| `artifacts[].sizeBytes` | The size of the stored file, which is the length of a complete download. |
+| `artifacts[].sha256` | The SHA-256 of the stored bytes, lower-case hexadecimal: the hash the received bytes must match. |
+| `artifacts[].expiresAt` | When the file stops being downloadable, in UTC as RFC 3339 with `Z` and three fractional digits. |
+
+An artifact whose `expiresAt` has passed **stays in the list** with its past
+instant: expiry is not a status, and the answer to a download tells the caller
+that the file expired. The order is fixed — by format, then by identifier — and
+an answer is never served from a cache.
+
+## Download a file
+
+```http
+GET /api/v1/report-jobs/job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a/artifacts/artifact-9a1c4e0b7d2f4a3c8e6b5d4c3b2a1f0e/download
+X-Consumer-Id: dev-consumer
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Length: 38211
+Content-Disposition: attachment; filename="job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a.pdf"
+Cache-Control: no-store
+X-Content-Type-Options: nosniff
+
+... 38211 bytes ...
+```
+
+The body is the stored file, streamed as it is read and **verified to its end**
+against the size and the hash the listing carries. The file name is built from
+the job's identifier — a caller never names a file — and no `ETag` is offered and
+no range is served: a partial read would be unverified.
+
+**A transfer that ends short is a failure, not a file.** The declared
+`Content-Length` is the whole file, and the last bytes are released only once the
+stored object matched its size and its SHA-256. When the stored bytes no longer
+match — a changed, a missing or an extra byte — the response is aborted and the
+client receives fewer bytes than announced: retry, and never use the bytes of an
+incomplete transfer.
+
+| Case | HTTP | `code` | `title` |
+|------|------|--------|---------|
+| The job or the file does not exist, belongs to another consumer, or either identifier is malformed | 404 | `INPUT_NOT_FOUND` | `Artifact not found` |
+| The file's expiry has passed | 410 | `ARTIFACT_EXPIRED` | `Artifact expired` |
+| No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` | `Unknown consumer` |
+| The stored object is missing or unreadable while the file has not expired | 500 | `SERVICE_UNAVAILABLE` | `Service unavailable` |
+| A storage cause worth retrying | 503 | `SERVICE_UNAVAILABLE` | `Service unavailable` |
+
+The expiry is decided from the service's own records, before the stored object is
+read at all: an expired file is answered as expired even if its bytes are still
+there, the job stays `succeeded`, and nothing is written. The not-found answer is
+one answer for every unusable reference — an absent job, another consumer's job,
+an absent file and a file of another job are indistinguishable — and it differs
+from the expired one in its status and its code. An inactive consumer may list
+and download the files of the jobs it already owns.
 
 ```http
 POST /api/v1/report-jobs
