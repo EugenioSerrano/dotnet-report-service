@@ -30,6 +30,8 @@ public sealed partial class InMemoryJobStore : IJobStore
     private int _failCalls;
     private int _findStatusCalls;
     private int _listArtifactCalls;
+    private int _findArtifactCalls;
+    private int _writeCalls;
     private int _progressWriteCalls;
 
     /// <summary>Creates the store over the upload records it checks an acceptance against.</summary>
@@ -60,6 +62,16 @@ public sealed partial class InMemoryJobStore : IJobStore
 
     /// <summary>How many times <see cref="ListArtifactsAsync"/> was called.</summary>
     public int ListArtifactCalls => Volatile.Read(ref _listArtifactCalls);
+
+    /// <summary>How many times <see cref="FindArtifactAsync"/> was called.</summary>
+    public int FindArtifactCalls => Volatile.Read(ref _findArtifactCalls);
+
+    /// <summary>
+    /// How many calls were made to a method that could change a record of a job, of its
+    /// outputs or of its artifacts. A read never counts, so a case can prove that an answer
+    /// wrote nothing at all.
+    /// </summary>
+    public int WriteCalls => Volatile.Read(ref _writeCalls);
 
     /// <summary>How many times <see cref="RecordRecordsReadAsync"/> was called.</summary>
     public int ProgressWriteCalls => Volatile.Read(ref _progressWriteCalls);
@@ -139,6 +151,7 @@ public sealed partial class InMemoryJobStore : IJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(acceptance);
         Interlocked.Increment(ref _acceptCalls);
 
@@ -253,6 +266,7 @@ public sealed partial class InMemoryJobStore : IJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(reason);
@@ -297,6 +311,7 @@ public sealed partial class InMemoryJobStore : IJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(pin);
 
@@ -327,6 +342,7 @@ public sealed partial class InMemoryJobStore : IJobStore
     /// <inheritdoc />
     public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
 
         lock (_gate)
@@ -344,6 +360,7 @@ public sealed partial class InMemoryJobStore : IJobStore
     /// <inheritdoc />
     public Task<EndInputWaitOutcome> EndInputWaitAsync(string reportJobId, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
 
         lock (_gate)

@@ -66,6 +66,7 @@ public sealed partial class InMemoryJobStore
         long recordsRead,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
         Interlocked.Increment(ref _progressWriteCalls);
         if (ProgressWriteFailure is { } failure)

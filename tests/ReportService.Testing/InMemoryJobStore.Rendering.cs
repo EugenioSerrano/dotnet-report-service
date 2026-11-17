@@ -44,6 +44,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(from);
         var stage = JobWireValues.ToStoredText(JobStages.StageFor(to));
@@ -81,6 +82,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(outputId);
 
         lock (_gate)
@@ -110,6 +112,7 @@ public sealed partial class InMemoryJobStore
         PartitionRecord partition,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(partition);
 
         lock (_gate)
@@ -153,6 +156,7 @@ public sealed partial class InMemoryJobStore
     /// <inheritdoc />
     public Task<PartCommitResult> CommitPartAsync(PartCommit commit, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(commit);
 
         lock (_gate)
@@ -206,6 +210,7 @@ public sealed partial class InMemoryJobStore
     /// <inheritdoc />
     public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(artifact);
 
         lock (_gate)
@@ -276,6 +281,7 @@ public sealed partial class InMemoryJobStore
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(artifactId);
         ArgumentNullException.ThrowIfNull(consumerId);
+        Interlocked.Increment(ref _findArtifactCalls);
 
         lock (_gate)
         {
@@ -318,6 +324,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(outputId);
         ArgumentNullException.ThrowIfNull(code);
 
@@ -345,6 +352,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
 
         lock (_gate)

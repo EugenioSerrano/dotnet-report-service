@@ -12,6 +12,7 @@ using ReportService.Api.Jobs;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
+using ReportService.Storage.Filesystem;
 using ReportService.Testing;
 using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
@@ -59,9 +60,11 @@ internal sealed class JobApiHost : IDisposable
     /// <summary>Starts the service over a registry carrying an active and an inactive consumer.</summary>
     /// <param name="store">Wraps the job records the service is given, so a case can place an event inside one call.</param>
     /// <param name="versions">Wraps the taken template versions the service reads, so a case can make the read fail.</param>
+    /// <param name="objects">Wraps the object storage the service is given, so a case can count its reads or make one fail.</param>
     public JobApiHost(
         Func<IJobStore, IJobStore>? store = null,
-        Func<ITemplateVersionStore, ITemplateVersionStore>? versions = null)
+        Func<ITemplateVersionStore, ITemplateVersionStore>? versions = null,
+        Func<IObjectStore, IObjectStore>? objects = null)
     {
         _registryPath = _directory.Write(
             "consumers.json",
@@ -86,6 +89,14 @@ internal sealed class JobApiHost : IDisposable
                 services.AddSingleton(store is null ? Jobs : store(Jobs));
                 services.RemoveAll<ITemplateVersionStore>();
                 services.AddSingleton<ITemplateVersionStore>(versions is null ? Versions : versions(Versions));
+                if (objects is not null)
+                {
+                    // The store the host built for itself is the provider's own, so a case that
+                    // wraps it still reads and writes the root the service was started on.
+                    services.RemoveAll<IObjectStore>();
+                    services.AddSingleton<IObjectStore>(provider => objects(provider.GetRequiredService<FilesystemObjectStore>()));
+                }
+
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(Clock);
             });
@@ -102,11 +113,17 @@ internal sealed class JobApiHost : IDisposable
     /// <summary>The taken template versions the service reads when a job is created.</summary>
     public InMemoryTemplateVersionStore Versions { get; } = new();
 
-    /// <summary>The clock the service reads.</summary>
-    public FixedTimeProvider Clock { get; } = new(Now);
+    /// <summary>The clock the service reads; a case moves it to reach an artifact's expiry.</summary>
+    public ManualTimeProvider Clock { get; } = new(Now);
 
     /// <summary>Every line the service logged.</summary>
     public LogCapture Logs { get; } = new();
+
+    /// <summary>The object storage the service reads and writes.</summary>
+    public IObjectStore Objects => _factory.Services.GetRequiredService<IObjectStore>();
+
+    /// <summary>The root the service's objects are kept under, so a case can alter one on disk.</summary>
+    public string StorageRoot => Path.Combine(_directory.Path, "storage");
 
     /// <summary>The client the cases send with.</summary>
     public HttpClient Client { get; }

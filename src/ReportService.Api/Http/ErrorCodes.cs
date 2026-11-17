@@ -31,6 +31,9 @@ public static class ErrorCodes
     /// <summary>The upload does not admit the operation in its current state.</summary>
     public const string UploadStateConflict = "UPLOAD_STATE_CONFLICT";
 
+    /// <summary>The named artifact's expiry has passed; it can no longer be downloaded.</summary>
+    public const string ArtifactExpired = "ARTIFACT_EXPIRED";
+
     /// <summary>The service could not complete the request for a cause on its side.</summary>
     public const string ServiceUnavailable = "SERVICE_UNAVAILABLE";
 }
