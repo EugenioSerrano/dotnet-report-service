@@ -81,8 +81,8 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
         var key = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO report_service.artifacts
-                (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256, size_bytes, page_count, created_at)
-            VALUES (@ArtifactId, @ReportJobId, @OutputId, 'PDF', 'application/pdf', @Key, @Sha256, 2048, 3, @Now)
+                (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256, size_bytes, page_count, created_at, expires_at)
+            VALUES (@ArtifactId, @ReportJobId, @OutputId, 'PDF', 'application/pdf', @Key, @Sha256, 2048, 3, @Now, @ExpiresAt)
             """,
             new
             {
@@ -92,6 +92,7 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
                 Key = $"blocks/{acceptance.ReportJobId}/0/attempt",
                 Sha256 = Hash,
                 Now,
+                ExpiresAt = Now.AddDays(7),
             },
             cancellationToken: cancellationToken)));
         Assert.Equal(PostgresErrorCodes.CheckViolation, key.SqlState);
@@ -99,8 +100,8 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
         var pages = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO report_service.artifacts
-                (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256, size_bytes, page_count, created_at)
-            VALUES (@ArtifactId, @ReportJobId, @OutputId, 'PDF', 'application/pdf', @Key, @Sha256, 2048, 0, @Now)
+                (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256, size_bytes, page_count, created_at, expires_at)
+            VALUES (@ArtifactId, @ReportJobId, @OutputId, 'PDF', 'application/pdf', @Key, @Sha256, 2048, 0, @Now, @ExpiresAt)
             """,
             new
             {
@@ -110,6 +111,7 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
                 Key = $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
                 Sha256 = Hash,
                 Now,
+                ExpiresAt = Now.AddDays(7),
             },
             cancellationToken: cancellationToken)));
         Assert.Equal(PostgresErrorCodes.CheckViolation, pages.SqlState);
