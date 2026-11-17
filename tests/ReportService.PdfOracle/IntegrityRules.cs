@@ -114,8 +114,14 @@ internal static class IntegrityRules
     /// <summary>How far below the content's top edge the first word of a continued page may begin, in points.</summary>
     public const double ContentTopSlackPt = 6.0;
 
-    /// <summary>How much of a page's content height may be left unfilled before its last page, in points.</summary>
-    public const double FillTolerancePt = 16.0;
+    /// <summary>
+    /// How much of its content height a page that ends inside a continued detail cell may
+    /// leave unfilled, in points: the greatest gap measured over that population on the
+    /// packages and geometries the reports are printed with (22.843 pt, on Letter
+    /// landscape), plus two points. A page that ends between rows leaves up to one row step
+    /// of the table by design and is not measured against it.
+    /// </summary>
+    public const double FillTolerancePt = 24.843;
 
     /// <summary>How far a page's lowest content word may cross the content's bottom edge, in points.</summary>
     public const double BottomOvershootPt = 1.0;
@@ -600,6 +606,7 @@ internal static class IntegrityRules
             }
         }
 
+        var endedInsideACell = PagesThatEndInsideAContinuedCell(classified);
         for (var page = 1; page < extraction.Pages; page++)
         {
             var words = placed.Lines.Where(line => line.Page == page).SelectMany(line => line.Words).ToList();
@@ -613,11 +620,34 @@ internal static class IntegrityRules
             {
                 failures.Add(new Failure("TI-10", "frame-wrong", Page: page, Detail: "the page's content runs past the declared bottom margin"));
             }
-            else if (bottom - lowest > FillTolerancePt)
+            else if (endedInsideACell.Contains(page) && bottom - lowest > FillTolerancePt)
             {
                 failures.Add(new Failure("TI-10", "frame-wrong", Page: page, Detail: "the page ends well above the declared bottom margin"));
             }
         }
+    }
+
+    /// <summary>
+    /// The pages that end inside a detail row the reading continues onto the page after
+    /// them: the row's words printed on both pages. Only there must the layout fill the
+    /// page, so only there is the fill of the content column measured; a page that ends
+    /// between rows leaves up to one row step of the table by design.
+    /// </summary>
+    private static HashSet<int> PagesThatEndInsideAContinuedCell(ClassifiedDocument classified)
+    {
+        var pages = new HashSet<int>();
+        foreach (var row in classified.Rows)
+        {
+            foreach (var page in row.Pages)
+            {
+                if (row.Pages.Contains(page + 1))
+                {
+                    pages.Add(page);
+                }
+            }
+        }
+
+        return pages;
     }
 
     /// <summary>

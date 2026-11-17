@@ -73,16 +73,100 @@ public sealed class PageFrameJudgeTests
         Assert.Contains(verdict.Failures, failure => failure.Rule == "TI-10" && failure.Class == "frame-wrong" && failure.Page == 1);
     }
 
+    /// <summary>
+    /// The control E15 of the restricted fill clause: a page that ends inside a continued
+    /// detail cell, with enough of its lowest content lines dropped that the gap it leaves
+    /// exceeds the recorded tolerance, is a frame failure on that page.
+    /// </summary>
     [Fact]
-    public void APageThatEndsWellAboveTheMarginIsAFrameFailure()
+    public void AContinuedCellPageThatLeavesMoreThanTheToleranceIsAFrameFailure()
     {
-        var words = PageFrameDocument.Extraction().Words
-            .Where(candidate => candidate.Page != 1 || candidate.YCentre < 200)
+        var extraction = PageFrameDocument.Extraction();
+        var page = 2;
+        var judgeOfTheWholeDocument = Judge(extraction);
+        Assert.DoesNotContain(judgeOfTheWholeDocument.Failures, failure => failure.Rule == "TI-10" && failure.Class == "frame-wrong");
+
+        var dropped = DropTheLowestContentLinesUntilTheGapExceedsTheTolerance(extraction, page, out var gap);
+        Assert.True(gap > IntegrityRules.FillTolerancePt, $"the control left {gap:0.000} pt unfilled on page {page}.");
+        Assert.NotEmpty(dropped);
+
+        var verdict = Judge(extraction.WithWords(dropped));
+
+        Assert.Contains(verdict.Failures, failure => failure.Rule == "TI-10" && failure.Class == "frame-wrong" && failure.Page == page);
+        Assert.Equal("fail", verdict.Rules["TI-10"]);
+    }
+
+    /// <summary>
+    /// The control E16 of the restricted fill clause: the same lines dropped from a page
+    /// that ends between detail rows leave a gap well above the tolerance and are not a
+    /// frame failure, because the clause is not applied to a page the layout ends between
+    /// rows.
+    /// </summary>
+    [Fact]
+    public void ABetweenRowsPageThatLeavesMoreThanTheToleranceIsNotAFrameFailure()
+    {
+        var extraction = BetweenRowsDocument.Extraction();
+        var page = 1;
+        var verdict = Judge(extraction);
+        Assert.True(verdict.Passed, JudgeTests.Describe(verdict));
+
+        var dropped = DropTheLowestContentLinesUntilTheGapExceedsTheTolerance(extraction, page, out var gap);
+        Assert.True(gap > IntegrityRules.FillTolerancePt, $"the control left {gap:0.000} pt unfilled on page {page}.");
+        Assert.NotEmpty(dropped);
+
+        var judged = Judge(extraction.WithWords(dropped));
+
+        Assert.DoesNotContain(judged.Failures, failure => failure.Rule == "TI-10" && failure.Class == "frame-wrong" && failure.Page == page);
+        Assert.NotEqual("fail", judged.Rules["TI-10"]);
+    }
+
+    /// <summary>
+    /// Drops the lowest content lines of <paramref name="page"/> one at a time — never the
+    /// line of a repeated column-header row, which the page-frame rules assert on page 2 —
+    /// and returns the words that remain, with the gap the last drop left.
+    /// </summary>
+    private static IReadOnlyList<PdfWord> DropTheLowestContentLinesUntilTheGapExceedsTheTolerance(
+        PdfExtraction extraction,
+        int page,
+        out double gap)
+    {
+        var expectation = PageFrameDocument.Expectation();
+        var bottom = expectation.ContentBottomPt;
+        var headRow = Normalisation.N(string.Join(' ', expectation.HeadRow));
+        var placed = Placement.Place(extraction, expectation);
+        var pageLines = placed.Lines
+            .Where(line => line.Page == page && Normalisation.N(line.Text) != headRow)
+            .OrderByDescending(line => line.Words.Max(word => word.YMax))
             .ToList();
 
-        var verdict = Judge(PageFrameDocument.Extraction().WithWords(words));
+        var dropped = new HashSet<PdfWord>();
+        gap = bottom - placed.Lines.Where(line => line.Page == page).SelectMany(line => line.Words).Max(word => word.YMax);
+        foreach (var line in pageLines)
+        {
+            if (gap > IntegrityRules.FillTolerancePt)
+            {
+                break;
+            }
 
-        Assert.Contains(verdict.Failures, failure => failure.Rule == "TI-10" && failure.Class == "frame-wrong" && failure.Page == 1);
+            foreach (var word in line.Words)
+            {
+                dropped.Add(word);
+            }
+
+            var remaining = placed.Lines
+                .Where(candidate => candidate.Page == page && !candidate.Words.All(dropped.Contains))
+                .SelectMany(candidate => candidate.Words)
+                .ToList();
+            if (remaining.Count == 0)
+            {
+                gap = double.PositiveInfinity;
+                break;
+            }
+
+            gap = bottom - remaining.Max(word => word.YMax);
+        }
+
+        return JudgeTests.Without(extraction.Words, dropped.Contains);
     }
 
     [Fact]

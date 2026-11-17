@@ -8,6 +8,7 @@ namespace ReportService.RenderingTests;
 /// declare, a page element that hides the detail, or a manifest that lost its page
 /// is refused before anything is published.
 /// </summary>
+[Trait("Tier", "core")]
 [Collection(RenderingCollection.Name)]
 public sealed class PageFrameTierTests(RenderingSuite suite)
 {

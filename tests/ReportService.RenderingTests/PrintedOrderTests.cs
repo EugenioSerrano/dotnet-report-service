@@ -28,8 +28,11 @@ public sealed class PrintedOrderTests(RenderingSuite suite)
         Assert.True(first.Passed && second.Passed && third.Passed, $"{fixture}: {string.Join(", ", first.Classes)} {string.Join(", ", second.Classes)} {string.Join(", ", third.Classes)}");
         Assert.Equal(first.Pages, second.Pages);
         Assert.Equal(first.Pages, third.Pages);
-        Assert.Equal(first.Reading, second.Reading);
-        Assert.Equal(first.Reading, third.Reading);
+
+        // A reading names the file it was reached from, so two prints of one document are
+        // compared word for word: every word, in the order the tool reported it.
+        Assert.Equal(RenderingSuite.ReadingWords(first.Reading), RenderingSuite.ReadingWords(second.Reading));
+        Assert.Equal(RenderingSuite.ReadingWords(first.Reading), RenderingSuite.ReadingWords(third.Reading));
     }
 
     /// <summary>A row taller than a page is read before the row that follows it.</summary>

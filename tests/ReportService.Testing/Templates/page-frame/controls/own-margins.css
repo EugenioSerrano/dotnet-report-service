@@ -1,7 +1,7 @@
 /*
   A package stylesheet that declares its own page margins without importance: the
-  service's page rule comes later and wins, so the printed page keeps the margins
-  the manifest declares.
+  service's page rule marks its margins important, so the declared margins win and
+  the printed page keeps the margins the manifest declares.
 */
 @page {
   margin: 40mm 40mm 40mm 40mm;

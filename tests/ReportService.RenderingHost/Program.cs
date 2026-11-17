@@ -188,13 +188,18 @@ internal static partial class Program
         var document = mutation is not null && KnownBad.IsHtmlLevel(mutation) && !KnownBad.AppendsStylesheet(mutation)
             ? KnownBad.ApplyHtml(mutation, composed)
             : composed.Text;
-        var served = pageRule.AppendTo(document);
+        // A control's stylesheet is a package file linked before the page rule, the way a
+        // package's own stylesheet is linked from the document. Chromium 153 resolves the
+        // page's size from the first important declaration in document order, and a later
+        // one loses - measured on the pinned base: a package that declares
+        // `@page { size: ... !important; }` prints its own page only when its rule comes
+        // before the service's. The page rule stays the last element of the served document.
         if (mutation is not null && KnownBad.AppendsStylesheet(mutation))
         {
-            // The control's stylesheet is a package file linked after the page rule, so it
-            // sits later in the cascade than the rule the service wrote.
-            served += KnownBad.StylesheetLink(mutation);
+            document += KnownBad.StylesheetLink(mutation);
         }
+
+        var served = pageRule.AppendTo(document);
 
         await using var session = new BrowserSession();
         var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
@@ -359,11 +364,11 @@ internal static partial class KnownBad
     /// <param name="name">The control's name.</param>
     public static bool IsHtmlLevel(string name) => name is "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
 
-    /// <summary>Whether the control links a package stylesheet after the page rule.</summary>
+    /// <summary>Whether the control links a package stylesheet before the page rule.</summary>
     /// <param name="name">The control's name.</param>
     public static bool AppendsStylesheet(string name) => name is "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
 
-    /// <summary>The stylesheet link the page-frame control adds after the page rule.</summary>
+    /// <summary>The stylesheet link the page-frame control adds before the page rule.</summary>
     /// <param name="name">The control's name.</param>
     public static string StylesheetLink(string name) => name switch
     {

@@ -80,6 +80,7 @@ table.detail th {
   white-space: nowrap;
 }
 
+table.detail th.col-amount,
 table.detail td.col-amount {
   text-align: right;
 }
