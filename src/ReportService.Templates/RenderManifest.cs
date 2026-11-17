@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace ReportService.Templates;
 
 /// <summary>
@@ -12,6 +14,7 @@ namespace ReportService.Templates;
 /// <param name="Pdf">The PDF settings of the package.</param>
 /// <param name="LocaleDefaults">The package's fallback culture and time zone.</param>
 /// <param name="GroupKey">The record field that begins a group, or <see langword="null"/> when the package declares none.</param>
+/// <param name="PdfOutput">The manifest's <c>outputs.pdf</c> element exactly as it was stored, or an absent element.</param>
 public sealed record RenderManifest(
     string Engine,
     string EngineVersion,
@@ -19,7 +22,8 @@ public sealed record RenderManifest(
     IReadOnlyList<string> Stylesheets,
     PdfSettings Pdf,
     LocaleDefaults LocaleDefaults,
-    string? GroupKey)
+    string? GroupKey,
+    JsonElement PdfOutput = default)
 {
     /// <summary>The path of <paramref name="part"/>, or <see langword="null"/> when the package declares none.</summary>
     public string? PathOf(TemplatePart part) => Parts.TryGetValue(part, out var path) ? path : null;

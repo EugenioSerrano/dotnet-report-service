@@ -1,0 +1,13 @@
+/*
+  A known-bad package stylesheet: the page header is printed at a size that
+  cannot stay inside the top margin, so its words fall into the content area.
+*/
+@page {
+  @top-left {
+    content: "Solapada";
+    font-family: "Liberation Sans", sans-serif;
+    font-size: 120pt;
+    line-height: 1;
+    color: #000;
+  }
+}

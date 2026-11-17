@@ -563,7 +563,8 @@ internal sealed class PrinterThatMustNotPrint : IPdfPrinter
     public bool Called { get; private set; }
 
     public Task<PrintOutcome> PrintAsync(
-        string html,
+        string document,
+        PageRule pageRule,
         ITemplatePackageFiles files,
         string pdfPath,
         CancellationToken cancellationToken = default)

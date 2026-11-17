@@ -21,11 +21,13 @@ internal sealed record PdfWord(int Page, string Text, double XMin, double YMin, 
 /// <param name="ReportedPages">How many pages the file alone says it has.</param>
 /// <param name="PageSizes">The width and height of each page, in points, in page order.</param>
 /// <param name="Words">Every word, in the order the tool reports it.</param>
+/// <param name="Rotations">Each page's rotation in degrees, when the file information reported it.</param>
 internal sealed class PdfExtraction(
     int pages,
     int reportedPages,
     IReadOnlyList<(double Width, double Height)> pageSizes,
-    IReadOnlyList<PdfWord> words)
+    IReadOnlyList<PdfWord> words,
+    IReadOnlyList<int>? rotations = null)
 {
     /// <summary>How many pages the text reading covers.</summary>
     public int Pages { get; } = pages;
@@ -39,12 +41,23 @@ internal sealed class PdfExtraction(
     /// <summary>Every word, in the order the tool reports it.</summary>
     public IReadOnlyList<PdfWord> Words { get; } = words;
 
+    /// <summary>Each page's rotation in degrees; empty when the file information did not report it.</summary>
+    public IReadOnlyList<int> Rotations { get; } = rotations ?? [];
+
     /// <summary>The same document with another word list; page sizes and counts stay as they were read.</summary>
     public PdfExtraction WithWords(IReadOnlyList<PdfWord> words)
     {
         ArgumentNullException.ThrowIfNull(words);
 
-        return new PdfExtraction(Pages, ReportedPages, PageSizes, words);
+        return new PdfExtraction(Pages, ReportedPages, PageSizes, words, Rotations);
+    }
+
+    /// <summary>The same document with other page sizes; its words and counts stay as they were read.</summary>
+    public PdfExtraction WithPageSizes(IReadOnlyList<(double Width, double Height)> pageSizes)
+    {
+        ArgumentNullException.ThrowIfNull(pageSizes);
+
+        return new PdfExtraction(Pages, ReportedPages, pageSizes, Words, Rotations);
     }
 }
 

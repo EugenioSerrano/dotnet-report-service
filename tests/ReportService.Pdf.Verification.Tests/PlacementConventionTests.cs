@@ -40,6 +40,64 @@ public sealed class PlacementConventionTests
     }
 
     [Fact]
+    public void TheBandsOfALandscapePageComeFromItsOwnHeight()
+    {
+        // A4 landscape is 210 mm high: the top margin of 20 mm ends at 56.7 pt and
+        // the bottom one begins at 538.6 pt.
+        var frame = PageFrame.FromMillimetres(297, 210, 20, 15, 20, 15);
+        var margins = frame.Margins;
+
+        Assert.Equal(ReadingBand.Header, PlacementConvention.BandOf(20, 30, frame.HeightPt, margins));
+        Assert.Equal(ReadingBand.Content, PlacementConvention.BandOf(300, 310, frame.HeightPt, margins));
+        Assert.Equal(ReadingBand.Footer, PlacementConvention.BandOf(550, 560, frame.HeightPt, margins));
+    }
+
+    [Fact]
+    public void TheBandsOfALetterPageComeFromItsOwnHeight()
+    {
+        // Letter portrait is 279.4 mm high with 25.4 mm margins.
+        var frame = PageFrame.FromMillimetres(215.9, 279.4, 25.4, 19.05, 25.4, 19.05);
+        var margins = frame.Margins;
+
+        Assert.Equal(ReadingBand.Header, PlacementConvention.BandOf(30, 40, frame.HeightPt, margins));
+        Assert.Equal(ReadingBand.Content, PlacementConvention.BandOf(400, 410, frame.HeightPt, margins));
+        Assert.Equal(ReadingBand.Footer, PlacementConvention.BandOf(760, 770, frame.HeightPt, margins));
+    }
+
+    [Fact]
+    public void AMarginBoxWordSitsInItsOwnBand()
+    {
+        var frame = PageFrame.FromMillimetres(297, 210, 20, 15, 20, 15);
+        var page = new PrintedPage(1, frame.WidthPt, frame.HeightPt,
+        [
+            new PrintedWord("Hoja", 30, 30, 60, 38, 0, ReadingBand.Header),
+            new PrintedWord("cuerpo", 45, 300, 90, 308, 1, ReadingBand.Content),
+            new PrintedWord("interno", 30, 560, 70, 568, 2, ReadingBand.Footer),
+        ]);
+
+        Assert.Equal("cuerpo", PlacementConvention.ContentText(page));
+    }
+
+    [Fact]
+    public void ASideMarginBoxWordIsContentAndFailsTheAlignment()
+    {
+        // A side margin box prints in the content band by its vertical centre: its
+        // words are not composed units, so the alignment refuses the document.
+        var frame = PageFrame.FromMillimetres(210, 297, 15, 12, 18, 12);
+        var page = new PrintedPage(1, frame.WidthPt, frame.HeightPt,
+        [
+            new PrintedWord("lateral", 5, 300, 40, 308, 0, ReadingBand.Content),
+            new PrintedWord("cuerpo", 45, 300, 90, 308, 1, ReadingBand.Content),
+        ]);
+
+        var content = PlacementConvention.ContentText(page);
+        var alignment = new ContentOrderAligner().Align([content], Sample.Units("cuerpo"));
+
+        Assert.False(alignment.Passed);
+        Assert.Equal(VerificationReasons.TextExtra, alignment.Reason);
+    }
+
+    [Fact]
     public void TheContentTextHoldsOnlyTheContentBandAndIsNormalised()
     {
         var page = new PrintedPage(1, 595, 842,

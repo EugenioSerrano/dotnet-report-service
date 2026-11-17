@@ -35,7 +35,12 @@ internal sealed class ExpectationDocument
         IReadOnlyList<string> headerAnchors,
         string? trail,
         bool grouped,
-        bool blockTotal)
+        bool blockTotal,
+        bool pageFrame,
+        string? pageHeader,
+        string? pageFooter,
+        string? pageNumbering,
+        bool repeatHeadRow)
     {
         Paper = paper;
         WidthMm = widthMm;
@@ -52,6 +57,11 @@ internal sealed class ExpectationDocument
         Trail = trail;
         Grouped = grouped;
         BlockTotal = blockTotal;
+        PageFrame = pageFrame;
+        PageHeader = pageHeader;
+        PageFooter = pageFooter;
+        PageNumbering = pageNumbering;
+        RepeatHeadRow = repeatHeadRow;
     }
 
     /// <summary>The paper the package declares, as its manifest names it.</summary>
@@ -104,6 +114,24 @@ internal sealed class ExpectationDocument
 
     /// <summary>Whether the package prints a block total.</summary>
     public bool BlockTotal { get; }
+
+    /// <summary>Whether the document is judged as a page frame: geometry, content frame and repeated column headers.</summary>
+    public bool PageFrame { get; }
+
+    /// <summary>The words the page header prints, or <see langword="null"/> when the package declares none.</summary>
+    public string? PageHeader { get; }
+
+    /// <summary>The words the page footer prints, or <see langword="null"/> when the package declares none.</summary>
+    public string? PageFooter { get; }
+
+    /// <summary>The template's numbering wording with <c>{X}</c> and <c>{Y}</c>, or <see langword="null"/> when it numbers no page.</summary>
+    public string? PageNumbering { get; }
+
+    /// <summary>Whether the package's detail repeats its column headers on every page it continues on.</summary>
+    public bool RepeatHeadRow { get; }
+
+    /// <summary>Whether the package declares any page element: a header, a footer or a numbering.</summary>
+    public bool HasPageElements => PageHeader is not null || PageFooter is not null || PageNumbering is not null;
 
     /// <summary>The content area's top edge in points from the page's top.</summary>
     public double ContentTopPt => Points.Of(TopMm);
@@ -174,7 +202,30 @@ internal sealed class ExpectationDocument
                 ?? throw new InvalidDataException("A header member is not a member path."))],
             root["trail"] is JsonValue trail && trail.TryGetValue<string>(out var trailPath) ? trailPath : null,
             Flag(root, "grouped"),
-            Flag(root, "blockTotal"));
+            Flag(root, "blockTotal"),
+            Flag(root, "pageFrame"),
+            OptionalText(root, "pageHeader"),
+            OptionalText(root, "pageFooter"),
+            Numbering(root),
+            Flag(root, "repeatHeadRow"));
+    }
+
+    /// <summary>A member the declaration may omit.</summary>
+    private static string? OptionalText(JsonObject root, string name) =>
+        root[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+
+    /// <summary>The numbering wording, which must name both counters it prints.</summary>
+    private static string? Numbering(JsonObject root)
+    {
+        var wording = OptionalText(root, "pageNumbering");
+        if (wording is null)
+        {
+            return null;
+        }
+
+        return wording.Contains("{X}", StringComparison.Ordinal) && wording.Contains("{Y}", StringComparison.Ordinal)
+            ? wording
+            : throw new InvalidDataException("The declaration's numbering wording holds no {X} and {Y}.");
     }
 
     // A declared role names one of the declaration's own columns: the judge never guesses

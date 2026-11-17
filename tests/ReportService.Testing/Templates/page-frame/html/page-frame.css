@@ -1,0 +1,95 @@
+/*
+  The page frame of the document: the page's size and margins are not declared
+  here - the service imposes the ones the manifest declares. The header and the
+  footer live in the page's own margin boxes, and the numbering is the page's own
+  counters in the template's wording.
+*/
+@page {
+  @top-left {
+    content: "Estado de cuenta — prueba de marco";
+    font-family: "Liberation Sans", sans-serif;
+    font-size: 8pt;
+    color: #000;
+  }
+  @top-right {
+    content: "Hoja " counter(page) " de " counter(pages);
+    font-family: "Liberation Sans", sans-serif;
+    font-size: 8pt;
+    color: #000;
+  }
+  @bottom-center {
+    content: "Documento interno · uso de prueba";
+    font-family: "Liberation Sans", sans-serif;
+    font-size: 8pt;
+    color: #000;
+  }
+}
+
+html {
+  font-family: "Liberation Sans", sans-serif;
+  font-size: 9pt;
+  line-height: 1.25;
+  color: #000;
+}
+
+body {
+  margin: 0;
+}
+
+h1 {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: 0 0 2mm 0;
+}
+
+p.customer {
+  margin: 0 0 3mm 0;
+}
+
+table.detail {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.detail th,
+table.detail td {
+  box-sizing: border-box;
+  padding: 4pt;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.detail th {
+  font-weight: bold;
+}
+
+.col-sequence {
+  width: 14mm;
+  white-space: nowrap;
+}
+
+.col-date {
+  width: 22mm;
+  white-space: nowrap;
+}
+
+.col-amount {
+  width: 30mm;
+  text-align: right;
+  white-space: nowrap;
+}
+
+table.detail th.col-amount,
+table.detail td.col-amount {
+  text-align: right;
+}
+
+.description {
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+p.closing {
+  margin: 3mm 0 0 0;
+}

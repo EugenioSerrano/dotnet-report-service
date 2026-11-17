@@ -1,0 +1,9 @@
+/*
+  A known-bad package stylesheet: it declares the page's size as important, and the
+  layout engine takes the first important size declaration in document order, so a
+  package that links this sheet prints the document on another page. The service's
+  page-size check refuses the printed document.
+*/
+@page {
+  size: 148mm 210mm !important;
+}

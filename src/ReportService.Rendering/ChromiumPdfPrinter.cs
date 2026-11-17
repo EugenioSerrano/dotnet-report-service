@@ -27,26 +27,42 @@ public sealed class PrintTemporarilyFailedException(string message, Exception? i
 /// </summary>
 public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider clock) : IPdfPrinter
 {
-    /// <summary>The content security policy the document carries.</summary>
+    /// <summary>The content security policy of a document that carries no page rule: nothing is allowed but the package's own origin.</summary>
     public const string ContentSecurityPolicy =
         "default-src 'none'; style-src https://report.invalid; font-src https://report.invalid; img-src https://report.invalid data:";
+
+    /// <summary>
+    /// The policy of a document that carries <paramref name="pageRule"/>: the package's
+    /// own origin, plus the hash of exactly that rule and nothing else. Inline styles and
+    /// style attributes of the package stay blocked.
+    /// </summary>
+    /// <param name="pageRule">The rule the served document carries.</param>
+    public static string PolicyFor(PageRule pageRule)
+    {
+        ArgumentNullException.ThrowIfNull(pageRule);
+        return "default-src 'none'; style-src https://report.invalid " + pageRule.CspHashSource
+            + "; font-src https://report.invalid; img-src https://report.invalid data:";
+    }
 
     /// <summary>How long the fonts of a document are given to load before the print goes ahead.</summary>
     public static readonly TimeSpan FontsWaitLimit = TimeSpan.FromSeconds(10);
 
-    /// <summary>Prints <paramref name="html"/> to <paramref name="pdfPath"/>.</summary>
+    /// <summary>Prints <paramref name="document"/> to <paramref name="pdfPath"/>.</summary>
     public async Task<PrintOutcome> PrintAsync(
-        string html,
+        string document,
+        PageRule pageRule,
         ITemplatePackageFiles files,
         string pdfPath,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(html);
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(pageRule);
         ArgumentNullException.ThrowIfNull(files);
         ArgumentException.ThrowIfNullOrWhiteSpace(pdfPath);
 
         var started = clock.GetTimestamp();
         var policy = new PackageRoutePolicy(files);
+        var contentSecurityPolicy = PolicyFor(pageRule);
         var aborted = 0;
         var consoleErrors = 0;
 
@@ -74,8 +90,8 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
                         {
                             Status = 200,
                             ContentType = "text/html; charset=utf-8",
-                            Body = html,
-                            Headers = new Dictionary<string, string>(StringComparer.Ordinal) { ["Content-Security-Policy"] = ContentSecurityPolicy },
+                            Body = document,
+                            Headers = new Dictionary<string, string>(StringComparer.Ordinal) { ["Content-Security-Policy"] = contentSecurityPolicy },
                         }).ConfigureAwait(false);
                         break;
                     case RouteKind.Served:

@@ -84,9 +84,12 @@ internal sealed class Verdict
 /// <summary>
 /// The text-integrity rules the judge applies to a printed document: its structure,
 /// every record printed once and in order, the text of each row against the record
-/// it came from, the document header and the text after the table, and the marks a
-/// page may not print. Every expectation comes from the fixture the document was
-/// printed from, never from the composition the document was laid out from.
+/// it came from, the document header and the text after the table, the marks a page
+/// may not print, and - for a document judged as a page frame - the page's geometry,
+/// its page elements and numbering, its content frame and its repeated column
+/// headers. Every expectation comes from the fixture the document was printed from
+/// and from the declaration written beside the package, never from the composition
+/// the document was laid out from.
 /// </summary>
 internal static class IntegrityRules
 {
@@ -95,6 +98,33 @@ internal static class IntegrityRules
 
     /// <summary>How far a printed page's size may be from the size the package declares, in points.</summary>
     public const double PageSizeTolerancePt = 0.5;
+
+    /// <summary>How far a page frame's size may be from the declared one, in points.</summary>
+    public const double FrameTolerancePt = 1.0;
+
+    /// <summary>How far the column-header line's first and last word may be from the declared inset, in points.</summary>
+    public const double HeadInsetTolerancePt = 1.5;
+
+    /// <summary>The cell padding the page-frame package declares, in points.</summary>
+    public const double HeadInsetPt = 4.0;
+
+    /// <summary>How far above the content's top edge the first word of a continued page may sit, in points.</summary>
+    public const double ContentTopOvershootPt = 1.0;
+
+    /// <summary>How far below the content's top edge the first word of a continued page may begin, in points.</summary>
+    public const double ContentTopSlackPt = 6.0;
+
+    /// <summary>
+    /// How much of its content height a page that ends inside a continued detail cell may
+    /// leave unfilled, in points: the greatest gap measured over that population on the
+    /// packages and geometries the reports are printed with (22.843 pt, on Letter
+    /// landscape), plus two points. A page that ends between rows leaves up to one row step
+    /// of the table by design and is not measured against it.
+    /// </summary>
+    public const double FillTolerancePt = 24.843;
+
+    /// <summary>How far a page's lowest content word may cross the content's bottom edge, in points.</summary>
+    public const double BottomOvershootPt = 1.0;
 
     /// <summary>Judges <paramref name="extraction"/> against <paramref name="fixture"/>.</summary>
     public static Verdict Judge(PdfExtraction extraction, FixtureSource fixture, ExpectationDocument expectation, string file)
@@ -112,12 +142,32 @@ internal static class IntegrityRules
         Rows(classified, fixture, expectation, failures);
         Regions(classified, fixture, expectation, failures);
         Marks(placed, classified, failures);
+        PageGeometry(extraction, expectation, failures);
+        PageElements(placed, extraction, expectation, failures);
+        ContentFrame(extraction, placed, classified, expectation, failures);
+        RepeatedHeadRows(placed, extraction, expectation, failures);
 
         var rules = new SortedDictionary<string, string>(StringComparer.Ordinal);
-        for (var number = 1; number <= 8; number++)
+        for (var number = 1; number <= 11; number++)
         {
             var rule = "TI-" + number.ToString(CultureInfo.InvariantCulture);
-            rules[rule] = rule == "TI-5" ? "n/a" : failures.Any(failure => failure.Rule == rule) ? "fail" : "pass";
+            rules[rule] = RuleState(rule, expectation, failures);
+        }
+
+        var notApplicable = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["TI-5"] = "the packages this judge reads begin no group and print no block total",
+        };
+        if (!expectation.PageFrame)
+        {
+            const string reason = "the package declares no page frame; its page geometry, content frame and repeated headers are not judged here";
+            notApplicable["TI-9"] = reason;
+            notApplicable["TI-10"] = reason;
+            notApplicable["TI-11"] = reason;
+        }
+        else if (!expectation.RepeatHeadRow)
+        {
+            notApplicable["TI-11"] = "the package declares no repeated column headers on this path";
         }
 
         return new Verdict
@@ -126,12 +176,29 @@ internal static class IntegrityRules
             Pages = extraction.Pages,
             Words = extraction.Words.Count,
             Rules = rules,
-            NotApplicable = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["TI-5"] = "the packages this judge reads begin no group and print no block total",
-            },
+            NotApplicable = notApplicable,
             Failures = failures,
         };
+    }
+
+    private static string RuleState(string rule, ExpectationDocument expectation, IReadOnlyList<Failure> failures)
+    {
+        if (rule == "TI-5")
+        {
+            return "n/a";
+        }
+
+        if (!expectation.PageFrame && rule is "TI-9" or "TI-10" or "TI-11")
+        {
+            return "n/a";
+        }
+
+        if (expectation.PageFrame && rule == "TI-11" && !expectation.RepeatHeadRow)
+        {
+            return "n/a";
+        }
+
+        return failures.Any(failure => string.Equals(failure.Rule, rule, StringComparison.Ordinal)) ? "fail" : "pass";
     }
 
     /// <summary>The page's frame, its edges and the two bands no text may print in.</summary>
@@ -147,40 +214,59 @@ internal static class IntegrityRules
             failures.Add(new Failure("TI-1", "structure-lost", Detail: $"the text covers {Count(extraction.Pages)} page(s), the file reports {Count(extraction.ReportedPages)}"));
         }
 
-        for (var index = 0; index < extraction.PageSizes.Count; index++)
+        if (!expectation.PageFrame)
         {
-            var (width, height) = extraction.PageSizes[index];
-            if (Math.Abs(width - expectation.WidthPt) > PageSizeTolerancePt || Math.Abs(height - expectation.HeightPt) > PageSizeTolerancePt)
+            for (var index = 0; index < extraction.PageSizes.Count; index++)
             {
-                failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: "the page is not the size the package declares"));
+                var (width, height) = extraction.PageSizes[index];
+                if (Math.Abs(width - expectation.WidthPt) > PageSizeTolerancePt || Math.Abs(height - expectation.HeightPt) > PageSizeTolerancePt)
+                {
+                    failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: "the page is not the size the package declares"));
+                }
             }
         }
 
-        foreach (var page in placed.Crossing.GroupBy(word => word.Page))
+        // A page frame's own tolerance for a word at its edge is TI-10's; the packages
+        // without one keep the strict rule.
+        if (!expectation.PageFrame)
         {
-            failures.Add(new Failure("TI-1", "structure-lost", Page: page.Key, Detail: $"{Count(page.Count())} word(s) cross the content area's edge"));
-        }
-
-        for (var index = 0; index < placed.HeaderBand.Count; index++)
-        {
-            if (placed.HeaderBand[index].Count > 0)
+            foreach (var page in placed.Crossing.GroupBy(word => word.Page))
             {
-                failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: $"the header band holds {Count(placed.HeaderBand[index].Count)} word(s)"));
+                failures.Add(new Failure("TI-1", "structure-lost", Page: page.Key, Detail: $"{Count(page.Count())} word(s) cross the content area's edge"));
             }
         }
 
-        for (var index = 0; index < placed.FooterBand.Count; index++)
+        // A package that declares page elements prints them in the two bands; their
+        // words are read by TI-8. A band no element is declared for prints nothing there.
+        if (expectation.PageHeader is null && expectation.PageNumbering is null)
         {
-            if (placed.FooterBand[index].Count > 0)
+            for (var index = 0; index < placed.HeaderBand.Count; index++)
             {
-                failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: $"the footer band holds {Count(placed.FooterBand[index].Count)} word(s)"));
+                if (placed.HeaderBand[index].Count > 0)
+                {
+                    failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: $"the header band holds {Count(placed.HeaderBand[index].Count)} word(s)"));
+                }
+            }
+        }
+
+        if (expectation.PageFooter is null)
+        {
+            for (var index = 0; index < placed.FooterBand.Count; index++)
+            {
+                if (placed.FooterBand[index].Count > 0)
+                {
+                    failures.Add(new Failure("TI-1", "structure-lost", Page: index + 1, Detail: $"the footer band holds {Count(placed.FooterBand[index].Count)} word(s)"));
+                }
             }
         }
 
         var wordsByPage = new int[extraction.Pages];
-        foreach (var line in placed.Lines)
+        foreach (var word in extraction.Words)
         {
-            wordsByPage[line.Page - 1] += line.Words.Count;
+            if (word.Page >= 1 && word.Page <= extraction.Pages)
+            {
+                wordsByPage[word.Page - 1]++;
+            }
         }
 
         for (var page = 1; page <= extraction.Pages; page++)
@@ -367,6 +453,253 @@ internal static class IntegrityRules
             failures.Add(new Failure("TI-7", "structure-lost", Page: page.Key, Detail: "a continuation mark prints outside every row"));
         }
     }
+
+    /// <summary>
+    /// The page's geometry: every page is the declared size within one point, the page
+    /// is not rotated, and every page is the same size as the first.
+    /// </summary>
+    private static void PageGeometry(PdfExtraction extraction, ExpectationDocument expectation, List<Failure> failures)
+    {
+        if (!expectation.PageFrame)
+        {
+            return;
+        }
+
+        for (var index = 0; index < extraction.PageSizes.Count; index++)
+        {
+            var (width, height) = extraction.PageSizes[index];
+            if (Math.Abs(width - expectation.WidthPt) > FrameTolerancePt || Math.Abs(height - expectation.HeightPt) > FrameTolerancePt)
+            {
+                failures.Add(new Failure(
+                    "TI-9",
+                    "page-geometry-wrong",
+                    Page: index + 1,
+                    Detail: $"{ExpectationDocument.Points.Format(width)} x {ExpectationDocument.Points.Format(height)} pt, not the declared "
+                        + $"{ExpectationDocument.Points.Format(expectation.WidthPt)} x {ExpectationDocument.Points.Format(expectation.HeightPt)} pt"));
+            }
+        }
+
+        if (extraction.Rotations.Count == extraction.Pages)
+        {
+            for (var index = 0; index < extraction.Rotations.Count; index++)
+            {
+                if (extraction.Rotations[index] != 0)
+                {
+                    failures.Add(new Failure(
+                        "TI-9",
+                        "page-geometry-wrong",
+                        Page: index + 1,
+                        Detail: $"the page is rotated {Count(extraction.Rotations[index])} degrees"));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The page's repeated elements: the header band reads the header wording and the
+    /// page's own position and the document's page count; the footer band reads the
+    /// footer wording. Every page is judged; a missing element is a failure.
+    /// </summary>
+    private static void PageElements(
+        PlacedDocument placed,
+        PdfExtraction extraction,
+        ExpectationDocument expectation,
+        List<Failure> failures)
+    {
+        if (!expectation.HasPageElements)
+        {
+            return;
+        }
+
+        for (var page = 1; page <= extraction.Pages; page++)
+        {
+            var expectedHeader = Combine(
+                expectation.PageHeader,
+                expectation.PageNumbering is { } wording ? NumberingOf(wording, page, extraction.Pages) : null);
+            var expectedFooter = expectation.PageFooter;
+            if (expectedHeader is not null && !Reads(placed.HeaderBand[page - 1], expectedHeader))
+            {
+                var headerWords = BandText(placed.HeaderBand[page - 1]);
+                var headerPresent = expectation.PageHeader is null
+                    || headerWords.StartsWith(Normalisation.N(expectation.PageHeader), StringComparison.Ordinal);
+                failures.Add(new Failure(
+                    "TI-8",
+                    headerPresent ? "numbering-wrong" : "header-wrong",
+                    Page: page,
+                    Detail: headerPresent ? "the numbering reads other words or numbers" : "the header band reads other words"));
+            }
+
+            if (expectedFooter is not null && !Reads(placed.FooterBand[page - 1], expectedFooter))
+            {
+                failures.Add(new Failure("TI-8", "footer-wrong", Page: page, Detail: "the footer band reads other words"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The content frame: every content word inside the declared rectangle; the column
+    /// header line inset by the cell padding; a continued page starting at the content's
+    /// top; and a page that is not the last filled down to the content's bottom.
+    /// </summary>
+    private static void ContentFrame(
+        PdfExtraction extraction,
+        PlacedDocument placed,
+        ClassifiedDocument classified,
+        ExpectationDocument expectation,
+        List<Failure> failures)
+    {
+        if (!expectation.PageFrame)
+        {
+            return;
+        }
+
+        var left = ExpectationDocument.Points.Of(expectation.LeftMm);
+        var right = ExpectationDocument.Points.Of(expectation.WidthMm - expectation.RightMm);
+        var top = expectation.ContentTopPt;
+        var bottom = expectation.ContentBottomPt;
+
+        foreach (var word in extraction.Words)
+        {
+            if (word.YCentre < top || word.YCentre > bottom)
+            {
+                continue;
+            }
+
+            if (word.XMin < left - FrameTolerancePt
+                || word.XMax > right + FrameTolerancePt
+                || word.YMin < top - FrameTolerancePt
+                || word.YMax > bottom + FrameTolerancePt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: word.Page, Detail: "a content word lies outside the declared content rectangle"));
+            }
+        }
+
+        var headRow = Normalisation.N(string.Join(' ', expectation.HeadRow));
+        var headLine = placed.Lines.FirstOrDefault(line => Normalisation.N(line.Text) == headRow);
+        if (headLine is not null && headLine.Words.Count > 0)
+        {
+            var first = headLine.Words.OrderBy(word => word.XMin).First();
+            var last = headLine.Words.OrderBy(word => word.XMax).Last();
+            if (Math.Abs(first.XMin - (left + HeadInsetPt)) > HeadInsetTolerancePt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: first.Page, Detail: "the column header line does not start at the declared inset"));
+            }
+
+            if (Math.Abs(last.XMax - (right - HeadInsetPt)) > HeadInsetTolerancePt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: last.Page, Detail: "the column header line does not end at the declared inset"));
+            }
+        }
+
+        for (var page = 2; page <= extraction.Pages; page++)
+        {
+            var words = placed.Lines.Where(line => line.Page == page).SelectMany(line => line.Words).ToList();
+            if (words.Count == 0)
+            {
+                continue;
+            }
+
+            var firstTop = words.Min(word => word.YMin);
+            if (firstTop < top - ContentTopOvershootPt || firstTop > top + ContentTopSlackPt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: page, Detail: "the page's content does not start at the declared top margin"));
+            }
+        }
+
+        var endedInsideACell = PagesThatEndInsideAContinuedCell(classified);
+        for (var page = 1; page < extraction.Pages; page++)
+        {
+            var words = placed.Lines.Where(line => line.Page == page).SelectMany(line => line.Words).ToList();
+            if (words.Count == 0)
+            {
+                continue;
+            }
+
+            var lowest = words.Max(word => word.YMax);
+            if (lowest > bottom + BottomOvershootPt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: page, Detail: "the page's content runs past the declared bottom margin"));
+            }
+            else if (endedInsideACell.Contains(page) && bottom - lowest > FillTolerancePt)
+            {
+                failures.Add(new Failure("TI-10", "frame-wrong", Page: page, Detail: "the page ends well above the declared bottom margin"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The pages that end inside a detail row the reading continues onto the page after
+    /// them: the row's words printed on both pages. Only there must the layout fill the
+    /// page, so only there is the fill of the content column measured; a page that ends
+    /// between rows leaves up to one row step of the table by design.
+    /// </summary>
+    private static HashSet<int> PagesThatEndInsideAContinuedCell(ClassifiedDocument classified)
+    {
+        var pages = new HashSet<int>();
+        foreach (var row in classified.Rows)
+        {
+            foreach (var page in row.Pages)
+            {
+                if (row.Pages.Contains(page + 1))
+                {
+                    pages.Add(page);
+                }
+            }
+        }
+
+        return pages;
+    }
+
+    /// <summary>
+    /// The column headers on a continued page: the page's first content line is the
+    /// column-header line, in the order the package prints it.
+    /// </summary>
+    private static void RepeatedHeadRows(
+        PlacedDocument placed,
+        PdfExtraction extraction,
+        ExpectationDocument expectation,
+        List<Failure> failures)
+    {
+        if (!expectation.PageFrame || !expectation.RepeatHeadRow)
+        {
+            return;
+        }
+
+        var headRow = Normalisation.N(string.Join(' ', expectation.HeadRow));
+        for (var page = 2; page <= extraction.Pages; page++)
+        {
+            var lines = placed.Lines.Where(line => line.Page == page).ToList();
+            if (lines.Count == 0)
+            {
+                continue;
+            }
+
+            if (!string.Equals(Normalisation.N(lines[0].Text), headRow, StringComparison.Ordinal))
+            {
+                failures.Add(new Failure("TI-11", "column-header-missing", Page: page, Detail: "the page does not begin with the column headers"));
+            }
+        }
+    }
+
+    /// <summary>The words of a page band, top to bottom and left to right, as one text.</summary>
+    private static string BandText(IReadOnlyList<PdfWord> words) =>
+        Normalisation.N(string.Join(
+            ' ',
+            words.OrderBy(word => word.YCentre).ThenBy(word => word.XMin).Select(word => word.Text)));
+
+    /// <summary>Whether a page band reads exactly <paramref name="expected"/>.</summary>
+    private static bool Reads(IReadOnlyList<PdfWord> words, string expected) =>
+        string.Equals(BandText(words), Normalisation.N(expected), StringComparison.Ordinal);
+
+    /// <summary>The two page elements that share the header band, as one text.</summary>
+    private static string? Combine(string? left, string? right) =>
+        left is null ? right : right is null ? left : left + " " + right;
+
+    /// <summary>The numbering wording with the page's own numbers.</summary>
+    private static string NumberingOf(string wording, int position, int pages) =>
+        wording
+            .Replace("{X}", position.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{Y}", pages.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
     private static void CheckField(string rule, int? sequence, string field, IReadOnlyList<PdfWord> words, string expected, List<Failure> failures)
     {

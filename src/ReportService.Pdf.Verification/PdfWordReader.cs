@@ -119,6 +119,11 @@ public static class PdfWordReader
             positions[letters[index]] = index;
         }
 
+        // The size a page is displayed at: its media box with the rotation applied, so
+        // a page turned a quarter is compared at the size a reader sees.
+        var width = page.Rotation.SwapsAxis ? page.Height : page.Width;
+        var height = page.Rotation.SwapsAxis ? page.Width : page.Height;
+
         var words = new List<(PrintedWord Word, int Position)>();
         foreach (var word in page.GetWords())
         {
@@ -128,8 +133,8 @@ public static class PdfWordReader
             }
 
             var box = word.BoundingBox;
-            var top = page.Height - box.Top;
-            var bottom = page.Height - box.Bottom;
+            var top = height - box.Top;
+            var bottom = height - box.Bottom;
             words.Add((
                 new PrintedWord(
                     word.Text,
@@ -138,7 +143,7 @@ public static class PdfWordReader
                     box.Right,
                     bottom,
                     FirstLetterPosition(word.Letters, positions),
-                    PlacementConvention.BandOf(top, bottom, page.Height, margins)),
+                    PlacementConvention.BandOf(top, bottom, height, margins)),
                 words.Count));
         }
 
@@ -149,7 +154,7 @@ public static class PdfWordReader
             .ThenBy(pair => pair.Position)
             .Select(pair => pair.Word)
             .ToList();
-        return new PrintedPage(number, page.Width, page.Height, ordered);
+        return new PrintedPage(number, width, height, ordered);
     }
 
     private static int FirstLetterPosition(IReadOnlyList<Letter> wordLetters, Dictionary<Letter, int> pagePositions)

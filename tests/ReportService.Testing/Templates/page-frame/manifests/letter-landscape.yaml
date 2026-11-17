@@ -1,0 +1,27 @@
+manifestVersion: "1.0"
+id: page-frame
+version: "1.0.0"
+engine: scriban
+engineVersion: "7.5.1"
+dataContract:
+  version: "1.0"
+  profile: header-items-v1
+outputs:
+  html:
+    documentStart: html/document-start.html.sbn
+    row: html/row.html.sbn
+    documentEnd: html/document-end.html.sbn
+    styles: [html/page-frame.css]
+  pdf:
+    paper: Letter
+    orientation: landscape
+    marginMm: { top: 19.05, right: 25.4, bottom: 19.05, left: 25.4 }
+    pageTotals:
+      enabled: false
+    verification:
+      anchors:
+        header: ["$.reportTitle", "$.customer.name", "$.customer.id", "$.currency"]
+        item: ["$.sequence", "$.date", "$.description", "$.amount"]
+localeDefaults:
+  culture: es-AR
+  timeZone: America/Argentina/Buenos_Aires

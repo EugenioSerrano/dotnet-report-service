@@ -71,14 +71,14 @@ public sealed record SourceCheckOutcome(bool Passed, string? Reason, long? Recor
 /// <summary>Everything the printed document is checked against after it was printed.</summary>
 /// <param name="PdfPath">The file of the printed document.</param>
 /// <param name="BlockIndex">The block's position in the partition, from zero.</param>
-/// <param name="Margins">The template's declared margins, in points.</param>
+/// <param name="Frame">The page the template declared, in points: its size and its margins.</param>
 /// <param name="Composition">The composed block the document was laid out from.</param>
 /// <param name="Text">The text units of the composition.</param>
 /// <param name="SourceChecksMs">How long the source checks took.</param>
 public sealed record PrintedCheckInput(
     string PdfPath,
     int BlockIndex,
-    PageMargins Margins,
+    PageFrame Frame,
     ComposedBlock Composition,
     ExtractedText Text,
     long SourceChecksMs);
@@ -100,6 +100,13 @@ public sealed record PrintedCheckInput(
 /// <param name="Words">How many words the document holds.</param>
 /// <param name="ReadAndAlignMs">How long reading the document and aligning it took.</param>
 /// <param name="SourceChecksMs">How long the source checks took.</param>
+/// <param name="Paper">The paper of the page the block declared, or <see langword="null"/> when it declared none.</param>
+/// <param name="Orientation">The orientation of the page the block declared, or <see langword="null"/> when it declared none.</param>
+/// <param name="Field">The manifest path of a page-setting failure, or <see langword="null"/>.</param>
+/// <param name="MeasuredWidthPt">The width of the first page whose size was wrong, or <see langword="null"/>.</param>
+/// <param name="MeasuredHeightPt">The height of the first page whose size was wrong, or <see langword="null"/>.</param>
+/// <param name="ExpectedWidthPt">The width the page declaration expected, or <see langword="null"/>.</param>
+/// <param name="ExpectedHeightPt">The height the page declaration expected, or <see langword="null"/>.</param>
 public sealed record VerificationResult(
     bool Passed,
     string? Reason,
@@ -112,7 +119,14 @@ public sealed record VerificationResult(
     int Pages,
     int Words,
     long ReadAndAlignMs,
-    long SourceChecksMs)
+    long SourceChecksMs,
+    string? Paper = null,
+    string? Orientation = null,
+    string? Field = null,
+    double? MeasuredWidthPt = null,
+    double? MeasuredHeightPt = null,
+    double? ExpectedWidthPt = null,
+    double? ExpectedHeightPt = null)
 {
     /// <summary>A failure of the printed document.</summary>
     /// <param name="reason">The reason word.</param>
@@ -124,6 +138,10 @@ public sealed record VerificationResult(
     /// <param name="words">How many words the document holds.</param>
     /// <param name="readAndAlignMs">How long reading and aligning took.</param>
     /// <param name="sourceChecksMs">How long the source checks took.</param>
+    /// <param name="measuredWidthPt">The width of the page whose size was wrong.</param>
+    /// <param name="measuredHeightPt">The height of the page whose size was wrong.</param>
+    /// <param name="expectedWidthPt">The width the page declaration expected.</param>
+    /// <param name="expectedHeightPt">The height the page declaration expected.</param>
     public static VerificationResult Failed(
         string reason,
         int blockIndex,
@@ -133,6 +151,26 @@ public sealed record VerificationResult(
         int pages,
         int words,
         long readAndAlignMs,
-        long sourceChecksMs) =>
-        new(false, reason, blockIndex, null, null, page, unitIndex, offset, pages, words, readAndAlignMs, sourceChecksMs);
+        long sourceChecksMs,
+        double? measuredWidthPt = null,
+        double? measuredHeightPt = null,
+        double? expectedWidthPt = null,
+        double? expectedHeightPt = null) =>
+        new(
+            false,
+            reason,
+            blockIndex,
+            null,
+            null,
+            page,
+            unitIndex,
+            offset,
+            pages,
+            words,
+            readAndAlignMs,
+            sourceChecksMs,
+            MeasuredWidthPt: measuredWidthPt,
+            MeasuredHeightPt: measuredHeightPt,
+            ExpectedWidthPt: expectedWidthPt,
+            ExpectedHeightPt: expectedHeightPt);
 }

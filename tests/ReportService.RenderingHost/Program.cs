@@ -7,6 +7,7 @@ using Microsoft.Playwright;
 using ReportService.Data;
 using ReportService.Rendering;
 using ReportService.Pdf.Verification;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.Templates;
 
 namespace ReportService.RenderingHost;
@@ -36,14 +37,22 @@ internal static partial class Program
         }
 
         var options = new Dictionary<string, string>(StringComparer.Ordinal);
-        for (var index = 1; index < args.Length; index += 2)
+        var pageSettingsUnset = false;
+        for (var index = 1; index < args.Length; index++)
         {
+            if (string.Equals(args[index], "--page-settings-unset", StringComparison.Ordinal))
+            {
+                pageSettingsUnset = true;
+                continue;
+            }
+
             if (index + 1 >= args.Length || !args[index].StartsWith("--", StringComparison.Ordinal))
             {
                 return await FailAsync(ExitUsage, $"The option '{args[index]}' holds no value.").ConfigureAwait(false);
             }
 
             options[args[index][2..]] = args[index + 1];
+            index++;
         }
 
         foreach (var required in new[] { "fixture", "template", "out" })
@@ -55,6 +64,7 @@ internal static partial class Program
         }
 
         var mutation = options.TryGetValue("mutation", out var named) ? named : null;
+        var stem = options.TryGetValue("name", out var givenName) ? givenName : null;
         if (mutation is not null && !KnownBad.Names.Contains(mutation, StringComparer.Ordinal))
         {
             return await FailAsync(ExitUsage, $"The host knows no control '{mutation}'. It knows: {string.Join(", ", KnownBad.Names)}.").ConfigureAwait(false);
@@ -62,7 +72,7 @@ internal static partial class Program
 
         try
         {
-            return await RenderAsync(options["fixture"], options["template"], options["out"], mutation).ConfigureAwait(false);
+            return await RenderAsync(options["fixture"], options["template"], options["out"], mutation, stem, pageSettingsUnset).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or TemplatePackageException
             or TemplateGuardException or TemplateInputException or PrintTemporarilyFailedException
@@ -73,13 +83,65 @@ internal static partial class Program
     }
 
     private const string Usage =
-        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>]";
+        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>] [--name <stem>] [--page-settings-unset]";
 
-    private static async Task<int> RenderAsync(string snapshotPath, string templateFolder, string outFolder, string? mutation)
+    private static async Task<int> RenderAsync(
+        string snapshotPath,
+        string templateFolder,
+        string outFolder,
+        string? mutation,
+        string? stem,
+        bool pageSettingsUnset)
     {
         Directory.CreateDirectory(outFolder);
         var packageId = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(templateFolder)));
         var manifest = PackageManifests.Of(packageId);
+        if (pageSettingsUnset)
+        {
+            // The manifest copy the renderer receives loses outputs.pdf.paper, as a take
+            // defect would leave it: the renderer's own guard is what is being held.
+            manifest = manifest with { PdfOutput = PackageManifests.Pdf("{}") };
+        }
+
+        var fixtureId = Path.GetFileNameWithoutExtension(snapshotPath);
+        var name = stem ?? (mutation is null ? fixtureId : $"{fixtureId}-{mutation}");
+
+        // The page is resolved before anything is composed: an absent or unusable page
+        // setting prints nothing, and no page is guessed.
+        var pageSettings = PdfPageSettingsRules.Resolve(manifest.PdfOutput);
+        if (pageSettings.Settings is not { } settings)
+        {
+            var refusal = new RenderResult(
+                Fixture: fixtureId,
+                Template: packageId,
+                Mutation: mutation,
+                Pdf: null,
+                Sha256: null,
+                SizeBytes: 0,
+                AbortedRequests: 0,
+                ConsoleErrors: 0,
+                DurationMs: 0,
+                VerificationPassed: false,
+                VerificationReason: VerificationReasons.PageSettingsInvalid,
+                VerificationPage: null,
+                VerificationUnit: null,
+                VerificationOffset: null,
+                VerificationField: pageSettings.UnusableField,
+                Pages: 0,
+                Words: 0);
+            await WriteResultAsync(outFolder, name, refusal).ConfigureAwait(false);
+            Console.WriteLine($"refused {name}: page settings invalid at {pageSettings.UnusableField}");
+            return ExitOk;
+        }
+
+        var pageRule = PageRule.From(settings);
+        var frame = PageFrame.FromMillimetres(
+            (double)settings.WidthMm,
+            (double)settings.HeightMm,
+            (double)settings.MarginTopMm,
+            (double)settings.MarginRightMm,
+            (double)settings.MarginBottomMm,
+            (double)settings.MarginLeftMm);
         var files = new FolderTemplatePackageFiles(templateFolder);
 
         var adapter = new ScribanTemplateAdapter();
@@ -118,20 +180,30 @@ internal static partial class Program
             IsFirstBlock: true);
         var sourceCheck = verifier.CheckSource(source, out var sourceChecksMs);
 
-        var fixtureId = Path.GetFileNameWithoutExtension(snapshotPath);
-        var name = mutation is null ? fixtureId : $"{fixtureId}-{mutation}";
         var pdfPath = Path.Combine(outFolder, name + ".pdf");
 
         // The document is printed whatever the source checks said: a control exists to
         // produce a document the judge can read, and a composition the product refuses
         // before printing is still a document the second reader must refuse on its own.
-        var html = mutation is not null && KnownBad.IsHtmlLevel(mutation)
+        var document = mutation is not null && KnownBad.IsHtmlLevel(mutation) && !KnownBad.AppendsStylesheet(mutation)
             ? KnownBad.ApplyHtml(mutation, composed)
             : composed.Text;
+        // A control's stylesheet is a package file linked before the page rule, the way a
+        // package's own stylesheet is linked from the document. Chromium 153 resolves the
+        // page's size from the first important declaration in document order, and a later
+        // one loses - measured on the pinned base: a package that declares
+        // `@page { size: ... !important; }` prints its own page only when its rule comes
+        // before the service's. The page rule stays the last element of the served document.
+        if (mutation is not null && KnownBad.AppendsStylesheet(mutation))
+        {
+            document += KnownBad.StylesheetLink(mutation);
+        }
+
+        var served = pageRule.AppendTo(document);
 
         await using var session = new BrowserSession();
         var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
-        var outcome = await printer.PrintAsync(html, files, pdfPath).ConfigureAwait(false);
+        var outcome = await printer.PrintAsync(served, pageRule, files, pdfPath).ConfigureAwait(false);
 
         string? verificationReason = sourceCheck.Reason;
         var verificationPassed = false;
@@ -140,12 +212,13 @@ internal static partial class Program
         int? verificationPage = null;
         int? verificationUnit = null;
         int? verificationOffset = null;
+        string? verificationField = null;
         if (sourceCheck.Passed)
         {
             var verification = verifier.Verify(new PrintedCheckInput(
                 pdfPath,
                 0,
-                PlacementConvention.FromMillimetres(manifest.Pdf.MarginMm),
+                frame,
                 composed,
                 text,
                 sourceChecksMs));
@@ -156,6 +229,7 @@ internal static partial class Program
             verificationPage = verification.Page;
             verificationUnit = verification.UnitIndex;
             verificationOffset = verification.Offset;
+            verificationField = verification.Field;
         }
 
         var bytes = await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false);
@@ -174,17 +248,22 @@ internal static partial class Program
             VerificationPage: verificationPage,
             VerificationUnit: verificationUnit,
             VerificationOffset: verificationOffset,
+            VerificationField: verificationField,
             Pages: pages,
             Words: words);
 
+        await WriteResultAsync(outFolder, name, result).ConfigureAwait(false);
+        Console.WriteLine($"rendered {name}: {result.SizeBytes} bytes, sha256 {result.Sha256}");
+        return ExitOk;
+    }
+
+    private static async Task WriteResultAsync(string outFolder, string name, RenderResult result)
+    {
         var resultPath = Path.Combine(outFolder, name + ".json");
         await File.WriteAllTextAsync(
             resultPath,
             JsonSerializer.Serialize(result, RenderResultContext.Default.RenderResult) + "\n",
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)).ConfigureAwait(false);
-
-        Console.WriteLine($"rendered {name}: {result.SizeBytes} bytes, sha256 {result.Sha256}");
-        return ExitOk;
     }
 
     private static async Task<(IReadOnlyDictionary<string, object?> Header, IReadOnlyList<ComposedRecord> Records)> ReadSnapshotAsync(string snapshotPath)
@@ -217,8 +296,8 @@ internal static partial class Program
 /// <param name="Fixture">The fixture the block was read from.</param>
 /// <param name="Template">The package it was composed with.</param>
 /// <param name="Mutation">The control applied, or null for none.</param>
-/// <param name="Pdf">The PDF file the print wrote.</param>
-/// <param name="Sha256">Its SHA-256, lower-case hexadecimal.</param>
+/// <param name="Pdf">The PDF file the print wrote, or null when the block was refused before printing.</param>
+/// <param name="Sha256">Its SHA-256, lower-case hexadecimal, or null when nothing was printed.</param>
 /// <param name="SizeBytes">Its size in bytes.</param>
 /// <param name="AbortedRequests">How many requests of the document the route policy aborted.</param>
 /// <param name="ConsoleErrors">How many console errors the page reported.</param>
@@ -228,14 +307,15 @@ internal static partial class Program
 /// <param name="VerificationPage">The page its verification stopped on, or null.</param>
 /// <param name="VerificationUnit">The unit its verification stopped at, or null.</param>
 /// <param name="VerificationOffset">The offset within the page its verification stopped at, or null.</param>
+/// <param name="VerificationField">The manifest path of a page-setting refusal, or null.</param>
 /// <param name="Pages">How many pages the verification read.</param>
 /// <param name="Words">How many words the verification read.</param>
 internal sealed record RenderResult(
     string Fixture,
     string Template,
     string? Mutation,
-    string Pdf,
-    string Sha256,
+    string? Pdf,
+    string? Sha256,
     long SizeBytes,
     int AbortedRequests,
     int ConsoleErrors,
@@ -245,6 +325,7 @@ internal sealed record RenderResult(
     int? VerificationPage,
     int? VerificationUnit,
     int? VerificationOffset,
+    string? VerificationField,
     int Pages,
     int Words);
 
@@ -271,6 +352,9 @@ internal static partial class KnownBad
         "NC-L",
         "NC-R",
         "NC-W",
+        "PF-MARGINS",
+        "PF-OVERLAP",
+        "PF-SIZE",
         "RowDuplicated",
         "RowRemoved",
         "RowWithoutText",
@@ -278,7 +362,21 @@ internal static partial class KnownBad
 
     /// <summary>Whether the control acts on the printed page rather than on the composition.</summary>
     /// <param name="name">The control's name.</param>
-    public static bool IsHtmlLevel(string name) => name is "NC-W" or "NC-L" or "NC-R" or "NC-F";
+    public static bool IsHtmlLevel(string name) => name is "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
+
+    /// <summary>Whether the control links a package stylesheet before the page rule.</summary>
+    /// <param name="name">The control's name.</param>
+    public static bool AppendsStylesheet(string name) => name is "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
+
+    /// <summary>The stylesheet link the page-frame control adds before the page rule.</summary>
+    /// <param name="name">The control's name.</param>
+    public static string StylesheetLink(string name) => name switch
+    {
+        "PF-SIZE" => "<link rel=\"stylesheet\" href=\"https://report.invalid/controls/wrong-size.css\">",
+        "PF-OVERLAP" => "<link rel=\"stylesheet\" href=\"https://report.invalid/controls/header-overlap.css\">",
+        "PF-MARGINS" => "<link rel=\"stylesheet\" href=\"https://report.invalid/controls/own-margins.css\">",
+        _ => throw new InvalidDataException($"The host knows no stylesheet control '{name}'."),
+    };
 
     /// <summary>
     /// Applies a control of the composition: it acts before the expected units are
