@@ -16,4 +16,19 @@ public sealed class InMemoryJobStoreContractTests : JobStoreContract
     /// <summary>The two stores this class's cases run against, both in memory.</summary>
     protected override Task<(IJobStore Jobs, IUploadStore Uploads)> CreateStoresAsync(CancellationToken cancellationToken) =>
         Task.FromResult<(IJobStore, IUploadStore)>((new InMemoryJobStore(_uploads), _uploads));
+
+    /// <summary>
+    /// Publishes an artifact of an output beyond the one the acceptance creates: the double
+    /// records an output of any format, so the fixed order of the formats is exercised here.
+    /// </summary>
+    /// <param name="artifact">The artifact to publish, naming the output it belongs to.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected override async Task<bool> TryPublishArtifactOfAnotherOutputAsync(
+        ArtifactRecord artifact,
+        CancellationToken cancellationToken)
+    {
+        var store = (InMemoryJobStore)Store;
+        store.SeedOutput(artifact.ReportJobId, artifact.OutputId, artifact.Format);
+        return (await store.PublishAsync(artifact, cancellationToken)).Outcome == PublishOutcome.Published;
+    }
 }

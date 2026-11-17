@@ -1,11 +1,13 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using ReportService.Jobs;
 using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Jobs;
+using ReportService.Workers.Orchestration.Retention;
 using Temporalio.Exceptions;
 using Temporalio.Testing;
 
@@ -81,6 +83,13 @@ public sealed class PdfOutputActivitiesTests
         Assert.Equal(OutputStatus.Succeeded, output.Status);
         var view = await jobs.FindStatusAsync(acceptance.ReportJobId, Consumer, TestContext.Current.CancellationToken);
         Assert.Equal(published.ArtifactId, Assert.Single(view!.Outputs).ArtifactId);
+
+        // The artifact expires the configured output retention after the instant it was
+        // published at, which is the one its creation carries.
+        var artifact = jobs.ArtifactOf(acceptance.OutputId);
+        Assert.NotNull(artifact);
+        Assert.Equal(Now, artifact!.CreatedAt);
+        Assert.Equal(Now.AddDays(7), artifact.ExpiresAt);
     }
 
     [Fact]
@@ -152,6 +161,7 @@ public sealed class PdfOutputActivitiesTests
     private static PdfOutputActivities Activity(IJobStore jobs) => new(
         jobs,
         new FixedTimeProvider(Now),
+        Options.Create(new RetentionOptions { Outputs = TimeSpan.FromDays(7) }),
         NullLoggerFactory.Instance,
         NullLogger<PdfOutputActivities>.Instance);
 

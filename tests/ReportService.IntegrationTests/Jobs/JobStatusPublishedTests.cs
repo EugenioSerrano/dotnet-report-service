@@ -152,7 +152,8 @@ public sealed class JobStatusPublishedTests : IClassFixture<PostgresFixture>, IA
                 Hash,
                 65_536,
                 3,
-                now),
+                now,
+                now.AddDays(7)),
             cancellationToken)).Outcome);
         Assert.Equal(JobFinalizationOutcome.Applied, (await store.FinalizeJobAsync(
             job.ReportJobId, now.AddSeconds(1), cancellationToken)).Outcome);
@@ -205,7 +206,8 @@ public sealed class JobStatusPublishedTests : IClassFixture<PostgresFixture>, IA
                 Hash,
                 8_192,
                 1,
-                now),
+                now,
+                now.AddDays(7)),
             cancellationToken)).Outcome);
         Assert.Equal(JobFinalizationOutcome.Applied, (await store.FinalizeJobAsync(
             job.ReportJobId, now.AddSeconds(1), cancellationToken)).Outcome);

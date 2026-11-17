@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
+using ReportService.Workers.Orchestration.Retention;
 using ReportService.Workers.Orchestration.Telemetry;
 using Temporalio.Activities;
 using Temporalio.Exceptions;
@@ -55,6 +57,7 @@ public sealed record PublishOutputResult(string Outcome, string ArtifactId)
 public sealed class PdfOutputActivities(
     IJobStore jobs,
     TimeProvider clock,
+    IOptions<RetentionOptions> retention,
     ILoggerFactory loggers,
     ILogger<PdfOutputActivities> logger)
 {
@@ -96,7 +99,10 @@ public sealed class PdfOutputActivities(
         return new FindPdfOutputResult(pdf[0].OutputId);
     }
 
-    /// <summary>Publishes one output's verified block as its one artifact.</summary>
+    /// <summary>
+    /// Publishes one output's verified block as its one artifact, which expires at the instant
+    /// it was published plus the configured output retention.
+    /// </summary>
     /// <param name="input">The output and the object its block was printed into.</param>
     /// <returns>The outcome and the identifier of the artifact that exists.</returns>
     [Activity(PublishOutputName)]
@@ -107,6 +113,7 @@ public sealed class PdfOutputActivities(
         System.Diagnostics.Activity.Current?.SetTag("output.id", input.OutputId);
         System.Diagnostics.Activity.Current?.SetTag("block.index", 0);
 
+        var now = clock.GetUtcNow();
         var artifact = new ArtifactRecord(
             NewArtifactId(),
             input.ReportJobId,
@@ -117,7 +124,8 @@ public sealed class PdfOutputActivities(
             input.Sha256,
             input.SizeBytes,
             input.PageCount,
-            clock.GetUtcNow());
+            now,
+            now + retention.Value.Outputs);
 
         var published = await jobs
             .PublishAsync(artifact, ActivityExecutionContext.Current.CancellationToken)

@@ -204,7 +204,8 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
         Hash,
         2_048,
         3,
-        Now);
+        Now,
+        Now.AddDays(7));
 
     private async Task<long> CountAsync(string table, string reportJobId, CancellationToken cancellationToken)
     {

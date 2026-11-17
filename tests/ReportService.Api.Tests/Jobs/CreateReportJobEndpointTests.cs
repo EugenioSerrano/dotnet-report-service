@@ -736,6 +736,12 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken) =>
             inner.PublishAsync(artifact, cancellationToken);
 
+        public Task<JobArtifactsView?> ListArtifactsAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) =>
+            inner.ListArtifactsAsync(reportJobId, consumerId, cancellationToken);
+
+        public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
+            inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
+
         public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FailOutputAsync(outputId, code, now, cancellationToken);
 
@@ -815,6 +821,10 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<JobArtifactsView?> ListArtifactsAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
 

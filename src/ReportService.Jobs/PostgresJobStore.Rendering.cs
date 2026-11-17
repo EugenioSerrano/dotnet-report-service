@@ -92,11 +92,30 @@ public sealed partial class PostgresJobStore
     private const string InsertArtifactSql = """
         INSERT INTO report_service.artifacts
             (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256,
-             size_bytes, page_count, created_at)
+             size_bytes, page_count, created_at, expires_at)
         VALUES
             (@ArtifactId, @ReportJobId, @OutputId, @Format, @MediaType, @ObjectKey, @Sha256,
-             @SizeBytes, @PageCount, @CreatedAt)
+             @SizeBytes, @PageCount, @CreatedAt, @ExpiresAt)
         ON CONFLICT (output_id) DO NOTHING
+        """;
+
+    private const string ListArtifactsSql = """
+        SELECT j.report_job_id AS "ReportJobId", a.artifact_id AS "ArtifactId", a.format AS "Format",
+               a.media_type AS "MediaType", a.object_key AS "ObjectKey", a.sha256 AS "Sha256",
+               a.size_bytes AS "SizeBytes", a.created_at AS "CreatedAt", a.expires_at AS "ExpiresAt"
+          FROM report_service.report_jobs j
+          LEFT JOIN report_service.artifacts a ON a.report_job_id = j.report_job_id
+         WHERE j.report_job_id = @ReportJobId AND j.consumer_id = @ConsumerId
+         ORDER BY array_position(ARRAY['PDF','HTML','XLSX','MARKDOWN'], a.format), a.artifact_id
+        """;
+
+    private const string FindArtifactSql = """
+        SELECT a.report_job_id AS "ReportJobId", a.artifact_id AS "ArtifactId", a.format AS "Format",
+               a.media_type AS "MediaType", a.object_key AS "ObjectKey", a.sha256 AS "Sha256",
+               a.size_bytes AS "SizeBytes", a.created_at AS "CreatedAt", a.expires_at AS "ExpiresAt"
+          FROM report_service.artifacts a
+          JOIN report_service.report_jobs j ON j.report_job_id = a.report_job_id
+         WHERE a.artifact_id = @ArtifactId AND a.report_job_id = @ReportJobId AND j.consumer_id = @ConsumerId
         """;
 
     private const string SelectArtifactIdSql = """
@@ -404,6 +423,7 @@ public sealed partial class PostgresJobStore
             artifact.SizeBytes,
             artifact.PageCount,
             CreatedAt = UtcInstant(artifact.CreatedAt),
+            ExpiresAt = UtcInstant(artifact.ExpiresAt),
         };
 
         try
@@ -450,6 +470,67 @@ public sealed partial class PostgresJobStore
             return written > 0
                 ? new PublishResult(PublishOutcome.Published, existing ?? artifact.ArtifactId)
                 : new PublishResult(PublishOutcome.AlreadyPublished, existing);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<JobArtifactsView?> ListArtifactsAsync(
+        string reportJobId,
+        string consumerId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(consumerId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var rows = (await connection.QueryAsync<ArtifactRow>(new CommandDefinition(
+                ListArtifactsSql,
+                new { ReportJobId = reportJobId, ConsumerId = consumerId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false)).ToList();
+            if (rows.Count == 0)
+            {
+                return null;
+            }
+
+            // A job with no published artifact answers one row whose artifact columns are all
+            // null: its list is empty, and the job itself is still the one the caller owns.
+            return new JobArtifactsView(
+                rows[0].ReportJobId,
+                [.. rows.Where(row => row.ArtifactId is not null).Select(row => row.ToView())]);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ArtifactView?> FindArtifactAsync(
+        string reportJobId,
+        string artifactId,
+        string consumerId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(artifactId);
+        ArgumentNullException.ThrowIfNull(consumerId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var row = await connection.QuerySingleOrDefaultAsync<ArtifactRow>(new CommandDefinition(
+                FindArtifactSql,
+                new { ReportJobId = reportJobId, ArtifactId = artifactId, ConsumerId = consumerId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return row?.ToView();
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -648,5 +729,46 @@ public sealed partial class PostgresJobStore
             PageCount,
             TemplatePackageSha256,
             Utc(CommittedAt));
+    }
+
+    // The artifact row: the join of the job and its artifact, whose artifact columns are all
+    // null for a job that has published nothing yet. A column of a published artifact is never
+    // absent, so a missing one is a corrupt row and a fault rather than a default.
+    private sealed class ArtifactRow
+    {
+        public string ReportJobId { get; set; } = string.Empty;
+
+        public string? ArtifactId { get; set; }
+
+        public string? Format { get; set; }
+
+        public string? MediaType { get; set; }
+
+        public string? ObjectKey { get; set; }
+
+        public string? Sha256 { get; set; }
+
+        public long? SizeBytes { get; set; }
+
+        public DateTime? CreatedAt { get; set; }
+
+        public DateTime? ExpiresAt { get; set; }
+
+        public ArtifactView ToView() => new(
+            Stored(ArtifactId),
+            ReportJobId,
+            JobWireValues.ParseStoredFormat(Stored(Format)),
+            Stored(MediaType),
+            Stored(ObjectKey),
+            Stored(Sha256),
+            SizeBytes ?? throw new InvalidOperationException("the stored artifact carries no size"),
+            Instant(CreatedAt),
+            Instant(ExpiresAt));
+
+        private static string Stored(string? value) =>
+            value ?? throw new InvalidOperationException("the stored artifact is missing a column of its own");
+
+        private static DateTimeOffset Instant(DateTime? value) =>
+            value is { } instant ? Utc(instant) : throw new InvalidOperationException("the stored artifact is missing an instant of its own");
     }
 }

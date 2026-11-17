@@ -533,6 +533,178 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task APublishedArtifactIsListedAndReadBackWithItsExpiry()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+
+        var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        Assert.NotNull(listed);
+        Assert.Equal(acceptance.ReportJobId, listed!.ReportJobId);
+        var view = Assert.Single(listed.Artifacts);
+        Assert.Equal(artifact.ArtifactId, view.ArtifactId);
+        Assert.Equal(acceptance.ReportJobId, view.ReportJobId);
+        Assert.Equal(artifact.Format, view.Format);
+        Assert.Equal(artifact.MediaType, view.MediaType);
+        Assert.Equal(artifact.ObjectKey, view.ObjectKey);
+        Assert.Equal(artifact.Sha256, view.Sha256);
+        Assert.Equal(artifact.SizeBytes, view.SizeBytes);
+        Assert.Equal(artifact.CreatedAt, view.CreatedAt);
+        Assert.Equal(artifact.ExpiresAt, view.ExpiresAt);
+
+        var found = await Store.FindArtifactAsync(
+            acceptance.ReportJobId, artifact.ArtifactId, Consumer, cancellationToken);
+        Assert.Equal(view, found);
+    }
+
+    [Fact]
+    public async Task ARepetitionOfAPublicationKeepsTheExpiryTheFirstOneWrote()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+
+        // A retried publication carries a later expiry of its own: the row the first one wrote
+        // stands, down to the instant it stops being downloadable.
+        var repeated = await Store.PublishAsync(
+            artifact with { ArtifactId = "artifact-ffffffffffffffffffffffffffffffff", ExpiresAt = Now.AddDays(30) },
+            cancellationToken);
+
+        Assert.Equal(PublishOutcome.AlreadyPublished, repeated.Outcome);
+        Assert.Equal(ArtifactId, repeated.ArtifactId);
+        var view = Assert.Single((await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Artifacts);
+        Assert.Equal(Now.AddDays(7), view.ExpiresAt);
+    }
+
+    [Fact]
+    public async Task AnExpiryBeforeTheCreationOfItsArtifactIsRefusedAndStoresNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        // The schema refuses a row that expires before it was created, and so does the double:
+        // no store answers a publication that cannot describe a downloadable artifact.
+        await Assert.ThrowsAnyAsync<Exception>(() => Store.PublishAsync(
+            Artifact(acceptance.ReportJobId, acceptance.OutputId) with { ExpiresAt = Now.AddSeconds(-1) },
+            cancellationToken));
+
+        var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.NotNull(listed);
+        Assert.Empty(listed!.Artifacts);
+    }
+
+    [Fact]
+    public async Task AJobThatHasPublishedNothingListsAnEmptySetAndAnotherConsumerSeesNoJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var pending = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.NotNull(pending);
+        Assert.Equal(acceptance.ReportJobId, pending!.ReportJobId);
+        Assert.Empty(pending.Artifacts);
+
+        Assert.Null(await Store.ListArtifactsAsync(acceptance.ReportJobId, "another-consumer", cancellationToken));
+        Assert.Null(await Store.ListArtifactsAsync(
+            "job-ffffffffffffffffffffffffffffffff", Consumer, cancellationToken));
+
+        // A job that ended without publishing has published nothing either, and it is still the
+        // owner's job: its list is empty rather than absent.
+        await Store.FailJobAsync(acceptance.ReportJobId, "INPUT_NOT_FOUND", "input-expired", Now, cancellationToken);
+        var failed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+        Assert.NotNull(failed);
+        Assert.Empty(failed!.Artifacts);
+    }
+
+    [Fact]
+    public async Task AnArtifactIsReadOnlyUnderItsOwnJobOfItsOwnConsumer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        var otherJob = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(otherJob, Now, cancellationToken));
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+
+        Assert.NotNull(await Store.FindArtifactAsync(
+            acceptance.ReportJobId, artifact.ArtifactId, Consumer, cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(
+            otherJob.ReportJobId, artifact.ArtifactId, Consumer, cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(
+            acceptance.ReportJobId, artifact.ArtifactId, "another-consumer", cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(
+            acceptance.ReportJobId, "artifact-ffffffffffffffffffffffffffffffff", Consumer, cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(
+            "job-ffffffffffffffffffffffffffffffff", artifact.ArtifactId, Consumer, cancellationToken));
+    }
+
+    [Fact]
+    public async Task TheListOrdersItsArtifactsByFormatWhateverTheOrderTheyWerePublishedIn()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        // The markdown artifact is published first and the html one second: the list still puts
+        // html before markdown, the fixed order of the formats and not the order of publication.
+        var markdown = ArtifactOf(
+            acceptance.ReportJobId,
+            JobIdentifier.CreateOutput(),
+            "artifact-00000000000000000000000000000002",
+            OutputFormat.Markdown);
+        var html = ArtifactOf(
+            acceptance.ReportJobId,
+            JobIdentifier.CreateOutput(),
+            "artifact-00000000000000000000000000000001",
+            OutputFormat.Html);
+        if (!await TryPublishArtifactOfAnotherOutputAsync(markdown, cancellationToken)
+            || !await TryPublishArtifactOfAnotherOutputAsync(html, cancellationToken))
+        {
+            return;
+        }
+
+        var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        Assert.NotNull(listed);
+        Assert.Equal(
+            [html.ArtifactId, markdown.ArtifactId],
+            listed!.Artifacts.Select(artifact => artifact.ArtifactId));
+    }
+
+    [Fact]
+    public async Task AJobPublishedFromAnEmptySnapshotListsItsOneArtifact()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.CommitPartitionAsync(
+            Partition(acceptance.ReportJobId, recordCount: 0, blockCount: 1), cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PublishOutcome.Published,
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+
+        var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
+
+        var view = Assert.Single(listed!.Artifacts);
+        Assert.Equal(ArtifactId, view.ArtifactId);
+        Assert.Equal(OutputFormat.Pdf, view.Format);
+    }
+
+    [Fact]
     public async Task AProgressWriteOnlyEverRaisesTheReadCount()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -1066,20 +1238,52 @@ public abstract class JobStoreContract : IAsyncLifetime
     /// <summary>The identifier every published artifact of this contract carries.</summary>
     protected const string ArtifactId = "artifact-0123456789abcdef0123456789abcdef";
 
-    /// <summary>An artifact of <paramref name="outputId"/>.</summary>
+    /// <summary>An artifact of <paramref name="outputId"/>: a PDF of three pages that expires seven days after it is created.</summary>
     /// <param name="reportJobId">The job it belongs to.</param>
     /// <param name="outputId">The output it is the result of.</param>
-    protected static ArtifactRecord Artifact(string reportJobId, string outputId) => new(
-        ArtifactId,
+    protected static ArtifactRecord Artifact(string reportJobId, string outputId) =>
+        ArtifactOf(reportJobId, outputId, ArtifactId, OutputFormat.Pdf);
+
+    /// <summary>An artifact of one format, under an identifier of its own, expiring seven days after it is created.</summary>
+    /// <param name="reportJobId">The job it belongs to.</param>
+    /// <param name="outputId">The output it is the result of.</param>
+    /// <param name="artifactId">The identifier it carries.</param>
+    /// <param name="format">The format it carries.</param>
+    protected static ArtifactRecord ArtifactOf(string reportJobId, string outputId, string artifactId, OutputFormat format) => new(
+        artifactId,
         reportJobId,
         outputId,
-        OutputFormat.Pdf,
-        "application/pdf",
+        format,
+        format switch
+        {
+            OutputFormat.Pdf => "application/pdf",
+            OutputFormat.Html => "text/html",
+            OutputFormat.Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            OutputFormat.Markdown => "text/markdown",
+            _ => throw new ArgumentOutOfRangeException(nameof(format), "the format has no media type"),
+        },
         $"outputs/{reportJobId}/{outputId}/attempt",
         Hash,
         2_048,
-        3,
-        Now);
+        format is OutputFormat.Pdf ? 3 : null,
+        Now,
+        Now.AddDays(7));
+
+    /// <summary>
+    /// Publishes an artifact of an output the acceptance did not create, when the store can hold
+    /// one. A job accepted through the service carries one output only, so two formats in one list
+    /// need an output the store is given directly; the double records one, and a store that cannot
+    /// be arranged that way answers <see langword="false"/> and the case asserts no order it
+    /// cannot present.
+    /// </summary>
+    /// <param name="artifact">The artifact to publish, naming the output it belongs to.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>Whether the store published the artifact.</returns>
+    protected virtual Task<bool> TryPublishArtifactOfAnotherOutputAsync(
+        ArtifactRecord artifact,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(false);
+
     /// <summary>An acceptance of a job over <paramref name="uploadId"/>, with identifiers of their own.</summary>
     /// <param name="uploadId">The upload the job reports on.</param>
     /// <param name="consumerId">The consumer the job is accepted for.</param>
