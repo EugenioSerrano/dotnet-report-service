@@ -367,6 +367,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as before; a process that hosts more than one host no longer mixes their
   telemetry.
 
+### Fixed
+
+- A rendered part is now stored under a key that fits a storage root of 111
+  characters: the attempt's identity inside the key carries 96 bits instead of
+  the whole digest. The object storage page states the path budget every class
+  of stored object needs — the longest key of each one, the room a storage root
+  leaves free for it, and the 38 characters a write's temporary file adds.
+
 ## [0.1.0] - 2026-10-22
 
 First release. It completes the groundwork milestone of the roadmap
