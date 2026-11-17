@@ -35,12 +35,14 @@ public sealed class MigrationCatalogTests
 
     private const string Locale = "0012_report-job-locale.sql";
 
+    private const string Expiry = "0013_artifact-expiry.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(Locale, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Expiry, MigrationCatalog.ExpectedVersion);
     }
 
     /// <summary>
@@ -82,7 +84,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(12, MigrationCatalog.Scripts.Count);
+        Assert.Equal(13, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -103,9 +105,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(12, MigrationCatalog.Scripts.Count);
-        Assert.Equal(Locale, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(Locale, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(13, MigrationCatalog.Scripts.Count);
+        Assert.Equal(Expiry, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(Expiry, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -227,6 +229,26 @@ public sealed class MigrationCatalogTests
 
         Assert.Empty(scripts);
         Assert.Equal(SchemaVersion.None, MigrationCatalog.ExpectedVersionOf(scripts));
+    }
+
+    /// <summary>
+    /// The thirteenth script states when a published artifact stops being downloadable:
+    /// one nullable column added, backfilled from `created_at`, then made NOT NULL with
+    /// its check. It adds no table, drops nothing and creates no index; the backfill is
+    /// what makes every row published before this change expired at once (D15). That the
+    /// server applies it and refuses `expires_at &lt; created_at` is a case against a real
+    /// database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheExpiryScriptAddsOneColumnBackfilledThenNotNullAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Expiry);
+
+        Assert.Contains("ALTER TABLE report_service.artifacts ADD COLUMN expires_at timestamptz NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("UPDATE report_service.artifacts SET expires_at = created_at WHERE expires_at IS NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER COLUMN expires_at SET NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT artifacts_expiry_after_publication CHECK (expires_at >= created_at)", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE INDEX", script.Sql, StringComparison.Ordinal);
     }
 
     private static int CountOf(string text, string token)
