@@ -7,6 +7,7 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Uploads;
+using ReportService.Workers.Orchestration.Retention;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
 
@@ -41,6 +42,10 @@ public static class OrchestrationWorkerComposition
         // Verifying an upload: the size limits it enforces, the records it reads and
         // writes, and the instruments of the work it does.
         builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
+
+        // How long a published output stays downloadable: the retention the
+        // publication records on each artifact, required and bounded.
+        builder.AddValidatedConfiguration<RetentionOptions>(RetentionOptions.SectionPath);
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.TryAddSingleton<OrchestrationMetrics>();
         builder.Services.AddSingleton(services => NpgsqlDataSource.Create(

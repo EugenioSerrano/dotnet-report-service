@@ -261,6 +261,7 @@ public sealed class UploadTransferOverRealServerTests : IClassFixture<PostgresFi
             ["Temporal__Namespace"] = "default",
             ["Uploads__MaxUncompressedBytes"] = (4L * 1024 * 1024 * 1024).ToString(CultureInfo.InvariantCulture),
             ["Uploads__Verification__StartToClose"] = "00:10:00",
+            ["Retention__Outputs"] = "01:00:00",
             ["Workers__DataActivitySlots"] = "2",
         };
 

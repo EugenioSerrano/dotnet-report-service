@@ -149,6 +149,7 @@ var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orch
     .WithEnvironment("Temporal__Namespace", "default")
     .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
     .WithEnvironment("Uploads__VerificationDeadline", verificationDeadline)
+    .WithEnvironment("Retention__Outputs", "7.00:00:00")
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")
