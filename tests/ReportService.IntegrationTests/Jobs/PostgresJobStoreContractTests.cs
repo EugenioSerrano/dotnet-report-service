@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using Dapper;
 using Npgsql;
 using ReportService.Jobs;
 using ReportService.Migrations;
+using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
@@ -19,6 +21,9 @@ namespace ReportService.IntegrationTests.Jobs;
 public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixture<PostgresFixture>
 {
     private readonly PostgresFixture _fixture;
+    /// <summary>The name every command activity of this class's data source carries.</summary>
+    private const string StatementActivityName = "statement";
+
     private NpgsqlDataSource? _dataSource;
     private PostgresTemplateVersionStore? _versions;
     private string? _database;
@@ -43,7 +48,12 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
         var migration = await MigrationRunner.RunAsync(connectionString, MigrationCatalog.Scripts, cancellationToken);
         Assert.True(migration.Succeeded, string.Join("; ", migration.ErrorLines));
 
-        _dataSource = NpgsqlDataSource.Create(connectionString);
+        // One data source of the class's own, whose command activities carry a name of their own:
+        // the case that counts the statements one read costs reads exactly that name, and no
+        // connection's own activity can be mistaken for a statement.
+        var dataSource = new NpgsqlDataSourceBuilder(connectionString);
+        dataSource.ConfigureTracing(tracing => tracing.ConfigureCommandSpanNameProvider(_ => StatementActivityName));
+        _dataSource = dataSource.Build();
         _versions = new PostgresTemplateVersionStore(_dataSource);
         return (new PostgresJobStore(_dataSource), new PostgresUploadStore(_dataSource));
     }
@@ -344,6 +354,246 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
         Assert.Equal(first!.FinishedAt, after.FinishedAt);
         Assert.Equal(first.ErrorCode, after.ErrorCode);
         Assert.Equal(first.Status, after.Status);
+    }
+
+    [Fact]
+    public async Task TheExpiryMigrationBackfillsAnArtifactPublishedBeforeIt()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // A database of its own, brought to the version before the expiry column.
+        var database = await _fixture.CreateDatabaseAsync(cancellationToken);
+        var connectionString = new NpgsqlConnectionStringBuilder(_fixture.Application(database))
+        {
+            Timeout = 5,
+            CommandTimeout = PostgresJobStore.CommandTimeoutSeconds,
+        }.ConnectionString;
+        var expiry = MigrationCatalog.Scripts.Single(script => script.Name == "0013_artifact-expiry.sql");
+        var before = MigrationCatalog.Scripts.Where(script => string.CompareOrdinal(script.Name, expiry.Name) < 0).ToList();
+        var first = await MigrationRunner.RunAsync(connectionString, before, cancellationToken);
+        Assert.True(first.Succeeded, string.Join("; ", first.ErrorLines));
+
+        await using var dataSource = NpgsqlDataSource.Create(connectionString);
+        var uploads = new PostgresUploadStore(dataSource);
+        var store = new PostgresJobStore(dataSource);
+        var acceptance = await AcceptedOnAsync(uploads, store, cancellationToken);
+        Assert.Equal(TransitionOutcome.Applied, await store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+
+        // The row a publication wrote before the change: it carries no expiry at all.
+        var artifactId = "artifact-0123456789abcdef0123456789abcdef";
+        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                """
+                INSERT INTO report_service.artifacts
+                    (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256,
+                     size_bytes, page_count, created_at)
+                VALUES
+                    (@ArtifactId, @ReportJobId, @OutputId, 'PDF', 'application/pdf', @ObjectKey, @Sha256,
+                     65536, 3, @CreatedAt)
+                """,
+                new
+                {
+                    ArtifactId = artifactId,
+                    acceptance.ReportJobId,
+                    acceptance.OutputId,
+                    ObjectKey = $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+                    Sha256 = new string('a', 64),
+                    CreatedAt = Now,
+                },
+                cancellationToken: cancellationToken));
+        }
+
+        // The change reaches the database that already holds the row: the backfill makes it
+        // expired at the instant it was published, never downloadable for a period it never
+        // promised.
+        var applied = await MigrationRunner.RunAsync(connectionString, MigrationCatalog.Scripts, cancellationToken);
+        Assert.True(applied.Succeeded, string.Join("; ", applied.ErrorLines));
+        Assert.Contains(expiry.Name, applied.Applied);
+
+        await using var verify = await dataSource.OpenConnectionAsync(cancellationToken);
+        var stored = await verify.QuerySingleAsync<DateTime>(new CommandDefinition(
+            "SELECT expires_at FROM report_service.artifacts WHERE artifact_id = @ArtifactId",
+            new { ArtifactId = artifactId },
+            cancellationToken: cancellationToken));
+        Assert.Equal(Now.UtcDateTime, stored);
+
+        var view = await store.FindArtifactAsync(acceptance.ReportJobId, artifactId, Consumer, cancellationToken);
+        Assert.NotNull(view);
+        Assert.Equal(stored, view!.ExpiresAt);
+        Assert.True(view.ExpiresAt <= Now, "an artifact published before the expiry column is expired at the instant it was published");
+    }
+
+    [Fact]
+    public async Task TheSchemaRefusesAnExpiryBeforeTheArtifactWasPublished()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+
+        // A row whose expiry precedes its publication is one the schema refuses: no answer can
+        // ever say an artifact stopped being downloadable before it existed.
+        var exception = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+            """
+            INSERT INTO report_service.artifacts
+                (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256,
+                 size_bytes, page_count, created_at, expires_at)
+            VALUES
+                ('artifact-0123456789abcdef0123456789abcdef', @ReportJobId, @OutputId, 'PDF', 'application/pdf',
+                 @ObjectKey, @Sha256, 2048, 1, @CreatedAt, @ExpiresAt)
+            """,
+            new
+            {
+                acceptance.ReportJobId,
+                acceptance.OutputId,
+                ObjectKey = $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+                Sha256 = new string('a', 64),
+                CreatedAt = Now,
+                ExpiresAt = Now.AddMilliseconds(-1),
+            },
+            cancellationToken: cancellationToken)));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+    }
+
+    [Fact]
+    public async Task TheArtifactListAndTheArtifactReadAreOneStatementEach()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+
+        using var commands = new StatementCount();
+
+        // A first call of each read opens the connection the pool then keeps, so the window
+        // measured below holds the read alone.
+        Assert.NotNull(await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken));
+        Assert.NotNull(await Store.FindArtifactAsync(acceptance.ReportJobId, artifact.ArtifactId, Consumer, cancellationToken));
+
+        // One statement each: a listing that needed a second read to tell "no job of yours" from
+        // "a job of yours with nothing published" would be two, and the two could disagree.
+        var listing = await commands.CountedAsync(async () =>
+            Assert.NotNull(await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken)));
+        var read = await commands.CountedAsync(async () =>
+            Assert.NotNull(await Store.FindArtifactAsync(acceptance.ReportJobId, artifact.ArtifactId, Consumer, cancellationToken)));
+
+        // One statement each: a listing that needed a second read to tell "no job of yours" from
+        // "a job of yours with nothing published" would be two, and the two could disagree.
+        Assert.Equal(1, listing);
+        Assert.Equal(1, read);
+    }
+
+    // A job accepted on a ready upload of its own, over stores opened on a database of the case's
+    // own: the state the cases that need a publication start from.
+    private static async Task<JobAcceptance> AcceptedOnAsync(
+        PostgresUploadStore uploads,
+        PostgresJobStore store,
+        CancellationToken cancellationToken)
+    {
+        var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
+        var record = new UploadRecord(
+            uploadId,
+            Consumer,
+            UploadMode.ApiStream,
+            DataProfile.HeaderItemsV1,
+            UploadStatus.Created,
+            ObjectKey.FromSegments("staging", uploadId, "content"),
+            Now,
+            Now.AddHours(1));
+        await uploads.CreateAsync(record, cancellationToken);
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, Now, cancellationToken));
+        Assert.True(await uploads.RecordTransferAsync(
+            uploadId,
+            UploadContentOutcome.Complete,
+            900,
+            800,
+            new string('a', 64),
+            Now,
+            cancellationToken));
+        Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, Now, Now, Now.AddHours(5), cancellationToken));
+        Assert.Equal(
+            SnapshotCommitResult.Committed,
+            await uploads.CommitReadyAsync(
+                new SnapshotRecord(
+                    uploadId,
+                    Consumer,
+                    ObjectKey.FromSegments("snapshots", uploadId, "content"),
+                    UploadContentEncoding.None,
+                    DataProfile.HeaderItemsV1,
+                    new string('a', 64),
+                    900,
+                    new string('a', 64),
+                    900,
+                    Now),
+                Now,
+                cancellationToken));
+
+        var acceptance = new JobAcceptance(
+            JobIdentifier.Create(),
+            JobIdentifier.CreateOutput(),
+            Consumer,
+            uploadId,
+            "pilot-grouped",
+            TemplateReferenceForm.Exact,
+            "1.0.0");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await store.AcceptAsync(acceptance, Now, cancellationToken));
+        return acceptance;
+    }
+
+    /// <summary>
+    /// Counts the statements the data source's own tracing reports, so a case can say how many
+    /// round trips one read cost. Every command Npgsql executes is an activity on its own source;
+    /// the count is taken around the read and never includes the connection the pool keeps.
+    /// </summary>
+    private sealed class StatementCount : IDisposable
+    {
+        private readonly ActivityListener _listener;
+        private readonly List<string> _seen = [];
+        private long _statements;
+
+        public StatementCount()
+        {
+            _listener = new ActivityListener
+            {
+                ShouldListenTo = source => source.Name.Contains("Npgsql", StringComparison.Ordinal),
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                ActivityStarted = activity =>
+                {
+                    var statement = string.Equals(activity.OperationName, StatementActivityName, StringComparison.Ordinal);
+                    lock (_seen)
+                    {
+                        _seen.Add($"{activity.Source.Name}/{activity.OperationName}");
+                    }
+
+                    if (statement)
+                    {
+                        Interlocked.Increment(ref _statements);
+                    }
+                },
+            };
+            ActivitySource.AddActivityListener(_listener);
+        }
+
+        /// <summary>The statements counted while <paramref name="work"/> ran.</summary>
+        public async Task<int> CountedAsync(Func<Task> work)
+        {
+            var before = Interlocked.Read(ref _statements);
+            await work();
+            var after = Interlocked.Read(ref _statements);
+            Assert.True(
+                after - before == 1,
+                $"the read executed {after - before} statements; the activities observed were: "
+                + string.Join(", ", _seen));
+            return (int)(after - before);
+        }
+
+        public void Dispose() => _listener.Dispose();
     }
 
     [Fact]
