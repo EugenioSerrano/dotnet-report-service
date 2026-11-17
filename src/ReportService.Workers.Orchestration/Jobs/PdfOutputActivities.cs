@@ -113,7 +113,9 @@ public sealed class PdfOutputActivities(
         System.Diagnostics.Activity.Current?.SetTag("output.id", input.OutputId);
         System.Diagnostics.Activity.Current?.SetTag("block.index", 0);
 
-        var now = clock.GetUtcNow();
+        // The instant the row carries is the one every answer repeats: whole milliseconds, in UTC,
+        // the precision the API decides an expiry at.
+        var now = JobWireValues.TruncateToMillisecond(clock.GetUtcNow());
         var artifact = new ArtifactRecord(
             NewArtifactId(),
             input.ReportJobId,

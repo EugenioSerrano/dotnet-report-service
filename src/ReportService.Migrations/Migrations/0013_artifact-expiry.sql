@@ -1,10 +1,9 @@
--- When a published artifact stops being downloadable (US-005.BOLT-002,
--- SPEC-261101-0918 6 A.1). Additive, forward-only, one transaction: the
--- runner applies each script in its own transaction.
+-- When a published artifact stops being downloadable. Additive, forward-only,
+-- one transaction: the runner applies each script in its own transaction.
 --
--- Rows published before this change become expired immediately (D15): the
--- backfill sets expires_at to created_at, so nothing published earlier is
--- suddenly downloadable for a period it never promised.
+-- Rows published before this change become expired immediately: the backfill
+-- sets expires_at to created_at, so nothing published earlier is suddenly
+-- downloadable for a period it never promised.
 --
 -- No index on expires_at: nothing selects by it in this increment.
 

@@ -8,6 +8,7 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ReportService.Migrations;
+using ReportService.Workers.Orchestration.Retention;
 
 namespace ReportService.EndToEndTests;
 
@@ -177,6 +178,51 @@ public sealed class CompositionTopologyTests
             new { role = ApplicationRole },
             cancellationToken: cancellationToken));
         Assert.All(users, user => Assert.Contains(user, new[] { ApplicationRole, BootstrapRole }));
+    }
+
+    [Fact]
+    public async Task TheOrchestrationWorkerIsTheOnlyProcessGivenAnOutputRetention()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var appHost = await TestComposition.CreateAsync(cancellationToken);
+        await using var app = await appHost.BuildAsync(cancellationToken);
+        var model = app.Services.GetRequiredService<DistributedApplicationModel>();
+        var orchestration = model.Resources.Single(resource => resource.Name == "orchestration-worker");
+
+        // The publication records each artifact's expiry from this setting, and the composition
+        // passes the development value the deployment would otherwise have to supply: without it
+        // the worker refuses to start.
+        var environment = await EffectiveEnvironmentAsync(app, orchestration, cancellationToken);
+        Assert.Equal("7.00:00:00", Assert.Contains("Retention__Outputs", environment));
+
+        // No other process reads an artifact's retention, so no other process is given one. The
+        // composition's processes are the resources that read the product's settings; a container
+        // carries its own image's environment and reads none of them.
+        var processes = model.Resources.OfType<ProjectResource>().ToList();
+        Assert.Contains(orchestration, processes);
+        foreach (var process in processes.Where(process => process.Name != "orchestration-worker"))
+        {
+            var other = await EffectiveEnvironmentAsync(app, process, cancellationToken);
+            Assert.DoesNotContain(
+                other.Keys,
+                key => key.StartsWith("Retention", StringComparison.Ordinal)
+                    || key.StartsWith($"{RetentionOptions.SectionPath}__", StringComparison.Ordinal));
+        }
+    }
+
+    private static async Task<IReadOnlyDictionary<string, object>> EffectiveEnvironmentAsync(
+        DistributedApplication app,
+        IResource resource,
+        CancellationToken cancellationToken)
+    {
+        var execution = app.Services.GetRequiredService<DistributedApplicationExecutionContext>();
+        var environment = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (var callback in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
+        {
+            await callback.Callback(new EnvironmentCallbackContext(execution, resource, environment, cancellationToken));
+        }
+
+        return environment;
     }
 
     /// <summary>
