@@ -17,8 +17,8 @@ namespace ReportService.EndToEndTests;
 /// the version the code expects, the PDF worker carries no database check, and
 /// every process reaches the database as the application role — the AppHost's own
 /// health checks on the server's bootstrap user excepted. The orchestration worker
-/// runs one engine worker per queue it registers work on, and the rendering queue
-/// carries none until rendering work is registered.
+/// and the render worker each run one engine worker per queue they register work
+/// on, so every queue they serve reports a running worker.
 /// </summary>
 public sealed class CompositionTopologyTests
 {
@@ -31,8 +31,6 @@ public sealed class CompositionTopologyTests
     private const string WorkerRunning = "worker running";
 
     private const string WorkerStopped = "worker stopped";
-
-    private const string NoRegisteredWork = "no registered work";
 
     private const string ApplicationRole = "reportservice";
     private const string BootstrapRole = "postgres";
