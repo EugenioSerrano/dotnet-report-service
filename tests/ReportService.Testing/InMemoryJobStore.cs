@@ -29,6 +29,7 @@ public sealed partial class InMemoryJobStore : IJobStore
     private int _findCalls;
     private int _failCalls;
     private int _findStatusCalls;
+    private int _listArtifactCalls;
     private int _progressWriteCalls;
 
     /// <summary>Creates the store over the upload records it checks an acceptance against.</summary>
@@ -56,6 +57,9 @@ public sealed partial class InMemoryJobStore : IJobStore
 
     /// <summary>How many times <see cref="FindStatusAsync"/> was called.</summary>
     public int FindStatusCalls => Volatile.Read(ref _findStatusCalls);
+
+    /// <summary>How many times <see cref="ListArtifactsAsync"/> was called.</summary>
+    public int ListArtifactCalls => Volatile.Read(ref _listArtifactCalls);
 
     /// <summary>How many times <see cref="RecordRecordsReadAsync"/> was called.</summary>
     public int ProgressWriteCalls => Volatile.Read(ref _progressWriteCalls);

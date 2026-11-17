@@ -246,6 +246,7 @@ public sealed partial class InMemoryJobStore
     {
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(consumerId);
+        Interlocked.Increment(ref _listArtifactCalls);
 
         lock (_gate)
         {

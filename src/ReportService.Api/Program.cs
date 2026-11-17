@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ReportService.Api.Artifacts;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
@@ -53,5 +54,6 @@ app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
 app.MapCreateReportJobEndpoint();
 app.MapReportJobStatusEndpoint();
+app.MapArtifactListEndpoint();
 app.MapGetTemplateVersionEndpoint();
 app.Run();

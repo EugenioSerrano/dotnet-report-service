@@ -33,9 +33,12 @@ public sealed class ConsumerRefusalMetrics : IDisposable
     /// <summary>The operation that reads one report job's status.</summary>
     public const string JobStatusOperation = "job-status";
 
+    /// <summary>The operation that lists one report job's published artifacts.</summary>
+    public const string ArtifactListOperation = "artifact-list";
+
     /// <summary>Every operation the gate protects.</summary>
     public static readonly IReadOnlyList<string> Operations =
-        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation, JobStatusOperation];
+        [CreateOperation, StatusOperation, ContentOperation, ConfirmOperation, TemplateVersionOperation, JobStatusOperation, ArtifactListOperation];
 
     private readonly Meter _meter;
     private readonly Counter<long> _refusals;
