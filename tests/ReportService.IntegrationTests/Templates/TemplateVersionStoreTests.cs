@@ -14,14 +14,17 @@ namespace ReportService.IntegrationTests.Templates;
 /// The taken-version record against a real PostgreSQL 18.6 with the product's
 /// migrations applied: a version is recorded once even when eight takes of it
 /// insert at the same moment, and the losers read the winner; the table's own
-/// checks refuse a row the product can never write; a recorded manifest reads
-/// back as the same document through <c>jsonb</c> - every member and every
-/// value - while the member order and the spacing of the column's own text are
-/// never part of the contract; and the pin the next change adds compiles against
-/// the table it pins to.
+/// checks refuse a row the product can never write, and its two taken shapes are
+/// the only ones it admits; a recorded manifest reads back as the same document
+/// through <c>jsonb</c> - every member and every value - while the member order
+/// and the spacing of the column's own text are never part of the contract; and
+/// the pin's three shapes and its set-once tuple hold on the delivered constraint
+/// and trigger.
 /// </summary>
 public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
+    private static readonly DateTimeOffset Now = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
+
     private readonly PostgresFixture _fixture;
 
     private string _connectionString = string.Empty;
@@ -154,22 +157,35 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
         Assert.Equal(record.PackageSha256, read.PackageSha256);
     }
 
-    public static TheoryData<string, string> MixedTakenShapes => new()
+    public static TheoryData<string, string, string> RefusedTakenShapes => new()
     {
-        { "commit_sha = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678'", "template_versions_provenance" },
-        { "source_tree_sha = 'b2c3d4e5f60718293a4b5c6d7e8f90123456789a'", "template_versions_provenance" },
-        { "source_descriptor_key = NULL", "template_versions_provenance" },
-        { "source_descriptor_sha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'", "template_versions_source_descriptor_sha256" },
+        // A storage-taken row with one Git column, with a part of the source trio,
+        // with neither shape, or with a descriptor hash outside the 64-hex syntax.
+        { "storage", "commit_sha = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678'", "template_versions_provenance" },
+        { "storage", "source_tree_sha = 'b2c3d4e5f60718293a4b5c6d7e8f90123456789a'", "template_versions_provenance" },
+        { "storage", "source_descriptor_key = NULL", "template_versions_provenance" },
+        { "storage", "source_objects = NULL", "template_versions_provenance" },
+        { "storage", "commit_sha = NULL, source_tree_sha = NULL, source_descriptor_sha256 = NULL, source_descriptor_key = NULL, source_objects = NULL", "template_versions_provenance" },
+        { "storage", "source_descriptor_sha256 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'", "template_versions_source_descriptor_sha256" },
+
+        // A Git-taken row with one column of the pair, with neither shape, or with
+        // a source column beside its Git pair.
+        { "git", "source_tree_sha = NULL", "template_versions_provenance" },
+        { "git", "commit_sha = NULL", "template_versions_provenance" },
+        { "git", "commit_sha = NULL, source_tree_sha = NULL", "template_versions_provenance" },
+        { "git", "source_descriptor_sha256 = 'd0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f', source_descriptor_key = 'template-source/key.json', source_objects = '[]'::jsonb", "template_versions_provenance" },
     };
 
     [Theory]
-    [MemberData(nameof(MixedTakenShapes))]
-    public async Task TheTableRefusesAMixtureOfTheTwoTakenShapes(string assignment, string constraint)
+    [MemberData(nameof(RefusedTakenShapes))]
+    public async Task TheTableRefusesAMixtureOfTheTwoTakenShapes(string shape, string assignment, string constraint)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var store = new PostgresTemplateVersionStore(_dataSource!);
         var templateId = "mixture-" + Guid.NewGuid().ToString("N");
-        var record = TemplateVersionRecords.StorageSample(templateId: templateId, version: "1.1.0");
+        var record = shape == "git"
+            ? Record(templateId)
+            : TemplateVersionRecords.StorageSample(templateId: templateId, version: "1.1.0");
         Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
 
         await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
@@ -203,54 +219,206 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
     }
 
     [Fact]
-    public async Task ThePinsColumnsCompileAgainstTheTableTheyPointAt()
+    public async Task ThePinsDeliveredShapesAdmitAbsentGitAndStorage()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition("CREATE SCHEMA scratch_pin", cancellationToken: cancellationToken));
+        var store = new PostgresTemplateVersionStore(_dataSource!);
 
-        // The table the pin points at, in the scratch schema, with the product's own check list.
-        await connection.ExecuteAsync(new CommandDefinition(
-            """
-            CREATE TABLE scratch_pin.template_references (
-                template_id text NOT NULL,
-                PRIMARY KEY (template_id)
-            );
-            CREATE TABLE scratch_pin.template_versions (LIKE report_service.template_versions INCLUDING ALL);
-            """,
-            cancellationToken: cancellationToken));
+        // Absent: the reference as acceptance writes it, no pin column set.
+        var gitVersion = Record("pin-absent");
+        Assert.True((await store.TryInsertAsync(gitVersion, cancellationToken)).WasInserted);
+        var absentJob = await NewJobAsync(gitVersion.TemplateId, gitVersion.Version, cancellationToken);
+        Assert.Null(await PinColumnAsync(absentJob, "resolved_version", cancellationToken));
+        Assert.Null(await PinColumnAsync(absentJob, "commit_sha", cancellationToken));
+        Assert.Null(await PinColumnAsync(absentJob, "source_descriptor_sha256", cancellationToken));
+        Assert.Null(await PinColumnAsync(absentJob, "source_objects", cancellationToken));
+        Assert.Null(await PinColumnAsync(absentJob, "resolved_at", cancellationToken));
 
-        // The pin of the change that writes it: every resolved column, tied to the record,
-        // in exactly one of the two complete shapes or absent — never a mixture.
-        await connection.ExecuteAsync(new CommandDefinition(
-            """
-            ALTER TABLE scratch_pin.template_references
-                ADD COLUMN resolved_version          text        NULL,
-                ADD COLUMN commit_sha                text        NULL,
-                ADD COLUMN source_descriptor_sha256  text        NULL,
-                ADD COLUMN package_sha256            text        NULL,
-                ADD COLUMN source_objects            jsonb       NULL,
-                ADD COLUMN engine                    text        NULL,
-                ADD COLUMN engine_version            text        NULL,
-                ADD COLUMN schema_ref                text        NULL,
-                ADD COLUMN resolved_at               timestamptz NULL,
-                ADD CONSTRAINT template_references_pin_version
-                    FOREIGN KEY (template_id, resolved_version)
-                    REFERENCES scratch_pin.template_versions (template_id, version),
-                ADD CONSTRAINT template_references_pin_shapes CHECK (
-                    num_nonnulls(resolved_version, commit_sha, source_descriptor_sha256, package_sha256,
-                                 source_objects, engine, engine_version, schema_ref, resolved_at) = 0
-                    OR
-                    (commit_sha IS NOT NULL AND source_descriptor_sha256 IS NULL AND source_objects IS NULL
-                     AND num_nonnulls(resolved_version, commit_sha, package_sha256, engine, engine_version,
-                                      schema_ref, resolved_at) = 7)
-                    OR
-                    (commit_sha IS NULL AND source_descriptor_sha256 IS NOT NULL AND source_objects IS NOT NULL
-                     AND num_nonnulls(resolved_version, source_descriptor_sha256, package_sha256, source_objects,
-                                      engine, engine_version, schema_ref, resolved_at) = 8));
-            """,
-            cancellationToken: cancellationToken));
+        // Git-taken pin: the commit and the six columns that complete it, no source column.
+        var gitJob = await NewJobAsync(gitVersion.TemplateId, gitVersion.Version, cancellationToken);
+        await ExecuteAsync(GitPinSql, GitPinParameters(gitJob, gitVersion), cancellationToken);
+        Assert.Equal(gitVersion.Version, await PinColumnAsync(gitJob, "resolved_version", cancellationToken));
+        Assert.Equal(TemplateVersionRecords.CommitSha, await PinColumnAsync(gitJob, "commit_sha", cancellationToken));
+        Assert.Null(await PinColumnAsync(gitJob, "source_descriptor_sha256", cancellationToken));
+        Assert.Null(await PinColumnAsync(gitJob, "source_objects", cancellationToken));
+        Assert.NotNull(await PinColumnAsync(gitJob, "resolved_at", cancellationToken));
+
+        // Storage-taken pin: the publication's provenance and no commit.
+        var storageVersion = TemplateVersionRecords.StorageSample(templateId: "pin-storage", version: "1.1.0");
+        Assert.True((await store.TryInsertAsync(storageVersion, cancellationToken)).WasInserted);
+        var storageJob = await NewJobAsync(storageVersion.TemplateId, storageVersion.Version, cancellationToken);
+        await ExecuteAsync(StoragePinSql, StoragePinParameters(storageJob, storageVersion), cancellationToken);
+        Assert.Equal(storageVersion.Version, await PinColumnAsync(storageJob, "resolved_version", cancellationToken));
+        Assert.Null(await PinColumnAsync(storageJob, "commit_sha", cancellationToken));
+        Assert.Equal(storageVersion.SourceDescriptorSha256, await PinColumnAsync(storageJob, "source_descriptor_sha256", cancellationToken));
+        Assert.NotNull(await PinColumnAsync(storageJob, "source_objects", cancellationToken));
+        Assert.NotNull(await PinColumnAsync(storageJob, "resolved_at", cancellationToken));
     }
+
+    [Theory]
+    [InlineData("both-sources")]
+    [InlineData("storage-without-objects")]
+    [InlineData("git-without-commit")]
+    public async Task ThePinsDeliveredConstraintRefusesEveryMixture(string mixture)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new PostgresTemplateVersionStore(_dataSource!);
+        var storageVersion = TemplateVersionRecords.StorageSample(
+            templateId: "pin-mixed-" + Guid.NewGuid().ToString("N"),
+            version: "1.1.0");
+        Assert.True((await store.TryInsertAsync(storageVersion, cancellationToken)).WasInserted);
+        var job = await NewJobAsync(storageVersion.TemplateId, storageVersion.Version, cancellationToken);
+
+        var (sql, parameters) = mixture switch
+        {
+            "both-sources" => (BothSourcesPinSql, BothSourcesPinParameters(job, storageVersion)),
+            "storage-without-objects" => (StorageWithoutObjectsPinSql, StorageWithoutObjectsPinParameters(job, storageVersion)),
+            "git-without-commit" => (GitWithoutCommitPinSql, GitWithoutCommitPinParameters(job, storageVersion)),
+            _ => throw new InvalidOperationException($"the case {mixture} has no statement"),
+        };
+
+        var exception = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(sql, parameters, cancellationToken));
+
+        Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+        Assert.Equal("template_references_pin_shapes", exception.ConstraintName);
+        Assert.Null(await PinColumnAsync(job, "resolved_at", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ThePinsDeliveredGuardKeepsThePublicationProvenanceSetOnce()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = new PostgresTemplateVersionStore(_dataSource!);
+        var storageVersion = TemplateVersionRecords.StorageSample(templateId: "pin-guard", version: "1.1.0");
+        Assert.True((await store.TryInsertAsync(storageVersion, cancellationToken)).WasInserted);
+        var job = await NewJobAsync(storageVersion.TemplateId, storageVersion.Version, cancellationToken);
+        await ExecuteAsync(StoragePinSql, StoragePinParameters(job, storageVersion), cancellationToken);
+        var pinnedDescriptor = await PinColumnAsync(job, "source_descriptor_sha256", cancellationToken);
+        var pinnedObjects = await PinColumnAsync(job, "source_objects", cancellationToken);
+
+        var descriptor = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            "UPDATE report_service.template_references SET source_descriptor_sha256 = @Other WHERE report_job_id = @ReportJobId",
+            new { Other = new string('d', 64), ReportJobId = job },
+            cancellationToken));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, descriptor.SqlState);
+        Assert.Contains("set once", descriptor.MessageText, StringComparison.Ordinal);
+
+        var objects = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
+            "UPDATE report_service.template_references SET source_objects = '[]'::jsonb WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = job },
+            cancellationToken));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, objects.SqlState);
+        Assert.Contains("set once", objects.MessageText, StringComparison.Ordinal);
+
+        Assert.Equal(pinnedDescriptor, await PinColumnAsync(job, "source_descriptor_sha256", cancellationToken));
+        Assert.Equal(pinnedObjects, await PinColumnAsync(job, "source_objects", cancellationToken));
+    }
+
+    private const string GitPinSql =
+        """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version, commit_sha = @CommitSha, package_sha256 = @PackageSha256,
+               engine = @Engine, engine_version = @EngineVersion, schema_ref = @SchemaRef, resolved_at = @Now
+         WHERE report_job_id = @ReportJobId
+        """;
+
+    private const string StoragePinSql =
+        """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version, source_descriptor_sha256 = @SourceDescriptorSha256,
+               package_sha256 = @PackageSha256, source_objects = CAST(@ObjectsJson AS jsonb),
+               engine = @Engine, engine_version = @EngineVersion, schema_ref = @SchemaRef, resolved_at = @Now
+         WHERE report_job_id = @ReportJobId
+        """;
+
+    private const string BothSourcesPinSql =
+        """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version, commit_sha = @CommitSha,
+               source_descriptor_sha256 = @SourceDescriptorSha256, package_sha256 = @PackageSha256,
+               source_objects = CAST(@ObjectsJson AS jsonb),
+               engine = @Engine, engine_version = @EngineVersion, schema_ref = @SchemaRef, resolved_at = @Now
+         WHERE report_job_id = @ReportJobId
+        """;
+
+    private const string StorageWithoutObjectsPinSql =
+        """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version, source_descriptor_sha256 = @SourceDescriptorSha256,
+               package_sha256 = @PackageSha256,
+               engine = @Engine, engine_version = @EngineVersion, schema_ref = @SchemaRef, resolved_at = @Now
+         WHERE report_job_id = @ReportJobId
+        """;
+
+    private const string GitWithoutCommitPinSql =
+        """
+        UPDATE report_service.template_references
+           SET resolved_version = @Version, package_sha256 = @PackageSha256,
+               engine = @Engine, engine_version = @EngineVersion, schema_ref = @SchemaRef, resolved_at = @Now
+         WHERE report_job_id = @ReportJobId
+        """;
+
+    private static object GitPinParameters(string reportJobId, TemplateVersionRecord version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version.Version,
+        CommitSha = TemplateVersionRecords.CommitSha,
+        PackageSha256 = version.PackageSha256,
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = version.EngineVersion,
+        SchemaRef = version.SchemaRef,
+        Now = Now.UtcDateTime,
+    };
+
+    private static object StoragePinParameters(string reportJobId, TemplateVersionRecord version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version.Version,
+        SourceDescriptorSha256 = version.SourceDescriptorSha256,
+        PackageSha256 = version.PackageSha256,
+        ObjectsJson = TemplateSourceObjects.Write(version.SourceObjects!),
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = version.EngineVersion,
+        SchemaRef = version.SchemaRef,
+        Now = Now.UtcDateTime,
+    };
+
+    private static object BothSourcesPinParameters(string reportJobId, TemplateVersionRecord version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version.Version,
+        CommitSha = TemplateVersionRecords.CommitSha,
+        SourceDescriptorSha256 = version.SourceDescriptorSha256,
+        PackageSha256 = version.PackageSha256,
+        ObjectsJson = TemplateSourceObjects.Write(version.SourceObjects!),
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = version.EngineVersion,
+        SchemaRef = version.SchemaRef,
+        Now = Now.UtcDateTime,
+    };
+
+    private static object StorageWithoutObjectsPinParameters(string reportJobId, TemplateVersionRecord version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version.Version,
+        SourceDescriptorSha256 = version.SourceDescriptorSha256,
+        PackageSha256 = version.PackageSha256,
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = version.EngineVersion,
+        SchemaRef = version.SchemaRef,
+        Now = Now.UtcDateTime,
+    };
+
+    private static object GitWithoutCommitPinParameters(string reportJobId, TemplateVersionRecord version) => new
+    {
+        ReportJobId = reportJobId,
+        Version = version.Version,
+        PackageSha256 = version.PackageSha256,
+        Engine = TemplateEngineNames.ToStoredText(TemplateEngine.Scriban),
+        EngineVersion = version.EngineVersion,
+        SchemaRef = version.SchemaRef,
+        Now = Now.UtcDateTime,
+    };
 
     private static async Task<TemplateVersionInsert> InsertAsync(
         PostgresTemplateVersionStore store,
@@ -260,6 +428,63 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
 
     private static TemplateVersionRecord Record(string templateId) =>
         TemplateVersionRecords.Sample(templateId, "1.1.0", engineVersion: TemplateEngineCatalog.ScribanVersion);
+
+    /// <summary>Seeds one accepted job over a ready upload and its exact template reference.</summary>
+    /// <param name="templateId">The template the reference names.</param>
+    /// <param name="version">The version the reference asks for.</param>
+    /// <param name="cancellationToken">The case's token.</param>
+    private async Task<string> NewJobAsync(string templateId, string version, CancellationToken cancellationToken)
+    {
+        var jobId = "job-" + Guid.NewGuid().ToString("N");
+        var uploadId = "upload-" + Guid.NewGuid().ToString("N");
+        await ExecuteAsync(
+            """
+            INSERT INTO report_service.uploads
+                (upload_id, consumer_id, mode, declared_profile, status, staging_key, created_at, expires_at, completed_at)
+            VALUES
+                (@UploadId, 'dev-consumer', 'API_STREAM', 'HEADER_ITEMS_V1', 'READY', @StagingKey, @Now, @ExpiresAt, @Now)
+            """,
+            new
+            {
+                UploadId = uploadId,
+                StagingKey = "staging/" + uploadId + "/content",
+                Now = Now.UtcDateTime,
+                ExpiresAt = Now.AddHours(1).UtcDateTime,
+            },
+            cancellationToken);
+        await ExecuteAsync(
+            """
+            INSERT INTO report_service.report_jobs
+                (report_job_id, consumer_id, upload_id, status, report_clock, created_at)
+            VALUES (@ReportJobId, 'dev-consumer', @UploadId, 'QUEUED', @Now, @Now)
+            """,
+            new { ReportJobId = jobId, UploadId = uploadId, Now = Now.UtcDateTime },
+            cancellationToken);
+        await ExecuteAsync(
+            """
+            INSERT INTO report_service.template_references
+                (report_job_id, template_id, reference_form, requested_version, baseline_version)
+            VALUES (@ReportJobId, @TemplateId, 'EXACT', @Version, NULL)
+            """,
+            new { ReportJobId = jobId, TemplateId = templateId, Version = version },
+            cancellationToken);
+        return jobId;
+    }
+
+    private async Task<object?> PinColumnAsync(string reportJobId, string column, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync(new CommandDefinition(
+            $"SELECT {column} FROM report_service.template_references WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
+    private async Task ExecuteAsync(string sql, object parameters, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
 
     private async Task<long> ScalarAsync(CancellationToken cancellationToken, string sql)
     {
