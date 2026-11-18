@@ -62,6 +62,9 @@ samples/datasets/header-items-v1.*.json
 # Object storage root of the local composition (shared by the API and the workers)
 .storage/
 
+# Template source root of the local composition (the source class, mounted read-only into the PDF worker)
+.template-source/
+
 # Visual Studio per-user state (never committed)
 .vs/
 

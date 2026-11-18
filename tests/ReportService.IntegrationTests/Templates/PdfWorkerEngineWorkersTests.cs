@@ -130,7 +130,7 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
 
         await StartEngineAsync(cancellationToken);
 
-        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        _source = await TemplateSourceClass.CreateAsync(SourceRoot());
         await _source.PublishAsync(
             Template,
             Version,
@@ -458,12 +458,16 @@ public sealed class PdfWorkerEngineWorkersTests : IClassFixture<PostgresFixture>
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", SourceRoot());
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
+
+    private string SourceRoot() => Path.Combine(_directory, "template-source");
 
     private static async Task WaitForHealthyAsync(HttpClient client, TimeSpan deadline, CancellationToken cancellationToken) =>
         await Wait.UntilAsync(

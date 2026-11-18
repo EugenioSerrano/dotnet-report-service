@@ -64,13 +64,17 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         var (version, files) = SamplePackage(templateId);
-        var source = await TemplateSourceClass.CreateAsync(storageRoot);
+
+        // The source's own root, beside the storage root the class's other hosts write to:
+        // the worker reads the class a publisher creates, and this fixture is that publisher.
+        var sourceRoot = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(storageRoot))!, "template-source");
+        var source = await TemplateSourceClass.CreateAsync(sourceRoot);
         await source.PublishAsync(templateId, version, files);
 
         WebApplicationFactory<PdfWorker>? worker = null;
         try
         {
-            worker = Worker(enginePort, connectionString, storageRoot, logs);
+            worker = Worker(enginePort, connectionString, storageRoot, sourceRoot, logs);
             using var client = worker.CreateClient();
             await Wait.UntilAsync(
                 "the render worker answering its health check",
@@ -111,6 +115,7 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         int enginePort,
         string connectionString,
         string storageRoot,
+        string sourceRoot,
         LogCapture? logs) =>
         new WebApplicationFactory<PdfWorker>().WithWebHostBuilder(builder =>
         {
@@ -119,6 +124,8 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", storageRoot);
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", sourceRoot);
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             if (logs is not null)

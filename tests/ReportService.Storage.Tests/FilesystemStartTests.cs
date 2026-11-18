@@ -14,6 +14,9 @@ namespace ReportService.Storage.Tests;
 public sealed class FilesystemStartTests : IDisposable
 {
     private const string RootSetting = "Storage:Filesystem:Root";
+
+    private const string Section = "TemplateSource:Store:Filesystem";
+
     private readonly TemporaryRoot _directory = new();
 
     public void Dispose() => _directory.Dispose();
@@ -219,8 +222,160 @@ public sealed class FilesystemStartTests : IDisposable
         Assert.Throws<ArgumentException>(() => new ServiceCollection().AddFilesystemObjectStore(_ => new FilesystemStorageOptions(), " "));
     }
 
+    [Fact]
+    public async Task AReadOnlyRootListsAndReadsEvenThoughItCannotBeWritten()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var root = Path.Combine(_directory.Path, "source");
+        var writable = Open(new FilesystemStorageOptions { Root = root, CreateIfMissing = true });
+        var key = ObjectKey.FromSegments("template-source", "invoice-energy", "published", "1.1.0", new string('a', 64) + ".json");
+        var content = new byte[] { 1, 2, 3 };
+        var write = await writable.WriteAsync(key, new MemoryStream(content, writable: false), cancellationToken);
+        Assert.True(write.Succeeded, write.Error?.Code);
+
+        using (new UnwritableDirectory(root))
+        {
+            var store = OpenReadOnly(new FilesystemStorageOptions { Root = root });
+            Assert.Equal(root, store.Root);
+            Assert.Equal(0, store.SweptTemporaryFiles);
+
+            var listed = new List<ObjectInfo>();
+            await foreach (var entry in store.ListAsync("template-source", cancellationToken))
+            {
+                listed.Add(entry);
+            }
+
+            Assert.Equal(key.ToString(), Assert.Single(listed).Key.ToString());
+
+            var read = await store.OpenReadAsync(key, content.Length, write.Value!.Sha256, cancellationToken);
+            Assert.True(read.Succeeded, read.Error?.Code);
+            await using var verified = read.Value!;
+            using var copy = new MemoryStream();
+            await verified.Content.CopyToAsync(copy, cancellationToken);
+            Assert.Equal(content, copy.ToArray());
+        }
+    }
+
+    [Fact]
+    public void AMissingReadOnlyRootStopsTheStartNamingTheGivenSection()
+    {
+        var root = Path.Combine(_directory.Path, "absent");
+
+        var error = Assert.Throws<StorageConfigurationException>(() => OpenReadOnly(new FilesystemStorageOptions { Root = root }));
+
+        Assert.Equal(Section + ":Root", error.Setting);
+        Assert.Equal("the directory does not exist", error.Reason);
+        Assert.DoesNotContain(root, error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(Directory.Exists(root));
+    }
+
+    [Fact]
+    public void AReadOnlyRootThatIsAFileStopsTheStartNamingTheGivenSection()
+    {
+        var file = Path.Combine(_directory.Path, "a-file");
+        File.WriteAllText(file, "x");
+
+        var error = Assert.Throws<StorageConfigurationException>(() => OpenReadOnly(new FilesystemStorageOptions { Root = file }));
+
+        Assert.Equal(Section + ":Root", error.Setting);
+        Assert.Equal("is not a directory", error.Reason);
+    }
+
+    [Fact]
+    public void AReadOnlyRootThatMayBeCreatedIsRefused()
+    {
+        var root = Path.Combine(_directory.Path, "created");
+
+        var error = Assert.Throws<StorageConfigurationException>(() => OpenReadOnly(new FilesystemStorageOptions { Root = root, CreateIfMissing = true }));
+
+        Assert.Equal(Section + ":CreateIfMissing", error.Setting);
+        Assert.Contains("must be false", error.Reason, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(root));
+    }
+
+    [Fact]
+    public void TheReadOnlyOpeningLeavesNoProbeAndSweepsNothing()
+    {
+        var root = Path.Combine(_directory.Path, "source");
+        Directory.CreateDirectory(root);
+        var stale = Write(root, ".object.tmp-0123456789abcdef0123456789abcdef", DateTimeOffset.UtcNow.AddDays(-3));
+
+        var store = OpenReadOnly(new FilesystemStorageOptions { Root = root });
+
+        Assert.Equal(0, store.SweptTemporaryFiles);
+        Assert.True(File.Exists(stale));
+        Assert.Equal(stale, Assert.Single(Directory.EnumerateFileSystemEntries(root)));
+    }
+
+    [Fact]
+    public async Task AReadOnlyStoreWritesAndDeletesNothingItWasAskedTo()
+    {
+        var root = Path.Combine(_directory.Path, "source");
+        Directory.CreateDirectory(root);
+        var key = ObjectKey.FromSegments("template-source", "invoice-energy", "published", "1.1.0", new string('a', 64) + ".json");
+        using (new UnwritableDirectory(root))
+        {
+            var store = OpenReadOnly(new FilesystemStorageOptions { Root = root });
+
+            var write = await store.WriteAsync(key, new MemoryStream([1, 2, 3], writable: false), TestContext.Current.CancellationToken);
+
+            Assert.False(write.Succeeded);
+            Assert.False(Directory.Exists(Path.Combine(root, "template-source")));
+        }
+    }
+
+    [Fact]
+    public void TheWritableOpeningStillRefusesTheRootTheReadOnlyOneAccepts()
+    {
+        var root = Path.Combine(_directory.Path, "source");
+        Directory.CreateDirectory(root);
+        using (new UnwritableDirectory(root))
+        {
+            var error = Assert.Throws<StorageConfigurationException>(() => Open(new FilesystemStorageOptions { Root = root }));
+
+            Assert.Equal(RootSetting, error.Setting);
+            Assert.Equal("the directory is not writable", error.Reason);
+            Assert.NotNull(OpenReadOnly(new FilesystemStorageOptions { Root = root }));
+        }
+    }
+
+    [Fact]
+    public void OpenReadOnlyChecksItsArguments()
+    {
+        var options = new FilesystemStorageOptions { Root = _directory.Path };
+        var logger = NullLogger<FilesystemObjectStore>.Instance;
+
+        Assert.Throws<ArgumentNullException>(() => FilesystemObjectStore.OpenReadOnly(null!, Section, _directory.Path, logger));
+        Assert.Throws<ArgumentException>(() => FilesystemObjectStore.OpenReadOnly(options, " ", _directory.Path, logger));
+        Assert.Throws<ArgumentException>(() => FilesystemObjectStore.OpenReadOnly(options, Section, " ", logger));
+        Assert.Throws<ArgumentNullException>(() => FilesystemObjectStore.OpenReadOnly(options, Section, _directory.Path, null!));
+    }
+
+    [Fact]
+    public void AReadOnlyRegistrationIsReachableUnderItsKeyOnly()
+    {
+        var services = new ServiceCollection()
+            .AddLogging()
+            .AddReadOnlyFilesystemObjectStore(
+                "template-source-store",
+                _ => new FilesystemStorageOptions { Root = "source" },
+                Section,
+                _directory.Path);
+        Directory.CreateDirectory(Path.Combine(_directory.Path, "source"));
+        using var provider = services.BuildServiceProvider();
+
+        var store = provider.GetRequiredKeyedService<IObjectStore>("template-source-store");
+
+        Assert.IsType<FilesystemObjectStore>(store);
+        Assert.Null(provider.GetService<IObjectStore>());
+        Assert.Null(provider.GetService<FilesystemObjectStore>());
+    }
+
     private FilesystemObjectStore Open(FilesystemStorageOptions options) =>
         FilesystemObjectStore.Open(options, _directory.Path, TimeProvider.System, _directory.LoggerFactory.CreateLogger<FilesystemObjectStore>());
+
+    private FilesystemObjectStore OpenReadOnly(FilesystemStorageOptions options, string section = Section) =>
+        FilesystemObjectStore.OpenReadOnly(options, section, _directory.Path, _directory.LoggerFactory.CreateLogger<FilesystemObjectStore>());
 
     private static string Write(string directory, string name, DateTimeOffset lastWrite)
     {

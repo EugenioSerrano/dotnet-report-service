@@ -120,6 +120,14 @@ public sealed class CompositionTopologyTests
             Assert.Equal("Healthy", engine.GetProperty("status").GetString());
             Assert.Equal("worker running", engine.GetProperty("data").GetProperty("queues").GetProperty("report-pdf-rendering").GetString());
 
+            // The source's own check, beside the writable store's: it states the provider, the
+            // class and the descriptor contract version this build reads before a job is taken.
+            var source = Check(health, "template-source");
+            Assert.Equal("Healthy", source.GetProperty("status").GetString());
+            Assert.Equal("filesystem", source.GetProperty("data").GetProperty("provider").GetString());
+            Assert.Equal("template-source", source.GetProperty("data").GetProperty("class").GetString());
+            Assert.Equal("1.0", source.GetProperty("data").GetProperty("descriptorVersions")[0].GetString());
+
             // The worker serves the take, which publishes a record, so it carries the
             // metadata database check and needs the migrations to have run.
             Assert.Contains(

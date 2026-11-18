@@ -1,13 +1,18 @@
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
+using ReportService.Storage.Filesystem;
 using ReportService.TemplateSource;
+using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Workers.Pdf.Templates;
 using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 using Temporalio.Exceptions;
 
 namespace ReportService.Workers.Pdf.Tests.Templates;
@@ -95,21 +100,89 @@ public sealed class TemplateTakeRegistrationTests
         new Temporalio.Testing.ActivityEnvironment().RunAsync(
             () => activity.RunAsync(new TakeTemplateVersionInput(templateId, version, consumer, "job-1")));
 
-    private static IHost Build(out IReadOnlyList<TaskQueueWork> registrations)
+    private static IHost Build(out IReadOnlyList<TaskQueueWork> registrations) =>
+        Build(out registrations, sourceRoot: null, processStore: null);
+
+    private static IHost Build(
+        out IReadOnlyList<TaskQueueWork> registrations,
+        string? sourceRoot,
+        IObjectStore? processStore)
     {
+        var directory = Directory.CreateTempSubdirectory("report-service-b072-");
+        var root = sourceRoot ?? Path.Combine(directory.FullName, "template-source");
+        Directory.CreateDirectory(root);
+
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Development" });
+        builder.Services.AddSingleton(new TemporaryTree(directory.FullName));
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             [DatabaseOptions.ConnectionStringSetting] = "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=1",
             [DatabaseOptions.ExpectedSchemaVersionSetting] = "0000",
+            ["Storage:Provider"] = "filesystem",
+            ["TemplateSource:Store:Filesystem:Root"] = root,
+            ["TemplateSource:Store:Filesystem:CreateIfMissing"] = "false",
         });
-        builder.Services.AddSingleton<IObjectStore>(new NoObjects());
+        builder.Services.AddSingleton(processStore ?? new NoObjects());
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();
         var host = builder.Build();
         registrations = [.. host.Services.GetServices<TaskQueueWork>()];
         return host;
+    }
+
+    /// <summary>A directory the host removes when it is disposed.</summary>
+    private sealed class TemporaryTree(string path) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task TheReaderReadsThroughTheSourcesOwnInstanceAndNeverThroughTheProcessStore()
+    {
+        var directory = Directory.CreateTempSubdirectory("report-service-b072-case-");
+        try
+        {
+            var storageRoot = Path.Combine(directory.FullName, "storage");
+            var sourceRoot = Path.Combine(directory.FullName, "template-source");
+            Directory.CreateDirectory(storageRoot);
+
+            var classStore = await TemplateSourceClass.CreateAsync(sourceRoot);
+            await classStore.PublishAsync(
+                "invoice-energy",
+                "1.1.0",
+                new Dictionary<string, byte[]>(StringComparer.Ordinal)
+                {
+                    ["template.yaml"] = Encoding.UTF8.GetBytes("id: invoice-energy\nversion: 1.1.0\n"),
+                });
+
+            var processStore = new SourceClassStore(FilesystemObjectStore.Open(
+                new FilesystemStorageOptions { Root = storageRoot, CreateIfMissing = true },
+                storageRoot,
+                TimeProvider.System,
+                NullLogger<FilesystemObjectStore>.Instance));
+
+            using var host = Build(out _, sourceRoot, processStore);
+            var reader = host.Services.GetRequiredService<ITemplateSourceReader>();
+
+            var read = await reader.ReadVersionAsync("invoice-energy", "1.1.0", TestContext.Current.CancellationToken);
+
+            Assert.IsType<SourceVersionRead.Found>(read);
+            Assert.Empty(processStore.SourceOperations);
+            Assert.DoesNotContain(processStore.Operations, operation => operation.Verb is "write" or "delete");
+            Assert.False(Directory.Exists(Path.Combine(sourceRoot, "staging")));
+            await classStore.DisposeAsync();
+        }
+        finally
+        {
+            Directory.Delete(directory.FullName, recursive: true);
+        }
     }
 
     /// <summary>A store the registration cases never reach; resolving the graph needs one.</summary>

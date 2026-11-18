@@ -12,7 +12,7 @@ public enum TemplateSourceFailure
     /// <summary>The source could not be reached, did not answer in time, answered with a server fault, or answered with bytes that did not verify.</summary>
     Unreachable,
 
-    /// <summary>The source answered that the repository, the branch or the credential is not usable.</summary>
+    /// <summary>The source answered that the class it reads, the root it reads it from, or the credential it reads with is not usable.</summary>
     Misconfigured,
 
     /// <summary>The package exceeds a bound this deployment sets: too many files, a file too large, a package too large, a truncated tree.</summary>

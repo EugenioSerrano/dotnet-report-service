@@ -124,6 +124,66 @@ public sealed partial class FilesystemObjectStore : IObjectStore
         return new FilesystemObjectStore(root, options.BufferBytes, swept, logger);
     }
 
+    /// <summary>
+    /// Opens the store for reading only: the same argument checks and root
+    /// resolution as <see cref="Open"/>, and then nothing that writes. The root
+    /// must exist and must be a directory — it is never created — and no
+    /// writability probe runs and no stale temporary file is swept, so a root a
+    /// publisher owns and a service user may only read opens without a refusal.
+    /// The section the refusal names is <paramref name="sectionPath"/>'s, so a
+    /// deployment reads which of its settings is wrong. Throws
+    /// <see cref="StorageConfigurationException"/> naming the setting and never
+    /// its value.
+    /// </summary>
+    /// <param name="options">The provider's settings for this instance.</param>
+    /// <param name="sectionPath">The configuration section the settings were bound from.</param>
+    /// <param name="contentRootPath">The directory a relative root is resolved against.</param>
+    /// <param name="logger">The store's log.</param>
+    public static FilesystemObjectStore OpenReadOnly(
+        FilesystemStorageOptions options,
+        string sectionPath,
+        string contentRootPath,
+        ILogger<FilesystemObjectStore> logger)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sectionPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentRootPath);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        var rootSetting = sectionPath + ":" + nameof(FilesystemStorageOptions.Root);
+        if (options.Validate().FirstOrDefault() is { } problem)
+        {
+            throw new StorageConfigurationException($"{sectionPath}:{problem.Setting}", problem.Reason);
+        }
+
+        if (options.CreateIfMissing)
+        {
+            throw new StorageConfigurationException(
+                $"{sectionPath}:{nameof(FilesystemStorageOptions.CreateIfMissing)}",
+                "must be false: a read-only store never creates its root");
+        }
+
+        var root = Path.GetFullPath(options.Root!, contentRootPath);
+        if (File.Exists(root))
+        {
+            throw new StorageConfigurationException(rootSetting, "is not a directory");
+        }
+
+        if (!Directory.Exists(root))
+        {
+            throw new StorageConfigurationException(rootSetting, "the directory does not exist");
+        }
+
+        if (new DirectoryInfo(root).ResolveLinkTarget(returnFinalTarget: true) is { } target)
+        {
+            root = target.FullName;
+        }
+
+        // Nothing is proved about writing and nothing is swept: the store this
+        // returns reads and lists, and the root belongs to whoever publishes there.
+        return new FilesystemObjectStore(Path.TrimEndingDirectorySeparator(root), options.BufferBytes, 0, logger);
+    }
+
     /// <inheritdoc />
     public async Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken)
     {

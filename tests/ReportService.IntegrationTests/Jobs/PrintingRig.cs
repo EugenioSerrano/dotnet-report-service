@@ -452,7 +452,11 @@ internal sealed class PrintingRig : IAsyncDisposable
 
         await StartEngineAsync(cancellationToken);
 
-        _sourceStore = new SourceClassStore(Objects);
+        _sourceStore = new SourceClassStore(FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = SourcePath(), CreateIfMissing = true },
+            SourcePath(),
+            TimeProvider.System,
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<FilesystemObjectStore>()));
         Source = TemplateSourceClass.Over(_sourceStore);
         await SeedSourceAsync(Source);
 
@@ -585,17 +589,23 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StoragePath());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", SourcePath());
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IObjectStore>();
-                services.AddSingleton<IObjectStore>(_sourceStore!);
+                // The source reads through its own instance, so the class's spy is registered
+                // under the source's key: the writable store stays the deployment's own.
+                services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
+                services.AddKeyedSingleton<IObjectStore>(TemplateSourceStorage.StoreServiceKey, _sourceStore!);
             });
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
 
     private string StoragePath() => Path.Combine(_directory, "storage");
+
+    private string SourcePath() => Path.Combine(_directory, "template-source");
 
     private static async Task WaitForHealthyAsync(HttpClient client, TimeSpan deadline, CancellationToken cancellationToken) =>
         await Wait.UntilAsync(

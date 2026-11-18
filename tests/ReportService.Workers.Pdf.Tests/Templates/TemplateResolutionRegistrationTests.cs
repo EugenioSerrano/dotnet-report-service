@@ -108,11 +108,19 @@ public sealed class TemplateResolutionRegistrationTests
 
     private static IHost Build(out IReadOnlyList<TaskQueueWork> registrations)
     {
+        var directory = Directory.CreateTempSubdirectory("report-service-b072-resolution-");
+        var root = Path.Combine(directory.FullName, "template-source");
+        Directory.CreateDirectory(root);
+
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Development" });
+        builder.Services.AddSingleton(new TemporaryTree(directory.FullName));
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             [DatabaseOptions.ConnectionStringSetting] = "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=1",
             [DatabaseOptions.ExpectedSchemaVersionSetting] = "0000",
+            ["Storage:Provider"] = "filesystem",
+            ["TemplateSource:Store:Filesystem:Root"] = root,
+            ["TemplateSource:Store:Filesystem:CreateIfMissing"] = "false",
         });
         builder.Services.AddSingleton<IObjectStore>(new NoObjects());
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
@@ -122,6 +130,18 @@ public sealed class TemplateResolutionRegistrationTests
         var host = builder.Build();
         registrations = [.. host.Services.GetServices<TaskQueueWork>()];
         return host;
+    }
+
+    /// <summary>A directory the host removes when it is disposed.</summary>
+    private sealed class TemporaryTree(string path) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
     }
 
     /// <summary>A store the registration cases never reach; resolving the graph needs one.</summary>
