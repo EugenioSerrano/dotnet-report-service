@@ -56,6 +56,9 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>The consumer every case submits for.</summary>
     public const string Consumer = "consumer-a";
 
+    /// <summary>The consumer the registry carries as inactive.</summary>
+    public const string InactiveConsumer = "consumer-c";
+
     /// <summary>The sample template every case prints.</summary>
     public const string Template = "pilot-simple";
 
@@ -104,7 +107,14 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private WebApplicationFactory<PdfWorker>? _pdf;
 
+
     private PrintingRig(PostgresFixture fixture) => _fixture = fixture;
+
+    /// <summary>Whether the render worker starts with the composition.</summary>
+    private bool StartPdf { get; init; }
+
+    /// <summary>The clock the API reads, when the case replaces it.</summary>
+    private ManualTimeProvider? Clock { get; init; }
 
     /// <summary>The source class every take and resolution of these cases reads, publishing into the composition's own root.</summary>
     public TemplateSourceClass Source { get; private set; } = null!;
@@ -121,6 +131,12 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>The database the composition uses.</summary>
     public NpgsqlDataSource DataSource => _dataSource!;
 
+    /// <summary>The connection string the composition's database was opened on.</summary>
+    public string ConnectionString => _connectionString!;
+
+    /// <summary>Every line the composition's processes logged.</summary>
+    public LogCapture Logs => _logs;
+
     /// <summary>The root the composition's storage keeps its objects under.</summary>
     public string StorageRoot => Path.Combine(_directory, "storage");
 
@@ -131,9 +147,11 @@ internal sealed class PrintingRig : IAsyncDisposable
     public static async Task<PrintingRig> StartAsync(
         PostgresFixture fixture,
         bool startOrchestration = true,
+        bool startPdf = true,
+        ManualTimeProvider? clock = null,
         CancellationToken cancellationToken = default)
     {
-        var rig = new PrintingRig(fixture);
+        var rig = new PrintingRig(fixture) { StartPdf = startPdf, Clock = clock };
         try
         {
             await rig.OpenAsync(startOrchestration, cancellationToken);
@@ -155,13 +173,21 @@ internal sealed class PrintingRig : IAsyncDisposable
         await WaitForHealthyAsync(_orchestration.CreateClient(), ReadyDeadline, cancellationToken);
     }
 
+    /// <summary>Starts the render worker, which serves the step that prints a job's block.</summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task StartPdfAsync(CancellationToken cancellationToken)
+    {
+        _pdf ??= Pdf();
+        await WaitForHealthyAsync(_pdf.CreateClient(), ReadyDeadline, cancellationToken);
+    }
+
     /// <summary>Stops answering the template source, as an outage of the deployment's store does.</summary>
     public void StopTheSource() => _sourceStore!.Fail = true;
 
     /// <summary>Creates a ready upload of <paramref name="document"/> and answers its identifier.</summary>
     /// <param name="document">The snapshot's bytes.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    public async Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken)
+    public async Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken, string consumer = Consumer)
     {
         var now = DateTimeOffset.UtcNow;
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
@@ -169,7 +195,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         await uploads.CreateAsync(
             new UploadRecord(
                 uploadId,
-                Consumer,
+                consumer,
                 UploadMode.ApiStream,
                 DataProfile.HeaderItemsV1,
                 UploadStatus.Created,
@@ -177,7 +203,7 @@ internal sealed class PrintingRig : IAsyncDisposable
                 now,
                 now.AddHours(1)),
             cancellationToken);
-        Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, consumer, UploadContentEncoding.None, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(
             uploadId,
             UploadContentOutcome.Complete,
@@ -186,7 +212,7 @@ internal sealed class PrintingRig : IAsyncDisposable
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document)),
             now,
             cancellationToken));
-        Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, now.AddHours(1), cancellationToken));
+        Assert.True(await uploads.ConfirmAsync(uploadId, consumer, null, now, now, now.AddHours(1), cancellationToken));
 
         var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
         using var content = new MemoryStream(document, writable: false);
@@ -198,7 +224,7 @@ internal sealed class PrintingRig : IAsyncDisposable
             await uploads.CommitReadyAsync(
                 new SnapshotRecord(
                     uploadId,
-                    Consumer,
+                    consumer,
                     key,
                     UploadContentEncoding.None,
                     DataProfile.HeaderItemsV1,
@@ -273,11 +299,14 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <param name="reportJobId">The job.</param>
     public byte[] SnapshotOf(string reportJobId) => _snapshotOf[_uploadOf[reportJobId]];
 
+    /// <summary>The client a case sends its own requests with, as the composition's own API serves them.</summary>
+    public HttpClient CreateApiClient() => _api!.CreateClient();
+
     /// <summary>Submits one job through the product's own API and answers its identifier.</summary>
     /// <param name="uploadId">The ready upload it reports on.</param>
     /// <param name="version">The exact version it names.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    public async Task<string> SubmitAsync(string uploadId, string? version, CancellationToken cancellationToken)
+    public async Task<string> SubmitAsync(string uploadId, string? version, CancellationToken cancellationToken, string consumer = Consumer)
     {
         using var api = _api!.CreateClient();
         var template = version is null
@@ -290,7 +319,7 @@ internal sealed class PrintingRig : IAsyncDisposable
                 Encoding.UTF8,
                 "application/json"),
         };
-        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, consumer);
         using var response = await api.SendAsync(request, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         Assert.True(response.StatusCode == HttpStatusCode.Accepted, $"the job had to be accepted: {(int)response.StatusCode} {body}");
@@ -331,7 +360,8 @@ internal sealed class PrintingRig : IAsyncDisposable
             SELECT j.status AS "Status", j.error_code AS "ErrorCode", j.error_reason AS "ErrorReason",
                    o.status AS "OutputStatus", o.error_code AS "OutputErrorCode",
                    a.artifact_id AS "ArtifactId", a.object_key AS "ObjectKey",
-                   a.sha256 AS "Sha256", a.size_bytes AS "SizeBytes", a.page_count AS "PageCount",
+                   a.sha256 AS "Sha256", a.size_bytes AS "SizeBytes", a.page_count AS "PageCount", a.expires_at AS "ExpiresAt",
+                   a.created_at AS "ArtifactCreatedAt",
                    p.block_count AS "BlockCount", p.record_count AS "RecordCount",
                    c.template_package_sha256 AS "TemplatePackageSha256", c.page_count AS "PartPages"
               FROM report_service.report_jobs j
@@ -457,10 +487,14 @@ internal sealed class PrintingRig : IAsyncDisposable
         await SeedSourceAsync(Source);
 
         _api = Api();
-        _pdf = Pdf();
+        _pdf = StartPdf ? Pdf() : null;
         _orchestration = startOrchestration ? Orchestration() : null;
         await WaitForHealthyAsync(_api.CreateClient(), ReadyDeadline, cancellationToken);
-        await WaitForHealthyAsync(_pdf.CreateClient(), ReadyDeadline, cancellationToken);
+        if (_pdf is not null)
+        {
+            await WaitForHealthyAsync(_pdf.CreateClient(), ReadyDeadline, cancellationToken);
+        }
+
         if (_orchestration is not null)
         {
             await WaitForHealthyAsync(_orchestration.CreateClient(), ReadyDeadline, cancellationToken);
@@ -554,13 +588,25 @@ internal sealed class PrintingRig : IAsyncDisposable
     private WebApplicationFactory<Program> Api()
     {
         var registry = Path.Combine(_directory, "consumers.json");
-        File.WriteAllText(registry, "{\"consumers\":[{\"consumerId\":\"" + Consumer + "\",\"active\":true}]}");
+        File.WriteAllText(
+            registry,
+            "{\"consumers\":[{\"consumerId\":\"" + Consumer + "\",\"active\":true},"
+            + "{\"consumerId\":\"" + InactiveConsumer + "\",\"active\":false}]}");
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);
             builder.UseSetting("Storage:Filesystem:Root", StoragePath());
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
+            builder.ConfigureLogging(logging => logging.AddProvider(_logs));
+            if (Clock is not null)
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(Clock);
+                });
+            }
         });
     }
 
@@ -572,6 +618,7 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StoragePath());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("Retention:Outputs", "01:00:00");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
@@ -632,6 +679,10 @@ internal sealed class JobStateRow
     public long? SizeBytes { get; set; }
 
     public int? PageCount { get; set; }
+
+    public DateTimeOffset? ExpiresAt { get; set; }
+
+    public DateTimeOffset? ArtifactCreatedAt { get; set; }
 
     public int? BlockCount { get; set; }
 

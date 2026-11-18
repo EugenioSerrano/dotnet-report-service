@@ -44,6 +44,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(from);
         var stage = JobWireValues.ToStoredText(JobStages.StageFor(to));
@@ -81,6 +82,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(outputId);
 
         lock (_gate)
@@ -110,6 +112,7 @@ public sealed partial class InMemoryJobStore
         PartitionRecord partition,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(partition);
 
         lock (_gate)
@@ -153,6 +156,7 @@ public sealed partial class InMemoryJobStore
     /// <inheritdoc />
     public Task<PartCommitResult> CommitPartAsync(PartCommit commit, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(commit);
 
         lock (_gate)
@@ -206,6 +210,7 @@ public sealed partial class InMemoryJobStore
     /// <inheritdoc />
     public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(artifact);
 
         lock (_gate)
@@ -220,6 +225,13 @@ public sealed partial class InMemoryJobStore
                 return Task.FromResult(new PublishResult(PublishOutcome.GuardRefused, null));
             }
 
+            // The database's expiry check, mirrored: a row whose expiry is before its creation
+            // is one the schema refuses, so the double refuses it too.
+            if (artifact.ExpiresAt < artifact.CreatedAt)
+            {
+                throw new InvalidOperationException("the expiry would be before the artifact's creation");
+            }
+
             _artifacts.Add(artifact.OutputId, artifact);
             var output = _outputs[artifact.OutputId];
             _outputs[artifact.OutputId] = output with
@@ -232,12 +244,87 @@ public sealed partial class InMemoryJobStore
     }
 
     /// <inheritdoc />
+    public Task<JobArtifactsView?> ListArtifactsAsync(
+        string reportJobId,
+        string consumerId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(consumerId);
+        Interlocked.Increment(ref _listArtifactCalls);
+
+        lock (_gate)
+        {
+            if (!_jobs.TryGetValue(reportJobId, out var job)
+                || !string.Equals(job.ConsumerId, consumerId, StringComparison.Ordinal))
+            {
+                return Task.FromResult<JobArtifactsView?>(null);
+            }
+
+            var artifacts = _artifacts.Values
+                .Where(artifact => string.Equals(artifact.ReportJobId, reportJobId, StringComparison.Ordinal))
+                .OrderBy(artifact => Array.IndexOf(FormatOrder, artifact.Format))
+                .ThenBy(artifact => artifact.ArtifactId, StringComparer.Ordinal)
+                .Select(ViewOf)
+                .ToList();
+            return Task.FromResult<JobArtifactsView?>(new JobArtifactsView(reportJobId, artifacts));
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<ArtifactView?> FindArtifactAsync(
+        string reportJobId,
+        string artifactId,
+        string consumerId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(artifactId);
+        ArgumentNullException.ThrowIfNull(consumerId);
+        Interlocked.Increment(ref _findArtifactCalls);
+
+        lock (_gate)
+        {
+            if (!_jobs.TryGetValue(reportJobId, out var job)
+                || !string.Equals(job.ConsumerId, consumerId, StringComparison.Ordinal))
+            {
+                return Task.FromResult<ArtifactView?>(null);
+            }
+
+            var artifact = _artifacts.Values.FirstOrDefault(item =>
+                string.Equals(item.ArtifactId, artifactId, StringComparison.Ordinal)
+                && string.Equals(item.ReportJobId, reportJobId, StringComparison.Ordinal));
+            return Task.FromResult(artifact is null ? null : ViewOf(artifact));
+        }
+    }
+
+    /// <summary>
+    /// Records an output the service has not created, with the state it is in: a case that
+    /// needs an artifact of another format than the PDF an acceptance asks for arranges the
+    /// output it was published from here.
+    /// </summary>
+    /// <param name="reportJobId">The job the output belongs to.</param>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="format">The format the output produces.</param>
+    public void SeedOutput(string reportJobId, string outputId, OutputFormat format)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        lock (_gate)
+        {
+            _outputs.Add(outputId, new ReportOutputRecord(outputId, reportJobId, format, OutputStatus.Running));
+        }
+    }
+
+    /// <inheritdoc />
     public Task<OutputFailureOutcome> FailOutputAsync(
         string outputId,
         string code,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(outputId);
         ArgumentNullException.ThrowIfNull(code);
 
@@ -265,6 +352,7 @@ public sealed partial class InMemoryJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
 
         lock (_gate)
@@ -331,4 +419,17 @@ public sealed partial class InMemoryJobStore
     }
 
     private static string KeyOf(string outputId, int blockIndex) => $"{outputId}/{blockIndex}";
+
+    // The read model of a stored artifact: the record's values with both instants in UTC, as
+    // the database's reader answers them.
+    private static ArtifactView ViewOf(ArtifactRecord artifact) => new(
+        artifact.ArtifactId,
+        artifact.ReportJobId,
+        artifact.Format,
+        artifact.MediaType,
+        artifact.ObjectKey,
+        artifact.Sha256,
+        artifact.SizeBytes,
+        artifact.CreatedAt.ToUniversalTime(),
+        artifact.ExpiresAt.ToUniversalTime());
 }

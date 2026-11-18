@@ -65,7 +65,34 @@ public sealed record ArtifactRecord(
     string Sha256,
     long SizeBytes,
     int? PageCount,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ExpiresAt);
+
+/// <summary>One published artifact as its owner's list and download read it.</summary>
+/// <param name="ArtifactId">The identifier of the artifact.</param>
+/// <param name="ReportJobId">The job the artifact was published for.</param>
+/// <param name="Format">The format the artifact carries.</param>
+/// <param name="MediaType">The media type stored with it.</param>
+/// <param name="ObjectKey">The key the bytes are stored under.</param>
+/// <param name="Sha256">The SHA-256 of the stored bytes, lower-case hexadecimal.</param>
+/// <param name="SizeBytes">The size of the stored object.</param>
+/// <param name="CreatedAt">When the artifact was published, in UTC.</param>
+/// <param name="ExpiresAt">When it stops being downloadable, in UTC.</param>
+public sealed record ArtifactView(
+    string ArtifactId,
+    string ReportJobId,
+    OutputFormat Format,
+    string MediaType,
+    string ObjectKey,
+    string Sha256,
+    long SizeBytes,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ExpiresAt);
+
+/// <summary>One job's published artifacts, in the fixed format order.</summary>
+/// <param name="ReportJobId">The identifier of the job.</param>
+/// <param name="Artifacts">Its artifacts, empty when it has published none.</param>
+public sealed record JobArtifactsView(string ReportJobId, IReadOnlyList<ArtifactView> Artifacts);
 
 /// <summary>What a conditional status change did.</summary>
 public enum TransitionOutcome

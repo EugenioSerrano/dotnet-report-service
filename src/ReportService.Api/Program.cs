@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ReportService.Api.Artifacts;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
@@ -8,6 +9,7 @@ using ReportService.Api.Telemetry;
 using ReportService.Api.Templates;
 using ReportService.Api.Uploads;
 using ReportService.Jobs;
+using ReportService.Storage;
 using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 using ReportService.ServiceDefaults;
@@ -26,6 +28,13 @@ builder.AddObjectStorage("api");
 // test can fix it.
 builder.AddValidatedConfiguration<UploadOptions>(UploadOptions.SectionPath);
 builder.Services.TryAddSingleton(TimeProvider.System);
+
+// The download's two collaborators are registered by a factory: a process whose storage provider
+// is not configured has no store to hand them, and the start has to say so as a configuration
+// error naming the setting — not as a container that could not be built.
+builder.Services.TryAddSingleton(services => new ArtifactContent(services.GetRequiredService<IObjectStore>()));
+builder.Services.TryAddSingleton<ArtifactStreaming>();
+builder.Services.AddSingleton<ArtifactDownloadMetrics>();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<ConsumerRefusalMetrics>();
 builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
@@ -53,5 +62,7 @@ app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
 app.MapCreateReportJobEndpoint();
 app.MapReportJobStatusEndpoint();
+app.MapArtifactListEndpoint();
+app.MapArtifactDownloadEndpoint();
 app.MapGetTemplateVersionEndpoint();
 app.Run();

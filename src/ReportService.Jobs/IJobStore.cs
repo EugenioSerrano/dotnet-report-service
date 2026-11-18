@@ -172,6 +172,28 @@ public interface IJobStore
     /// <param name="cancellationToken">The step's cancellation token.</param>
     Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Reads one job's published artifacts as its owner reads them, in the fixed format
+    /// order. The read is scoped by the consumer that owns the job, so a job of another
+    /// consumer answers the same as a job that does not exist.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="consumerId">The consumer that must own the job.</param>
+    /// <param name="cancellationToken">The request's cancellation token.</param>
+    /// <returns>The job's artifacts, or <see langword="null"/> when no job of that consumer has the identifier.</returns>
+    Task<JobArtifactsView?> ListArtifactsAsync(string reportJobId, string consumerId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads one artifact of one job as its owner reads it. An absent job, a job of another
+    /// consumer, an absent artifact and an artifact of another job answer the same: nothing.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="artifactId">The identifier of the artifact.</param>
+    /// <param name="consumerId">The consumer that must own the job.</param>
+    /// <param name="cancellationToken">The request's cancellation token.</param>
+    /// <returns>The artifact, or <see langword="null"/> when that owner has no such artifact.</returns>
+    Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken);
+
     /// <summary>Ends one output that has not ended yet with the code of the condition.</summary>
     /// <param name="outputId">The identifier of the output.</param>
     /// <param name="code">The code of the condition that ended it.</param>

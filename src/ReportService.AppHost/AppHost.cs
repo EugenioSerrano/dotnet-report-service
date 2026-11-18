@@ -144,11 +144,17 @@ var maxStoredBytes = builder.Configuration["Uploads:MaxStoredBytes"] ?? "4294967
 // span as its schedule-to-close, so the engine stops retrying when the upload's own
 // deadline passes.
 var verificationDeadline = builder.Configuration["Uploads:VerificationDeadline"] ?? "06:00:00";
+
+// How long a published file stays downloadable. The development value is the example the
+// retention question records; a run of the whole composition may state its own, which is what
+// lets a case watch a file expire without waiting a week.
+var outputRetention = builder.Configuration["Retention:Outputs"] ?? "7.00:00:00";
 var orchestrationWorker = builder.AddProject<Projects.ReportService_Workers_Orchestration>("orchestration-worker")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
     .WithEnvironment("Uploads__MaxStoredBytes", maxStoredBytes)
     .WithEnvironment("Uploads__VerificationDeadline", verificationDeadline)
+    .WithEnvironment("Retention__Outputs", outputRetention)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", storage.HostPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "true")

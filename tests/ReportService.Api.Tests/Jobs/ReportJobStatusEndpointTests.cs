@@ -421,7 +421,8 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         Hash,
         2_048,
         3,
-        Now);
+        Now,
+        Now.AddDays(7));
 
     // Forwards every member to the store it wraps and refuses the status read as a store
     // that cannot be reached; used to prove the read's 503 without any internal text.
@@ -471,6 +472,12 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
 
         public Task<PublishResult> PublishAsync(ArtifactRecord artifact, CancellationToken cancellationToken) =>
             inner.PublishAsync(artifact, cancellationToken);
+
+        public Task<JobArtifactsView?> ListArtifactsAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) =>
+            inner.ListArtifactsAsync(reportJobId, consumerId, cancellationToken);
+
+        public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
+            inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
 
         public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FailOutputAsync(outputId, code, now, cancellationToken);
