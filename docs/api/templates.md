@@ -53,10 +53,10 @@ Content-Type: application/json
 
 Every member is always present, and none of them changes after the version is
 taken: the package is write-once and the record it is published through is
-inserted once, so a change to the version in the repository can never alter what
-this read answers. A changed version is a new version; the service logs the
-conflict under the old one and keeps what it has. No answer carries a commit
-SHA.
+inserted once, so a change to the version at the source, the object store, can
+never alter what this read answers. A changed version is a new version; the
+service logs the conflict under the old one and keeps what it has. No answer
+carries a commit SHA.
 
 A version taken before the service read its template source from the object
 store answers `null` for `sourceDescriptorHash` and `objects`: it has no

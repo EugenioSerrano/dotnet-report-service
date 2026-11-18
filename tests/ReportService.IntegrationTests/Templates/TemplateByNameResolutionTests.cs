@@ -136,7 +136,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
         _hostPort = _engine.HostPort;
 
         Directory.CreateDirectory(StorageRoot());
-        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        Directory.CreateDirectory(SourceRoot());
+        _source = await TemplateSourceClass.CreateAsync(SourceRoot());
         _sourceStore = new SourceClassStore(_source.Store);
 
         _client = await TemporalClient.ConnectAsync(
@@ -573,12 +574,16 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", SourceRoot());
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IObjectStore>();
-                services.AddSingleton<IObjectStore>(_sourceStore!);
+                // The source reads through its own instance: the class's spy observes the
+                // source's key, and the writable store stays the deployment's own.
+                services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
+                services.AddKeyedSingleton<IObjectStore>(TemplateSourceStorage.StoreServiceKey, _sourceStore!);
             });
             builder.UseSetting($"{TemplateSourceOptions.SectionPath}:ResolveDeadline", resolveDeadline);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
@@ -683,6 +688,8 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     };
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
+
+    private string SourceRoot() => Path.Combine(_directory, "template-source");
 
     private async Task<StoredVersion> RowAsync(string templateId, string version, CancellationToken cancellationToken) =>
         await RowOrNullAsync(templateId, version, cancellationToken)

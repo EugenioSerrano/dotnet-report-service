@@ -5,6 +5,8 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
 
 namespace ReportService.EndToEndTests;
 
@@ -13,13 +15,39 @@ namespace ReportService.EndToEndTests;
 /// the additions that belong to the test run and change no product behaviour: the
 /// telemetry view is enabled, answers without a credential on this machine and
 /// receives telemetry on the one address its own container can reach, the
-/// dependency wait keeps the behaviour the composition was written for, and the
+/// dependency wait keeps the behaviour the composition was written for, the
 /// render worker is pointed at that view before its container is created — a
 /// container does not inherit the AppHost's telemetry address and cannot be given
-/// one afterwards.
+/// one afterwards — and the template a class names without a version is published
+/// into the root the worker reads its templates from, before any process starts.
 /// </summary>
 internal static class TestComposition
 {
+    /// <summary>The template identifier the classes that name only a template submit.</summary>
+    public const string ByNameTemplate = "pilot-grouped";
+
+    /// <summary>The one release published for it, so a by-name reference resolves to it.</summary>
+    public const string ByNameTemplateVersion = "1.0.0";
+
+    /// <summary>
+    /// The consumer the end-to-end classes submit as, and the owner the published
+    /// template names: a consumer may use the versions it owns or a shared one.
+    /// </summary>
+    public const string FixtureConsumer = "consumer-a";
+
+    /// <summary>The directory name the worker's template source root has under the repository root.</summary>
+    public const string SourceDirectoryName = ".template-source";
+
+    /// <summary>
+    /// The one publication of this run, made the first time a composition asks for it: the
+    /// source root is one directory whatever the number of compositions, and every class of
+    /// the run reads the same class. Publishing it once keeps the run's own writes out of the
+    /// way of the listings the worker's start and its readiness check perform on it.
+    /// </summary>
+    private static readonly Lazy<Task> Seed = new(
+        PublishByNameTemplateAsync,
+        LazyThreadSafetyMode.ExecutionAndPublication);
+
     /// <summary>The switch that runs the test's telemetry view without a credential.</summary>
     public const string AnonymousSetting = "ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS";
 
@@ -70,6 +98,13 @@ internal static class TestComposition
     /// </param>
     public static async Task<IDistributedApplicationTestingBuilder> CreateAsync(CancellationToken cancellationToken, params string[] arguments)
     {
+        // The source root is the publisher's, and this run's publisher is here: a class that
+        // names a template and leaves the version to the composition reads the class the worker
+        // reads, so the template is published into the source's own root before any process
+        // starts. Publishing nothing would leave that class empty, and the job would be refused
+        // for a template that was never published rather than for anything the case asserts.
+        await Seed.Value;
+
         // The receiver's address is resolved here, once for this composition: the
         // value written into the run's configuration below is the one value both the
         // receiver's bind and the container's destination are read from, so a machine
@@ -115,6 +150,36 @@ internal static class TestComposition
         });
 
         return builder;
+    }
+
+    /// <summary>
+    /// Publishes the template a job that names only a template resolves, into the root
+    /// the render worker reads its templates from — the source's own class, mounted
+    /// read-only into that process. The package is one the product's checks accept for a
+    /// template this deployment's publisher owns, so the by-name resolution has exactly
+    /// one release to walk; nothing is written to a class the service itself keeps. The
+    /// version's record and files are removed through the fixture before the publication,
+    /// so a run leaves one record under the version and changed bytes replace the old
+    /// record instead of leaving a second one beside it. The window between the removal
+    /// and the publication is a test-environment failure, never product behaviour.
+    /// </summary>
+    private static async Task PublishByNameTemplateAsync()
+    {
+        var root = Path.Combine(RepositoryPaths.Root, SourceDirectoryName);
+        Directory.CreateDirectory(root);
+        var source = await TemplateSourceClass.CreateAsync(root);
+        try
+        {
+            await source.RemoveAsync(ByNameTemplate, ByNameTemplateVersion);
+            await source.PublishAsync(
+                ByNameTemplate,
+                ByNameTemplateVersion,
+                TemplatePackageFixtures.Valid(ByNameTemplate, ByNameTemplateVersion, FixtureConsumer));
+        }
+        finally
+        {
+            await source.DisposeAsync();
+        }
     }
 
     /// <summary>

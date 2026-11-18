@@ -87,9 +87,14 @@ var temporalAddress = ReferenceExpression.Create($"{temporalGrpc.Property(Endpoi
 // The host processes use the host path; the PDF worker sees the same directory mounted
 // at /data/storage. The development diagnostics that prove the sharing are switched on here.
 var storage = await SharedStorageRoot.DescribeAsync(renderWorkerImage.RepositoryRoot);
+
+// The template source's own directory (see TemplateSourceRoot): the class a publisher owns,
+// which the host processes do not read and the PDF worker sees mounted read-only.
+var templateSource = await TemplateSourceRoot.DescribeAsync(renderWorkerImage.RepositoryRoot);
 if (builder.ExecutionContext.IsRunMode)
 {
     Directory.CreateDirectory(storage.HostPath);
+    Directory.CreateDirectory(templateSource.HostPath);
 }
 
 // Where the PDF worker sends its telemetry: the dashboard this composition starts
@@ -108,9 +113,12 @@ var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repos
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")
     .WithBindMount(storage.MountSource, SharedStorageRoot.ContainerPath, isReadOnly: false)
+    .WithBindMount(templateSource.MountSource, TemplateSourceRoot.ContainerPath, isReadOnly: true)
     .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
     .WithEnvironment("Storage__Filesystem__Root", SharedStorageRoot.ContainerPath)
     .WithEnvironment("Storage__Filesystem__CreateIfMissing", "false")
+    .WithEnvironment("TemplateSource__Store__Filesystem__Root", TemplateSourceRoot.ContainerPath)
+    .WithEnvironment("TemplateSource__Store__Filesystem__CreateIfMissing", "false")
     .WithEnvironment("Storage__Diagnostics__Enabled", "true")
     .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
     .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
@@ -125,10 +133,9 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
     renderWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
 }
 
-// The template source the worker reads a version from is the deployment's object store,
-// which this composition already mounts into the worker. The one setting it takes from
-// here is the bound of a by-name resolution, which the composition documents and gives
-// the process the same value of.
+// The template source the worker reads is its own root of the composition, mounted into the
+// worker read-only; the one other setting it takes from here is the bound of a by-name
+// resolution, which the composition documents and gives the process the same value of.
 var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
 renderWorker
     .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline);

@@ -52,7 +52,7 @@ internal sealed record SharedStorageRoot(string HostPath, string MountSource)
     }
 
     // Asks the engine what it is; only reads, never changes anything.
-    private static async Task<bool> IsDockerDesktopAsync(CancellationToken cancellationToken)
+    internal static async Task<bool> IsDockerDesktopAsync(CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo("docker")
         {
@@ -78,5 +78,36 @@ internal sealed record SharedStorageRoot(string HostPath, string MountSource)
             // No container engine: the composition cannot start its containers either way.
             return false;
         }
+    }
+}
+
+/// <summary>
+/// The template source's own root of the local composition:
+/// <c>&lt;repository&gt;/.template-source</c>, outside <c>src/</c> and ignored by
+/// version control. One physical directory, one logical root: the PDF worker is
+/// given it, mounted at <see cref="ContainerPath"/> read-only, so the class a
+/// publisher owns is reachable and the worker cannot change it.
+/// </summary>
+/// <param name="HostPath">The root as a host process sees it.</param>
+/// <param name="MountSource">The host directory as the container engine must be given it for the mount.</param>
+internal sealed record TemplateSourceRoot(string HostPath, string MountSource)
+{
+    /// <summary>The root as the PDF worker sees it.</summary>
+    public const string ContainerPath = "/data/template-source";
+
+    /// <summary>The directory name under the repository root.</summary>
+    public const string DirectoryName = ".template-source";
+
+    /// <summary>
+    /// Describes the source's root of the repository at <paramref name="repositoryRoot"/>,
+    /// in the same form and by the same per-OS rule as <see cref="SharedStorageRoot"/>.
+    /// </summary>
+    public static async Task<TemplateSourceRoot> DescribeAsync(string repositoryRoot, CancellationToken cancellationToken = default)
+    {
+        var hostPath = Path.Combine(repositoryRoot, DirectoryName);
+        var mountSource = OperatingSystem.IsWindows() && !await SharedStorageRoot.IsDockerDesktopAsync(cancellationToken)
+            ? SharedStorageRoot.ToEnginePath(hostPath)
+            : hostPath;
+        return new TemplateSourceRoot(hostPath, mountSource);
     }
 }

@@ -110,7 +110,7 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         _engine = await EngineStart.StartAsync(_engineImage, "temporal-template-take", cancellationToken);
         _hostPort = _engine.HostPort;
 
-        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        _source = await TemplateSourceClass.CreateAsync(SourceRoot());
         _sourceStore = new SwitchableStore(_source.Store);
 
         _client = await TemporalClient.ConnectAsync(
@@ -123,12 +123,16 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", SourceRoot());
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IObjectStore>();
-                services.AddSingleton<IObjectStore>(_sourceStore!);
+                // The source reads through its own instance: the switchable spy observes the
+                // source's key, and the writable store stays the deployment's own.
+                services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
+                services.AddKeyedSingleton<IObjectStore>(TemplateSourceStorage.StoreServiceKey, _sourceStore!);
             });
         });
         using var health = _worker.CreateClient();
@@ -364,6 +368,8 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         _source!.PublishAsync(Template, version, files);
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
+
+    private string SourceRoot() => Path.Combine(_directory, "template-source");
 
     private async Task<TakeTemplateVersionResult> TakeAsync(
         string templateId,

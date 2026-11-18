@@ -12,7 +12,9 @@ using Npgsql;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
+using ReportService.TemplatePackages.Keys;
 using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource.Source;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
 
@@ -44,6 +46,20 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
 
     /// <summary>The setting the render worker keeps: the bound of one by-name resolution.</summary>
     private const string ResolveDeadlineKey = "TemplateSource__ResolveDeadline";
+
+    /// <summary>The render worker's settings of the source's own root.</summary>
+    private const string SourceRootKey = "TemplateSource__Store__Filesystem__Root";
+
+    private const string SourceCreateIfMissingKey = "TemplateSource__Store__Filesystem__CreateIfMissing";
+
+    /// <summary>The source's root as the render worker's container is given it.</summary>
+    private const string SourceContainerPath = "/data/template-source";
+
+    /// <summary>The writable root as the render worker's container is given it.</summary>
+    private const string StorageContainerPath = "/data/storage";
+
+    /// <summary>The source class's directory name under the repository root.</summary>
+    private const string SourceDirectoryName = ".template-source";
 
     /// <summary>The template-source settings the product no longer reads.</summary>
     private static readonly string[] RemovedKeys =
@@ -114,6 +130,9 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         var again = await PinnedAsync(connectionString, exact, cancellationToken);
         Assert.Equal(exactPin.ResolvedVersion, again.ResolvedVersion);
         Assert.Equal(exactPin.ResolvedAt, again.ResolvedAt);
+
+        // And the class the take read is the source's: the writable root holds none of it.
+        AssertTheWritableRootHoldsNoSourceClassOfThisRun();
     }
 
     [Fact]
@@ -152,24 +171,61 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         string scenario,
         CancellationToken cancellationToken)
     {
-        var environment = await EffectiveEnvironmentAsync(app, cancellationToken);
+        var environment = await EffectiveEnvironmentAsync(app, TestComposition.RenderWorkerName, cancellationToken);
         Assert.True(
             environment.ContainsKey(ResolveDeadlineKey),
             $"{scenario}: the render worker is not given {ResolveDeadlineKey}, the one template-source setting a by-name resolution reads.");
+        Assert.True(
+            environment.TryGetValue(SourceRootKey, out var root) && Equals(root, SourceContainerPath),
+            $"{scenario}: the render worker is not given its own template source root at {SourceContainerPath}.");
+        Assert.True(
+            environment.TryGetValue(SourceCreateIfMissingKey, out var create) && Equals(create, "false"),
+            $"{scenario}: the render worker may create its template source root, and the source reads a root a publisher owns.");
         foreach (var key in RemovedKeys)
         {
             Assert.False(
                 environment.ContainsKey(key),
                 $"{scenario}: the render worker is given '{key}', a template-source setting the product no longer reads.");
         }
+
+        // The two processes that compose no source reader are given none of its settings.
+        foreach (var name in new[] { "api", "orchestration-worker" })
+        {
+            var other = await EffectiveEnvironmentAsync(app, name, cancellationToken);
+            foreach (var key in new[] { SourceRootKey, SourceCreateIfMissingKey, ResolveDeadlineKey })
+            {
+                Assert.False(
+                    other.ContainsKey(key),
+                    $"{scenario}: the {name} is given '{key}', a template-source setting of a process that reads none.");
+            }
+        }
+    }
+
+    // The built model's two mounts: the writable root read-write, the source's root read-only.
+    private static void AssertTheModelCarriesTheReadOnlyMount(DistributedApplication app, string scenario)
+    {
+        var model = app.Services.GetRequiredService<DistributedApplicationModel>();
+        var worker = model.Resources.Single(candidate => string.Equals(candidate.Name, TestComposition.RenderWorkerName, StringComparison.Ordinal));
+        var mounts = worker.Annotations.OfType<ContainerMountAnnotation>().ToList();
+        var storage = Assert.Single(mounts, mount => string.Equals(mount.Target, StorageContainerPath, StringComparison.Ordinal));
+        var source = Assert.Single(mounts, mount => string.Equals(mount.Target, SourceContainerPath, StringComparison.Ordinal));
+        Assert.False(storage.IsReadOnly, $"{scenario}: the writable root must stay read-write.");
+        Assert.True(source.IsReadOnly, $"{scenario}: the source root must be mounted read-only, and the grant is expressed by that mount.");
+        Assert.NotNull(source.Source);
+        Assert.NotNull(storage.Source);
+        Assert.EndsWith(SourceDirectoryName, source.Source.TrimEnd('/', '\\'), StringComparison.Ordinal);
+        Assert.False(
+            string.Equals(source.Source, storage.Source, StringComparison.Ordinal),
+            $"{scenario}: the source root and the writable root are the same directory, so the separation is not expressed.");
     }
 
     private static async Task<IReadOnlyDictionary<string, object>> EffectiveEnvironmentAsync(
         DistributedApplication app,
+        string resourceName,
         CancellationToken cancellationToken)
     {
         var model = app.Services.GetRequiredService<DistributedApplicationModel>();
-        var resource = model.Resources.Single(candidate => string.Equals(candidate.Name, TestComposition.RenderWorkerName, StringComparison.Ordinal));
+        var resource = model.Resources.Single(candidate => string.Equals(candidate.Name, resourceName, StringComparison.Ordinal));
         var execution = app.Services.GetRequiredService<DistributedApplicationExecutionContext>();
         var environment = new Dictionary<string, object>(StringComparer.Ordinal);
         foreach (var callback in resource.Annotations.OfType<EnvironmentCallbackAnnotation>())
@@ -199,12 +255,15 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         }
 
         await AssertTheCompositionCarriesNoTemplateSourceSettingAsync(app, "the composition under test", cancellationToken);
+        AssertTheModelCarriesTheReadOnlyMount(app, "the composition under test");
         return (app, app.CreateHttpClient("api"));
     }
 
     private async Task PublishAsync(CancellationToken cancellationToken)
     {
-        var root = Path.Combine(RepositoryPaths.Root, ".storage");
+        // The version is published only where the composition reads it: the source's own root.
+        // Finding it there is itself the observable of the separation.
+        var root = Path.Combine(RepositoryPaths.Root, SourceDirectoryName);
         Directory.CreateDirectory(root);
         var source = await TemplateSourceClass.CreateAsync(root);
         try
@@ -216,6 +275,19 @@ public sealed class TemplateReferenceEndToEndTests : IDisposable
         {
             await source.DisposeAsync();
         }
+    }
+
+    // The writable root holds nothing of this run's template: the take read it from the source's root.
+    private void AssertTheWritableRootHoldsNoSourceClassOfThisRun()
+    {
+        var written = Path.Combine(
+            RepositoryPaths.Root,
+            ".storage",
+            TemplateSourceKeys.ClassPrefix,
+            KeySegmentEncoding.Encode(_template));
+        Assert.False(
+            Directory.Exists(written),
+            $"the writable root holds '{written}', so the take did not read the source's own root");
     }
 
     private void AssertThePublishedFiles(PinRow pin)

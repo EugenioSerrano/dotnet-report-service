@@ -317,7 +317,10 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
     // are sent as, and the version the request names, all stated once.
     private const string Consumer = "consumer-a";
 
-    private const string Template = "pilot-simple";
+    private const string Template = "pilot-simple-completion";
+
+    // The shipped sample the package is built from; the published identity is this class's own.
+    private const string Sample = "pilot-simple";
 
     private const string Version = "1.0.0";
 
@@ -381,7 +384,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         await TakenAsync(dataSource, versions, storage, cancellationToken);
 
         var sample = await File.ReadAllBytesAsync(
-            Path.Combine(RepositoryPaths.Root, "samples", "templates", Template, SamplePath),
+            Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample, SamplePath),
             cancellationToken);
         var uploadId = await ReadyUploadAsync(api, sample, cancellationToken);
 
@@ -497,6 +500,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         CancellationToken cancellationToken)
     {
         var source = TemplateSourceClass.Over(storage);
+        await source.RemoveAsync(Template, Version);
         await source.PublishAsync(Template, Version, PackageFiles());
 
         var options = new TemplateSourceOptions();
@@ -524,7 +528,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
     // because it is the case's upload rather than a part of what the render reads.
     private static Dictionary<string, byte[]> PackageFiles()
     {
-        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
+        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
@@ -538,6 +542,7 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
             if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
             {
                 text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
+                text = text.Replace("id: pilot-simple", "id: " + Template, StringComparison.Ordinal);
             }
 
             if (string.Equals(relative, "html/styles.css", StringComparison.Ordinal))

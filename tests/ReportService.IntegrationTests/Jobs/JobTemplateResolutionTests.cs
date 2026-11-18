@@ -176,7 +176,7 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         _client = await TemporalClient.ConnectAsync(
             new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" }).WaitAsync(cancellationToken);
 
-        _source = await TemplateSourceClass.CreateAsync(StorageRoot());
+        _source = await TemplateSourceClass.CreateAsync(SourceRoot());
         _sourceStore = new SourceClassStore(_source.Store);
         await ByNameFixtures.SeedAsync(_source, ByNameFixtures.First, ByNameFixtures.Second, ByNameFixtures.HighestRelease);
         await _source.PublishAsync(Template, ByNameFixtures.PreRelease, ByNameFixtures.Valid(Template, ByNameFixtures.PreRelease));
@@ -798,12 +798,16 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             builder.UseSetting("Storage:Provider", "filesystem");
             builder.UseSetting("Storage:Filesystem:Root", StorageRoot());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
+            builder.UseSetting("TemplateSource:Store:Filesystem:Root", SourceRoot());
+            builder.UseSetting("TemplateSource:Store:Filesystem:CreateIfMissing", "false");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IObjectStore>();
-                services.AddSingleton<IObjectStore>(_sourceStore!);
+                // The source reads through its own instance: the class's spy observes the
+                // source's key, and the writable store stays the deployment's own.
+                services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
+                services.AddKeyedSingleton<IObjectStore>(TemplateSourceStorage.StoreServiceKey, _sourceStore!);
             });
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
         });
@@ -816,6 +820,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         """;
 
     private string StorageRoot() => Path.Combine(_directory, "storage");
+
+    private string SourceRoot() => Path.Combine(_directory, "template-source");
 
     private static async Task WaitForHealthyAsync(HttpClient client, TimeSpan deadline, CancellationToken cancellationToken) =>
         await Wait.UntilAsync(

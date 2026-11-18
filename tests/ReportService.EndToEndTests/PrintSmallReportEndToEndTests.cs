@@ -40,7 +40,10 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 {
     private const string Consumer = "consumer-a";
 
-    private const string Template = "pilot-simple";
+    private const string Template = "pilot-simple-print";
+
+    // The shipped sample the package is built from; the published identity is this class's own.
+    private const string Sample = "pilot-simple";
 
     private const string Version = "1.0.0";
 
@@ -216,6 +219,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
         CancellationToken cancellationToken)
     {
         var source = TemplateSourceClass.Over(storage);
+        await source.RemoveAsync(Template, Version);
         await source.PublishAsync(Template, Version, PackageFiles());
 
         var options = new TemplateSourceOptions();
@@ -242,7 +246,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
     // the sample's own (relative to the package root).
     private static Dictionary<string, byte[]> PackageFiles()
     {
-        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Template);
+        var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
@@ -256,6 +260,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
             if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
             {
                 text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
+                text = text.Replace("id: pilot-simple", "id: " + Template, StringComparison.Ordinal);
             }
 
             if (string.Equals(relative, "html/styles.css", StringComparison.Ordinal))
@@ -280,7 +285,7 @@ public sealed class PrintSmallReportEndToEndTests : IDisposable
 
     private static byte[] Snapshot(int records)
     {
-        var sample = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.Root, "samples", "templates", Template, "sample.json")))!;
+        var sample = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample, "sample.json")))!;
         var items = sample["items"]!.AsArray();
         var built = new JsonArray();
         for (var index = 0; index < records; index++)

@@ -16,15 +16,25 @@ namespace ReportService.Workers.Pdf.Templates;
 
 /// <summary>
 /// What this worker registers on the queue it declares: the take, and everything
-/// the take runs on - the template source's settings, the class read over the
-/// process's object store, the manifest reader, the taken-version store, the
-/// object store the process already has, the conflict warning and the checks
-/// registered so far (none today). One work registration, one options object and
-/// one engine worker serve <c>report-pdf-rendering</c>, and that registration
-/// bounds the queue to one activity at a time - the PDF worker's own rule.
+/// the take runs on - the template source's own object store, on its own root and
+/// read-only, the class read through that instance over the deployment's provider,
+/// the manifest reader, the taken-version store, the conflict warning and the
+/// checks registered so far (none today). The source's settings are validated at
+/// start, so a root that is missing or a class that cannot be read stops the
+/// process naming the setting instead of failing at the first take. One work
+/// registration, one options object and one engine worker serve
+/// <c>report-pdf-rendering</c>, and that registration bounds the queue to one
+/// activity at a time - the PDF worker's own rule.
 /// </summary>
 public static class TemplateTakeRegistration
 {
+    /// <summary>The layout of the class the source reads, as this build writes its keys.</summary>
+    public static readonly TemplateSourceClassLayout SourceClassLayout = new(
+        TemplateSourceKeys.ClassPrefix,
+        TemplateSourceKeys.PublishedSegment,
+        TemplateSourceKeys.DescriptorSuffix,
+        TemplateSourceKeys.DescriptorHashLength);
+
     /// <summary>Registers the take's work and the settings it runs under.</summary>
     /// <param name="builder">The process being built.</param>
     public static IHostApplicationBuilder AddTemplateTakeWork(this IHostApplicationBuilder builder)
@@ -32,6 +42,7 @@ public static class TemplateTakeRegistration
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
+        builder.AddTemplateSourceStorage(SourceClassLayout, PublicationChecks.DescriptorVersions);
         builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
             services.GetRequiredService<IOptions<DatabaseOptions>>().Value.ConnectionString));
         builder.Services.TryAddSingleton(TimeProvider.System);
@@ -41,7 +52,7 @@ public static class TemplateTakeRegistration
         builder.Services.AddSingleton(services => new TemplateVersionConflict(
             services.GetRequiredService<ILoggerFactory>().CreateLogger(TemplateVersionConflict.LogCategory)));
         builder.Services.AddSingleton<ITemplateSourceReader>(services => new StorageTemplateSource(
-            services.GetRequiredService<IObjectStore>(),
+            services.GetRequiredKeyedService<IObjectStore>(TemplateSourceStorage.StoreServiceKey),
             services.GetRequiredService<IOptions<TemplateSourceOptions>>().Value,
             services.GetRequiredService<TemplateSourceMetrics>(),
             services.GetRequiredService<ILogger<StorageTemplateSource>>()));

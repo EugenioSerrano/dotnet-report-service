@@ -18,6 +18,9 @@ public static class PublicationChecks
     /// <summary>The one record contract version this build reads.</summary>
     public const string DescriptorVersion = "1.0";
 
+    /// <summary>Every record contract version this build reads: the one above, stated at start and on the check.</summary>
+    public static readonly IReadOnlyList<string> DescriptorVersions = [DescriptorVersion];
+
     /// <summary>Checks one parsed record against the requested version and the deployment's caps.</summary>
     /// <param name="descriptor">The parsed record.</param>
     /// <param name="templateId">The requested template's identifier.</param>
