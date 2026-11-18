@@ -670,8 +670,17 @@ public sealed class ReaderCostTests
 
     private const long RetainedHeapBoundBytes = 8L * 1024 * 1024;
 
-    // 5 µs per open over the 5 000 opens of the measured document, as the round's total.
-    private const double MedianDifferenceBoundMilliseconds = 25.0;
+    // A ceiling over the median of the nine round differences, not a cost target. Two
+    // different figures sit under it, and they are not the same figure: the same 5 000
+    // one-member objects, read with no wide value, cost about 16 ms here, while the
+    // median of a run's nine differences has been measured around 26 ms on the same
+    // machine. The rounds of one run move by tens of milliseconds when the machine is
+    // busy, so the bound has to sit above that movement, or the verdict belongs to the
+    // machine. What it must still reject is the defect this case exists for: a reader
+    // that walks the 512 KiB wide value again for every one of the 5 000 opens, well
+    // over two seconds of extra work per round even at a gigabyte a second, more than
+    // ten times this ceiling.
+    private const double MedianDifferenceBoundMilliseconds = 210.0;
 
     // The bytes the baseline spends before and after the one string value it carries in place
     // of the 5 000 members: ,"pad":" and the closing quote. Bounded with the value below, the
