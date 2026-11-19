@@ -203,6 +203,61 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
     }
 
     [Fact]
+    public async Task AConfiguredThousandAdmitsAThousandRecords()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(1_000), cancellationToken);
+
+        var result = await RunWithAsync(new SingleBlockLimit(1_000));
+
+        Assert.Equal(1, result.BlockCount);
+        Assert.Equal(1_000, result.RecordCount);
+        Assert.NotNull(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AConfiguredThousandRefusesTheThousandAndFirstRecordAndLogsTheConfiguration()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(1_001), cancellationToken);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
+            () => RunWithAsync(new SingleBlockLimit(1_000)));
+
+        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains(
+            "reason=dimension=records applied=1000 limit=block ordinal=1001",
+            failure.Message,
+            StringComparison.Ordinal);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+
+        // One refusal event, carrying the configured value on the operator's side only;
+        // the consumer's text is the failure's own message, which never names it.
+        var refusals = Logs.Lines.Where(line => line.Contains("snapshot refused", StringComparison.Ordinal)).ToList();
+        Assert.Single(refusals);
+        Assert.Contains("configured=1000", refusals[0], StringComparison.Ordinal);
+        Assert.DoesNotContain("configured=", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AConfiguredFiveThousandBehavesAsTheHardMaximum()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(2_001), cancellationToken);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
+            () => RunWithAsync(new SingleBlockLimit(5_000)));
+
+        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("dimension=records applied=2000", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("ordinal=2001", failure.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("5000", failure.Message, StringComparison.Ordinal);
+        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    [Fact]
     public async Task ASnapshotThatNoLongerMatchesItsRecordEndsTheStepWithoutBeingRetried()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -806,6 +861,37 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
     }
 
     private Task<PartitionResult> RunAsync() => RunAsync(ReportJobId);
+
+    // The same step under a configured limit: the pass's own answer, with the activity
+    // built from the configured value rather than from the hard maximum.
+    private Task<PartitionResult> RunWithAsync(SingleBlockLimit limit)
+    {
+        var activity = new ValidateAndPartitionActivity(
+            Jobs,
+            Uploads,
+            Objects,
+            Versions,
+            Contracts,
+            new FixedTimeProvider(Now),
+            _loggerFactory.CreateLogger<ValidateAndPartitionActivity>(),
+            Path.Combine(_root, "scratch"),
+            limit);
+
+        var environment = new ActivityEnvironment
+        {
+            Info = ActivityEnvironment.DefaultInfo with
+            {
+                WorkflowId = $"report-job/{ReportJobId}",
+                WorkflowRunId = "run-0123456789abcdef",
+                ActivityId = "1",
+                ActivityType = ValidateAndPartitionActivity.Name,
+                Attempt = 1,
+                TaskQueue = PdfOutputActivityOptions.DataQueue,
+            },
+            Heartbeater = _ => { },
+        };
+        return environment.RunAsync(() => activity.RunAsync(new ValidateAndPartitionInput(ReportJobId)));
+    }
 
     private Task<PartitionResult> RunAsync(string reportJobId)
     {

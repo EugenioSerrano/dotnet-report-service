@@ -101,7 +101,82 @@ public sealed class SingleBlockPartitionerTests
         Assert.Equal(1, SingleBlockPartitioner.PartitionerVersion);
     }
 
-    private static async Task<(PartitionSummary Summary, byte[] Document)> PartitionAsync(string[] records)
+    [Fact]
+    public async Task AConfiguredThousandAdmitsAThousandRecordsAndRefusesTheNextOne()
+    {
+        var limit = new SingleBlockLimit(1_000);
+
+        var (summary, _) = await PartitionAsync(SnapshotBytes.Records(1_000), limit);
+        Assert.Equal(1, summary.BlockCount);
+        Assert.Equal(1_000, summary.RecordCount);
+
+        var violation = await Assert.ThrowsAsync<DataContractViolation>(
+            () => PartitionAsync(SnapshotBytes.Records(1_001), limit));
+
+        Assert.Equal(DataContractViolation.QuotaExceeded, violation.Code);
+        Assert.Equal("block", violation.Limit);
+        Assert.Equal(1_001, violation.Ordinal);
+        Assert.Equal("dimension=records applied=1000", violation.Reason);
+    }
+
+    [Fact]
+    public async Task AConfiguredFiveThousandBehavesAsTheHardMaximum()
+    {
+        var limit = new SingleBlockLimit(5_000);
+
+        var (summary, _) = await PartitionAsync(SnapshotBytes.Records(2_000), limit);
+        Assert.Equal(2_000, summary.RecordCount);
+
+        var violation = await Assert.ThrowsAsync<DataContractViolation>(
+            () => PartitionAsync(SnapshotBytes.Records(2_001), limit));
+
+        Assert.Equal("dimension=records applied=2000", violation.Reason);
+        Assert.Equal(2_001, violation.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheByteBoundaryPairIsAdmittedAtTheBoundAndRefusedOneByteBeyondIt()
+    {
+        // Sixty-four records of exactly 16 384 bytes are exactly the block's byte maximum;
+        // the sixty-fifth crosses it with one record more.
+        var record = SizedRecord(16_384);
+        var family = Enumerable.Repeat(record, 64).ToArray();
+        var overByOne = Enumerable.Repeat(record, 65).ToArray();
+        var limit = new SingleBlockLimit(1_000);
+
+        var (summary, _) = await PartitionAsync(family, limit);
+        Assert.Equal(64, summary.RecordCount);
+        Assert.Equal(SingleBlockLimit.HardMaxRecordBytes, summary.RecordBytes);
+
+        var violation = await Assert.ThrowsAsync<DataContractViolation>(() => PartitionAsync(overByOne, limit));
+
+        Assert.Equal("dimension=bytes applied=1048576", violation.Reason);
+        Assert.Equal(65, violation.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheRecordCountIsEvaluatedBeforeTheByteBound()
+    {
+        var limit = new SingleBlockLimit(1_000);
+        var records = SnapshotBytes.Records(1_000).Append(SnapshotBytes.TallRecord(1, 1_048_000)).ToArray();
+
+        var violation = await Assert.ThrowsAsync<DataContractViolation>(() => PartitionAsync(records, limit));
+
+        Assert.Equal("dimension=records applied=1000", violation.Reason);
+        Assert.Equal(1_001, violation.Ordinal);
+    }
+
+    // A record whose wire length is exactly <paramref name="bytes"/>: the ordinary record
+    // with a description long enough to reach the length the case needs.
+    private static string SizedRecord(int bytes)
+    {
+        var ordinary = Encoding.UTF8.GetByteCount(SnapshotBytes.TallRecord(1, 0));
+        return SnapshotBytes.TallRecord(1, bytes - ordinary);
+    }
+
+    private static async Task<(PartitionSummary Summary, byte[] Document)> PartitionAsync(
+        string[] records,
+        SingleBlockLimit? limit = null)
     {
         var snapshot = SnapshotBytes.Document(records: records);
         await using var source = new MemoryStream(snapshot, writable: false);
@@ -109,7 +184,8 @@ public sealed class SingleBlockPartitionerTests
         var summary = await SingleBlockPartitioner.PartitionAsync(
             HeaderItemsReader.ReadAsync(source, TestContext.Current.CancellationToken),
             block,
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken,
+            limit: limit);
         return (summary, block.ToArray());
     }
 }
