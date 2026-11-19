@@ -61,6 +61,16 @@ metrics backend learns which build a process runs), `Api/Telemetry/` holds the
 API's instruments and `Workers.Orchestration/Telemetry/` the worker's. A new
 instrument is created through one of those factories, on the host's identity.
 
+The API's refusal counter, `reportservice.consumer.refusals`, counts the requests
+the consumer gate refused, by the refusal's `code`, the `operation` and the
+identity's `identity_state`. Its operations are the upload operations (`create`,
+`status`, `content`, `confirm`), the template version read (`template-version`)
+and the report-job reads (`job-status`, `artifact-list`, `artifact-download`); its
+states are `missing`, `malformed`, `unregistered` and `inactive`. Every tag is one
+of those fixed values: a declared identity, a job's identifier and an artifact's
+identifier never appear on a metric. A job or file that was not found is not a
+consumer refusal and is not counted there.
+
 ## The job identifier: logs and spans, never a metric
 
 A unit of work is opened with a job identifier and the logger factory of the

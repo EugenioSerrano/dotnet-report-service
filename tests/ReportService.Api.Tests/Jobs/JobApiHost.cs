@@ -11,6 +11,7 @@ using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
 using ReportService.ServiceDefaults;
+using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.Testing;
@@ -61,10 +62,14 @@ internal sealed class JobApiHost : IDisposable
     /// <param name="store">Wraps the job records the service is given, so a case can place an event inside one call.</param>
     /// <param name="versions">Wraps the taken template versions the service reads, so a case can make the read fail.</param>
     /// <param name="objects">Wraps the object storage the service is given, so a case can count its reads or make one fail.</param>
+    /// <param name="registry">Feeds the registry from an in-memory source instead of the host's file, so a case triggers the reload itself.</param>
+    /// <param name="meterName">The meter this host's instruments are created on, when a case must hear only its own measurements.</param>
     public JobApiHost(
         Func<IJobStore, IJobStore>? store = null,
         Func<ITemplateVersionStore, ITemplateVersionStore>? versions = null,
-        Func<IObjectStore, IObjectStore>? objects = null)
+        Func<IObjectStore, IObjectStore>? objects = null,
+        ReplaceableConfiguration? registry = null,
+        string? meterName = null)
     {
         _registryPath = _directory.Write(
             "consumers.json",
@@ -99,6 +104,25 @@ internal sealed class JobApiHost : IDisposable
 
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(Clock);
+
+                if (registry is not null)
+                {
+                    // The registry of the running service is the in-memory source the case holds:
+                    // replacing the value of it swaps the snapshot synchronously, so a case sees
+                    // the change in force before its next request instead of waiting for a file.
+                    services.RemoveAll<ConsumerRegistry>();
+                    services.AddSingleton(provider => new ConsumerRegistry(
+                        registry.Root,
+                        provider.GetRequiredService<ILogger<ConsumerRegistry>>()));
+                }
+
+                if (meterName is not null)
+                {
+                    // A host of a case that measures an instrument publishes it on a meter of its
+                    // own, so a listener hears this host's measurements and never a neighbour's.
+                    services.RemoveAll<MeterIdentity>();
+                    services.AddSingleton(MeterIdentity.ForHost(meterName));
+                }
             });
         });
         Client = _factory.CreateClient();
