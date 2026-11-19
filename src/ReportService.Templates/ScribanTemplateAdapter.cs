@@ -190,12 +190,17 @@ internal sealed class PackageTemplateLoader(PreparedTemplate template) : ITempla
 {
     public string GetPath(TemplateContext context, SourceSpan callerSpan, string templatePath)
     {
-        // An include of another declared part is served from what preparation already read.
-        foreach (var part in Enum.GetValues<TemplatePart>())
+        // One resolution for the render and the take's include check: a Scriban
+        // include names a declared part's path, and nothing else is loaded.
+        var resolved = ScribanIncludes.Resolve(templatePath);
+        if (resolved is not null)
         {
-            if (string.Equals(template.Manifest.PathOf(part), templatePath, StringComparison.Ordinal) && template.Has(part))
+            foreach (var part in Enum.GetValues<TemplatePart>())
             {
-                return templatePath;
+                if (string.Equals(template.Manifest.PathOf(part), resolved, StringComparison.Ordinal) && template.Has(part))
+                {
+                    return resolved;
+                }
             }
         }
 
@@ -204,11 +209,15 @@ internal sealed class PackageTemplateLoader(PreparedTemplate template) : ITempla
 
     public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
     {
-        foreach (var part in Enum.GetValues<TemplatePart>())
+        var resolved = ScribanIncludes.Resolve(templatePath);
+        if (resolved is not null)
         {
-            if (string.Equals(template.Manifest.PathOf(part), templatePath, StringComparison.Ordinal) && template.Has(part))
+            foreach (var part in Enum.GetValues<TemplatePart>())
             {
-                return template.Source(part);
+                if (string.Equals(template.Manifest.PathOf(part), resolved, StringComparison.Ordinal) && template.Has(part))
+                {
+                    return template.Source(part);
+                }
             }
         }
 

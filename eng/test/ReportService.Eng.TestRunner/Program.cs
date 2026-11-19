@@ -35,6 +35,7 @@ internal static partial class Program
         "tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
         "tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
+        "tests/ReportService.TemplateChecks.Tests/ReportService.TemplateChecks.Tests.csproj",
         "tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj",
         "tests/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj",
         "tests/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj",

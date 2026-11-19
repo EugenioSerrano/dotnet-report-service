@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The static checks a template version passes before it is taken: the eight
+    checks in their fixed order, the refusal message an author reads, the source
+    scans a template's parts are read with, and the registration the PDF worker
+    calls. Every engine parser is reached through ReportService.Templates and
+    every schema evaluation through ReportService.DataContract; no engine or
+    validator package is referenced here directly.
+  -->
+  <PropertyGroup>
+    <RootNamespace>ReportService.TemplateChecks</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\ReportService.Templates\ReportService.Templates.csproj" />
+    <ProjectReference Include="..\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+  </ItemGroup>
+
+</Project>

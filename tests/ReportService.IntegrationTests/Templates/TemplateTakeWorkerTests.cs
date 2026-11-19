@@ -38,9 +38,13 @@ namespace ReportService.IntegrationTests.Templates;
 /// settings its caller is given.
 /// <para>
 /// Every package this class <b>takes</b> is a package the product's own rules
-/// accept: the checks that refuse an invalid one ship later, and a taken copy is
-/// never re-checked, so the refused packages are never taken - they are refused
-/// before anything is written.
+/// accept; the packages it expects to be refused are one mutation of that package,
+/// and each case asserts the code, the file the reason names, no record in the
+/// store and no object under the copy's key. The eight refusal classes are the
+/// delivered take checks: the schema, the sample, the syntax, an include that does
+/// not resolve, a missing asset, an unescaped output, a declaration this increment
+/// does not deliver and an unusable page setting; the ninth case is a version
+/// published more than once, whose conflict is logged.
 /// </para>
 /// <para>
 /// The two-workflow interleaving of the conflict (a take paused after its read) and
@@ -364,6 +368,167 @@ public sealed class TemplateTakeWorkerTests : IClassFixture<PostgresFixture>, IA
         throw new Xunit.Sdk.XunitException($"the workflow failed without an application failure: {failure.Message}");
     }
 
+    [Fact]
+    public async Task ASyntaxErrorInAPartEndsWithTemplateInvalidAndNamesTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var package = TemplatePackageFixtures.Valid(Template, "1.7.0", Owner);
+        package["html/row.html.sbn"] = System.Text.Encoding.UTF8.GetBytes("<tr><td>{{ if }}</td></tr>");
+        await PublishAsync("1.7.0", package);
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "1.7.0", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.True(cause.NonRetryable);
+        Assert.Contains("html/row.html.sbn", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "1.7.0", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASchemaOutsideTheProfileEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var package = TemplatePackageFixtures.Valid(Template, "1.8.0", Owner);
+        package["schema.json"] = System.Text.Encoding.UTF8.GetBytes(
+            """{ "$schema": "http://json-schema.org/draft-07/schema#", "type": "object" }""");
+        await PublishAsync("1.8.0", package);
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "1.8.0", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("schema.json", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "1.8.0", cancellationToken));
+    }
+
+    [Fact]
+    public async Task AnUnescapedDataOutputEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var package = TemplatePackageFixtures.Valid(Template, "1.9.0", Owner);
+        package["html/row.html.sbn"] = System.Text.Encoding.UTF8.GetBytes("<tr><td>{{ item.quantity }}</td></tr>");
+        await PublishAsync("1.9.0", package);
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "1.9.0", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("html.escape", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "1.9.0", cancellationToken));
+    }
+
+    [Fact]
+    public async Task AnUnusablePageSettingEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var package = TemplatePackageFixtures.Valid(Template, "1.9.1", Owner);
+        var manifest = System.Text.Encoding.UTF8.GetString(package["template.yaml"])
+            .Replace("paper: A4", "paper: A5", StringComparison.Ordinal);
+        package["template.yaml"] = System.Text.Encoding.UTF8.GetBytes(manifest);
+        await PublishAsync("1.9.1", package);
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "1.9.1", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("outputs.pdf.paper", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "1.9.1", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASampleThatBreaksTheSchemaEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync("2.0.0", TemplatePackageFixtures.SampleThatBreaksTheSchema(Template, "2.0.0", Owner));
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "2.0.0", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.True(cause.NonRetryable);
+        Assert.Contains("sample.json", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "2.0.0", cancellationToken));
+        AssertNoCopyWritten("2.0.0");
+    }
+
+    [Fact]
+    public async Task AnIncludeThatDoesNotResolveEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync("2.0.1", TemplatePackageFixtures.IncludeThatDoesNotResolve(Template, "2.0.1", Owner));
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "2.0.1", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("html/row.html.sbn", cause.Message, StringComparison.Ordinal);
+        Assert.Contains("include", cause.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(await RowOrNullAsync(Template, "2.0.1", cancellationToken));
+        AssertNoCopyWritten("2.0.1");
+    }
+
+    [Fact]
+    public async Task AMissingAssetEndsWithTemplateInvalid()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync("2.0.2", TemplatePackageFixtures.MissingAsset(Template, "2.0.2", Owner));
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "2.0.2", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("logo.png", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "2.0.2", cancellationToken));
+        AssertNoCopyWritten("2.0.2");
+    }
+
+    [Fact]
+    public async Task ADeclarationThisIncrementDoesNotDeliverEndsWithUnsupportedCapability()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync("2.0.3", TemplatePackageFixtures.FeatureDeclaration(Template, "2.0.3", Owner));
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "2.0.3", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.UnsupportedCapability, cause.ErrorType);
+        Assert.True(cause.NonRetryable);
+        Assert.Contains("aggregates", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "2.0.3", cancellationToken));
+        AssertNoCopyWritten("2.0.3");
+    }
+    [Fact]
+    public async Task AVersionPublishedTwiceEndsWithTemplateInvalidAndNothingTaken()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await PublishAsync("1.9.2", TemplatePackageFixtures.Valid(Template, "1.9.2", Owner, title: "first"));
+        await PublishAsync("1.9.2", TemplatePackageFixtures.Valid(Template, "1.9.2", Owner, title: "second"));
+
+        var failure = await Assert.ThrowsAsync<WorkflowFailedException>(
+            () => TakeAsync(Template, "1.9.2", Owner, cancellationToken));
+
+        var cause = ApplicationFailure(failure);
+        Assert.Equal(TemplateTakeCodes.TemplateInvalid, cause.ErrorType);
+        Assert.Contains("published more than once", cause.Message, StringComparison.Ordinal);
+        Assert.Null(await RowOrNullAsync(Template, "1.9.2", cancellationToken));
+    }
+    /// <summary>Asserts that no copy of the version was written under the storage root.</summary>
+    private void AssertNoCopyWritten(string version)
+    {
+        var folder = Path.Combine(StorageRoot(), "templates", Owner, Template, version);
+        var written = Directory.Exists(folder)
+            && Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).Any();
+        Assert.False(written, $"a copy was written for {Template} {version}");
+    }
     private Task PublishAsync(string version, IReadOnlyDictionary<string, byte[]> files) =>
         _source!.PublishAsync(Template, version, files);
 

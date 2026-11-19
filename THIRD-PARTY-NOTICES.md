@@ -227,6 +227,54 @@ product ships it as the package bundles it:
 
 ---
 
+## Handlebars.Net 2.4.3
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Copyright c 2014-2020 Rex Morgan` - from the package's own `.nuspec`.
+- Project: https://github.com/Handlebars-Net.
+- The licence text is reproduced in [MIT](#mit) below.
+
+## Fluid.Core 2.40.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Sebastien Ros` - from the package's own `.nuspec`.
+- Project: https://github.com/sebastienros/fluid.
+- The licence text is reproduced in [MIT](#mit) below.
+
+## Parlot 1.5.2
+
+- Licence: BSD-3-Clause - declared by the package's own metadata and published
+  at https://licenses.nuget.org/BSD-3-Clause.
+- Copyright: `Sebastien Ros` - from the package's own `.nuspec`.
+- Project: https://github.com/sebastienros/parlot.
+- The licence text is reproduced in [BSD-3-Clause](#bsd-3-clause) below.
+
+## TimeZoneConverter 7.2.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Matt Johnson-Pint` - from the package's own `.nuspec`.
+- Project: https://github.com/mattjohnsonpint/TimeZoneConverter.
+- The licence text is reproduced in [MIT](#mit) below.
+
+## Microsoft.Extensions.FileProviders.Abstractions 10.0.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Microsoft Corporation` - from the package's own `.nuspec`.
+- Project: https://dot.net/.
+- The licence text is reproduced in [MIT](#mit) below.
+
+## Microsoft.Extensions.Primitives 10.0.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Microsoft Corporation` - from the package's own `.nuspec`.
+- Project: https://dot.net/.
+- The licence text is reproduced in [MIT](#mit) below.
+
 ## Licence texts
 
 ### MIT

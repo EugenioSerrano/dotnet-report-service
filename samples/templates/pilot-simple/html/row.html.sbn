@@ -1,1 +1,1 @@
-    <tr><td class="num">{{ item.sequence }}</td><td class="text">{{ item.description | html.escape }}</td><td class="num">{{ item.quantity }}</td><td class="num">{{ item.unitPrice }}</td><td class="num">{{ item.amount }}</td></tr>
+    <tr><td class="num">{{ item.sequence | html.escape }}</td><td class="text">{{ item.description | html.escape }}</td><td class="num">{{ item.quantity | html.escape }}</td><td class="num">{{ item.unitPrice | html.escape }}</td><td class="num">{{ item.amount | html.escape }}</td></tr>

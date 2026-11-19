@@ -8,6 +8,8 @@
   -->
   <ItemGroup>
     <PackageReference Include="Scriban" />
+    <PackageReference Include="Handlebars.Net" />
+    <PackageReference Include="Fluid.Core" />
   </ItemGroup>
 
   <ItemGroup>

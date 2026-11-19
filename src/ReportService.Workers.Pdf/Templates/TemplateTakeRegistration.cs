@@ -6,6 +6,7 @@ using Npgsql;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
+using ReportService.TemplateChecks;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Manifest;
@@ -19,7 +20,7 @@ namespace ReportService.Workers.Pdf.Templates;
 /// the take runs on - the template source's own object store, on its own root and
 /// read-only, the class read through that instance over the deployment's provider,
 /// the manifest reader, the taken-version store, the conflict warning and the
-/// checks registered so far (none today). The source's settings are validated at
+/// checks this build registers. The source's settings are validated at
 /// start, so a root that is missing or a class that cannot be read stops the
 /// process naming the setting instead of failing at the first take. One work
 /// registration, one options object and one engine worker serve
@@ -58,6 +59,7 @@ public static class TemplateTakeRegistration
             services.GetRequiredService<ILogger<StorageTemplateSource>>()));
         builder.Services.AddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
         builder.Services.AddSingleton<TemplateTake>();
+        builder.Services.AddTemplateVersionChecks();
         builder.Services.AddSingleton<TakeTemplateVersionActivity>();
 
         // One registration on the queue, resolved from the container so the activity

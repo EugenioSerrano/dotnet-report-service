@@ -70,10 +70,12 @@ namespace ReportService.IntegrationTests.Jobs;
 /// data step reads it, so a case reads the pin while the job may still be running.
 /// </para>
 /// <para>
-/// The case of a syntax error inside a part (<c>html/row.html.sbn</c>) is <b>not</b> run here
-/// and is carried, never waived: the take registers no content checks, so such a package is not
-/// refused yet. What this class proves is the job-level half - a take's <c>TEMPLATE_INVALID</c>
-/// refusal fails the job with its code and message and nothing is taken.
+/// The take's static checks are registered in this build, so every content refusal is run here
+/// too: an invalid schema, a sample that breaks it, a syntax error inside a part, an include
+/// that does not resolve, a missing asset, an unescaped output, a declaration this increment
+/// does not deliver and an unusable page setting each fail the job after the <c>202</c> with the
+/// take's code and a message that names the file, and nothing is pinned; a version published
+/// more than once fails the exact reference and logs <c>TEMPLATE_VERSION_CONFLICT</c>.
 /// </para>
 /// </summary>
 public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>, IAsyncLifetime
@@ -464,8 +466,8 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
 
         // A folder whose name is not the manifest's version, and a manifest that names no
         // owner: both are the take's own structural refusals, and both end the job with the
-        // take's message. The file-naming half (a syntax error inside html/row.html.sbn) is
-        // carried: the take registers no content checks, so it is not attempted here.
+        // take's message before any content check runs. The content refusals have their own
+        // cases below, one for each class the take refuses.
         await _source!.PublishAsync(Pilot, "1.3.0", TemplatePackageFixtures.FolderDoesNotMatchTheVersion(Pilot, "1.3.0", "1.3.1"));
         await _source.PublishAsync(Pilot, "1.5.0", TemplatePackageFixtures.OwnerMissing(Pilot, "1.5.0"));
 
@@ -483,6 +485,141 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
         Assert.Null(await ReferencePinnedToAsync("1.2.0", cancellationToken));
     }
 
+    [Fact]
+    public async Task AContentRefusalFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var package = TemplatePackageFixtures.Valid(Pilot, "1.7.0", owner: Owner);
+        package["html/row.html.sbn"] = System.Text.Encoding.UTF8.GetBytes("<tr><td>{{ if }}</td></tr>");
+        await _source!.PublishAsync(Pilot, "1.7.0", package);
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "1.7.0", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("html/row.html.sbn", state.ErrorMessage!, StringComparison.Ordinal);
+        Assert.Null(await TakenAsync(Pilot, "1.7.0", cancellationToken));
+    }
+
+    [Fact]
+    public async Task AVersionsSecondPublicationFailsTheExactReferenceAndLogsTheConflict()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        await _source!.PublishAsync(Pilot, "1.8.0", TemplatePackageFixtures.Valid(Pilot, "1.8.0", owner: Owner, title: "first"));
+        await _source!.PublishAsync(Pilot, "1.8.0", TemplatePackageFixtures.Valid(Pilot, "1.8.0", owner: Owner, title: "second"));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "1.8.0", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("published more than once", state.ErrorMessage!, StringComparison.Ordinal);
+        Assert.Contains(
+            _logs.Lines,
+            line => line.Contains("TEMPLATE_VERSION_CONFLICT", StringComparison.Ordinal)
+                && line.Contains("duplicate_publication", StringComparison.Ordinal));
+        Assert.Null(await TakenAsync(Pilot, "1.8.0", cancellationToken));
+    }
+
+    [Fact]
+    public async Task AnInvalidSchemaFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.0", TemplatePackageFixtures.SchemaOutsideTheProfile(Pilot, "2.1.0", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.0", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("schema.json", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.0", cancellationToken);
+    }
+
+    [Fact]
+    public async Task ASampleThatBreaksTheSchemaFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.1", TemplatePackageFixtures.SampleThatBreaksTheSchema(Pilot, "2.1.1", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.1", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("sample.json", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.1", cancellationToken);
+    }
+
+    [Fact]
+    public async Task AnIncludeThatDoesNotResolveFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.2", TemplatePackageFixtures.IncludeThatDoesNotResolve(Pilot, "2.1.2", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.2", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("html/row.html.sbn", state.ErrorMessage!, StringComparison.Ordinal);
+        Assert.Contains("include", state.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.2", cancellationToken);
+    }
+
+    [Fact]
+    public async Task AMissingAssetFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.3", TemplatePackageFixtures.MissingAsset(Pilot, "2.1.3", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.3", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("logo.png", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.3", cancellationToken);
+    }
+
+    [Fact]
+    public async Task AnUnescapedOutputFailsTheJobNamingTheFile()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.4", TemplatePackageFixtures.UnescapedOutput(Pilot, "2.1.4", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.4", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("html.escape", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.4", cancellationToken);
+    }
+
+    [Fact]
+    public async Task AnUnusablePageSettingFailsTheJobNamingTheField()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.5", TemplatePackageFixtures.UnusablePageSetting(Pilot, "2.1.5", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.5", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.Invalid, state.ErrorCode);
+        Assert.Contains("outputs.pdf.paper", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.5", cancellationToken);
+    }
+
+    [Fact]
+    public async Task ADeclarationThisIncrementDoesNotDeliverFailsTheJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _source!.PublishAsync(Pilot, "2.1.6", TemplatePackageFixtures.FeatureDeclaration(Pilot, "2.1.6", Owner));
+
+        var reportJobId = await AcceptedJobAsync(Owner, Pilot, "2.1.6", cancellationToken);
+        var state = await FailedAsync(reportJobId, cancellationToken);
+
+        Assert.Equal(TemplateFailureCodes.UnsupportedCapability, state.ErrorCode);
+        Assert.Contains("aggregates", state.ErrorMessage!, StringComparison.Ordinal);
+        await AssertNothingPinnedAsync(reportJobId, "2.1.6", cancellationToken);
+    }
     [Fact]
     public async Task AnUnreachableSourceFailsAnUntakenExactVersionAndPinsTheByNameBaseline()
     {
@@ -956,6 +1093,25 @@ public sealed class JobTemplateResolutionTests : IClassFixture<PostgresFixture>,
             """,
             new { TemplateId = templateId, Version = version },
             cancellationToken: cancellationToken));
+    }
+
+    /// <summary>
+    /// Asserts that a refused job stayed unpinned: its own reference names the version it
+    /// asked for and never resolved it, no other version was substituted, and no version of
+    /// the template was taken.
+    /// </summary>
+    private async Task AssertNothingPinnedAsync(
+        string reportJobId,
+        string requestedVersion,
+        CancellationToken cancellationToken)
+    {
+        var reference = await ReferenceAsync(reportJobId, cancellationToken);
+        Assert.NotNull(reference);
+        Assert.Equal(Pilot, reference.TemplateId);
+        Assert.Equal(requestedVersion, reference.RequestedVersion);
+        Assert.Null(reference.ResolvedVersion);
+        Assert.Null(await ReferencePinnedToAsync(requestedVersion, cancellationToken));
+        Assert.Null(await TakenAsync(Pilot, requestedVersion, cancellationToken));
     }
 
     private async Task<string?> ReferencePinnedToAsync(string version, CancellationToken cancellationToken)

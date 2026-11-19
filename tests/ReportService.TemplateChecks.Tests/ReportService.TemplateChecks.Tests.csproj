@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the take's static checks: the fixed order, the refusal message,
+    the schema profile and the pattern rule, the sample against its schema, the
+    anchors, the syntax per engine, the includes and assets, the lint, the engine
+    version and the budget. Hermetic: no container, no network, no browser.
+    ProjectReference to the printing assembly only for the document-base
+    cross-check; the checks themselves do not reference it.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+  </ItemGroup>
+
+</Project>

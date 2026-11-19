@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A template version is checked when it is taken, and a broken one is refused before
+  anything is kept: an invalid `schema.json`, a `sample.json` that breaks it, a syntax
+  error in a part for its engine, a missing include or asset, an unescaped data output,
+  an unsupported declaration, an unusable PDF page setting or an engine version this
+  build does not render ends the job `failed` with `TEMPLATE_INVALID` or
+  `UNSUPPORTED_CAPABILITY`, naming the file to fix. A version published more than once
+  is refused and the conflict is logged as `TEMPLATE_VERSION_CONFLICT`.
 - A job's published files can be listed and downloaded, verified to the last byte:
   `GET /api/v1/report-jobs/{id}/artifacts` answers the job's owner with each file's
   identifier, format, media type, size, SHA-256 and expiry, and

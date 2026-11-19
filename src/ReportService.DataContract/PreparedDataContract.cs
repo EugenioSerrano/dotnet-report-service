@@ -75,6 +75,11 @@ public sealed class PreparedDataContract : IDisposable
     /// <returns>The verdict over the record.</returns>
     public ContractCheck CheckRecord(ReadOnlyMemory<byte> record) => Evaluate(_record, record);
 
+    /// <summary>Evaluates a whole document at the schema's root.</summary>
+    /// <param name="envelope">The document's bytes, as the package holds them.</param>
+    /// <returns>The verdict over the document.</returns>
+    public ContractCheck CheckEnvelope(ReadOnlyMemory<byte> envelope) => Evaluate(_root, envelope);
+
     /// <inheritdoc />
     public void Dispose()
     {

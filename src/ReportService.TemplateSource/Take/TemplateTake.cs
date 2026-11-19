@@ -201,7 +201,7 @@ public sealed partial class TemplateTake
         string? scratch = null;
         try
         {
-            var read = await ReadVersionAsync(templateId, version, cancellationToken).ConfigureAwait(false);
+            var read = await ReadVersionAsync(templateId, version, reportJobId, cancellationToken).ConfigureAwait(false);
             if (read.Refusal is not null)
             {
                 return read.Refusal;
@@ -250,7 +250,7 @@ public sealed partial class TemplateTake
             // 6. The checks of the seam run only for a caller that may use the version.
             var check = await TemplateVersionChecks.RunAsync(
                 _checks,
-                new TemplateCandidate(templateId, version, candidate.Manifest, scratch, publication.DescriptorSha256),
+                new TemplateCandidate(templateId, version, candidate.Manifest, manifestRead.CanonicalJson!, scratch, publication.DescriptorSha256),
                 cancellationToken).ConfigureAwait(false);
             if (!check.Passed)
             {
@@ -326,6 +326,7 @@ public sealed partial class TemplateTake
     private async Task<Step<ReadVersion>> ReadVersionAsync(
         string templateId,
         string version,
+        string? reportJobId,
         CancellationToken cancellationToken)
     {
         SourceVersionRead read;
@@ -351,7 +352,8 @@ public sealed partial class TemplateTake
                     TemplateTakeCodes.TemplateInvalid,
                     $"Nothing was published for this version: the source holds {incomplete.FileCount.ToString(CultureInfo.InvariantCulture)} file(s) for it and no publication record.",
                     retryable: false));
-            case SourceVersionRead.Duplicate:
+            case SourceVersionRead.Duplicate duplicate:
+                _conflict.ReportDuplicatePublication(templateId, version, duplicate.Descriptors.Count, reportJobId);
                 return Step<ReadVersion>.Fail(TemplateTakeOutcome.Refused(
                     TemplateTakeCodes.TemplateInvalid,
                     "The version was published more than once; publish it under a new version.",

@@ -140,6 +140,34 @@ public sealed class TemplateVersionConflictTests
     }
 
     [Fact]
+    public void ADuplicatePublicationIsReportedWithItsObservationAndTheRecordCount()
+    {
+        var capture = new LogCapture();
+        using var factory = LoggerFactory.Create(builder => builder.AddProvider(capture).SetMinimumLevel(LogLevel.Trace));
+        var conflict = new TemplateVersionConflict(factory.CreateLogger(TemplateVersionConflict.LogCategory));
+
+        conflict.ReportDuplicatePublication("invoice-energy", "1.1.0", 2, "report-job-1");
+
+        var line = Assert.Single(capture.Lines);
+        Assert.StartsWith("Warning: ReportService.TemplateSource:", line, StringComparison.Ordinal);
+        Assert.Contains(TemplateVersionConflict.Code, line, StringComparison.Ordinal);
+        Assert.Contains("invoice-energy", line, StringComparison.Ordinal);
+        Assert.Contains("1.1.0", line, StringComparison.Ordinal);
+        Assert.Contains($"Observation {TemplateVersionConflict.Observations.DuplicatePublication}", line, StringComparison.Ordinal);
+        Assert.Contains("report-job-1", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ADuplicateReportNeedsAVersionAndTwoRecords()
+    {
+        var conflict = new TemplateVersionConflict(LoggerFactory.Create(builder => { }).CreateLogger("test"));
+
+        Assert.Throws<ArgumentException>(() => conflict.ReportDuplicatePublication(string.Empty, "1.1.0", 2));
+        Assert.Throws<ArgumentException>(() => conflict.ReportDuplicatePublication("invoice-energy", string.Empty, 2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => conflict.ReportDuplicatePublication("invoice-energy", "1.1.0", 1));
+    }
+
+    [Fact]
     public async Task TheChecksRunInOrderAndTheFirstRefusalEndsTheTake()
     {
         var ran = new List<string>();
@@ -181,6 +209,7 @@ public sealed class TemplateVersionConflictTests
         "invoice-energy",
         "1.1.0",
         TemplateManifestJson.ReadTyped("""{"manifestVersion":"1.0","id":"invoice-energy","version":"1.1.0"}"""),
+        """{"manifestVersion":"1.0","id":"invoice-energy","version":"1.1.0"}""",
         Path.GetTempPath(),
         new string('1', 40));
 
