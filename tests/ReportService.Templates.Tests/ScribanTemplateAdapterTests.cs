@@ -86,7 +86,7 @@ public sealed class ScribanTemplateAdapterTests
         var adapter = new ScribanTemplateAdapter();
 
         Assert.Equal("scriban", adapter.Engine);
-        Assert.Equal("7.5.1", ScribanTemplateAdapter.PinnedVersion);
+        Assert.Equal("7.5.1", ScribanTemplateAdapter.EngineVersion);
         Assert.Equal(10_000, ScribanTemplateAdapter.LoopLimit);
         Assert.Equal(100, ScribanTemplateAdapter.RecursiveLimit);
         Assert.Equal(1024 * 1024, ScribanTemplateAdapter.LimitToString);
@@ -100,7 +100,7 @@ public sealed class ScribanTemplateAdapterTests
         string? groupKey = null)
     {
         var template = Prepare(parts);
-        var composer = new BlockComposer(new ScribanTemplateAdapter(), new ManualTimeProvider(Now));
+        var composer = new BlockComposer(new ManualTimeProvider(Now));
         return composer.Compose(new CompositionRequest(
             template,
             new CompositionBlock(0, records.Length, 1, IsFirst: true, IsLast: true),
@@ -108,6 +108,7 @@ public sealed class ScribanTemplateAdapterTests
             [.. records.Select((json, index) => new ComposedRecord(index + 1, RenderContextFactory.Header(Encoding.UTF8.GetBytes(json))))],
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
             groupKey),
+            new ScribanTemplateAdapter(),
             new PresentationSettings(System.Globalization.CultureInfo.GetCultureInfo("en-US"), TimeZoneInfo.Utc, DateTimeOffset.UnixEpoch));
     }
 
@@ -115,7 +116,7 @@ public sealed class ScribanTemplateAdapterTests
     {
         var manifest = new RenderManifest(
             engine,
-            ScribanTemplateAdapter.PinnedVersion,
+            ScribanTemplateAdapter.EngineVersion,
             parts.ToDictionary(part => part.Part, part => part.Part.ToString(), EqualityComparer<TemplatePart>.Default),
             [],
             new PdfSettings("A4", "portrait", new PageMarginsMm(15, 12, 18, 12), PageTotalsEnabled: false, VerificationAnchors.None),

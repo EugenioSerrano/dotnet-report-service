@@ -71,11 +71,11 @@ public sealed class PreparedTemplateCacheTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new PreparedTemplateCache(capacity: 0));
     }
 
-    private static PreparedTemplate Template(string engineVersion = ScribanTemplateAdapter.PinnedVersion) =>
+    private static PreparedTemplate Template(string? engineVersion = null) =>
         new(
             new RenderManifest(
                 ScribanTemplateAdapter.EngineName,
-                engineVersion,
+                engineVersion ?? ScribanTemplateAdapter.EngineVersion,
                 new Dictionary<TemplatePart, string>(),
                 [],
                 new PdfSettings("A4", "portrait", new PageMarginsMm(15, 12, 18, 12), PageTotalsEnabled: false, VerificationAnchors.None),

@@ -2,6 +2,7 @@ using System.Formats.Tar;
 using System.Diagnostics.Metrics;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReportService.Data;
 using ReportService.Jobs;
@@ -174,6 +175,277 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.True(renderer.Called);
     }
 
+    /// <summary>
+    /// The commit the step records carries what produced the presentation, in the same
+    /// transaction: the job's fixed culture, zone and clock, the engine the version declares
+    /// and the version that engine runs, and the globalisation data of the process that
+    /// printed it. The four identifiers reach the printed line as names, never a value.
+    /// </summary>
+    [Fact]
+    public async Task ACommitRecordsThePresentationAndTheLineNamesIt()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        using var logs = new CapturingLogs();
+        var activity = Activity(
+            jobs,
+            new FakeVersionStore { Record = record },
+            new FakeRenderer(),
+            storage.Store,
+            provenance: new GlobalisationProvenance("72.1.0.4", "10.0.26100.9818"),
+            loggers: logs.Factory);
+
+        await new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0)));
+
+        var presentation = jobs.Committed!.Presentation;
+        Assert.NotNull(presentation);
+        Assert.Equal("es-AR", presentation!.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", presentation.TimeZone);
+        Assert.Equal(new DateTimeOffset(2026, 3, 1, 12, 30, 0, TimeSpan.Zero), presentation.Clock);
+        Assert.Equal("scriban", presentation.Engine);
+        Assert.Equal("7.5.1", presentation.EngineVersion);
+        Assert.Equal("72.1.0.4", presentation.IcuVersion);
+        Assert.Equal("10.0.26100.9818", presentation.TzDataVersion);
+
+        var line = Assert.Single(logs.Lines, text => text.Contains("printed:", StringComparison.Ordinal));
+        Assert.Contains("engine scriban 7.5.1", line, StringComparison.Ordinal);
+        Assert.Contains("culture es-AR", line, StringComparison.Ordinal);
+        Assert.Contains("time zone America/Argentina/Buenos_Aires", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("10.00", line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The engine the version declares is refused before anything is composed, and the step
+    /// answers with that refusal's own code, non-retryably, with no commit and nothing under
+    /// the output namespace. The two codes a version can be refused with are the decision's.
+    /// </summary>
+    /// <param name="engine">The engine name the manifest declares.</param>
+    [Theory]
+    [InlineData("RAZOR")]
+    [InlineData("erlang")]
+    public async Task AnEngineTheDeploymentDoesNotOfferIsRefusedWithItsOwnCode(string engine)
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new EngineRefusingRenderer(engine);
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal("UNSUPPORTED_CAPABILITY", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=engine-unsupported", failure.Message, StringComparison.Ordinal);
+        Assert.True(renderer.Called, "the engine decision belongs to the renderer, so the refusal arrives from it");
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
+    /// <summary>
+    /// A version that declares no engine reaches the renderer's own decision, which refuses it
+    /// as a defect of the take rather than as a capability the deployment lacks.
+    /// </summary>
+    [Fact]
+    public async Task AVersionThatDeclaresNoEngineIsRefusedAsATakeDefect()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new EngineRefusingRenderer(string.Empty);
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal("TEMPLATE_INVALID", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=engine-undeclared", failure.Message, StringComparison.Ordinal);
+        Assert.True(renderer.Called, "the engine decision belongs to the renderer, so the refusal arrives from it");
+        Assert.Null(jobs.Committed);
+    }
+
+    /// <summary>
+    /// The step takes the engine decision itself, before the package is prepared: the pin and
+    /// the taken copy disagreeing about the engine is that decision's refusal, and it is a
+    /// defect of the take. It ends the block with D2's code and reason, non-retryably, with
+    /// nothing composed, committed or written under the output namespace.
+    /// </summary>
+    [Fact]
+    public async Task AnEngineThePinDisagreesWithIsRefusedBeforeComposing()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256, TemplateEngine.Handlebars);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new FakeRenderer();
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal("TEMPLATE_INVALID", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=engine-mismatch", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("declared=scriban", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("pinned=handlebars", failure.Message, StringComparison.Ordinal);
+        Assert.False(renderer.Called, "the step's own decision refuses the block, so the renderer never sees it");
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
+    /// <summary>
+    /// A version whose declared engine version names another major than the one its adapter
+    /// runs is a capability this deployment does not have. The step's own decision refuses it
+    /// before composing, with the code D2 gives it and nothing written.
+    /// </summary>
+    [Fact]
+    public async Task AnEngineVersionTheDeploymentDoesNotRunIsRefusedBeforeComposing()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size) with { EngineVersion = "8.0.0" };
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new FakeRenderer();
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal("UNSUPPORTED_CAPABILITY", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=engine-version", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("declared=8.0.0", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("offered=7.5.1", failure.Message, StringComparison.Ordinal);
+        Assert.False(renderer.Called, "the step's own decision refuses the block, so the renderer never sees it");
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
+    /// <summary>
+    /// A deployment whose built engine set does not offer the engine a taken version declares
+    /// cannot compose the block. The step's own decision refuses it before composing, with
+    /// <c>UNSUPPORTED_CAPABILITY</c> and the offered names, and never a value of the data.
+    /// </summary>
+    [Fact]
+    public async Task AnEngineTheDeploymentDoesNotOfferIsRefusedBeforeComposing()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new FakeRenderer();
+        var deployment = new TemplateEngineAdapterRegistry([new HandlebarsTemplateAdapter(), new FluidTemplateAdapter()]);
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store, engines: deployment);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal("UNSUPPORTED_CAPABILITY", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=engine-unsupported", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("offered=handlebars,liquid", failure.Message, StringComparison.Ordinal);
+        Assert.False(renderer.Called, "the step's own decision refuses the block, so the renderer never sees it");
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
+    /// <summary>
+    /// A value or a format the version cannot present ends the block before anything is
+    /// printed, with the refusal's own code and reason - never a value, never the format's
+    /// expansion - and nothing is committed.
+    /// </summary>
+    /// <param name="code">The code the surface refused with.</param>
+    /// <param name="reason">The reason word.</param>
+    /// <param name="function">The function that refused.</param>
+    [Theory]
+    [InlineData("DATA_INVALID", "number-out-of-range", "format_number")]
+    [InlineData("DATA_INVALID", "type-mismatch", "format_date")]
+    [InlineData("TEMPLATE_INVALID", "format-string", "format_number")]
+    public async Task APresentationTheVersionCannotProduceIsRefusedWithItsOwnCode(string code, string reason, string function)
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, new RefusingPresentationRenderer(code, reason, function), storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        Assert.Equal(code, failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains("reason=" + reason, failure.Message, StringComparison.Ordinal);
+        Assert.Contains("function=" + function, failure.Message, StringComparison.Ordinal);
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
+    /// <summary>
+    /// The part-commit fault a test host installs is absent from the product's own
+    /// composition and no public member accepts one: the seam is reachable only from the
+    /// tests that name it, and a process that starts without it commits every block it prints.
+    /// </summary>
+    [Fact]
+    public async Task ThePartCommitFaultIsAbsentFromTheProductsComposition()
+    {
+        // The seam itself is internal, no public member of the step takes one, and no public
+        // type of the assembly implements it: a process cannot be handed one from outside.
+        Assert.DoesNotContain(typeof(RenderPdfBlockActivity).GetConstructors()
+            .SelectMany(constructor => constructor.GetParameters()),
+            parameter => parameter.ParameterType == typeof(PartCommitFault));
+        Assert.DoesNotContain(
+            typeof(RenderPdfBlockActivity).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance),
+            property => property.PropertyType == typeof(PartCommitFault));
+        Assert.DoesNotContain(typeof(RenderPdfBlockActivity).Assembly.GetTypes(),
+            type => type.IsPublic && typeof(PartCommitFault).IsAssignableFrom(type));
+
+        // A step built exactly as the product builds it commits without consulting the seam.
+        var activity = Activity(new FakeJobStore(), new FakeVersionStore());
+        Assert.Null(activity.PartCommitFault);
+
+        await Task.CompletedTask;
+    }
+
     [Fact]
     public async Task ABlockThatPrintsReportsItsFourPhasesAndItsVerdict()
     {
@@ -264,9 +536,10 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         };
         var printer = new PrinterThatMustNotPrint();
         var renderer = new BlockRenderer(
-            new BlockComposer(new ScribanTemplateAdapter(), TimeProvider.System),
+            new BlockComposer(TimeProvider.System),
             printer,
-            new BlockVerifier());
+            new BlockVerifier(),
+            TemplateEngineAdapters.Registry());
         var activity = Activity(jobs, new FakeVersionStore { Record = withoutTheDeclaration }, renderer, storage.Store);
 
         var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
@@ -303,12 +576,45 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
     }
 
+    [Theory]
+    [InlineData("culture")]
+    [InlineData("time-zone")]
+    [InlineData("clock")]
+    public async Task ABlockWhoseJobHasNoUsablePresentationMemberIsRefused(string member)
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, new RefusingRenderer(member), storage.Store);
+
+        var failure = await Assert.ThrowsAsync<Temporalio.Exceptions.ApplicationFailureException>(
+            () => new ActivityEnvironment().RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0))));
+
+        // The refusal happens before composing: it is non-retryable, it names the job member
+        // and never a value, and nothing was written under the output namespace or committed.
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+        Assert.Contains(member, failure.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("'", failure.Message, StringComparison.Ordinal);
+        Assert.Null(jobs.Committed);
+        Assert.False(Directory.Exists(Path.Combine(root, "store", "outputs")));
+    }
+
     private RenderPdfBlockActivity Activity(
         FakeJobStore jobs,
         FakeVersionStore? versions = null,
         IBlockRenderer? renderer = null,
         IObjectStore? store = null,
-        PdfRenderingMetrics? metrics = null)
+        PdfRenderingMetrics? metrics = null,
+        GlobalisationProvenance? provenance = null,
+        ILoggerFactory? loggers = null,
+        TemplateEngineAdapterRegistry? engines = null)
     {
         store ??= FilesystemObjectStore.Open(
             new FilesystemStorageOptions { Root = Path.Combine(root, "store"), CreateIfMissing = true },
@@ -322,16 +628,17 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             store,
             new TakenTemplatePackageReader(store),
             new PreparedTemplateCache(),
-            new ScribanTemplateAdapter(),
+            engines ?? TemplateEngineAdapters.Registry(),
             renderer ?? new FakeRenderer(),
             metrics ?? new PdfRenderingMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             TimeProvider.System,
-            NullLoggerFactory.Instance,
-            NullLogger<RenderPdfBlockActivity>.Instance,
-            Path.Combine(root, "scratch"));
+            loggers ?? NullLoggerFactory.Instance,
+            loggers?.CreateLogger<RenderPdfBlockActivity>() ?? NullLogger<RenderPdfBlockActivity>.Instance,
+            Path.Combine(root, "scratch"),
+            provenance);
     }
 
-    private static TemplatePin Pin(string? packageSha256 = null) =>
+    private static TemplatePin Pin(string? packageSha256 = null, TemplateEngine engine = TemplateEngine.Scriban) =>
         new(
             "integrity-table",
             "1.0.0",
@@ -339,7 +646,7 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             null,
             null,
             packageSha256 ?? new string('f', 64),
-            TemplateEngine.Scriban,
+            engine,
             "7.5.1",
             "schema.json",
             DateTimeOffset.UnixEpoch);
@@ -479,7 +786,11 @@ internal sealed class FakeJobStore : IJobStore
 
     public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult<JobStateRecord?>(new JobStateRecord(
-            new ReportJobRecord(reportJobId, "consumer", "upload", ReportJobStatus.Running, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch),
+            new ReportJobRecord(reportJobId, "consumer", "upload", ReportJobStatus.Running, new DateTimeOffset(2026, 3, 1, 12, 30, 0, TimeSpan.Zero), DateTimeOffset.UnixEpoch)
+            {
+                Culture = "es-AR",
+                TimeZone = "America/Argentina/Buenos_Aires",
+            },
             [],
             UploadStatus.Ready,
             DateTimeOffset.UnixEpoch,
@@ -556,6 +867,98 @@ internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
             Print: print,
             new VerificationResult(true, null, 0, null, null, null, null, null, 2, 10, 1, 1));
+    }
+}
+
+/// <summary>
+/// The renderer as a job whose presentation cannot be fixed reaches it: it raises the
+/// refusal for the case's member, and writes nothing.
+/// </summary>
+internal sealed class RefusingRenderer(string member) : IBlockRenderer
+{
+    public Task<BlockRenderOutcome> RenderAsync(BlockRenderRequest request, CancellationToken cancellationToken = default) =>
+        throw new PresentationUnavailable(member);
+}
+
+/// <summary>
+/// The renderer as a version whose engine cannot be used reaches it: it takes the one
+/// decision over a manifest declaring <paramref name="engine"/> and raises the refusal the
+/// activity has to map, before composing anything.
+/// </summary>
+internal sealed class EngineRefusingRenderer(string engine) : IBlockRenderer
+{
+    public bool Called { get; private set; }
+
+    public Task<BlockRenderOutcome> RenderAsync(BlockRenderRequest request, CancellationToken cancellationToken = default)
+    {
+        Called = true;
+        var decision = EngineResolution.Resolve(
+            request.Manifest with { Engine = engine },
+            pinEngine: null,
+            TemplateEngineAdapters.Registry());
+        throw new EngineRefusedException(decision);
+    }
+}
+
+/// <summary>
+/// The renderer as a value or a format the version cannot present reaches it: it raises the
+/// typed refusal a presentation surface raises, and writes nothing.
+/// </summary>
+internal sealed class RefusingPresentationRenderer(string code, string reason, string function) : IBlockRenderer
+{
+    public Task<BlockRenderOutcome> RenderAsync(BlockRenderRequest request, CancellationToken cancellationToken = default) =>
+        throw new PresentationRefusedException(new PresentationFailure(code, reason, function, RecordOrdinal: 1));
+}
+
+/// <summary>The lines a process wrote while a case ran, as the message each entry was formatted into.</summary>
+internal sealed class CapturingLogs : IDisposable
+{
+    private readonly CaptureProvider _provider = new();
+
+    public ILoggerFactory Factory { get; }
+
+    public CapturingLogs() => Factory = LoggerFactory.Create(builder => builder.AddProvider(_provider));
+
+    public IReadOnlyList<string> Lines => _provider.Lines;
+
+    public void Dispose() => Factory.Dispose();
+
+    private sealed class CaptureProvider : ILoggerProvider
+    {
+        private readonly List<string> _lines = [];
+
+        public IReadOnlyList<string> Lines
+        {
+            get
+            {
+                lock (_lines)
+                {
+                    return [.. _lines];
+                }
+            }
+        }
+
+        public ILogger CreateLogger(string categoryName) => new Capture(this);
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class Capture(CaptureProvider provider) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state)
+                where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                lock (provider._lines)
+                {
+                    provider._lines.Add(formatter(state, exception));
+                }
+            }
+        }
     }
 }
 

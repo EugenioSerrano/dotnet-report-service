@@ -1,0 +1,29 @@
+manifestVersion: "1.0"
+id: same-report
+version: "1.1.0"
+engine: handlebars
+engineVersion: "2.4.3"
+dataContract:
+  version: "1.0"
+  profile: header-items-v1
+outputs:
+  html:
+    documentStart: html/document-start.html.hbs
+    row: html/row.html.hbs
+    documentEnd: html/document-end.html.hbs
+    styles: [html/styles.css]
+  pdf:
+    paper: A4
+    orientation: portrait
+    marginMm: { top: 15, right: 12, bottom: 18, left: 12 }
+    chunkLayout: page-boundary
+    pageNumbering: global
+    pageTotals:
+      enabled: false
+    verification:
+      anchors:
+        header: ["$.reportTitle", "$.customer.name", "$.currency", "$.totals.recordCount"]
+        item: ["$.sequence", "$.description"]
+localeDefaults:
+  culture: es-AR
+  timeZone: America/Argentina/Buenos_Aires

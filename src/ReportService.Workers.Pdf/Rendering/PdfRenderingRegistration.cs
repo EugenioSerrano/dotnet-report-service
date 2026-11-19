@@ -30,9 +30,8 @@ public static class PdfRenderingRegistration
         services.TryAddSingleton<IJobStore, PostgresJobStore>();
         services.TryAddSingleton<TakenTemplatePackageReader>();
         services.TryAddSingleton<PreparedTemplateCache>();
-        services.TryAddSingleton<ITemplateEngineAdapter, ScribanTemplateAdapter>();
+        services.TryAddSingleton(static _ => TemplateEngineAdapters.Registry());
         services.TryAddSingleton(services => new BlockComposer(
-            services.GetRequiredService<ITemplateEngineAdapter>(),
             services.GetRequiredService<TimeProvider>()));
         services.TryAddSingleton<BlockVerifier>();
         services.TryAddSingleton<PdfRenderingMetrics>();
@@ -44,12 +43,14 @@ public static class PdfRenderingRegistration
         services.TryAddSingleton(services => new BlockRenderer(
             services.GetRequiredService<BlockComposer>(),
             services.GetRequiredService<ChromiumPdfPrinter>(),
-            services.GetRequiredService<BlockVerifier>()));
+            services.GetRequiredService<BlockVerifier>(),
+            services.GetRequiredService<TemplateEngineAdapterRegistry>()));
 
         // The render step asks for the one renderer by its contract: a process that registered
         // the implementation alone could not construct the step at all, and the process would
         // refuse to start rather than print a document.
         services.TryAddSingleton<IBlockRenderer>(services => services.GetRequiredService<BlockRenderer>());
+        services.TryAddSingleton(GlobalisationProvenance.Current);
         services.AddSingleton<RenderPdfBlockActivity>();
 
         // The third registration on the queue: the same engine worker serves it, under

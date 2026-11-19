@@ -1,7 +1,6 @@
 using ReportService.Pdf.Verification;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.Templates;
-
 namespace ReportService.Rendering;
 
 /// <summary>What one block's render is asked to do: compose, check, print and verify.</summary>
@@ -14,6 +13,7 @@ namespace ReportService.Rendering;
 /// <param name="BlockIndex">The block's position in the partition.</param>
 /// <param name="IsFirstBlock">Whether this is the first block of the job.</param>
 /// <param name="WorkDirectory">The directory the printed file is written into.</param>
+/// <param name="PinEngine">The engine the job's pin recorded, as a manifest name, or <see langword="null"/> when the pin carries none.</param>
 public sealed record BlockRenderRequest(
     RenderManifest Manifest,
     CompositionRequest Composition,
@@ -23,7 +23,8 @@ public sealed record BlockRenderRequest(
     BlockFacts Block,
     int BlockIndex,
     bool IsFirstBlock,
-    string WorkDirectory);
+    string WorkDirectory,
+    string? PinEngine = null);
 
 /// <summary>What one block's render produced, and what the verification said about it.</summary>
 /// <param name="PdfPath">The printed file, or <see langword="null"/> when the block was refused before printing.</param>
@@ -66,7 +67,8 @@ public interface IBlockRenderer
 public sealed class BlockRenderer(
     BlockComposer composer,
     IPdfPrinter printer,
-    BlockVerifier verifier) : IBlockRenderer
+    BlockVerifier verifier,
+    TemplateEngineAdapterRegistry engines) : IBlockRenderer
 {
     /// <summary>The product's one activity source: the phases of a render are its spans.</summary>
     private const string ActivitySourceName = "ReportService";
@@ -120,12 +122,22 @@ public sealed class BlockRenderer(
             (double)settings.MarginBottomMm,
             (double)settings.MarginLeftMm);
 
+        // The engine is decided before anything is composed: a version whose engine this
+        // deployment does not have, that declares none, that disagrees with the job's pin, or
+        // whose declared major is not the adapter's, fails the block with nothing composed,
+        // printed, written or published.
+        var decision = EngineResolution.Resolve(request.Manifest, request.PinEngine, engines);
+        if (decision.Adapter is not { } adapter)
+        {
+            throw new EngineRefusedException(decision);
+        }
+
         var presentation = PresentationSettingsResolver.Resolve(new PresentationValues(
             request.Composition.Render.Culture,
             request.Composition.Render.TimeZone,
             request.Composition.Render.Clock));
 
-        var composed = Compose(request, presentation, cancellationToken, out var composeMs);
+        var composed = Compose(request, adapter, presentation, cancellationToken, out var composeMs);
         if (blockMutation is not null)
         {
             composed = blockMutation.Apply(composed);
@@ -243,14 +255,14 @@ public sealed class BlockRenderer(
         };
     }
 
-    private ComposedBlock Compose(BlockRenderRequest request, PresentationSettings settings, CancellationToken cancellationToken, out double composeMs)
+    private ComposedBlock Compose(BlockRenderRequest request, ITemplateEngineAdapter adapter, PresentationSettings settings, CancellationToken cancellationToken, out double composeMs)
     {
         using var span = Source.StartActivity("compose");
         span?.SetTag("block.index", request.BlockIndex);
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
-            return composer.Compose(request.Composition, settings, cancellationToken);
+            return composer.Compose(request.Composition, adapter, settings, cancellationToken);
         }
         finally
         {

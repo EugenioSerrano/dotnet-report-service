@@ -65,6 +65,27 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   with the judge. It needs the local development registry and the PDF base image;
   the runner prepares both, like the end-to-end level. It takes no
   `--without-printing`, because every document it runs is printed.
+  Its **`engines` tier** (`[Trait("Tier", "engines")]`) prints one report in three
+  template versions, one per engine, under three locale settings: the three
+  composed documents are byte-identical **under the `es-AR` ambient culture and
+  under the invariant one, with the engines rendering in parallel** (the host takes
+  `--ambient-culture`), the three printed documents pass the product's
+  verification and the judge, the two locale variants print their own culture's
+  amounts and zone's acceptance instant, and the control that presents every
+  formatted value in the invariant culture fails both readings. The tier keeps the
+  three engines' documents of one hundred records and the two locale documents in
+  the run's `evidence/` folder with `same-report-demo.sha256`.
+- The **integration** level's `EngineAndPresentationTests` drives three jobs, one per
+  engine, over one snapshot, two jobs under two cultures and zones, a block forced to
+  retry between streaming and its commit (through the render step's test-only fault
+  seam), a version whose engine major the deployment does not run, and a snapshot whose
+  amount cannot be presented — asserting the published documents, the two attempt-scoped
+  objects of the retried block, and the presentation provenance of every committed row.
+  `PresentationProvenanceMigrationTests` holds the provenance column to its two admitted
+  shapes against PostgreSQL, and `EnginePresentationEndToEndTests` prints one job that
+  names a culture and a zone over the whole local composition. The **performance**
+  level prints `B1000` once per engine and records each engine's render time beside the
+  same verification thresholds.
 
 ### The hermetic level's execution
 

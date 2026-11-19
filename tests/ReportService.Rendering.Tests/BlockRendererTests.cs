@@ -39,6 +39,42 @@ public sealed class BlockRendererTests : IDisposable
     private static string DocumentPath => Path.Combine(AppContext.BaseDirectory, "ReaderCases", PrintedDocument);
 
     [Fact]
+    public async Task AnEngineTheDeploymentDoesNotOfferIsRefusedBeforeAnythingIsComposed()
+    {
+        var printer = new RecordingPrinter();
+        var request = Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None), "<p>nothing</p>") with
+        {
+            Manifest = Manifest(pageTotals: false, anchors: VerificationAnchors.None) with { Engine = "razor" },
+            PinEngine = "razor",
+        };
+
+        var refusal = await Assert.ThrowsAsync<EngineRefusedException>(() =>
+            Renderer(printer).RenderAsync(request, TestContext.Current.CancellationToken));
+
+        Assert.Equal(EngineResolution.UnsupportedCapability, refusal.Code);
+        Assert.Equal(EngineResolution.EngineUnsupported, refusal.Reason);
+        Assert.False(printer.Called);
+        Assert.False(Directory.Exists(work) && Directory.EnumerateFiles(work, "*.pdf").Any());
+    }
+
+    [Fact]
+    public async Task APinThatRecordsAnotherEngineThanTheTakenCopyDeclaresIsRefusedBeforeAnythingIsComposed()
+    {
+        var printer = new RecordingPrinter();
+        var request = Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None), "<p>nothing</p>") with
+        {
+            PinEngine = "handlebars",
+        };
+
+        var refusal = await Assert.ThrowsAsync<EngineRefusedException>(() =>
+            Renderer(printer).RenderAsync(request, TestContext.Current.CancellationToken));
+
+        Assert.Equal(EngineResolution.TemplateInvalid, refusal.Code);
+        Assert.Equal(EngineResolution.EngineMismatch, refusal.Reason);
+        Assert.False(printer.Called);
+    }
+
+    [Fact]
     public async Task APackageWithPageTotalsIsRefusedBeforeAnythingIsPrinted()
     {
         var outcome = await Renderer(new PrintingPrinter()).RenderAsync(
@@ -247,7 +283,7 @@ public sealed class BlockRendererTests : IDisposable
     }
 
     private static BlockRenderer Renderer(IPdfPrinter printer) =>
-        new(new BlockComposer(new ScribanTemplateAdapter(), TimeProvider.System), printer, new BlockVerifier());
+        new(new BlockComposer(TimeProvider.System), printer, new BlockVerifier(), TemplateEngineAdapters.Registry());
 
     /// <summary>A request whose package prints <paramref name="documentStart"/> as its whole document.</summary>
     private BlockRenderRequest Request(RenderManifest manifest, string documentStart, IReadOnlyList<BlockRecord>? records = null)

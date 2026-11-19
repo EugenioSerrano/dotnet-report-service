@@ -23,7 +23,7 @@ public sealed partial class FluidTemplateValidator : ITemplateEngineValidator
         ArgumentException.ThrowIfNullOrEmpty(packagePath);
         ArgumentNullException.ThrowIfNull(text);
 
-        var parser = new FluidParser();
+        var parser = FluidParsing.Create();
         if (parser.TryParse(text, out var template, out var error))
         {
             return new PartParseResult.Parsed(new ParsedPart(template, text));

@@ -171,12 +171,66 @@ Values are plain: objects, arrays, strings, booleans and null; a number is the
 invariant text of its exact decimal, so `0.10` prints as `0.10` and never as
 `0.1`. Every data value must be encoded: end a Scriban output with
 `| html.escape` (Liquid and Handlebars encode `{{ }}` for you), and the take
-refuses a version that writes a data value without it. No formatting function of
-the host is available: format in the template or in the data.
+refuses a version that writes a data value without it. A date and a number are
+printed through the presentation functions below, so the job's culture and zone
+reach them; the engines' own formatters are refused when a version is taken.
 
-Templates are written for one engine, named by the manifest. This release prints
-with the Scriban adapter; the other engines arrive with their own adapter and
-the same context.
+Templates are written for one engine, named by the manifest: Scriban, Handlebars
+or Liquid. The three are peers — none is a default — and the same context is
+available to each.
+
+## Presenting a date or a number
+
+Dates and numbers are written in the culture and the time zone the job was
+accepted with, and the report's "now" is that job's own acceptance instant. A
+template cannot choose otherwise: the functions below take no culture, no time
+zone and no clock, and none of them reads the machine's clock or culture. The
+names and the arguments are the same in every engine.
+
+| Function | Arguments | Result |
+|----------|-----------|--------|
+| `format_number` | a value, a numeric format | the number in the job's culture and in that format |
+| `format_date` | a date or an instant, a date/time format | the text in the job's culture and zone |
+| `num_gt`, `num_ge`, `num_lt`, `num_le`, `num_eq`, `num_ne` | two values | a boolean, for a condition |
+| `num_sign` | a value | `"-1"`, `"0"` or `"1"`, **as text** |
+
+```text
+Scriban      {{ format_number item.amount "N2" }}       {{ format_date item.date "dd/MM/yyyy" }}
+Handlebars   {{format_number item.amount "N2"}}          {{format_date item.date "dd/MM/yyyy"}}
+Liquid       {{ item.amount | format_number: "N2" }}     {{ item.date | format_date: "dd/MM/yyyy" }}
+```
+
+- **The formats are .NET's**, standard or custom and at most 32 characters:
+  `N2`, `C2`, `F0`, `P1`, `#,##0.00` for numbers; `d`, `D`, `dd/MM/yyyy`,
+  `dd MMM yyyy HH:mm` for dates. Rounding is the format's own.
+- **A date is ISO 8601 text.** A value with a time (`2026-10-29T18:30:00Z`, a
+  `±HH:mm` offset, or no offset, which means UTC) is an instant and is shown in
+  the job's zone. A date-only value (`2026-10-29`) is a calendar date and is
+  printed unchanged in every zone — converting it would print the day before
+  west of Greenwich.
+- **`num_sign` is for printing only.** Every non-empty text is true in all three
+  engines, `"0"` included: a sign used as a condition is one of the six
+  comparisons, which answer a real boolean. `num_sign` prints; it never decides.
+- **A formatted field is never an anchor.** `outputs.pdf.verification.anchors`
+  names only the fields printed as they are; a formatted value is a different
+  text from the value it came from.
+- **A value that cannot be presented is refused, never printed wrong.** A number
+  with no exact decimal, a date that is not ISO 8601, or a format the runtime
+  rejects ends the job `failed` — `DATA_INVALID` with `number-out-of-range` or
+  `type-mismatch`, or `TEMPLATE_INVALID` with `format-string` — naming the
+  record and the function and never the value. A number the report must show
+  exactly as received is printed without a function.
+- **An engine's own formatter is refused when a version is taken** (the list of
+  forbidden functions includes them). A format applied through an engine's
+  native filter would read the worker's own culture, so a version that reached
+  printing with one is outside what this service can promise; that residual is
+  why the take refuses them rather than warning.
+
+The job's accepted culture and zone also reach the `render` values a template can
+print: `render.culture`, `render.timeZone` and `render.clock` (an instant). The
+package's `localeDefaults` apply only when a job was accepted without a culture
+or a zone; they are never re-read at render, so a newer version of a package
+cannot change the presentation of a job already accepted.
 
 ## What the service checks when it takes a version
 

@@ -102,7 +102,7 @@ public sealed class BlockComposerTests
     public void ABlockThatDoesNotHoldTheRecordsItDeclaresIsRefused()
     {
         var template = Prepare(Integrity);
-        var composer = new BlockComposer(new ScribanTemplateAdapter(), new ManualTimeProvider(Now));
+        var composer = new BlockComposer(new ManualTimeProvider(Now));
 
         Assert.Throws<TemplateInputException>(() => composer.Compose(new CompositionRequest(
             template,
@@ -111,6 +111,7 @@ public sealed class BlockComposerTests
             Records("""{"sequence":1}"""),
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
             GroupKey: null),
+            new ScribanTemplateAdapter(),
             Settings,
             TestContext.Current.CancellationToken));
     }
@@ -131,7 +132,7 @@ public sealed class BlockComposerTests
     private static ComposedBlock Compose((TemplatePart Part, string Source)[] parts, ComposedRecord[] records, string? groupKey = null)
     {
         var template = Prepare(parts);
-        var composer = new BlockComposer(new ScribanTemplateAdapter(), new ManualTimeProvider(Now));
+        var composer = new BlockComposer(new ManualTimeProvider(Now));
         return composer.Compose(new CompositionRequest(
             template,
             new CompositionBlock(0, records.Length, records.Length == 0 ? 1 : records[0].Ordinal, IsFirst: true, IsLast: true),
@@ -139,6 +140,7 @@ public sealed class BlockComposerTests
             records,
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
             groupKey),
+            new ScribanTemplateAdapter(),
             Settings);
     }
 
@@ -149,7 +151,7 @@ public sealed class BlockComposerTests
     {
         var manifest = new RenderManifest(
             ScribanTemplateAdapter.EngineName,
-            ScribanTemplateAdapter.PinnedVersion,
+            ScribanTemplateAdapter.EngineVersion,
             parts.ToDictionary(part => part.Part, part => part.Part.ToString(), EqualityComparer<TemplatePart>.Default),
             [],
             new PdfSettings("A4", "portrait", new PageMarginsMm(15, 12, 18, 12), PageTotalsEnabled: false, VerificationAnchors.None),
