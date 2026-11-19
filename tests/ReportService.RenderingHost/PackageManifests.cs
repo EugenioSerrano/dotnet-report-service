@@ -18,6 +18,18 @@ internal static class PackageManifests
     /// <summary>The package id of the page frame's canonical declaration, A4 portrait.</summary>
     public const string PageFrame = "page-frame";
 
+    /// <summary>The prefix a version of the same report is printed under, so the flat package folder names its engine.</summary>
+    public const string SameReportPrefix = "same-report-";
+
+    /// <summary>The five versions of the same report: three engines in the base locale and two other locales.</summary>
+    public static IReadOnlyList<string> SameReportVersions { get; } = ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"];
+
+    /// <summary>The three versions that print the report in three engines, under the base locale.</summary>
+    public static IReadOnlyList<string> SameReportEngines { get; } = [SameReportPrefix + "1.0.0", SameReportPrefix + "1.1.0", SameReportPrefix + "1.2.0"];
+
+    /// <summary>The base locale and the two locale variants: the same report, presented under three settings.</summary>
+    public static IReadOnlyList<string> SameReportLocales { get; } = [SameReportPrefix + "1.0.0", SameReportPrefix + "1.3.0", SameReportPrefix + "1.4.0"];
+
     /// <summary>The package ids the rendering suite knows, in ordinal order.</summary>
     public static IReadOnlyList<string> Ids { get; } =
     [
@@ -28,6 +40,7 @@ internal static class PackageManifests
         PageFrame + "-letter-landscape",
         PageFrame + "-letter-portrait",
         "pilot-simple",
+        .. SameReportVersions.Select(version => SameReportPrefix + version),
     ];
 
     /// <summary>The four geometries the page-frame package is printed on.</summary>
@@ -55,6 +68,7 @@ internal static class PackageManifests
             PageFrame + "-a4-landscape" => PageFrameManifest(A4Landscape),
             PageFrame + "-letter-portrait" => PageFrameManifest(LetterPortrait),
             PageFrame + "-letter-landscape" => PageFrameManifest(LetterLandscape),
+            _ when id.StartsWith(SameReportPrefix, StringComparison.Ordinal) => SameReport(id[SameReportPrefix.Length..]),
             _ => TestPackage(),
         };
     }
@@ -89,6 +103,53 @@ internal static class PackageManifests
         new LocaleDefaults("es-AR", "America/Argentina/Buenos_Aires"),
         GroupKey: null,
         PdfOutput: Pdf(A4Portrait));
+
+    // One version of the same report: the engine it declares, its three parts, its
+    // stylesheet, and the locale the version presents under. The three engines' versions
+    // share one declaration here; the two locale variants differ from 1.0.0 in the two
+    // localeDefaults lines alone.
+    private static RenderManifest SameReport(string version)
+    {
+        var (engine, extension) = version switch
+        {
+            "1.1.0" => (HandlebarsTemplateAdapter.EngineName, "hbs"),
+            "1.2.0" => (FluidTemplateAdapter.EngineName, "liquid"),
+            _ => (ScribanTemplateAdapter.EngineName, "sbn"),
+        };
+        var versionOf = engine switch
+        {
+            HandlebarsTemplateAdapter.EngineName => HandlebarsTemplateAdapter.EngineVersion,
+            FluidTemplateAdapter.EngineName => FluidTemplateAdapter.EngineVersion,
+            _ => ScribanTemplateAdapter.EngineVersion,
+        };
+        var locale = version switch
+        {
+            "1.3.0" => new LocaleDefaults("en-US", "Asia/Tokyo"),
+            "1.4.0" => new LocaleDefaults("en-GB", "Europe/Madrid"),
+            _ => new LocaleDefaults("es-AR", "America/Argentina/Buenos_Aires"),
+        };
+        return new RenderManifest(
+            engine,
+            versionOf,
+            new Dictionary<TemplatePart, string>
+            {
+                [TemplatePart.DocumentStart] = "html/document-start.html." + extension,
+                [TemplatePart.Row] = "html/row.html." + extension,
+                [TemplatePart.DocumentEnd] = "html/document-end.html." + extension,
+            },
+            ["html/styles.css"],
+            new PdfSettings(
+                Paper: "A4",
+                Orientation: "portrait",
+                new PageMarginsMm(Top: 15, Right: 12, Bottom: 18, Left: 12),
+                PageTotalsEnabled: false,
+                new VerificationAnchors(
+                    ["$.reportTitle", "$.customer.name", "$.currency", "$.totals.recordCount"],
+                    ["$.sequence", "$.description"])),
+            locale,
+            GroupKey: null,
+            PdfOutput: Pdf(A4Portrait));
+    }
 
     // The page frame's own declaration: four geometries that differ only in outputs.pdf.
     private static RenderManifest PageFrameManifest(string pdfOutput)

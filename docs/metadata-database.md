@@ -71,6 +71,24 @@ The shipped set holds `0001_baseline.sql` only, which creates the
 `report_service` schema. No business table exists yet; each change that needs one
 adds its own script.
 
+## What a printed block records about its presentation
+
+The commit of a printed block (`report_service.pdf_part_commits`) names the object
+that was written and, in its `presentation` column, what produced the document's
+appearance: the culture, the time zone and the acceptance instant the job was fixed
+to, the engine the template version declares and the version that engine runs, and
+the ICU and time-zone data versions of the image that printed it. The column is one
+JSON object, written in the same transaction as the commit, and holds settings and
+version strings only — never a value of the report.
+
+Two shapes are admitted, and the table's check refuses any other: the complete
+object, and the single value `{"source":"unrecorded"}`, which is what a row written
+before the column existed carries, and what a build that does not name the column
+inserts through its default. A partial object, an object with a `source` member of
+its own, and a member carrying JSON null are all refused. A retry cannot add a
+second copy: the commit is keyed by the output and the block, so a block has at most
+one row and the row's provenance is the one that was stored with it.
+
 ## What the migrator does
 
 `ReportService.Migrations` is a one-shot executable. In one session it:

@@ -29,7 +29,7 @@ public sealed class TestTemplatePackageTests
 
     private static RenderManifest Manifest() => new(
         ScribanTemplateAdapter.EngineName,
-        ScribanTemplateAdapter.PinnedVersion,
+        ScribanTemplateAdapter.EngineVersion,
         new Dictionary<TemplatePart, string>
         {
             [TemplatePart.DocumentStart] = "html/document-start.html.sbn",

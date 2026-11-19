@@ -33,6 +33,7 @@ using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
+using PdfRendering = pdf::ReportService.Workers.Pdf.Rendering;
 using PdfWorker = pdf::ReportService.Workers.Pdf.PdfWorkerProgram;
 using Temporalio.Client;
 using Temporalio.Common;
@@ -64,6 +65,20 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     /// <summary>The sample template every case prints.</summary>
     public const string Template = "pilot-simple";
+
+    /// <summary>The one report printed in three engines and under three settings.</summary>
+    public const string SameReport = "same-report";
+
+    /// <summary>The three versions of the one report, one engine each.</summary>
+    public static IReadOnlyList<string> SameReportEngines { get; } = ["1.0.0", "1.1.0", "1.2.0"];
+
+    /// <summary>The three settings the one report is printed under: the base locale and two others.</summary>
+    public static IReadOnlyList<(string Culture, string TimeZone)> SameReportLocales { get; } =
+    [
+        ("es-AR", "America/Argentina/Buenos_Aires"),
+        ("en-US", "Asia/Tokyo"),
+        ("en-GB", "Europe/Madrid"),
+    ];
 
     /// <summary>The version the sample template ships as the first release.</summary>
     public const string First = "1.0.0";
@@ -264,7 +279,38 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <param name="cancellationToken">The test's cancellation token.</param>
     public async Task SeedTakenVersionAsync(string version, CancellationToken cancellationToken)
     {
-        var files = Package(version, declaresAnchors: false, pageTotals: false);
+        await RecordTakenAsync(Template, version, Package(version, declaresAnchors: false, pageTotals: false), cancellationToken);
+    }
+
+    /// <summary>
+    /// Records the three versions of the one report as taken versions of its own template, each
+    /// with the package folder it ships as: the same report in three syntaxes, one engine each.
+    /// </summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task SeedSameReportAsync(CancellationToken cancellationToken)
+    {
+        foreach (var version in SameReportEngines)
+        {
+            var folder = Path.Combine(
+                RepositoryPaths.Root,
+                "tests",
+                "ReportService.Testing",
+                "TemplatePackages",
+                SameReport,
+                version);
+            var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+            foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/');
+                files[relative] = File.ReadAllBytes(file);
+            }
+
+            await RecordTakenAsync(SameReport, version, files, cancellationToken);
+        }
+    }
+
+    private async Task RecordTakenAsync(string templateId, string version, Dictionary<string, byte[]> files, CancellationToken cancellationToken)
+    {
         var sources = files
             .Select(file => new PackageFileSource(
                 file.Key,
@@ -275,7 +321,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         await TemplatePackageArchive.WriteAsync(sources, archive, cancellationToken);
         var bytes = archive.ToArray();
         var packageSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
-        var key = TemplatePackageKeys.ForVersion(Consumer, Template, version, packageSha256);
+        var key = TemplatePackageKeys.ForVersion(Consumer, templateId, version, packageSha256);
         using (var content = new MemoryStream(bytes, writable: false))
         {
             var written = await Objects.WriteAsync(key, content, cancellationToken);
@@ -291,9 +337,9 @@ internal sealed class PrintingRig : IAsyncDisposable
         Assert.True(read.Succeeded, read.Reason);
         var manifest = read.Manifest!;
         var record = TemplateVersionRecords.Sample(
-                Template,
+                templateId,
                 version,
-                manifest.Owner!,
+                manifest.Owner ?? Consumer,
                 shared: manifest.Shared,
                 schemaRef: manifest.DataContract!.Schema!,
                 packageSha256: packageSha256) with
@@ -324,16 +370,43 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <param name="uploadId">The ready upload it reports on.</param>
     /// <param name="version">The exact version it names.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    public async Task<string> SubmitAsync(string uploadId, string? version, CancellationToken cancellationToken, string consumer = Consumer)
+    public Task<string> SubmitAsync(string uploadId, string? version, CancellationToken cancellationToken, string consumer = Consumer) =>
+        SubmitAsync(uploadId, Template, version, culture: null, timeZone: null, cancellationToken, consumer);
+
+    /// <summary>
+    /// Submits one job of <paramref name="templateId"/> at <paramref name="version"/>, naming the
+    /// culture and the time zone the report is presented in when the case gives them, and
+    /// answers its identifier.
+    /// </summary>
+    /// <param name="uploadId">The ready upload it reports on.</param>
+    /// <param name="templateId">The template the job takes its version of.</param>
+    /// <param name="version">The exact version the job names, or null to take the latest.</param>
+    /// <param name="culture">The culture the report is written in, or null to take the package's own.</param>
+    /// <param name="timeZone">The time zone the report is read as, or null to take the package's own.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <param name="consumer">The consumer the job is submitted for.</param>
+    public async Task<string> SubmitAsync(
+        string uploadId,
+        string templateId,
+        string? version,
+        string? culture,
+        string? timeZone,
+        CancellationToken cancellationToken,
+        string consumer = Consumer)
     {
         using var api = _api!.CreateClient();
         var template = version is null
-            ? "{\"id\":\"" + Template + "\"}"
-            : "{\"id\":\"" + Template + "\",\"version\":\"" + version + "\"}";
+            ? "{\"id\":\"" + templateId + "\"}"
+            : "{\"id\":\"" + templateId + "\",\"version\":\"" + version + "\"}";
+        var render = culture is null && timeZone is null
+            ? string.Empty
+            : ",\"render\":{" + (culture is null ? string.Empty : "\"culture\":\"" + culture + "\"")
+                + (culture is not null && timeZone is not null ? "," : string.Empty)
+                + (timeZone is null ? string.Empty : "\"timeZone\":\"" + timeZone + "\"") + "}";
         var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
-                "{\"template\":" + template + ",\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[\"pdf\"]}",
+                "{\"template\":" + template + ",\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[\"pdf\"]" + render + "}",
                 Encoding.UTF8,
                 "application/json"),
         };
@@ -345,6 +418,113 @@ internal sealed class PrintingRig : IAsyncDisposable
         var reportJobId = document.RootElement.GetProperty("reportJobId").GetString()!;
         _uploadOf[reportJobId] = uploadId;
         return reportJobId;
+    }
+
+    /// <summary>
+    /// Installs the fault that makes one block's first attempt fail after it printed, so the
+    /// engine retries it: the seam exists on the render step only, and this host is the only
+    /// place that installs it.
+    /// </summary>
+    /// <param name="fault">The fault the case wants.</param>
+    public void InstallPartCommitFault(PdfRendering.PartCommitFault fault)
+    {
+        Assert.NotNull(_pdf);
+        _pdf!.Services.GetRequiredService<PdfRendering.RenderPdfBlockActivity>().PartCommitFault = fault;
+    }
+
+    /// <summary>The keys this run wrote under one job's output namespace, as the storage root holds them.</summary>
+    /// <param name="reportJobId">The job.</param>
+    /// <param name="outputId">The output.</param>
+    public IReadOnlyList<string> OutputObjectKeys(string reportJobId, string outputId)
+    {
+        var root = Path.Combine(StorageRoot, "outputs", reportJobId, outputId);
+        if (!Directory.Exists(root))
+        {
+            return [];
+        }
+
+        return [.. Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Select(file => "outputs/" + Path.GetRelativePath(Path.Combine(StorageRoot, "outputs"), file).Replace(Path.DirectorySeparatorChar, '/'))
+            .Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>Reads one object of the composition's storage through the verifying reader.</summary>
+    /// <param name="key">The key the object was written under.</param>
+    /// <param name="size">The size the record declares.</param>
+    /// <param name="sha256">The SHA-256 the record declares.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<byte[]> ReadObjectAsync(string key, long size, string sha256, CancellationToken cancellationToken)
+    {
+        var read = await Objects.OpenReadAsync(ObjectKey.Create(key), size, sha256, cancellationToken);
+        Assert.True(read.Succeeded, $"the object {key} had to verify ({read.Outcome})");
+        await using var content = read.Value!;
+        using var buffer = new MemoryStream();
+        await content.Content.CopyToAsync(buffer, cancellationToken);
+        return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// Reads the bytes the storage root holds for <paramref name="key"/> as they are: the
+    /// reading of an object no record declares - the orphan of an attempt that committed
+    /// nothing - which therefore has no size and no hash to verify it against.
+    /// </summary>
+    /// <param name="key">The key the object was written under.</param>
+    public byte[] ReadStoredObject(string key) =>
+        File.ReadAllBytes(Path.Combine(StorageRoot, key.Replace('/', Path.DirectorySeparatorChar)));
+
+    /// <summary>The instant the job was accepted with, as the composition recorded it.</summary>
+    /// <param name="reportJobId">The job.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<DateTimeOffset> ReportClockAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<DateTimeOffset>(new CommandDefinition(
+            "SELECT report_clock FROM report_service.report_jobs WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
+            cancellationToken: cancellationToken));
+    }
+
+    /// <summary>How many blocks of one output the composition committed.</summary>
+    /// <param name="outputId">The output.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<long> CountPartCommitsAsync(string outputId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM report_service.pdf_part_commits WHERE output_id = @OutputId",
+            new { OutputId = outputId },
+            cancellationToken: cancellationToken));
+    }
+
+    /// <summary>
+    /// Records one more version of the one report, declaring another engine version: the same
+    /// package the base version ships, with its manifest naming the version and the engine
+    /// version the case needs. A deployment refuses it before composing, so no document exists.
+    /// </summary>
+    /// <param name="version">The version to record.</param>
+    /// <param name="engineVersion">The engine version the manifest declares.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task SeedSameReportVersionWithEngineVersionAsync(string version, string engineVersion, CancellationToken cancellationToken)
+    {
+        var source = Path.Combine(
+            RepositoryPaths.Root,
+            "tests",
+            "ReportService.Testing",
+            "TemplatePackages",
+            SameReport,
+            SameReportEngines[0]);
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(source, file).Replace(Path.DirectorySeparatorChar, '/');
+            files[relative] = File.ReadAllBytes(file);
+        }
+
+        var manifest = Encoding.UTF8.GetString(files["template.yaml"])
+            .Replace("version: \"1.0.0\"", "version: \"" + version + "\"", StringComparison.Ordinal)
+            .Replace("engineVersion: \"7.5.1\"", "engineVersion: \"" + engineVersion + "\"", StringComparison.Ordinal);
+        files["template.yaml"] = Encoding.UTF8.GetBytes(manifest);
+        await RecordTakenAsync(SameReport, version, files, cancellationToken);
     }
 
     /// <summary>Waits for the job to reach a terminal status and answers what the record says.</summary>
@@ -382,7 +562,8 @@ internal sealed class PrintingRig : IAsyncDisposable
                    a.sha256 AS "Sha256", a.size_bytes AS "SizeBytes", a.page_count AS "PageCount", a.expires_at AS "ExpiresAt",
                    a.created_at AS "ArtifactCreatedAt",
                    p.block_count AS "BlockCount", p.record_count AS "RecordCount",
-                   c.template_package_sha256 AS "TemplatePackageSha256", c.page_count AS "PartPages"
+                   c.template_package_sha256 AS "TemplatePackageSha256", c.page_count AS "PartPages",
+                   c.object_key AS "PartObjectKey", c.presentation::text AS "Presentation"
               FROM report_service.report_jobs j
               LEFT JOIN report_service.report_outputs o ON o.report_job_id = j.report_job_id
               LEFT JOIN report_service.artifacts a ON a.output_id = o.output_id
@@ -711,6 +892,8 @@ internal sealed class JobStateRow
 
     public string? ErrorReason { get; set; }
 
+    public string? OutputId { get; set; }
+
     public string? OutputStatus { get; set; }
 
     public string? OutputErrorCode { get; set; }
@@ -740,4 +923,10 @@ internal sealed class JobStateRow
     public string? TemplatePackageSha256 { get; set; }
 
     public int? PartPages { get; set; }
+
+    /// <summary>The key the committed part names: the object the published artifact is built from.</summary>
+    public string? PartObjectKey { get; set; }
+
+    /// <summary>The presentation provenance the committed part records, as the column stores it.</summary>
+    public string? Presentation { get; set; }
 }

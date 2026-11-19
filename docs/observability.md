@@ -71,6 +71,27 @@ of those fixed values: a declared identity, a job's identifier and an artifact's
 identifier never appear on a metric. A job or file that was not found is not a
 consumer refusal and is not counted there.
 
+## The block that was printed, and what produced its presentation
+
+The render worker writes one line for each block it commits, and one for each block
+it refuses. The committed line names the block, the pages it holds and how long the
+verification took, and then the four identifiers that explain how the document
+looks: the engine that composed it and the version that engine runs, the culture
+and the time zone the job was accepted with.
+
+```text
+Block {blockIndex} of output {outputId} printed: {pageCount} pages on {paper} {orientation}, verified in {verificationMs} ms, engine {engine} {engineVersion}, culture {culture}, time zone {timeZone}
+```
+
+The same four identifiers, with the job's acceptance instant and the globalisation
+data of the image, are recorded with the block's commit row (`presentation`, see
+[the metadata database](metadata-database.md)). A refused block logs the reason in
+the same shape - the field, the function or the part, and the record's ordinal -
+and never a value of the report: the engine and function names, the culture, the
+zone, the ordinals and the counts are identifiers; a printed date, a printed amount
+or a record's text is not, and none of them appears in a log line, a span or a
+metric tag.
+
 ## The job identifier: logs and spans, never a metric
 
 A unit of work is opened with a job identifier and the logger factory of the

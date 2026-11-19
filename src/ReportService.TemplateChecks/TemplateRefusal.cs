@@ -93,6 +93,15 @@ public static class TemplateRefusal
         /// <summary>The declared engine version is not this deployment's major.</summary>
         public const string EngineVersion = "engine-version-mismatch";
 
+        /// <summary>The version declares the printed page totals, which this build does not print.</summary>
+        public const string PageAccounting = "pdf-page-accounting";
+
+        /// <summary>The detail text of a PDF version names no font family.</summary>
+        public const string FontFamily = "pdf-font-family";
+
+        /// <summary>A PDF version aligns a splittable grid cell to the bottom of the page.</summary>
+        public const string GridCellAlignment = "pdf-grid-cell-alignment";
+
         /// <summary>The checks ran out of their share of the take's deadline.</summary>
         public const string Budget = "check-budget";
     }

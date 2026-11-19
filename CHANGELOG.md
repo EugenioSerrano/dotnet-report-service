@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The job status read carries `errorMessage` on the job and on each output: the failed
   job's condition in plain words, `null` when it has none in this version. It never
   names a value of the report or a setting of the deployment.
+- A report may be written for Scriban, Handlebars or Liquid, whichever its template
+  version declares: the three engines are peers, the version's engine is the one
+  that composes its block, and a version whose engine this deployment does not offer,
+  declares none, disagrees with the job's pin, or names another major of the engine
+  version ends its job `failed` before anything is printed. Dates and amounts are
+  printed in the culture and the time zone fixed when the job was accepted, with the
+  report's "now" taken from that same instant - on every attempt of a retried block -
+  through one small set of presentation functions the three engines share. A version
+  that presents a value the service cannot format (`DATA_INVALID`, `TEMPLATE_INVALID`)
+  ends `failed` with nothing published. Each committed block records what produced its
+  presentation - the culture, the zone, the acceptance instant, the engine and its
+  version, and the globalisation data of the image - and the block's log line names
+  the same identifiers.
 - A template version is checked when it is taken, and a broken one is refused before
   anything is kept: an invalid `schema.json`, a `sample.json` that breaks it, a syntax
   error in a part for its engine, a missing include or asset, an unescaped data output,
@@ -40,6 +53,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not read, the job stays `succeeded` and nothing is written — while the file stays in
   the listing with its past instant. The worker refuses to start without a usable value,
   and the local composition supplies seven days.
+- A PDF template version is refused when it is taken if its detail grid aligns a cell
+  that may split across pages to the bottom, if its detail text names no font family,
+  or if it declares printed page subtotals. Each refusal names the file to fix, and for
+  the grid cell also the cell and the rule that aligns it; the PDF rules run in that
+  fixed order, so a version that breaks several of them reports the page totals first,
+  then the font family, then the grid cell.
+- The shipped sample templates now name their font family (`"Liberation Sans",
+  sans-serif`) and declare no printed page totals, so every sample the product ships
+  passes its own take.
 
 ### Changed
 

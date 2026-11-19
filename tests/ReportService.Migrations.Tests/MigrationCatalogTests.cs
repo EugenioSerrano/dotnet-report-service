@@ -39,12 +39,43 @@ public sealed class MigrationCatalogTests
 
     private const string OutputReason = "0014_report-output-failure-reason.sql";
 
+    private const string Presentation = "0015_presentation-provenance.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(OutputReason, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(Presentation, MigrationCatalog.ExpectedVersion);
+    }
+
+    /// <summary>
+    /// The fifteenth script states what produced each printed block's presentation: one
+    /// nullable <c>jsonb</c> column, the backfill every row written before it carries, and
+    /// the completeness check that admits exactly two shapes - the complete object and that
+    /// one value. It adds no table, drops nothing, creates no index and rewrites no other
+    /// column; that the server applies it, and refuses a partial object and a JSON null, is a
+    /// case against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void ThePresentationScriptAddsOneColumnItsBackfillAndTheCompletenessCheckAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Presentation);
+
+        Assert.Contains("ALTER TABLE report_service.pdf_part_commits", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN presentation jsonb NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("UPDATE report_service.pdf_part_commits", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("SET presentation = '{\"source\":\"unrecorded\"}'::jsonb", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER COLUMN presentation SET NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ALTER COLUMN presentation SET DEFAULT '{\"source\":\"unrecorded\"}'::jsonb", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT pdf_part_commits_presentation_complete CHECK (", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("presentation ?& ARRAY['culture', 'timeZone', 'clock', 'engine',", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("jsonb_typeof(presentation -> 'icuVersion')    = 'string'", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("jsonb_typeof(presentation -> 'tzDataVersion') = 'string'", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CREATE INDEX", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -86,7 +117,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(14, MigrationCatalog.Scripts.Count);
+        Assert.Equal(15, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -107,9 +138,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(14, MigrationCatalog.Scripts.Count);
-        Assert.Equal(OutputReason, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(OutputReason, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(15, MigrationCatalog.Scripts.Count);
+        Assert.Equal(Presentation, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(Presentation, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -266,8 +297,8 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == OutputReason);
 
-        Assert.Equal(14, MigrationCatalog.Scripts.Count);
-        Assert.Equal(OutputReason, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(15, MigrationCatalog.Scripts.Count);
+        Assert.Equal(Presentation, MigrationCatalog.Scripts[^1].Name);
         Assert.Equal(1, CountOf(script.Sql, "ALTER TABLE"));
         Assert.Equal(1, CountOf(script.Sql, "ADD COLUMN"));
         Assert.Contains("ALTER TABLE report_service.report_outputs", script.Sql, StringComparison.Ordinal);

@@ -34,6 +34,7 @@ public sealed record PartitionRecord(
 /// <param name="PageCount">How many pages the block's document holds.</param>
 /// <param name="TemplatePackageSha256">The SHA-256 of the template package the block was printed from.</param>
 /// <param name="CommittedAt">When the commit became durable, in UTC.</param>
+/// <param name="Presentation">What produced the block's presentation, or <see langword="null"/> when the row carries the value of a block written without one.</param>
 public sealed record PartCommit(
     string OutputId,
     int BlockIndex,
@@ -42,7 +43,8 @@ public sealed record PartCommit(
     long SizeBytes,
     int PageCount,
     string TemplatePackageSha256,
-    DateTimeOffset CommittedAt);
+    DateTimeOffset CommittedAt,
+    PresentationProvenance? Presentation = null);
 
 /// <summary>One published artifact: the output-class object a consumer can be told about.</summary>
 /// <param name="ArtifactId">The identifier of the artifact.</param>

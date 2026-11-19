@@ -298,6 +298,44 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(3, again.Existing!.PageCount);
     }
 
+    /// <summary>
+    /// The commit carries what produced the block's presentation, and the store returns it
+    /// with the row: the job's fixed settings, the engine the version declares and the
+    /// version it runs, and the globalisation data of the process that printed it. A commit
+    /// that names none reads back as none - the row the column's default describes - so no
+    /// reader is ever handed a half-filled object.
+    /// </summary>
+    [Fact]
+    public async Task ACommitRecordsThePresentationAndACommitWithoutOneReadsBackWithout()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        var presentation = new PresentationProvenance(
+            "es-AR",
+            "America/Argentina/Buenos_Aires",
+            new DateTimeOffset(2026, 3, 1, 12, 30, 0, TimeSpan.Zero),
+            "SCRIBAN",
+            "7.5.1",
+            "74.2",
+            "2025b");
+
+        var committed = await Store.CommitPartAsync(Commit(acceptance.OutputId) with { Presentation = presentation }, cancellationToken);
+        Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
+
+        var read = await Store.FindPartAsync(acceptance.OutputId, 0, cancellationToken);
+        Assert.NotNull(read);
+        Assert.Equal(presentation, read!.Presentation);
+
+        var without = await Store.CommitPartAsync(Commit(acceptance.OutputId, blockIndex: 1), cancellationToken);
+        Assert.Equal(PartCommitOutcome.Committed, without.Outcome);
+        var none = await Store.FindPartAsync(acceptance.OutputId, 1, cancellationToken);
+        Assert.NotNull(none);
+        Assert.Null(none!.Presentation);
+    }
+
     [Fact]
     public async Task PublicationSucceedsTheOutputOnceAndClosesTheJob()
     {

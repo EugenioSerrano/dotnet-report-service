@@ -38,6 +38,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     ];
 
     private readonly string root = Path.Combine(Path.GetTempPath(), "report-service-rendering-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
+    private readonly Dictionary<string, RenderOutcome> rendersInRun = new(StringComparer.Ordinal);
     private int renders;
 
     /// <summary>The repository root.</summary>
@@ -57,6 +58,15 @@ public sealed class RenderingSuite : IAsyncLifetime
 
     /// <summary>The sample packages the repository ships, as the folders a consumer copies.</summary>
     public static string SamplesDirectory => Path.Combine(RepositoryRoot, "samples", "templates");
+
+    /// <summary>The one report in five versions: three engines in the base locale and two locale variants.</summary>
+    public static string SameReportDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+
+    /// <summary>The three versions that print the one report in three engines, under the base locale.</summary>
+    public static IReadOnlyList<string> SameReportEngines => ["same-report-1.0.0", "same-report-1.1.0", "same-report-1.2.0"];
+
+    /// <summary>The base locale and the two locale variants of the one report.</summary>
+    public static IReadOnlyList<string> SameReportLocales => ["same-report-1.0.0", "same-report-1.3.0", "same-report-1.4.0"];
 
     /// <summary>The declarations of the two packages.</summary>
     public static string ExpectationsDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "OracleExpectations");
@@ -88,11 +98,26 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <summary>
     /// Renders <paramref name="fixtureId"/> with <paramref name="package"/> and
     /// returns the result the host wrote; <paramref name="mutation"/> applies a
-    /// known-bad control on the way.
+    /// known-bad control on the way. One stem is rendered once per run: the suite's
+    /// cases share the documents they assert on, and a case that needs a second,
+    /// independent render names it.
     /// </summary>
-    public async Task<RenderOutcome> RenderAsync(string fixtureId, string package, string? mutation = null, string? name = null)
+    public async Task<RenderOutcome> RenderAsync(string fixtureId, string package, string? mutation = null, string? name = null, string? ambientCulture = null)
     {
         var stem = name ?? (mutation is null ? $"{fixtureId}-{package}" : $"{fixtureId}-{package}-{mutation}");
+        if (ambientCulture is not null)
+        {
+            stem += "-" + ambientCulture;
+        }
+
+        lock (rendersInRun)
+        {
+            if (rendersInRun.TryGetValue(stem, out var already))
+            {
+                return already;
+            }
+        }
+
         var command = new List<string>
         {
             "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out", "--name", stem,
@@ -102,7 +127,12 @@ public sealed class RenderingSuite : IAsyncLifetime
             command.AddRange(["--mutation", mutation]);
         }
 
-        var exit = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
+        if (ambientCulture is not null)
+        {
+            command.AddRange(["--ambient-culture", ambientCulture]);
+        }
+
+        var (exit, _) = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
         var resultPath = Path.Combine(OutputDirectory, stem + ".json");
         if (exit != 0)
         {
@@ -110,7 +140,13 @@ public sealed class RenderingSuite : IAsyncLifetime
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
-        return ReadOutcome(document.RootElement, fixtureId, package, mutation, OutputDirectory);
+        var outcome = ReadOutcome(document.RootElement, fixtureId, package, mutation, OutputDirectory);
+        lock (rendersInRun)
+        {
+            rendersInRun[stem] = outcome;
+        }
+
+        return outcome;
     }
 
     /// <summary>
@@ -120,7 +156,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     public async Task<RenderOutcome> RenderWithoutPageSettingsAsync(string fixtureId, string package)
     {
         const string stem = "page-settings-unset";
-        var exit = await RunContainerAsync(
+        var (exit, _) = await RunContainerAsync(
             HostImage,
             [
                 "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out",
@@ -140,6 +176,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     private static RenderOutcome ReadOutcome(JsonElement result, string fixtureId, string package, string? mutation, string outputDirectory)
     {
         var reported = result.TryGetProperty("pdf", out var pdfName) && pdfName.ValueKind == JsonValueKind.String ? pdfName.GetString() : null;
+        var htmlSha256 = result.TryGetProperty("htmlSha256", out var html) && html.ValueKind == JsonValueKind.String ? html.GetString() : null;
         var reason = result.TryGetProperty("verificationReason", out var reportedReason) && reportedReason.ValueKind == JsonValueKind.String
             ? reportedReason.GetString()
             : null;
@@ -154,13 +191,20 @@ public sealed class RenderingSuite : IAsyncLifetime
             result.GetProperty("verificationPassed").GetBoolean(),
             reason,
             field,
-            ExpectationOf(package));
+            ExpectationOf(package),
+            htmlSha256);
     }
 
-    /// <summary>The declaration file of the package: the page frame's geometries are filed under their own names.</summary>
+    /// <summary>The declaration file of the package: the page frame's geometries are filed under their own names, and each locale of the one report has its own.</summary>
     /// <param name="package">The package id.</param>
-    public static string ExpectationOf(string package) =>
-        string.Equals(package, PageFramePackage, StringComparison.Ordinal) ? PageFramePackage + "-a4-portrait" : package;
+    public static string ExpectationOf(string package) => package switch
+    {
+        "same-report-1.0.0" or "same-report-1.1.0" or "same-report-1.2.0" => "same-report",
+        "same-report-1.3.0" => "same-report-en-us-tokyo",
+        "same-report-1.4.0" => "same-report-en-gb-madrid",
+        PageFramePackage => PageFramePackage + "-a4-portrait",
+        _ => package,
+    };
 
     /// <summary>The package id of the page frame's canonical declaration.</summary>
     public const string PageFramePackage = "page-frame";
@@ -186,7 +230,7 @@ public sealed class RenderingSuite : IAsyncLifetime
             (OutputDirectory, "/out", AccessMode.ReadWrite),
         ];
 
-        var exit = await RunContainerAsync(HostImage, command, mounts).ConfigureAwait(false);
+        var (exit, _) = await RunContainerAsync(HostImage, command, mounts).ConfigureAwait(false);
         var resultPath = Path.Combine(OutputDirectory, "sample.json");
         if (exit != 0)
         {
@@ -210,7 +254,7 @@ public sealed class RenderingSuite : IAsyncLifetime
         var stem = Path.GetFileNameWithoutExtension(render.Pdf);
         var verdictPath = Path.Combine(OutputDirectory, stem + ".verdict.json");
         var readingPath = Path.Combine(OutputDirectory, stem + ".reading.json");
-        var exit = await RunContainerAsync(
+        var (exit, logs) = await RunContainerAsync(
             OracleImage,
             [
                 "verdict", "--pdf", $"/out/{Path.GetFileName(render.Pdf)}",
@@ -222,18 +266,21 @@ public sealed class RenderingSuite : IAsyncLifetime
             [(FixturesDirectory, "/fixtures"), (ExpectationsDirectory, "/expectations"), (OutputDirectory, "/out")]).ConfigureAwait(false);
         if (exit != 0)
         {
-            throw new InvalidOperationException($"The judge exited {exit} for {stem}; it produced no verdict.");
+            throw new InvalidOperationException($"The judge exited {exit} for {stem}; it produced no verdict.{Environment.NewLine}{logs}");
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(verdictPath).ConfigureAwait(false));
         var failures = document.RootElement.GetProperty("failures").EnumerateArray()
             .Select(failure => Describe(failure))
             .ToList();
+        var rules = document.RootElement.GetProperty("rules").EnumerateObject()
+            .ToDictionary(rule => rule.Name, rule => rule.Value.GetString() ?? string.Empty, StringComparer.Ordinal);
         return new Verdict(
             Passed: document.RootElement.GetProperty("passed").GetBoolean(),
             Pages: document.RootElement.GetProperty("pages").GetInt32(),
             Words: document.RootElement.GetProperty("words").GetInt32(),
             Classes: failures,
+            Rules: rules,
             Reading: await File.ReadAllTextAsync(readingPath).ConfigureAwait(false));
     }
 
@@ -260,6 +307,23 @@ public sealed class RenderingSuite : IAsyncLifetime
         return [.. document.RootElement.GetProperty("words").EnumerateArray().Select(word => word.GetProperty("text").GetString()!)];
     }
 
+    /// <summary>
+    /// Copies a printed document into the run's evidence folder under <paramref name="fileName"/>
+    /// and answers its SHA-256: the demo is the document itself, kept beside the record that
+    /// names it, never a number about a file nobody kept.
+    /// </summary>
+    /// <param name="render">The printed document.</param>
+    /// <param name="fileName">The name it is kept under.</param>
+    public static string CopyToEvidence(RenderOutcome render, string fileName)
+    {
+        ArgumentNullException.ThrowIfNull(render);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        Assert.NotNull(render.Pdf);
+        var bytes = File.ReadAllBytes(render.Pdf);
+        RunEnvironment.WriteEvidence(fileName, bytes);
+        return RunEnvironment.Sha256Of(bytes);
+    }
+
     private void WriteFixtures()
     {
         var datasets = Path.Combine(RepositoryRoot, "samples", "datasets");
@@ -274,10 +338,12 @@ public sealed class RenderingSuite : IAsyncLifetime
         generator.WriteFolder(FixturesDirectory);
     }
 
-    // The packages the suite prints: the library's folders, plus one folder per page
-    // geometry of the page frame. A geometry's folder is a copy of the one source the
-    // page-frame package keeps, with its own declaration in place of the canonical one,
-    // so the four geometries never drift into four sets of files.
+    // The packages the suite prints: the library's folders, one folder per page
+    // geometry of the page frame, and the five versions of the one report. A geometry's
+    // folder is a copy of the one source the page-frame package keeps, with its own
+    // declaration in place of the canonical one, so the four geometries never drift into
+    // four sets of files. Each version of the one report is mounted under a flat name so
+    // the host's package id names the engine and the locale it prints under.
     private void PreparePackages()
     {
         Directory.CreateDirectory(PackagesDirectory);
@@ -292,6 +358,11 @@ public sealed class RenderingSuite : IAsyncLifetime
             CopyFolder(Path.Combine(TemplatesDirectory, PageFramePackage), target);
             var declaration = Path.Combine(TemplatesDirectory, PageFramePackage, "manifests", variant[(PageFramePackage.Length + 1)..] + ".yaml");
             File.Copy(declaration, Path.Combine(target, "template.yaml"), overwrite: true);
+        }
+
+        foreach (var version in Directory.GetDirectories(SameReportDirectory))
+        {
+            CopyFolder(version, Path.Combine(PackagesDirectory, "same-report-" + Path.GetFileName(version)));
         }
     }
 
@@ -353,13 +424,13 @@ public sealed class RenderingSuite : IAsyncLifetime
         }
     }
 
-    private Task<long> RunContainerAsync(string image, IReadOnlyList<string> command, IReadOnlyList<(string Source, string Target)> mounts) =>
+    private Task<(long Exit, string Logs)> RunContainerAsync(string image, IReadOnlyList<string> command, IReadOnlyList<(string Source, string Target)> mounts) =>
         RunContainerAsync(
             image,
             command,
             mounts.Select(mount => (mount.Source, mount.Target, AccessMode.ReadWrite)).ToArray());
 
-    private async Task<long> RunContainerAsync(
+    private async Task<(long Exit, string Logs)> RunContainerAsync(
         string image,
         IReadOnlyList<string> command,
         IReadOnlyList<(string Source, string Target, AccessMode Mode)> mounts)
@@ -375,7 +446,9 @@ public sealed class RenderingSuite : IAsyncLifetime
 
         await using var container = builder.Build();
         await container.StartAsync().ConfigureAwait(false);
-        return await container.GetExitCodeAsync().ConfigureAwait(false);
+        var exit = await container.GetExitCodeAsync().ConfigureAwait(false);
+        var (stdout, stderr) = await container.GetLogsAsync().ConfigureAwait(false);
+        return (exit, string.Join('\n', new[] { stdout, stderr }.Where(log => !string.IsNullOrWhiteSpace(log))));
     }
 
     private static async Task RunAsync(string workingDirectory, string fileName, IReadOnlyList<string> arguments)
@@ -412,6 +485,7 @@ public sealed class RenderingSuite : IAsyncLifetime
 /// <param name="VerificationReason">The reason its verification refused it with, or null.</param>
 /// <param name="VerificationField">The manifest path of a page-setting refusal, or null.</param>
 /// <param name="Expectation">The declaration file the judge reads it against.</param>
+/// <param name="HtmlSha256">The SHA-256 of the HTML the print was laid out from, lower-case hexadecimal.</param>
 public sealed record RenderOutcome(
     string Fixture,
     string Package,
@@ -420,7 +494,8 @@ public sealed record RenderOutcome(
     bool VerificationPassed,
     string? VerificationReason,
     string? VerificationField,
-    string Expectation);
+    string Expectation,
+    string? HtmlSha256);
 
 /// <summary>One printed shipped sample: where the document is and what the product's verification said about it.</summary>
 /// <param name="Pdf">The PDF the print wrote.</param>
@@ -438,5 +513,6 @@ public sealed record ShippedRenderOutcome(
 /// <param name="Pages">How many pages it read.</param>
 /// <param name="Words">How many words it read.</param>
 /// <param name="Classes">The failure classes, in the order the judge reported them.</param>
+/// <param name="Rules">The state of every rule: pass, fail or not applicable.</param>
 /// <param name="Reading">The reading the verdict was reached from.</param>
-public sealed record Verdict(bool Passed, int Pages, int Words, IReadOnlyList<string> Classes, string Reading);
+public sealed record Verdict(bool Passed, int Pages, int Words, IReadOnlyList<string> Classes, IReadOnlyDictionary<string, string> Rules, string Reading);

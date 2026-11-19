@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Globalization;
 using Microsoft.Playwright;
 using ReportService.Data;
 using ReportService.Rendering;
@@ -51,6 +52,11 @@ internal static partial class Program
                 return await FailAsync(ExitUsage, $"The option '{args[index]}' holds no value.").ConfigureAwait(false);
             }
 
+            if (!KnownOptions.Contains(args[index][2..], StringComparer.Ordinal))
+            {
+                return await FailAsync(ExitUsage, $"The option '{args[index]}' is not one this host knows ({string.Join(", ", KnownOptions)}).").ConfigureAwait(false);
+            }
+
             options[args[index][2..]] = args[index + 1];
             index++;
         }
@@ -70,6 +76,22 @@ internal static partial class Program
             return await FailAsync(ExitUsage, $"The host knows no control '{mutation}'. It knows: {string.Join(", ", KnownBad.Names)}.").ConfigureAwait(false);
         }
 
+        if (options.TryGetValue("ambient-culture", out var ambientCulture))
+        {
+            if (!AmbientCultures.Contains(ambientCulture, StringComparer.Ordinal))
+            {
+                return await FailAsync(ExitUsage, $"The host knows no ambient culture '{ambientCulture}'. It knows: {string.Join(", ", AmbientCultures)}.").ConfigureAwait(false);
+            }
+
+            var culture = string.Equals(ambientCulture, "invariant", StringComparison.Ordinal)
+                ? CultureInfo.InvariantCulture
+                : CultureInfo.GetCultureInfo(ambientCulture);
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+        }
+
         try
         {
             return await RenderAsync(options["fixture"], options["template"], options["out"], mutation, stem, pageSettingsUnset).ConfigureAwait(false);
@@ -83,7 +105,20 @@ internal static partial class Program
     }
 
     private const string Usage =
-        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>] [--name <stem>] [--page-settings-unset]";
+        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>] [--name <stem>] [--ambient-culture <invariant|es-AR>] [--page-settings-unset]";
+
+    /// <summary>The options one render accepts; anything else is a usage error, never silently ignored.</summary>
+    private static readonly IReadOnlyList<string> KnownOptions = ["fixture", "template", "out", "mutation", "name", "ambient-culture"];
+
+    /// <summary>
+    /// The culture the composing process itself runs under, when a case names one: the
+    /// conformance threshold asks for the same bytes under <c>es-AR</c> and under the invariant
+    /// culture, so the host can be made to run as a machine of either. It is the process's own
+    /// culture - never a render setting - and the report's presentation must not follow it.
+    /// </summary>
+    private static readonly IReadOnlyList<string> AmbientCultures = ["invariant", "es-AR"];
+
+
 
     private static async Task<int> RenderAsync(
         string snapshotPath,
@@ -117,6 +152,7 @@ internal static partial class Program
                 Mutation: mutation,
                 Pdf: null,
                 Sha256: null,
+                HtmlSha256: null,
                 SizeBytes: 0,
                 AbortedRequests: 0,
                 ConsoleErrors: 0,
@@ -144,21 +180,46 @@ internal static partial class Program
             (double)settings.MarginLeftMm);
         var files = new FolderTemplatePackageFiles(templateFolder);
 
-        var adapter = new ScribanTemplateAdapter();
+        var decision = EngineResolution.Resolve(
+            manifest,
+            pinEngine: null,
+            TemplateEngineAdapters.Registry());
+        if (decision.Adapter is not { } adapter)
+        {
+            throw new InvalidDataException(decision.Message);
+        }
+
         var prepared = adapter.Prepare(manifest, files);
 
         var (header, records) = await ReadSnapshotAsync(snapshotPath).ConfigureAwait(false);
+        var culture = manifest.LocaleDefaults.Culture;
+        var timeZone = manifest.LocaleDefaults.TimeZone;
+        if (string.IsNullOrWhiteSpace(culture) || string.IsNullOrWhiteSpace(timeZone))
+        {
+            throw new InvalidDataException("The package declares no culture and time zone to present under.");
+        }
+
         var composition = new CompositionRequest(
             prepared,
             new CompositionBlock(Index: 0, RecordCount: records.Count, FirstRecordOrdinal: 1, IsFirst: true, IsLast: true),
             header,
             records,
-            new CompositionRender(Culture: null, TimeZone: null, Clock: FixedClock),
+            new CompositionRender(Culture: culture, TimeZone: timeZone, Clock: FixedClock),
             manifest.GroupKey);
 
-        var composer = new BlockComposer(adapter, TimeProvider.System);
-        var composed = composer.Compose(composition);
-        if (mutation is not null && !KnownBad.IsHtmlLevel(mutation))
+        var composer = new BlockComposer(TimeProvider.System);
+        var composed = composer.Compose(
+            composition,
+            adapter,
+            PresentationSettingsResolver.Resolve(new PresentationValues(
+                composition.Render.Culture,
+                composition.Render.TimeZone,
+                composition.Render.Clock)));
+        if (string.Equals(mutation, InvariantCulturePresentation.ControlName, StringComparison.Ordinal))
+        {
+            composed = new InvariantCulturePresentation(records, header, timeZone, FixedClock).Apply(composed);
+        }
+        else if (mutation is not null && !KnownBad.IsHtmlLevel(mutation))
         {
             composed = KnownBad.ApplyComposition(mutation, composed);
         }
@@ -239,6 +300,7 @@ internal static partial class Program
             Mutation: mutation,
             Pdf: Path.GetFileName(pdfPath),
             Sha256: Convert.ToHexStringLower(SHA256.HashData(bytes)),
+            HtmlSha256: Convert.ToHexStringLower(SHA256.HashData(composed.Html)),
             SizeBytes: bytes.LongLength,
             AbortedRequests: outcome.AbortedRequests,
             ConsoleErrors: outcome.ConsoleErrors,
@@ -298,6 +360,7 @@ internal static partial class Program
 /// <param name="Mutation">The control applied, or null for none.</param>
 /// <param name="Pdf">The PDF file the print wrote, or null when the block was refused before printing.</param>
 /// <param name="Sha256">Its SHA-256, lower-case hexadecimal, or null when nothing was printed.</param>
+/// <param name="HtmlSha256">The SHA-256 of the composed HTML the print was laid out from, lower-case hexadecimal.</param>
 /// <param name="SizeBytes">Its size in bytes.</param>
 /// <param name="AbortedRequests">How many requests of the document the route policy aborted.</param>
 /// <param name="ConsoleErrors">How many console errors the page reported.</param>
@@ -316,6 +379,7 @@ internal sealed record RenderResult(
     string? Mutation,
     string? Pdf,
     string? Sha256,
+    string? HtmlSha256,
     long SizeBytes,
     int AbortedRequests,
     int ConsoleErrors,
@@ -355,6 +419,7 @@ internal static partial class KnownBad
         "PF-MARGINS",
         "PF-OVERLAP",
         "PF-SIZE",
+        InvariantCulturePresentation.ControlName,
         "RowDuplicated",
         "RowRemoved",
         "RowWithoutText",
