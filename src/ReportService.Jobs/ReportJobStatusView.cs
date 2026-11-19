@@ -17,6 +17,7 @@ namespace ReportService.Jobs;
 /// <param name="BlocksTotal">How many blocks the partition holds; null until it was committed.</param>
 /// <param name="PagesGenerated">How many pages the committed blocks hold.</param>
 /// <param name="ErrorCode">The stable code the job ended with; null unless it failed.</param>
+/// <param name="ErrorReason">The fixed reason recorded beside <paramref name="ErrorCode"/>; null when none was.</param>
 /// <param name="CreatedAt">When the job was accepted, in UTC.</param>
 /// <param name="StartedAt">When the job's work began, in UTC; null until then.</param>
 /// <param name="FinishedAt">When the job ended, in UTC; null until it did.</param>
@@ -31,6 +32,7 @@ public sealed record ReportJobStatusView(
     int? BlocksTotal,
     long PagesGenerated,
     string? ErrorCode,
+    string? ErrorReason,
     DateTimeOffset CreatedAt,
     DateTimeOffset? StartedAt,
     DateTimeOffset? FinishedAt,

@@ -62,9 +62,10 @@ Cache-Control: no-store
     "pagesGenerated": 0
   },
   "outputs": [
-    { "format": "pdf", "status": "running", "artifactId": null, "errorCode": null }
+    { "format": "pdf", "status": "running", "artifactId": null, "errorCode": null, "errorMessage": null }
   ],
   "errorCode": null,
+  "errorMessage": null,
   "createdAt": "2026-11-01T12:03:17.123Z",
   "startedAt": "2026-11-01T12:03:18.004Z",
   "finishedAt": null
@@ -84,8 +85,9 @@ Every member is always present; a value that does not exist yet is written as
 | `progress.blocksCompleted` | How many blocks of the report are finished. Only rises. |
 | `progress.blocksTotal` | How many blocks the job was divided into, `null` until that is known. |
 | `progress.pagesGenerated` | How many pages are finished. Only rises. |
-| `outputs[]` | One entry per requested output, in the fixed order `pdf`, `html`, `xlsx`, `markdown`. `format` is the requested format, `status` is `pending`, `running`, `succeeded`, `failed` or `cancelled`, `artifactId` identifies the published file once it exists, and `errorCode` names why the output failed. |
+| `outputs[]` | One entry per requested output, in the fixed order `pdf`, `html`, `xlsx`, `markdown`. `format` is the requested format, `status` is `pending`, `running`, `succeeded`, `failed` or `cancelled`, `artifactId` identifies the published file once it exists, `errorCode` names why the output failed, and `errorMessage` is what that failure says in plain words. |
 | `errorCode` | The stable code of the condition that ended a failed job; `null` otherwise. |
+| `errorMessage` | The message the failed job carries for you; `null` otherwise. It is written from the condition the job ended with, names no value of your data and no setting of the deployment, and is `null` when the condition has no message in this version. |
 | `createdAt`, `startedAt`, `finishedAt` | When the job was accepted, when it entered its first step and when it ended, in UTC as RFC 3339 with `Z` and three fractional digits; `null` until each happens. |
 
 **There is no percentage.** The service never presents a share of a total it has
@@ -95,6 +97,38 @@ not counted; a client that knows both numbers may compute one itself.
 the stage never move back either. A job that ends `failed` carries the stable
 code of the condition on itself, and its PDF output carries the same code; the
 answer itself still succeeds with `200`.
+
+### The message of a refused report
+
+A PDF report whose data does not fit in one block ends `failed` with
+`QUOTA_EXCEEDED`, on the job and on its PDF output, before anything is printed:
+no page, no artifact. Its `errorMessage` names the record at which the pass
+stopped and the limit **actually applied** to the data - the configured record
+count, or the block's own maximum when the configuration is above it:
+
+```json
+{
+  "status": "failed",
+  "errorCode": "QUOTA_EXCEEDED",
+  "errorMessage": "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report.",
+  "outputs": [
+    {
+      "format": "pdf",
+      "status": "failed",
+      "artifactId": null,
+      "errorCode": "QUOTA_EXCEEDED",
+      "errorMessage": "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report."
+    }
+  ]
+}
+```
+
+The same sentence names bytes when the record data was what crossed the bound:
+`… exceeds this version's limit of 1048576 bytes of record data per report (one
+block) …`. The numbers are plain digits. The report cannot be downloaded, and
+sending the same data again fails the same way: the refusal is not retried.
+[docs/limitations.md](../limitations.md) states the limit, why it exists and
+what removes it.
 
 Refusals of this read are the shared ones:
 

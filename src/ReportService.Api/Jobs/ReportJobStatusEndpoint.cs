@@ -80,7 +80,7 @@ public static class ReportJobStatusEndpoint
 
         // An intermediary that served an older answer would show counters going back.
         context.Response.Headers["Cache-Control"] = NoStore;
-        return Results.Ok(ReportJobStatusResponse.From(status));
+        return Results.Ok(ReportJobStatusResponse.From(status, logger));
     }
 
     // Every unusable job reference answers the one problem of a job that was not found,

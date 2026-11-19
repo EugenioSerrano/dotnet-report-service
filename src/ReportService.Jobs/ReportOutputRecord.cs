@@ -19,6 +19,12 @@ public sealed record ReportOutputRecord(
     /// <summary>Why the output failed; null unless it failed.</summary>
     public string? ErrorCode { get; init; }
 
+    /// <summary>
+    /// The fixed reason recorded beside <see cref="ErrorCode"/> when the whole job failed; null
+    /// when the output ended on its own or carries no reason.
+    /// </summary>
+    public string? ErrorReason { get; init; }
+
     /// <summary>When the output's production began, in UTC; null until then.</summary>
     public DateTimeOffset? StartedAt { get; init; }
 

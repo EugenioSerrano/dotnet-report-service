@@ -40,6 +40,7 @@ public sealed partial class InMemoryJobStore
                     output.Format,
                     output.Status,
                     output.ErrorCode,
+                    output.ErrorReason,
                     _artifacts.TryGetValue(output.OutputId, out var artifact) ? artifact.ArtifactId : null))
                 .ToList();
 
@@ -53,6 +54,7 @@ public sealed partial class InMemoryJobStore
                 progress.BlocksTotal,
                 progress.PagesGenerated,
                 job.ErrorCode,
+                job.ErrorReason,
                 job.CreatedAt,
                 job.StartedAt,
                 job.FinishedAt,

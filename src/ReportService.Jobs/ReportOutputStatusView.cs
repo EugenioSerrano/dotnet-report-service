@@ -9,9 +9,11 @@ namespace ReportService.Jobs;
 /// <param name="Format">The form the output is produced in.</param>
 /// <param name="Status">The state of the output.</param>
 /// <param name="ErrorCode">The stable code the output failed with; null unless it failed.</param>
+/// <param name="ErrorReason">The fixed reason recorded beside <paramref name="ErrorCode"/>; null when none was.</param>
 /// <param name="ArtifactId">The identifier of the published file; null unless the output succeeded.</param>
 public sealed record ReportOutputStatusView(
     OutputFormat Format,
     OutputStatus Status,
     string? ErrorCode,
+    string? ErrorReason,
     string? ArtifactId);

@@ -29,12 +29,12 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
     private const string Hash = "9ffcbf0acedfe4529a6093c4c669efab29c2d523a7794bacfb8eb8a946ca8dd3";
 
     private static readonly string[] TopMembers =
-        ["reportJobId", "status", "stage", "progress", "outputs", "errorCode", "createdAt", "startedAt", "finishedAt"];
+        ["reportJobId", "status", "stage", "progress", "outputs", "errorCode", "errorMessage", "createdAt", "startedAt", "finishedAt"];
 
     private static readonly string[] ProgressMembers =
         ["recordsRead", "recordsTotal", "blocksCompleted", "blocksTotal", "pagesGenerated"];
 
-    private static readonly string[] OutputMembers = ["format", "status", "artifactId", "errorCode"];
+    private static readonly string[] OutputMembers = ["format", "status", "artifactId", "errorCode", "errorMessage"];
 
     private static readonly DateTimeOffset Now = JobWireValues.TruncateToMillisecond(JobApiHost.Now);
 
@@ -159,6 +159,45 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         Assert.Equal("succeeded", output.GetProperty("status").GetString());
         Assert.Equal(ArtifactId, output.GetProperty("artifactId").GetString());
         Assert.Null(output.GetProperty("errorCode").GetString());
+    }
+
+    [Fact]
+    public async Task ARefusedSnapshotAnswersTheLimitItsDataExceededInPlainWords()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (refused, _) = await AcceptedAsync();
+        await _host.Jobs.FailJobAsync(
+            refused,
+            "QUOTA_EXCEEDED",
+            "the document cannot be used: code=QUOTA_EXCEEDED reason=dimension=records applied=1000 limit=block ordinal=1001 offset=48213",
+            Now,
+            cancellationToken);
+
+        var (published, publishedOutput) = await AcceptedAsync();
+        await _host.Jobs.TransitionOutputAsync(publishedOutput, Now, cancellationToken);
+        await _host.Jobs.PublishAsync(Artifact(published, publishedOutput), cancellationToken);
+        await _host.Jobs.FinalizeJobAsync(published, Now, cancellationToken);
+
+        // The sentence a producer reads: the applied limit, the record that crossed it and what
+        // to do next. It names no value of the report and no operator setting.
+        const string Expected =
+            "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report.";
+        using (var response = await GetAsync(JobApiHost.Consumer, refused))
+        {
+            var answer = await JobApiHost.AnswerAsync(response);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(Expected, answer.GetProperty("errorMessage").GetString());
+            var output = Assert.Single(answer.GetProperty("outputs").EnumerateArray());
+            Assert.Equal(Expected, output.GetProperty("errorMessage").GetString());
+        }
+
+        using (var response = await GetAsync(JobApiHost.Consumer, published))
+        {
+            var answer = await JobApiHost.AnswerAsync(response);
+            Assert.Equal(JsonValueKind.Null, answer.GetProperty("errorMessage").ValueKind);
+            var output = Assert.Single(answer.GetProperty("outputs").EnumerateArray());
+            Assert.Equal(JsonValueKind.Null, output.GetProperty("errorMessage").ValueKind);
+        }
     }
 
     [Fact]

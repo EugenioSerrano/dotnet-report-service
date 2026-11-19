@@ -32,7 +32,10 @@ using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
+using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
 using PdfWorker = pdf::ReportService.Workers.Pdf.PdfWorkerProgram;
+using Temporalio.Client;
+using Temporalio.Common;
 
 namespace ReportService.IntegrationTests.Jobs;
 
@@ -113,6 +116,9 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>Whether the render worker starts with the composition.</summary>
     private bool StartPdf { get; init; }
 
+    /// <summary>The record count the orchestration worker applies, when the case states one.</summary>
+    private int? SingleBlockRecordLimit { get; init; }
+
     /// <summary>The clock the API reads, when the case replaces it.</summary>
     private ManualTimeProvider? Clock { get; init; }
 
@@ -143,15 +149,27 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>Starts the composition on the case's own database and engine.</summary>
     /// <param name="fixture">The PostgreSQL container the class owns.</param>
     /// <param name="startOrchestration">Whether the job's own worker starts now; a case that pins two jobs starts it later.</param>
+    /// <param name="startPdf">Whether the render worker starts with the composition.</param>
+    /// <param name="clock">The clock the API reads, when the case replaces it.</param>
+    /// <param name="singleBlockRecordLimit">
+    /// The record count the orchestration worker applies; the deployment's default when the case states none.
+    /// The setting is read when the worker starts, so a case that asserts a limit starts its own composition.
+    /// </param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
     public static async Task<PrintingRig> StartAsync(
         PostgresFixture fixture,
         bool startOrchestration = true,
         bool startPdf = true,
         ManualTimeProvider? clock = null,
+        int? singleBlockRecordLimit = null,
         CancellationToken cancellationToken = default)
     {
-        var rig = new PrintingRig(fixture) { StartPdf = startPdf, Clock = clock };
+        var rig = new PrintingRig(fixture)
+        {
+            StartPdf = startPdf,
+            Clock = clock,
+            SingleBlockRecordLimit = singleBlockRecordLimit,
+        };
         try
         {
             await rig.OpenAsync(startOrchestration, cancellationToken);
@@ -358,7 +376,8 @@ internal sealed class PrintingRig : IAsyncDisposable
         return await connection.QuerySingleOrDefaultAsync<JobStateRow>(new CommandDefinition(
             """
             SELECT j.status AS "Status", j.error_code AS "ErrorCode", j.error_reason AS "ErrorReason",
-                   o.status AS "OutputStatus", o.error_code AS "OutputErrorCode",
+                   o.output_id AS "OutputId",
+                   o.status AS "OutputStatus", o.error_code AS "OutputErrorCode", o.error_reason AS "OutputErrorReason",
                    a.artifact_id AS "ArtifactId", a.object_key AS "ObjectKey",
                    a.sha256 AS "Sha256", a.size_bytes AS "SizeBytes", a.page_count AS "PageCount", a.expires_at AS "ExpiresAt",
                    a.created_at AS "ArtifactCreatedAt",
@@ -373,6 +392,20 @@ internal sealed class PrintingRig : IAsyncDisposable
             """,
             new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken));
+    }
+
+    /// <summary>The run's history, as the composition's own engine recorded it.</summary>
+    /// <param name="reportJobId">The job whose run is read.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<WorkflowHistory> HistoryAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        var client = await TemporalClient
+            .ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" })
+            .WaitAsync(cancellationToken);
+        return await client
+            .GetWorkflowHandle(ReportJobWorkflow.WorkflowIdFor(reportJobId))
+            .FetchHistoryAsync(new WorkflowHistoryEventFetchOptions())
+            .WaitAsync(cancellationToken);
     }
 
     /// <summary>Reads the object a job published, through the verifying storage reader.</summary>
@@ -618,6 +651,13 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting("Storage:Filesystem:Root", StoragePath());
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting("Retention:Outputs", "01:00:00");
+            if (SingleBlockRecordLimit is { } limit)
+            {
+                builder.UseSetting(
+                    "Partitioning:SingleBlockRecordLimit",
+                    limit.ToString(CultureInfo.InvariantCulture));
+            }
+
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));
@@ -674,6 +714,10 @@ internal sealed class JobStateRow
     public string? OutputStatus { get; set; }
 
     public string? OutputErrorCode { get; set; }
+
+    public string? OutputErrorReason { get; set; }
+
+    public string? OutputId { get; set; }
 
     public string? ArtifactId { get; set; }
 
