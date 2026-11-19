@@ -340,6 +340,69 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
         Assert.DoesNotContain("Password", text, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The catalogue leaves the outputs table exactly as it was, plus the one nullable
+    /// reason column a failed output needs beside the job's own reason: read back from
+    /// the catalog of a real server, because a reading of the embedded text proves what
+    /// the file says, never what the schema became.
+    /// </summary>
+    [Fact]
+    public async Task TheOutputReasonColumnIsNullableTextAndTheOutputsTableIsOtherwiseUnchanged()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var database = await server.CreateDatabaseAsync(cancellationToken);
+
+        var result = await MigrationRunner.RunAsync(server.Application(database), MigrationCatalog.Scripts, cancellationToken);
+        assertNoCredential(result);
+
+        Assert.True(result.Succeeded, string.Join("; ", result.Lines()));
+        Assert.Equal(CatalogNames, result.Applied);
+        Assert.Equal(MigrationCatalog.ExpectedVersion, result.CurrentVersion);
+
+        await using var connection = await server.OpenAsync(database, cancellationToken);
+        var columns = await connection.QueryAsync<OutputColumn>(new CommandDefinition(
+            """
+            SELECT column_name    AS "Name",
+                   data_type      AS "Type",
+                   is_nullable    AS "Nullable",
+                   column_default AS "Default"
+              FROM information_schema.columns
+             WHERE table_schema = 'report_service' AND table_name = 'report_outputs'
+             ORDER BY ordinal_position
+            """,
+            cancellationToken: cancellationToken));
+
+        Assert.Equal(
+            [
+                ("output_id", "text", "NO", (string?)null),
+                ("report_job_id", "text", "NO", null),
+                ("format", "text", "NO", null),
+                ("status", "text", "NO", null),
+                ("error_code", "text", "YES", null),
+                ("started_at", "timestamp with time zone", "YES", null),
+                ("finished_at", "timestamp with time zone", "YES", null),
+                ("error_reason", "text", "YES", null),
+            ],
+            columns.Select(column => (column.Name, column.Type, column.Nullable, column.Default)));
+
+        // The checks, the reference and the keys the table declares. The catalog also
+        // records one entry per NOT NULL column; those are left out because the column
+        // census above already states every column's nullability, and their shape is the
+        // catalog's, not the table's contract.
+        var constraints = await connection.QueryAsync<string>(new CommandDefinition(
+            """
+            SELECT c.contype::text
+              FROM pg_constraint c
+              JOIN pg_class t ON t.oid = c.conrelid
+              JOIN pg_namespace n ON n.oid = t.relnamespace
+             WHERE n.nspname = 'report_service' AND t.relname = 'report_outputs'
+               AND c.contype <> 'n'
+             ORDER BY c.contype
+            """,
+            cancellationToken: cancellationToken));
+        Assert.Equal(["c", "c", "c", "c", "f", "p", "u"], constraints);
+    }
+
     private void assertNoCredential(MigrationResult result)
     {
         var text = string.Join("\n", result.Lines());
@@ -420,6 +483,17 @@ public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixtur
             async token => await probe(token) ? new object() : null,
             deadline,
             cancellationToken);
+
+    private sealed class OutputColumn
+    {
+        public string? Name { get; set; }
+
+        public string? Type { get; set; }
+
+        public string? Nullable { get; set; }
+
+        public string? Default { get; set; }
+    }
 
     private sealed class JournalSnapshot
     {
