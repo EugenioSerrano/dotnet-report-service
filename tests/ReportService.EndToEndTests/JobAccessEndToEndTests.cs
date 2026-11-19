@@ -122,33 +122,53 @@ public sealed class JobAccessEndToEndTests : IDisposable
         }
 
         // Step 2: B gets, for A's job and file, the same answer as for identifiers that do not exist.
+        // Each operation is compared with its own absent answer: a job that does not exist is the
+        // status read's answer, a file that does not exist is the download's, and the listing's
+        // not-found is the status read's own document. The status and the download carry different
+        // text by design, so they are never compared with each other.
         var jobNotFound = await ReadProblemAsync(api, ConsumerB, StatusRequest(ConsumerB, jobId), cancellationToken);
         var absentJob = await ReadProblemAsync(
             api,
             ConsumerB,
             StatusRequest(ConsumerB, "job-" + new string('f', 32)),
             cancellationToken);
+        var foreignList = await ReadProblemAsync(api, ConsumerB, ListRequest(ConsumerB, jobId), cancellationToken);
+        var absentList = await ReadProblemAsync(
+            api,
+            ConsumerB,
+            ListRequest(ConsumerB, "job-" + new string('f', 32)),
+            cancellationToken);
         var absentFile = await ReadProblemAsync(
             api,
             ConsumerB,
             DownloadRequest(ConsumerB, "job-" + new string('f', 32), "artifact-" + new string('f', 32)),
             cancellationToken);
+        var foreignFile = await ReadProblemAsync(
+            api,
+            ConsumerB,
+            DownloadRequest(ConsumerB, jobId, listed.ArtifactId),
+            cancellationToken);
+
         Assert.Equal(HttpStatusCode.NotFound, jobNotFound.StatusCode);
         Assert.Equal("INPUT_NOT_FOUND", jobNotFound.Code);
+        Assert.Equal(ReportJobStatusEndpoint.NotFoundTitle, jobNotFound.Title);
+        Assert.Equal(ReportJobStatusEndpoint.NotFoundDetail, jobNotFound.Detail);
         Assert.Equal(jobNotFound with { TraceId = null }, absentJob with { TraceId = null });
-        Assert.Equal(jobNotFound with { TraceId = null }, absentFile with { TraceId = null });
 
-        // The same 404 for B on A's list and on A's file.
-        Assert.Equal(
-            jobNotFound with { TraceId = null },
-            await ReadProblemAsync(api, ConsumerB, ListRequest(ConsumerB, jobId), cancellationToken) with { TraceId = null });
-        Assert.Equal(
-            absentFile with { TraceId = null },
-            await ReadProblemAsync(
-                api,
-                ConsumerB,
-                DownloadRequest(ConsumerB, jobId, listed.ArtifactId),
-                cancellationToken) with { TraceId = null });
+        // The listing answers the job status read's not-found document (the approved shared answer),
+        // and B's request for an absent job's listing is that same answer.
+        Assert.Equal(HttpStatusCode.NotFound, foreignList.StatusCode);
+        Assert.Equal("INPUT_NOT_FOUND", foreignList.Code);
+        Assert.Equal(jobNotFound with { TraceId = null }, foreignList with { TraceId = null });
+        Assert.Equal(foreignList with { TraceId = null }, absentList with { TraceId = null });
+
+        // The download answers its own not-found document, to B on A's job and file exactly as to
+        // an absent job and an absent file; it is never compared with the status read's answer.
+        Assert.Equal(HttpStatusCode.NotFound, absentFile.StatusCode);
+        Assert.Equal("INPUT_NOT_FOUND", absentFile.Code);
+        Assert.Equal(ArtifactDownloadEndpoint.NotFoundTitle, absentFile.Title);
+        Assert.Equal(ArtifactDownloadEndpoint.NotFoundDetail, absentFile.Detail);
+        Assert.Equal(absentFile with { TraceId = null }, foreignFile with { TraceId = null });
 
         // Step 3: no identity, a malformed identity and an unregistered one on the three reads.
         var refusals = new List<Problem>();
