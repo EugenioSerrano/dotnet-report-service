@@ -35,7 +35,8 @@ public sealed class ValidateAndPartitionActivity(
     PreparedDataContractCache contracts,
     TimeProvider clock,
     ILogger<ValidateAndPartitionActivity> logger,
-    string? scratchRoot = null)
+    string? scratchRoot = null,
+    SingleBlockLimit? limit = null)
 {
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "ValidateAndPartition";
@@ -147,7 +148,8 @@ public sealed class ValidateAndPartitionActivity(
                     CheckedAsync(contract, HeaderItemsReader.ReadAsync(content, cancellationToken), input.ReportJobId, cancellationToken),
                     block,
                     cancellationToken,
-                    count => Interlocked.Exchange(ref recordsRead, count))
+                    count => Interlocked.Exchange(ref recordsRead, count),
+                    limit ?? SingleBlockLimit.Unconfigured)
                 .ConfigureAwait(false);
         }
         catch (DataContractViolation violation)
@@ -163,12 +165,15 @@ public sealed class ValidateAndPartitionActivity(
             System.Diagnostics.Activity.Current?.SetTag(ViolationReasonTag, violation.Reason ?? violation.Limit);
             System.Diagnostics.Activity.Current?.SetTag(ViolationOrdinalTag, violation.Ordinal);
             logger.LogInformation(
-                "Job {ReportJobId} snapshot refused: code={Code} reason={Reason} ordinal={Ordinal} offset={Offset} path={Path} keyword={Keyword}",
+                "Job {ReportJobId} snapshot refused: code={Code} reason={Reason} ordinal={Ordinal} offset={Offset} configured={Configured} path={Path} keyword={Keyword}",
                 input.ReportJobId,
                 violation.Code,
                 violation.Reason ?? violation.Limit,
                 violation.Ordinal,
                 violation.Offset,
+                string.Equals(violation.Limit, "block", StringComparison.Ordinal)
+                    ? (limit ?? SingleBlockLimit.Unconfigured).ConfiguredRecords
+                    : null,
                 violation.Path,
                 violation.Keyword);
             throw new ApplicationFailureException(violation.Message, errorType: violation.Code, nonRetryable: true);

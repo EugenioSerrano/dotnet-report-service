@@ -288,6 +288,7 @@ public sealed partial class InMemoryJobStore : IJobStore
                 {
                     Status = OutputStatus.Failed,
                     ErrorCode = code,
+                    ErrorReason = reason,
                     FinishedAt = now,
                 };
             }

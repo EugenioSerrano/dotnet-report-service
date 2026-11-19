@@ -9,18 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A PDF report whose data does not fit in one block is refused before anything is
+  printed: the job and its PDF output end `failed` with `QUOTA_EXCEEDED`, and the job
+  status says which limit the data exceeded, in records or in bytes, naming the limit
+  that was actually applied. The limit is temporary and will be removed when reports
+  can span more than one block; [`docs/limitations.md`](docs/limitations.md) states it,
+  why it exists and what removes it.
+- The job status read carries `errorMessage` on the job and on each output: the failed
+  job's condition in plain words, `null` when it has none in this version. It never
+  names a value of the report or a setting of the deployment.
 - A report may be written for Scriban, Handlebars or Liquid, whichever its template
   version declares: the three engines are peers, the version's engine is the one
   that composes its block, and a version whose engine this deployment does not offer,
   declares none, disagrees with the job's pin, or names another major of the engine
   version ends its job `failed` before anything is printed. Dates and amounts are
   printed in the culture and the time zone fixed when the job was accepted, with the
-  report's "now" taken from that same instant — on every attempt of a retried block —
+  report's "now" taken from that same instant - on every attempt of a retried block -
   through one small set of presentation functions the three engines share. A version
   that presents a value the service cannot format (`DATA_INVALID`, `TEMPLATE_INVALID`)
   ends `failed` with nothing published. Each committed block records what produced its
-  presentation — the culture, the zone, the acceptance instant, the engine and its
-  version, and the globalisation data of the image — and the block's log line names
+  presentation - the culture, the zone, the acceptance instant, the engine and its
+  version, and the globalisation data of the image - and the block's log line names
   the same identifiers.
 - A template version is checked when it is taken, and a broken one is refused before
   anything is kept: an invalid `schema.json`, a `sample.json` that breaks it, a syntax

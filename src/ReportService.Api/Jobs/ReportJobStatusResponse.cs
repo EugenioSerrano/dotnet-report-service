@@ -6,11 +6,12 @@ namespace ReportService.Api.Jobs;
 /// <summary>
 /// What a job's owner reads: the state, the step the job is in, the counters of the
 /// work it has done, each requested output with its own state and the identifier of
-/// the file it published, the condition it failed with and the three instants of its
-/// life. Every member is always present and is null while it does not apply, so a
-/// consumer branches on null and never on a member that is missing. There is no
-/// percentage at any time: a total a consumer may compute from is only ever the count
-/// the data step fixed, and the answer never presents a guessed one.
+/// the file it published, the condition it failed with, the message that condition
+/// carries for a consumer and the three instants of its life. Every member is always
+/// present and is null while it does not apply, so a consumer branches on null and
+/// never on a member that is missing. There is no percentage at any time: a total a
+/// consumer may compute from is only ever the count the data step fixed, and the
+/// answer never presents a guessed one.
 /// </summary>
 /// <param name="ReportJobId">The identifier of the job.</param>
 /// <param name="Status">The state of the job, in its answer text.</param>
@@ -18,6 +19,7 @@ namespace ReportService.Api.Jobs;
 /// <param name="Progress">The counters of the job's work.</param>
 /// <param name="Outputs">The outputs the job asked for, in the fixed format order.</param>
 /// <param name="ErrorCode">The stable code the job failed with; null unless it failed.</param>
+/// <param name="ErrorMessage">The message the failed job carries for a consumer; null unless it has one in this build.</param>
 /// <param name="CreatedAt">When the job was accepted, in UTC.</param>
 /// <param name="StartedAt">When the job's work began, in UTC; null until then.</param>
 /// <param name="FinishedAt">When the job ended, in UTC; null until it did.</param>
@@ -28,15 +30,18 @@ public sealed record ReportJobStatusResponse(
     JobProgressResponse Progress,
     IReadOnlyList<ReportOutputStatusResponse> Outputs,
     string? ErrorCode,
+    string? ErrorMessage,
     string? CreatedAt,
     string? StartedAt,
     string? FinishedAt)
 {
     /// <summary>Projects a stored job onto the answer.</summary>
     /// <param name="view">The job as the store read it.</param>
-    public static ReportJobStatusResponse From(ReportJobStatusView view)
+    /// <param name="logger">Where a stored reason this build cannot word is reported.</param>
+    public static ReportJobStatusResponse From(ReportJobStatusView view, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(view);
+        ArgumentNullException.ThrowIfNull(logger);
         return new ReportJobStatusResponse(
             view.ReportJobId,
             JobWireValues.ToWire(view.Status),
@@ -47,8 +52,9 @@ public sealed record ReportJobStatusResponse(
                 view.BlocksCompleted,
                 view.BlocksTotal,
                 view.PagesGenerated),
-            [.. view.Outputs.Select(ReportOutputStatusResponse.From)],
+            [.. view.Outputs.Select(output => ReportOutputStatusResponse.From(output, logger))],
             view.ErrorCode,
+            ErrorMessages.Format(view.ErrorCode, view.ErrorReason, logger),
             UploadWireValues.FormatTimestamp(view.CreatedAt),
             view.StartedAt is { } started ? UploadWireValues.FormatTimestamp(started) : null,
             view.FinishedAt is { } finished ? UploadWireValues.FormatTimestamp(finished) : null);
@@ -73,21 +79,26 @@ public sealed record JobProgressResponse(
 /// <param name="Status">The state of the output, in its answer text.</param>
 /// <param name="ArtifactId">The identifier of the published file; null unless the output succeeded.</param>
 /// <param name="ErrorCode">The stable code the output failed with; null unless it failed.</param>
+/// <param name="ErrorMessage">The message the failed output carries for a consumer; null unless it has one in this build.</param>
 public sealed record ReportOutputStatusResponse(
     string Format,
     string Status,
     string? ArtifactId,
-    string? ErrorCode)
+    string? ErrorCode,
+    string? ErrorMessage)
 {
     /// <summary>Projects one stored output onto the answer.</summary>
     /// <param name="view">The output as the store read it.</param>
-    public static ReportOutputStatusResponse From(ReportOutputStatusView view)
+    /// <param name="logger">Where a stored reason this build cannot word is reported.</param>
+    public static ReportOutputStatusResponse From(ReportOutputStatusView view, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(view);
+        ArgumentNullException.ThrowIfNull(logger);
         return new ReportOutputStatusResponse(
             JobWireValues.ToWire(view.Format),
             JobWireValues.ToWire(view.Status),
             view.ArtifactId,
-            view.ErrorCode);
+            view.ErrorCode,
+            ErrorMessages.Format(view.ErrorCode, view.ErrorReason, logger));
     }
 }

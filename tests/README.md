@@ -379,6 +379,21 @@ reading its answer (`JobAcceptanceOverRealServerTests`), and — for a build tha
 prints — the job that runs to a terminal status (`JobNeverLostNeverDoubledTests`,
 which carries `[Trait("Requires", "printing")]`).
 
+`SingleBlockLimitTests` holds the report that does not fit in one block: each case
+starts the composition with the record count it asserts (the setting is read when the
+worker starts), submits a snapshot of the families in
+`tests/ReportService.Testing/Limits/`, and asserts one state — the job and its PDF
+output failed with the same code and the same stored reason, the data step ran once,
+no render or publish step was scheduled, no partition record, part commit or artifact
+was written and no object reached the output namespace — or, for the document at the
+limit, that it printed and published once. `SingleBlockLimitEndToEndTests` follows the
+same limit the way a consumer does: upload, confirm, accept and the status read until
+it ends, with the message on the job and on its output and the refusal's transcript
+kept with the run. `SingleBlockLimitMessageTests` (hermetic) asserts the sentence
+itself, and `SingleBlockLimitRefusalMeasurementTests` records what a refusal of fifty
+thousand records costs, as an observation on the reference environment with no
+threshold.
+
 ## The independent judge of a printed document
 
 `ReportService.PdfOracle` reads a printed PDF with the text tools of its own image

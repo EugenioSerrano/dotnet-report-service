@@ -4,7 +4,7 @@ namespace ReportService.Data;
 /// The single-block partitioner: one sequential pass over the reader that admits the
 /// records into exactly one block and writes the block document to a sink. It holds
 /// the header and the open block, never the record set. The first record that would
-/// take the block past its hard maximum stops the pass with a quota refusal, so data
+/// take the block past its effective limit stops the pass with a quota refusal, so data
 /// that cannot be printed as one block fails before anything is written for it.
 /// </summary>
 public static class SingleBlockPartitioner
@@ -16,15 +16,19 @@ public static class SingleBlockPartitioner
     /// <param name="document">The values of one snapshot, header first.</param>
     /// <param name="sink">The stream the block document is written to.</param>
     /// <param name="cancellationToken">The pass's cancellation token.</param>
+    /// <param name="progress">Reports the records admitted so far.</param>
+    /// <param name="limit">The limit the pass applies; the block's hard maximum when none is given.</param>
     /// <returns>What the block holds.</returns>
     public static async Task<PartitionSummary> PartitionAsync(
         IAsyncEnumerable<RawRecord> document,
         Stream sink,
         CancellationToken cancellationToken = default,
-        Action<long>? progress = null)
+        Action<long>? progress = null,
+        SingleBlockLimit? limit = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(sink);
+        var bounds = limit ?? SingleBlockLimit.Unconfigured;
 
         await using var values = document.GetAsyncEnumerator(cancellationToken);
         if (!await values.MoveNextAsync().ConfigureAwait(false) || values.Current.Ordinal != 0)
@@ -40,15 +44,16 @@ public static class SingleBlockPartitioner
         while (await values.MoveNextAsync().ConfigureAwait(false))
         {
             var record = values.Current;
-            var ordinal = checked((int)recordCount + 1);
-            if (recordCount + 1 > DataContractLimits.BlockRecords
-                || recordBytes + record.ByteLength > DataContractLimits.BlockRecordBytes)
+            if (!bounds.TryAdmit(recordCount, recordBytes, record.ByteLength, out var refusal))
             {
+                // The record's own position is what the diagnostic carries: the limit's
+                // answer names the dimension and the applied value, never a value.
+                refusal = refusal with { Ordinal = record.Ordinal, Offset = record.Offset };
                 throw new DataContractViolation(
                     DataContractViolation.QuotaExceeded,
-                    null,
+                    refusal.Reason,
                     "block",
-                    ordinal,
+                    refusal.Ordinal,
                     record.Offset);
             }
 

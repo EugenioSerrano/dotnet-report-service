@@ -22,12 +22,14 @@ public sealed partial class PostgresJobStore
                j.blocks_total     AS "BlocksTotal",
                j.pages_generated  AS "PagesGenerated",
                j.error_code       AS "ErrorCode",
+               j.error_reason     AS "JobErrorReason",
                j.created_at       AS "CreatedAt",
                j.started_at       AS "StartedAt",
                j.finished_at      AS "FinishedAt",
                o.format           AS "OutputFormat",
                o.status           AS "OutputStatus",
                o.error_code       AS "OutputErrorCode",
+               o.error_reason     AS "OutputErrorReason",
                a.artifact_id      AS "ArtifactId"
         FROM report_service.report_jobs j
         JOIN report_service.report_outputs o ON o.report_job_id = j.report_job_id
@@ -81,6 +83,7 @@ public sealed partial class PostgresJobStore
                 first.BlocksTotal,
                 first.PagesGenerated,
                 first.ErrorCode,
+                first.JobErrorReason,
                 Utc(first.CreatedAt),
                 first.StartedAt is { } started ? Utc(started) : null,
                 first.FinishedAt is { } finished ? Utc(finished) : null,
@@ -88,6 +91,7 @@ public sealed partial class PostgresJobStore
                     JobWireValues.ParseStoredFormat(row.OutputFormat),
                     JobWireValues.ParseStoredOutputStatus(row.OutputStatus),
                     row.OutputErrorCode,
+                    row.OutputErrorReason,
                     row.ArtifactId))]);
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -141,6 +145,8 @@ public sealed partial class PostgresJobStore
 
         public string? ErrorCode { get; set; }
 
+        public string? JobErrorReason { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? StartedAt { get; set; }
@@ -152,6 +158,8 @@ public sealed partial class PostgresJobStore
         public string OutputStatus { get; set; } = string.Empty;
 
         public string? OutputErrorCode { get; set; }
+
+        public string? OutputErrorReason { get; set; }
 
         public string? ArtifactId { get; set; }
     }

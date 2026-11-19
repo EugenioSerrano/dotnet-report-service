@@ -102,6 +102,7 @@ public sealed partial class PostgresJobStore : IJobStore
                format        AS "Format",
                status        AS "Status",
                error_code    AS "ErrorCode",
+               error_reason  AS "ErrorReason",
                started_at    AS "StartedAt",
                finished_at   AS "FinishedAt"
         FROM report_service.report_outputs
@@ -151,7 +152,7 @@ public sealed partial class PostgresJobStore : IJobStore
 
     private const string FailOutputsSql = """
         UPDATE report_service.report_outputs
-           SET status = 'FAILED', error_code = @Code, finished_at = @Now
+           SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
          WHERE report_job_id = @ReportJobId AND status IN ('PENDING', 'RUNNING')
         """;
 
@@ -756,6 +757,8 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? ErrorCode { get; set; }
 
+        public string? ErrorReason { get; set; }
+
         public DateTime? StartedAt { get; set; }
 
         public DateTime? FinishedAt { get; set; }
@@ -767,6 +770,7 @@ public sealed partial class PostgresJobStore : IJobStore
             JobWireValues.ParseStoredOutputStatus(Status))
         {
             ErrorCode = ErrorCode,
+            ErrorReason = ErrorReason,
             StartedAt = StartedAt is { } started ? Utc(started) : null,
             FinishedAt = FinishedAt is { } finished ? Utc(finished) : null,
         };

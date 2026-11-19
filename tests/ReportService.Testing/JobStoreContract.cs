@@ -179,6 +179,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         var output = Assert.Single(state.Outputs);
         Assert.Equal(OutputStatus.Failed, output.Status);
         Assert.Equal("INPUT_NOT_FOUND", output.ErrorCode);
+        Assert.Equal("input-expired", output.ErrorReason);
         Assert.Equal(endedAt, output.FinishedAt);
     }
 
@@ -204,6 +205,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(Now.AddSeconds(1), state.Job.FinishedAt);
         var output = Assert.Single(state.Outputs);
         Assert.Equal("INPUT_NOT_FOUND", output.ErrorCode);
+        Assert.Equal("input-expired", output.ErrorReason);
         Assert.Equal(Now.AddSeconds(1), output.FinishedAt);
     }
 
@@ -1091,6 +1093,12 @@ public abstract class JobStoreContract : IAsyncLifetime
         var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(ReportJobStatus.Failed, status!.Status);
         Assert.Equal("QUOTA_EXCEEDED", status.ErrorCode);
+
+        // The read carries the reason of the job and of its output, so the answer a consumer
+        // reads can name the limit its data exceeded without a second read.
+        Assert.Equal("block", status.ErrorReason);
+        var output = Assert.Single(status.Outputs);
+        Assert.Equal("block", output.ErrorReason);
         Assert.Equal(0, status.RecordsRead);
         Assert.Null(status.RecordsTotal);
         Assert.Equal(0, status.BlocksCompleted);

@@ -384,6 +384,11 @@ stateDiagram-v2
 - Counters are monotonic. No percentage is reported unless the total is known.
 - An HTTP timeout or a dropped connection never cancels a job; only
   `POST …/cancel` does, cooperatively, and nothing is published after it.
+- A PDF report whose data does not fit in **one block** is refused before anything is
+  printed: the job and its PDF output end `failed` with `QUOTA_EXCEEDED`, and the
+  status read's `errorMessage` names the limit the data exceeded. The limit is
+  temporary — [`docs/limitations.md`](docs/limitations.md) states what it is, why it
+  exists, how to recognise it and what removes it.
 
 ## Security model — read this before deploying
 

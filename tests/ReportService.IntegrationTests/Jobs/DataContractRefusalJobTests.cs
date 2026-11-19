@@ -598,6 +598,11 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
             builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory, "storage"));
             builder.UseSetting("Storage:Filesystem:CreateIfMissing", "true");
             builder.UseSetting("Retention:Outputs", "01:00:00");
+
+            // This class drives a two-thousand-record document and tests the profile's
+            // refusal of its last member, not the single-block limit: the class's own
+            // document is admitted at the block's hard maximum.
+            builder.UseSetting("Partitioning:SingleBlockRecordLimit", "2000");
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, _connectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureLogging(logging => logging.AddProvider(_logs));

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ReportService.Data;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
@@ -42,6 +43,12 @@ public static class OrchestrationWorkerComposition
         // Verifying an upload: the size limits it enforces, the records it reads and
         // writes, and the instruments of the work it does.
         builder.AddValidatedConfiguration<VerificationOptions>(VerificationOptions.SectionPath);
+
+        // The temporary single-block limit of PDF jobs: the configured record count,
+        // capped by the block's hard maximum, that the data step admits a snapshot under.
+        builder.AddValidatedConfiguration<PartitioningOptions>(PartitioningOptions.SectionPath);
+        builder.Services.AddSingleton(provider => new SingleBlockLimit(
+            provider.GetRequiredService<IOptions<PartitioningOptions>>().Value.SingleBlockRecordLimit));
 
         // How long a published output stays downloadable: the retention the
         // publication records on each artifact, required and bounded.
