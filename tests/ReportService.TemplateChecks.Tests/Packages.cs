@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ReportService.TemplateChecks.Checks;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplateSource.Checks;
 
@@ -8,7 +9,7 @@ namespace ReportService.TemplateChecks.Tests;
 /// <summary>A package written to a temporary directory for one test.</summary>
 internal sealed class TempPackage : IDisposable
 {
-    private TempPackage(string directory) => Directory = directory;
+    internal TempPackage(string directory) => Directory = directory;
 
     /// <summary>The package's directory.</summary>
     public string Directory { get; }
@@ -190,7 +191,7 @@ internal static class Packages
             ("html/document-start.html" + extension, "<html><body>"),
             ("html/row.html" + extension, row ?? Row(engine)),
             ("html/document-end.html" + extension, "</body></html>"),
-            ("html/styles.css", "body { font-family: sans-serif; }"));
+            ("html/styles.css", "body { font-family: \"Liberation Sans\", sans-serif; }"));
     }
 
     internal static IReadOnlyList<ITemplateVersionCheck> Checks(TimeProvider? clock = null)
@@ -206,6 +207,9 @@ internal static class Packages
             new IncludeAndAssetCheck(session),
             new TemplateLintCheck(session),
             new EngineVersionCheck(),
+            new PageAccountingCheck(),
+            new NamedFontFamilyCheck(session),
+            new BottomAlignedGridCellCheck(session),
         ];
     }
 
@@ -223,6 +227,42 @@ internal static class Packages
         }
 
         return TemplateCheckResult.Pass();
+    }
+
+    /// <summary>A package written from the bytes of a fixture, by package-relative path.</summary>
+    /// <param name="files">The files, by package-relative path.</param>
+    internal static TempPackage WritePackage(IReadOnlyDictionary<string, byte[]> files)
+    {
+        var directory = System.IO.Directory.CreateTempSubdirectory("template-checks-").FullName;
+        foreach (var (path, bytes) in files)
+        {
+            var full = Path.Combine(directory, path.Replace('/', Path.DirectorySeparatorChar));
+            _ = System.IO.Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            File.WriteAllBytes(full, bytes);
+        }
+
+        return new TempPackage(directory);
+    }
+
+    /// <summary>
+    /// A candidate over a package the tree holds, its manifest read through the
+    /// product's own reader: the tests that read a package nobody wrote for them
+    /// judge the files as the take reads them.
+    /// </summary>
+    /// <param name="directory">The package's directory.</param>
+    internal static TemplateCandidate ReadCandidate(string directory)
+    {
+        using var stream = File.OpenRead(Path.Combine(directory, "template.yaml"));
+        var read = new ReportService.TemplateSource.Manifest.TemplateManifestReader().Read(stream);
+        Assert.True(read.Succeeded, read.Reason);
+        var manifest = Assert.IsType<TemplateManifest>(read.Manifest);
+        return new TemplateCandidate(
+            manifest.Id ?? string.Empty,
+            manifest.Version ?? string.Empty,
+            manifest,
+            read.CanonicalJson!,
+            directory,
+            "sha256:" + new string('a', 64));
     }
 }
 

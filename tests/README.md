@@ -345,7 +345,17 @@ the class refuses) and `JointTemplateTakeTests` (the job-level group, on a build
 that carries the job step). The fixtures are built by `ReportService.Testing`:
 `TemplateSourceClass` publishes a version into a store the way the owner's
 pipeline does, and `TemplatePackageFixtures` and `ByNameFixtures` supply the
-packages and the families, never checked in.
+packages and the families, never checked in. `PdfConstraintFixtures`
+(`TemplatePackages/PdfConstraints/`) supplies the one report written for each
+engine that the take's PDF constraints admit — table-markup detail, a named font
+family on the cell's own rule, the printed totals off — beside the page-total
+mutations those cases start from, the two family mutations (the one that replaces
+the family with a generic keyword, one package per engine, and the data-shape
+package whose grouped row carries a class of its own whose rule sets a generic
+keyword after the plain row's named rule), the three grid mutations (a grid row
+whose cell is bottom-aligned by its own rule for two engines and by the
+container's for the third, the same defect in a package whose sample cannot show
+it, and the one package that breaks all three PDF constraints at once).
 
 ## The report job suite
 

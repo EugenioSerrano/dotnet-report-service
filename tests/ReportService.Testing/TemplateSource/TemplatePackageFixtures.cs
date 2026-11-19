@@ -33,7 +33,7 @@ public static class TemplatePackageFixtures
             ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes("<html><head><link rel=\"stylesheet\" href=\"html/styles.css\"></head><body>"),
             ["html/row.html.sbn"] = Encoding.UTF8.GetBytes("<tr><td>{{ item.quantity | html.escape }}</td></tr>"),
             ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</body></html>"),
-            ["html/styles.css"] = Encoding.UTF8.GetBytes("body { font-family: sans-serif; }"),
+            ["html/styles.css"] = Encoding.UTF8.GetBytes("body { font-family: \"Liberation Sans\", sans-serif; }"),
         };
 
     /// <summary>A valid package whose manifest declares a version other than its folder.</summary>

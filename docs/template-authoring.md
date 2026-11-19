@@ -251,6 +251,26 @@ again; the fix is a new version.
 | 6 | includes and assets | an include that is not a fixed name, points outside the package, names no file the render loads (in Scriban, an include must be a declared part), carries another engine's extension or makes a cycle; a stylesheet or asset the manifest or a part refers to and the package does not hold; a `data:` URL outside an image |
 | 7 | the lint | a data output that is not escaped (Scriban: end it with `\| html.escape`), a raw output, a forbidden function, a data value inside a script, style, URL or event-handler attribute or an unquoted attribute value, and a Liquid range that is not fixed or has more than 10 000 values |
 | 8 | the engine version | an `engineVersion` whose major differs from the engine this deployment renders with |
+| 9 | the printed page totals | a version that turns `outputs.pdf.pageTotals.enabled` on: this build prints no totals, and a report with silently missing numbers is worse than a refusal. The message names the declaration, never its value; the fix is to print the totals in the template or turn them off |
+| 10 | the font family of the detail text | detail text whose text-bearing cells name no font family, or that no declaration reaches at all. The message names the part and the stylesheet and line of the declaration that sets only a generic keyword; the fix is to name the family the report is measured with, `"Liberation Sans", sans-serif`, on a rule that applies to the detail text |
+| 11 | the grid cell that may split | a row laid out as a grid whose direct child is aligned to the bottom by `align-self: end`, `align-items: end`, `place-self` or `place-items`, while nothing forbids that cell to break across pages. The message names the part, the cell and the rule that aligns it; the fix is to align the cell to the top |
+
+**The three PDF rules in product words.**
+
+- **Page totals.** A version that asks for printed page subtotals is refused
+  because this service does not print them yet. The fix is to print the totals in
+  the template or declare them off:
+  `template.yaml: the template declares page subtotals (outputs.pdf.pageTotals), which this service does not print yet. Print the totals in the template or turn them off.`
+- **Font family.** The detail text must name the typeface it is printed in: a
+  stylesheet that sets only `sans-serif` and no real family leaves the page in a
+  font the measurements do not cover. Name one family, with a generic fallback,
+  on a rule that reaches the detail text:
+  `html/row.html.sbn: the detail text names no font family; html/styles.css line 11 sets only the generic keyword "sans-serif" on the rule that governs its cells. Name the family the report is measured with, on a rule that applies to the detail text.`
+- **Grid cell.** A cell of a grid row that may break across pages must not be
+  aligned to the bottom: its amount would print on a later page, away from the
+  record it belongs to. `vertical-align` has no effect in grid layout and is not
+  refused. Align the cell to the top:
+  `html/row.html.sbn: the cell class "amount" may split across pages and is aligned to the bottom in the grid layout (html/styles.css line 11, align-self: end). Align it to the top.`
 
 **How the lint and the includes are read.** The escaping and sandbox rules and the
 include names are read from each file's text, for all three engines; the engine's

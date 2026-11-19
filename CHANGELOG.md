@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not read, the job stays `succeeded` and nothing is written — while the file stays in
   the listing with its past instant. The worker refuses to start without a usable value,
   and the local composition supplies seven days.
+- A PDF template version is refused when it is taken if its detail grid aligns a cell
+  that may split across pages to the bottom, if its detail text names no font family,
+  or if it declares printed page subtotals. Each refusal names the file to fix, and for
+  the grid cell also the cell and the rule that aligns it; the PDF rules run in that
+  fixed order, so a version that breaks several of them reports the page totals first,
+  then the font family, then the grid cell.
+- The shipped sample templates now name their font family (`"Liberation Sans",
+  sans-serif`) and declare no printed page totals, so every sample the product ships
+  passes its own take.
 
 ### Changed
 
