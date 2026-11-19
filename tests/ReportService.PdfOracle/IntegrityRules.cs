@@ -141,6 +141,7 @@ internal static class IntegrityRules
         HeadRows(classified, extraction, failures);
         Rows(classified, fixture, expectation, failures);
         Regions(classified, fixture, expectation, failures);
+        Presented(classified, fixture, expectation, failures);
         Marks(placed, classified, failures);
         PageGeometry(extraction, expectation, failures);
         PageElements(placed, extraction, expectation, failures);
@@ -148,7 +149,7 @@ internal static class IntegrityRules
         RepeatedHeadRows(placed, extraction, expectation, failures);
 
         var rules = new SortedDictionary<string, string>(StringComparer.Ordinal);
-        for (var number = 1; number <= 11; number++)
+        for (var number = 1; number <= 12; number++)
         {
             var rule = "TI-" + number.ToString(CultureInfo.InvariantCulture);
             rules[rule] = RuleState(rule, expectation, failures);
@@ -168,6 +169,11 @@ internal static class IntegrityRules
         else if (!expectation.RepeatHeadRow)
         {
             notApplicable["TI-11"] = "the package declares no repeated column headers on this path";
+        }
+
+        if (expectation.Presented is not { Applies: true })
+        {
+            notApplicable["TI-12"] = "the package presents no value through a formatting function";
         }
 
         return new Verdict
@@ -194,6 +200,11 @@ internal static class IntegrityRules
         }
 
         if (expectation.PageFrame && rule == "TI-11" && !expectation.RepeatHeadRow)
+        {
+            return "n/a";
+        }
+
+        if (rule == "TI-12" && expectation.Presented is not { Applies: true })
         {
             return "n/a";
         }
@@ -365,16 +376,23 @@ internal static class IntegrityRules
 
             // Every declared column is compared with the record's member of the same name,
             // and the column the declaration names as the amount carries the rule that the
-            // value prints on the page the row begins on.
+            // value prints on the page the row begins on. A column the declaration lists as
+            // presented is held to the text its declared culture and zone produce (TI-12),
+            // never to the raw member: a formatted value is not the value it was computed from.
             foreach (var column in expectation.Columns)
             {
                 var words = Field(row, column.Column);
+                var presented = IsPresented(expectation, column.Column);
                 if (string.Equals(column.Column, expectation.AmountColumn, StringComparison.Ordinal))
                 {
-                    CheckField("TI-4", row.Number, column.Column, words, record.Member(column.Column), failures);
+                    if (!presented)
+                    {
+                        CheckField("TI-4", row.Number, column.Column, words, record.Member(column.Column), failures);
+                    }
+
                     CheckAmountOnItsRowsFirstPage(row, column.Column, words, failures);
                 }
-                else
+                else if (!presented)
                 {
                     CheckField("TI-3", row.Number, column.Column, words, record.Member(column.Column), failures);
                 }
@@ -430,6 +448,88 @@ internal static class IntegrityRules
             failures.Add(new Failure("TI-6", difference.Class, Field: expectation.Trail, Page: PageAt(words, difference.Offset)));
         }
     }
+
+    /// <summary>
+    /// The values the package presents through a formatting function: every declared field is
+    /// computed from the record and the declaration's culture and zone, and the printed text of
+    /// the row's column must equal it; a value printed in another culture, another zone or
+    /// another rounding is a wrong document even when the composition printed exactly what it
+    /// composed. The acceptance instant the declaration names is held to its expected text on
+    /// every page its line prints on.
+    /// </summary>
+    private static void Presented(
+        ClassifiedDocument classified,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        List<Failure> failures)
+    {
+        if (expectation.Presented is not { Applies: true } presented)
+        {
+            return;
+        }
+
+        var byKey = new Dictionary<string, ItemRow>(StringComparer.Ordinal);
+        foreach (var row in classified.Rows)
+        {
+            byKey.TryAdd(row.Key, row);
+        }
+
+        foreach (var record in fixture.Records)
+        {
+            if (!byKey.TryGetValue(record.Key, out var row))
+            {
+                continue;
+            }
+
+            foreach (var field in presented.Fields)
+            {
+                var expected = presented.Expected(record, field);
+                if (expected is null)
+                {
+                    failures.Add(new Failure(
+                        "TI-12",
+                        "presented-value-wrong",
+                        Row: row.Number,
+                        Field: field.Column,
+                        Page: row.AnchorPage,
+                        Detail: "the value is not one the presentation rule reads"));
+                    continue;
+                }
+
+                var printed = Normalisation.N(string.Join(' ', Field(row, field.Column).Select(word => word.Text)));
+                if (!string.Equals(Normalisation.N(expected), printed, StringComparison.Ordinal))
+                {
+                    failures.Add(new Failure(
+                        "TI-12",
+                        "presented-value-wrong",
+                        Row: row.Number,
+                        Field: field.Column,
+                        Page: row.AnchorPage,
+                        Detail: "the printed text is not the expected presentation"));
+                }
+            }
+        }
+
+        if (presented.ExpectedClock() is not { } clock)
+        {
+            return;
+        }
+
+        var lines = classified.Trail;
+        var text = Normalisation.N(string.Join(' ', lines.Select(line => line.Text)));
+        if (!string.Equals(Normalisation.N(clock), text, StringComparison.Ordinal))
+        {
+            failures.Add(new Failure(
+                "TI-12",
+                "presented-value-wrong",
+                Field: "render.clock",
+                Page: lines.Count > 0 ? lines[0].Page : null,
+                Detail: "the printed text is not the expected presentation"));
+        }
+    }
+
+    private static bool IsPresented(ExpectationDocument expectation, string column) =>
+        expectation.Presented?.Fields.Any(field => string.Equals(field.Column, column, StringComparison.Ordinal)) == true;
 
     /// <summary>The mark the layout must not print, inside a row or anywhere else.</summary>
     private static void Marks(PlacedDocument placed, ClassifiedDocument classified, List<Failure> failures)

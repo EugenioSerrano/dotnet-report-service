@@ -5,6 +5,7 @@ using ReportService.Pdf.Verification;
 using ReportService.Rendering;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Storage;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.Templates;
@@ -43,13 +44,14 @@ public sealed class RenderPdfBlockActivity(
     IObjectStore objects,
     TakenTemplatePackageReader packages,
     PreparedTemplateCache prepared,
-    ITemplateEngineAdapter adapter,
+    TemplateEngineAdapterRegistry engines,
     IBlockRenderer renderer,
     PdfRenderingMetrics metrics,
     TimeProvider clock,
     ILoggerFactory loggers,
     ILogger<RenderPdfBlockActivity> logger,
-    string? scratchRoot = null)
+    string? scratchRoot = null,
+    GlobalisationProvenance? globalisation = null)
 {
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "RenderPdfBlock";
@@ -69,6 +71,15 @@ public sealed class RenderPdfBlockActivity(
 
     /// <summary>The directory a taken copy of the version being printed is extracted under.</summary>
     public string ScratchRoot { get; } = scratchRoot ?? DefaultScratchRoot;
+
+    /// <summary>
+    /// The seam that forces the second attempt of one block: it acts after the PDF is verified
+    /// and streamed and before the part is committed, so a test can read the two printed
+    /// documents a retry really produces. A process registers no implementation, and the seam
+    /// is reachable only from the tests this assembly names - the production composition
+    /// asserts it holds none.
+    /// </summary>
+    internal PartCommitFault? PartCommitFault { get; set; }
 
     /// <summary>Prints one block.</summary>
     /// <param name="input">The job, the output and the block.</param>
@@ -161,10 +172,31 @@ public sealed class RenderPdfBlockActivity(
         {
             var files = new FolderTemplatePackageFiles(package.Root);
             RenderManifest manifest;
+            ITemplateEngineAdapter adapter;
             PreparedTemplate template;
             try
             {
                 manifest = RenderManifestMapping.From(record);
+            }
+            catch (TemplatePackageException)
+            {
+                throw Refuse(ExecutionFailed, "the taken copy cannot be prepared");
+            }
+
+            // The engine is decided before the package is prepared: the version's own
+            // declaration, the pin's cross-check and the engines this deployment offers.
+            // A refusal is mapped here, where the decision is taken - the same mapping the
+            // renderer's own refusal takes below - so D2's code and reason reach the failure
+            // whether the step or the renderer refused, and nothing has been composed yet.
+            var decision = EngineResolution.Resolve(manifest, TemplateEngineNames.ToManifestName(pin.Engine), engines);
+            if (decision.Adapter is not { } resolved)
+            {
+                throw EngineRefusalOf(new EngineRefusedException(decision), input);
+            }
+
+            adapter = resolved;
+            try
+            {
                 template = prepared.GetOrAdd(pin.PackageSha256, () => adapter.Prepare(manifest, files));
             }
             catch (TemplatePackageException)
@@ -183,8 +215,8 @@ public sealed class RenderPdfBlockActivity(
                 header,
                 records,
                 new CompositionRender(
-                    manifest.LocaleDefaults.Culture,
-                    manifest.LocaleDefaults.TimeZone,
+                    state.Job.Culture,
+                    state.Job.TimeZone,
                     state.Job.ReportClock),
                 manifest.GroupKey);
 
@@ -202,9 +234,45 @@ public sealed class RenderPdfBlockActivity(
                     header),
                 input.BlockIndex,
                 IsFirstBlock: input.BlockIndex == 0,
-                work.Path);
+                work.Path,
+                PinEngine: adapter.Engine);
 
-            var outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            BlockRenderOutcome outcome;
+            try
+            {
+                outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (EngineRefusedException refused)
+            {
+                // The version's engine cannot compose the block: nothing was composed or
+                // printed, the diagnostic names the field and the engines, and the same
+                // version would fail the same way on every attempt.
+                throw EngineRefusalOf(refused, input);
+            }
+            catch (PresentationRefusedException refused)
+            {
+                // A value or a format cannot be presented as the version declares: nothing was
+                // printed, and the refusal carries the code, the reason, the function and the
+                // record - never a value and never the format's expansion.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: {Reason}",
+                    input.BlockIndex,
+                    input.OutputId,
+                    refused.Message);
+                throw new ApplicationFailureException(refused.Message, errorType: refused.Failure.Code, nonRetryable: true);
+            }
+            catch (PresentationUnavailable unavailable)
+            {
+                // The job's culture, time zone or clock is absent or unusable: nothing was
+                // composed, and the same job would fail the same way on every attempt.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: presentation unavailable at {Field}",
+                    input.BlockIndex,
+                    input.OutputId,
+                    unavailable.Field);
+                throw Refuse(ExecutionFailed, unavailable.Message);
+            }
+
             RecordTheRender(outcome);
             if (!outcome.Passed)
             {
@@ -237,6 +305,27 @@ public sealed class RenderPdfBlockActivity(
                 throw Refuse(ExecutionFailed, "the stored block does not match the printed file");
             }
 
+            // The one seam a test installs: the second attempt is forced after the document
+            // was verified and streamed and before the commit, so both printed documents exist
+            // and the first one is the orphan of an attempt that committed nothing.
+            if (PartCommitFault is { } fault)
+            {
+                await fault.FailOnceAsync(input.OutputId, input.BlockIndex, cancellationToken).ConfigureAwait(false);
+            }
+
+            // What produced this block's presentation, written in the same transaction as the
+            // commit: the job's fixed settings, the version's engine and the version it runs,
+            // and the globalisation data of this process. Names and identifiers, never a value.
+            var settings = globalisation ?? GlobalisationProvenance.Current;
+            var presentation = new PresentationProvenance(
+                state.Job.Culture ?? throw Refuse(ExecutionFailed, "presentation unavailable at culture"),
+                state.Job.TimeZone ?? throw Refuse(ExecutionFailed, "presentation unavailable at time-zone"),
+                state.Job.ReportClock,
+                adapter.Engine,
+                adapter.Version,
+                settings.IcuVersion,
+                settings.TzDataVersion);
+
             var commit = await jobs.CommitPartAsync(
                 new PartCommit(
                     input.OutputId,
@@ -246,7 +335,8 @@ public sealed class RenderPdfBlockActivity(
                     written.Size,
                     outcome.Verification.Pages,
                     pin.PackageSha256,
-                    clock.GetUtcNow()),
+                    clock.GetUtcNow(),
+                    presentation),
                 cancellationToken).ConfigureAwait(false);
 
             switch (commit.Outcome)
@@ -254,13 +344,17 @@ public sealed class RenderPdfBlockActivity(
                 case PartCommitOutcome.Committed:
                 case PartCommitOutcome.AlreadyCommitted when commit.Existing is not null:
                     logger.LogInformation(
-                        "Block {BlockIndex} of output {OutputId} printed: {PageCount} pages on {Paper} {Orientation}, verified in {VerificationMs} ms",
+                        "Block {BlockIndex} of output {OutputId} printed: {PageCount} pages on {Paper} {Orientation}, verified in {VerificationMs} ms, engine {Engine} {EngineVersion}, culture {Culture}, time zone {TimeZone}",
                         input.BlockIndex,
                         input.OutputId,
                         outcome.Verification.Pages,
                         outcome.Verification.Paper,
                         outcome.Verification.Orientation,
-                        outcome.Verification.ReadAndAlignMs + outcome.Verification.SourceChecksMs);
+                        outcome.Verification.ReadAndAlignMs + outcome.Verification.SourceChecksMs,
+                        presentation.Engine,
+                        presentation.EngineVersion,
+                        presentation.Culture,
+                        presentation.TimeZone);
                     return ResultOf(commit.Existing!);
                 default:
                     logger.LogWarning(
@@ -456,6 +550,22 @@ public sealed class RenderPdfBlockActivity(
 
     private static RenderPdfBlockResult ResultOf(PartCommit commit) =>
         new(commit.ObjectKey, commit.Sha256, commit.SizeBytes, commit.PageCount);
+
+    /// <summary>
+    /// The one mapping of an engine refusal: the code and the reason D2 gives it, non-retryably,
+    /// with nothing composed. The step's own decision and the renderer's refusal both end here,
+    /// so the same refusal cannot be mapped two ways, and the line names the field and the
+    /// engine names - never a value of the job's data.
+    /// </summary>
+    private ApplicationFailureException EngineRefusalOf(EngineRefusedException refused, RenderPdfBlockInput input)
+    {
+        logger.LogWarning(
+            "Block {BlockIndex} of output {OutputId} not printed: {Reason}",
+            input.BlockIndex,
+            input.OutputId,
+            refused.Message);
+        return new ApplicationFailureException(refused.Message, errorType: refused.Code, nonRetryable: true);
+    }
 
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);

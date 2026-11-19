@@ -26,7 +26,7 @@ public sealed partial class HandlebarsTemplateValidator : ITemplateEngineValidat
         ArgumentException.ThrowIfNullOrEmpty(packagePath);
         ArgumentNullException.ThrowIfNull(text);
 
-        var handlebars = Handlebars.Create(new HandlebarsConfiguration());
+        var handlebars = HandlebarsParsing.Create();
         try
         {
             _ = handlebars.Compile(text);

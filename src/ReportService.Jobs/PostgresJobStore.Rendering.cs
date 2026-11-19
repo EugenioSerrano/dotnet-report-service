@@ -69,10 +69,10 @@ public sealed partial class PostgresJobStore
     private const string InsertPartCommitSql = """
         INSERT INTO report_service.pdf_part_commits
             (output_id, block_index, object_key, sha256, size_bytes, page_count,
-             template_package_sha256, committed_at)
+             template_package_sha256, committed_at, presentation)
         VALUES
             (@OutputId, @BlockIndex, @ObjectKey, @Sha256, @SizeBytes, @PageCount,
-             @TemplatePackageSha256, @CommittedAt)
+             @TemplatePackageSha256, @CommittedAt, @Presentation::jsonb)
         ON CONFLICT (output_id, block_index) DO NOTHING
         """;
 
@@ -84,7 +84,8 @@ public sealed partial class PostgresJobStore
                size_bytes              AS "SizeBytes",
                page_count              AS "PageCount",
                template_package_sha256 AS "TemplatePackageSha256",
-               committed_at            AS "CommittedAt"
+               committed_at            AS "CommittedAt",
+               presentation::text      AS "Presentation"
         FROM report_service.pdf_part_commits
         WHERE output_id = @OutputId AND block_index = @BlockIndex
         """;
@@ -340,6 +341,7 @@ public sealed partial class PostgresJobStore
             commit.PageCount,
             commit.TemplatePackageSha256,
             CommittedAt = UtcInstant(commit.CommittedAt),
+            Presentation = commit.Presentation?.ToJson() ?? PresentationProvenance.UnrecordedJson,
         };
 
         try
@@ -720,6 +722,8 @@ public sealed partial class PostgresJobStore
 
         public DateTime CommittedAt { get; set; }
 
+        public string? Presentation { get; set; }
+
         public PartCommit ToRecord() => new(
             OutputId,
             BlockIndex,
@@ -728,7 +732,8 @@ public sealed partial class PostgresJobStore
             SizeBytes,
             PageCount,
             TemplatePackageSha256,
-            Utc(CommittedAt));
+            Utc(CommittedAt),
+            PresentationProvenance.Parse(Presentation));
     }
 
     // The artifact row: the join of the job and its artifact, whose artifact columns are all

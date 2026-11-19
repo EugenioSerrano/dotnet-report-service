@@ -93,12 +93,22 @@ public sealed record CompositionRequest(
 /// range, the kind and the record ordinal of each — which the text checks and
 /// the verification read.
 /// </summary>
-public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider clock)
+public sealed class BlockComposer(TimeProvider clock)
 {
-    /// <summary>Composes <paramref name="request"/>.</summary>
-    public ComposedBlock Compose(CompositionRequest request, CancellationToken cancellationToken = default)
+    /// <summary>Composes <paramref name="request"/> with the block's own engine and presentation.</summary>
+    /// <param name="request">The package, the block, the header and the records.</param>
+    /// <param name="adapter">The adapter of the engine the block's version declares.</param>
+    /// <param name="settings">The culture, time zone and clock one resolution resolved for the block.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    public ComposedBlock Compose(
+        CompositionRequest request,
+        ITemplateEngineAdapter adapter,
+        PresentationSettings settings,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(adapter);
+        ArgumentNullException.ThrowIfNull(settings);
         if (request.Block.RecordCount != request.Records.Count)
         {
             throw new TemplateInputException(
@@ -110,7 +120,7 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
         using var text = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1 << 16, leaveOpen: true);
         var writer = new GuardedWriter(text, clock);
 
-        Compose(request, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, adapter, settings, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
 
         string? groupKey = null;
         for (var i = 0; i < request.Records.Count; i++)
@@ -121,20 +131,20 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
             if (startsGroup)
             {
                 groupKey = key;
-                ComposeGroup(request, key, first: true, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, adapter, settings, key, first: true, record.Ordinal, writer, fragments, cancellationToken);
             }
 
-            Compose(request, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, writer, fragments, cancellationToken);
+            Compose(request, adapter, settings, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, writer, fragments, cancellationToken);
 
             var endsGroup = request.GroupKey is not null
                 && (i == request.Records.Count - 1 || !SameKey(KeyOf(request, request.Records[i + 1]), key));
             if (endsGroup)
             {
-                ComposeGroup(request, key, first: false, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, adapter, settings, key, first: false, record.Ordinal, writer, fragments, cancellationToken);
             }
         }
 
-        Compose(request, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, adapter, settings, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, writer, fragments, cancellationToken);
 
         text.Flush();
         var html = stream.ToArray();
@@ -148,6 +158,8 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
 
     private void ComposeGroup(
         CompositionRequest request,
+        ITemplateEngineAdapter adapter,
+        PresentationSettings settings,
         string? key,
         bool first,
         long ordinal,
@@ -163,11 +175,13 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
         }
 
         var group = RenderContextFactory.Group(key, first, continuesFromPreviousBlock: false, continuesInNextBlock: false);
-        Compose(request, part, kind, null, group, ordinal, writer, fragments, cancellationToken);
+        Compose(request, adapter, settings, part, kind, null, group, ordinal, writer, fragments, cancellationToken);
     }
 
     private void Compose(
         CompositionRequest request,
+        ITemplateEngineAdapter adapter,
+        PresentationSettings settings,
         TemplatePart part,
         FragmentKind kind,
         IReadOnlyDictionary<string, object?>? item,
@@ -195,10 +209,10 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
             group,
             block,
             RenderContextFactory.NoAggregates,
-            RenderContextFactory.Render(request.Render.Culture, request.Render.TimeZone, request.Render.Clock));
+            RenderContextFactory.Render(settings.Culture.Name, settings.TimeZone.Id, settings.Clock));
 
         var start = checked((int)writer.BytesWritten);
-        adapter.RenderPart(request.Template, part, context, writer, cancellationToken);
+        adapter.RenderPart(request.Template, part, context, settings, writer, cancellationToken);
         fragments.Add(new ComposedFragment(kind, start, checked((int)writer.BytesWritten) - start, kind == FragmentKind.Row ? recordOrdinal : 0));
     }
 

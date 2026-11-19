@@ -57,7 +57,82 @@ internal static class ExtractionControls
             controls.AddRange(PageFrameControls(passing, fixture, expectation, placed));
         }
 
+        if (expectation.Presented is { } presented)
+        {
+            if (presented.NumericFields.Any())
+            {
+                controls.Add(AlterADecimalSeparator(passing, fixture, expectation, classified));
+            }
+
+            if (presented.Clock is not null)
+            {
+                controls.Add(ShiftTheClockByOneHour(passing, fixture, expectation, classified));
+            }
+        }
+
         return controls;
+    }
+
+    /// <summary>
+    /// A presented number's decimal separator changed for the one of another culture: the
+    /// composition prints what it composed, so only a reading that computes the text from the
+    /// snapshot and the declared culture can refuse it.
+    /// </summary>
+    private static ControlOutcome AlterADecimalSeparator(
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        ClassifiedDocument classified)
+    {
+        var field = expectation.Presented!.NumericFields.First();
+        var row = Tallest(classified);
+        var word = row.Words
+            .Where(entry => string.Equals(entry.Column, field.Column, StringComparison.Ordinal))
+            .Select(entry => entry.Word)
+            .FirstOrDefault(candidate => candidate.Text.Contains(',', StringComparison.Ordinal) || candidate.Text.Contains('.', StringComparison.Ordinal));
+        if (word is null)
+        {
+            return NotEvaluable("E15", "alter a presented number's decimal separator", "presented-value-wrong");
+        }
+
+        var altered = word.Text.Contains(',', StringComparison.Ordinal)
+            ? ReplaceLast(word.Text, ',', '.')
+            : ReplaceLast(word.Text, '.', ',');
+
+        return ReplaceWordText("E15", $"alter the decimal separator of row {row.Key}", "presented-value-wrong", passing, fixture, expectation, word, altered);
+    }
+
+    /// <summary>An hour of the printed acceptance instant shifted by one: the zone and the clock are part of the declaration, and TI-12 holds the text to them.</summary>
+    private static ControlOutcome ShiftTheClockByOneHour(
+        PdfExtraction passing,
+        FixtureSource fixture,
+        ExpectationDocument expectation,
+        ClassifiedDocument classified)
+    {
+        foreach (var line in classified.Trail)
+        {
+            foreach (var word in line.Words)
+            {
+                var parts = word.Text.Split(':');
+                if (parts.Length != 2
+                    || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var hour)
+                    || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out _))
+                {
+                    continue;
+                }
+
+                var shifted = ((hour + 1) % 24).ToString("D2", CultureInfo.InvariantCulture) + ":" + parts[1];
+                return ReplaceWordText("E16", "print the acceptance instant an hour later", "presented-value-wrong", passing, fixture, expectation, word, shifted);
+            }
+        }
+
+        return NotEvaluable("E16", "print the acceptance instant an hour later", "presented-value-wrong");
+    }
+
+    private static string ReplaceLast(string text, char from, char to)
+    {
+        var index = text.LastIndexOf(from);
+        return index < 0 ? text : text[..index] + to + text[(index + 1)..];
     }
 
     /// <summary>

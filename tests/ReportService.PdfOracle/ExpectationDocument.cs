@@ -37,6 +37,7 @@ internal sealed class ExpectationDocument
         bool grouped,
         bool blockTotal,
         bool pageFrame,
+        PresentedValues? presented,
         string? pageHeader,
         string? pageFooter,
         string? pageNumbering,
@@ -58,6 +59,7 @@ internal sealed class ExpectationDocument
         Grouped = grouped;
         BlockTotal = blockTotal;
         PageFrame = pageFrame;
+        Presented = presented;
         PageHeader = pageHeader;
         PageFooter = pageFooter;
         PageNumbering = pageNumbering;
@@ -117,6 +119,9 @@ internal sealed class ExpectationDocument
 
     /// <summary>Whether the document is judged as a page frame: geometry, content frame and repeated column headers.</summary>
     public bool PageFrame { get; }
+
+    /// <summary>The values the package presents through a formatting function, or <see langword="null"/> when it presents none.</summary>
+    public PresentedValues? Presented { get; }
 
     /// <summary>The words the page header prints, or <see langword="null"/> when the package declares none.</summary>
     public string? PageHeader { get; }
@@ -204,6 +209,7 @@ internal sealed class ExpectationDocument
             Flag(root, "grouped"),
             Flag(root, "blockTotal"),
             Flag(root, "pageFrame"),
+            PresentedValues.Parse(root),
             OptionalText(root, "pageHeader"),
             OptionalText(root, "pageFooter"),
             Numbering(root),

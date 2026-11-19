@@ -42,6 +42,17 @@
     <ContainerPort Include="8080" Type="tcp" />
   </ItemGroup>
 
+  <!--
+    The part-commit fault is a test-only seam inside this assembly: the integration suite
+    installs it on the worker's own step to force a retried block, and the step's own tests
+    hold it absent from the production composition. Naming the two test projects is what
+    keeps the seam internal; no other assembly can reach it.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.IntegrationTests" />
+    <InternalsVisibleTo Include="ReportService.Workers.Pdf.Tests" />
+  </ItemGroup>
+
   <!-- Refuses to publish on a base that is not pinned by digest or not built for this package version. -->
   <Target Name="CheckPdfBaseImage" BeforeTargets="ComputeContainerBaseImage">
     <PropertyGroup>

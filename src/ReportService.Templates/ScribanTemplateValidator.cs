@@ -23,7 +23,7 @@ public sealed class ScribanTemplateValidator : ITemplateEngineValidator
         ArgumentException.ThrowIfNullOrEmpty(packagePath);
         ArgumentNullException.ThrowIfNull(text);
 
-        var template = Template.Parse(text, packagePath, parserOptions: null, lexerOptions: null);
+        var template = ScribanParsing.Parse(packagePath, text);
         if (!template.HasErrors)
         {
             return new PartParseResult.Parsed(new ParsedPart(template, text));

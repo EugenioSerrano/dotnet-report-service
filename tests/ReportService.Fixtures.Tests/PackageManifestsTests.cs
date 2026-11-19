@@ -19,15 +19,21 @@ public sealed class PackageManifestsTests
 
     private static string SamplesDirectory => Path.Combine(RepositoryPaths.Root, "samples", "templates");
 
+    private static string SameReportDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+
+    private static IReadOnlyList<string> SameReportIds =>
+        [.. Directory.GetDirectories(SameReportDirectory)
+            .Select(folder => PackageManifests.SameReportPrefix + Path.GetFileName(folder))
+            .Order(StringComparer.Ordinal)];
+
     /// <summary>
     /// The host knows exactly the test library's packages, the page frame's four
-    /// geometries, and the one shipped sample the rendering suite prints: a folder
-    /// added to either root without a registration fails here, and an id registered
-    /// with a folder in neither root fails here too. The page frame's geometries share
-    /// one folder and differ only in their declaration. The two samples that declare
-    /// page totals are not registered: the product refuses their accounting path, no
-    /// case prints them, and their printability belongs to the change that delivers
-    /// that path.
+    /// geometries, the five versions of the one report, and the one shipped sample the
+    /// rendering suite prints: a folder added to any root without a registration fails here,
+    /// and an id registered with a folder in no root fails here too. The page frame's
+    /// geometries share one folder and differ only in their declaration. The two samples that
+    /// declare page totals are not registered: the product refuses their accounting path, no
+    /// case prints them, and their printability belongs to the change that delivers that path.
     /// </summary>
     [Fact]
     public void TheHostKnowsTheTestLibraryAndTheShippedSampleItPrints()
@@ -36,6 +42,7 @@ public sealed class PackageManifestsTests
             .Select(folder => Path.GetFileName(folder))
             .Append(SimpleSample)
             .Concat(new[] { "page-frame-a4-landscape", "page-frame-letter-portrait", "page-frame-letter-landscape" })
+            .Concat(SameReportIds)
             .Order(StringComparer.Ordinal)
             .ToList();
 
@@ -52,10 +59,19 @@ public sealed class PackageManifestsTests
             return tested;
         }
 
+        if (id.StartsWith(PackageManifests.SameReportPrefix, StringComparison.Ordinal))
+        {
+            var version = Path.Combine(SameReportDirectory, id[PackageManifests.SameReportPrefix.Length..]);
+            if (Directory.Exists(version))
+            {
+                return version;
+            }
+        }
+
         var shipped = Path.Combine(SamplesDirectory, id);
         return Directory.Exists(shipped)
             ? shipped
-            : throw new InvalidOperationException($"The package '{id}' is under neither {TemplatesDirectory} nor {SamplesDirectory}.");
+            : throw new InvalidOperationException($"The package '{id}' is under neither {TemplatesDirectory}, {SameReportDirectory} nor {SamplesDirectory}.");
     }
 
     /// <summary>The declaration of <paramref name="id"/>: its own file, or the geometry file of a page-frame variant.</summary>
@@ -77,6 +93,11 @@ public sealed class PackageManifestsTests
     [InlineData("page-frame-a4-landscape")]
     [InlineData("page-frame-letter-portrait")]
     [InlineData("page-frame-letter-landscape")]
+    [InlineData("same-report-1.0.0")]
+    [InlineData("same-report-1.1.0")]
+    [InlineData("same-report-1.2.0")]
+    [InlineData("same-report-1.3.0")]
+    [InlineData("same-report-1.4.0")]
     [InlineData(SimpleSample)]
     public void EveryDeclaredFileIsInThePackage(string id)
     {
@@ -111,6 +132,11 @@ public sealed class PackageManifestsTests
     [InlineData("page-frame-a4-landscape")]
     [InlineData("page-frame-letter-portrait")]
     [InlineData("page-frame-letter-landscape")]
+    [InlineData("same-report-1.0.0")]
+    [InlineData("same-report-1.1.0")]
+    [InlineData("same-report-1.2.0")]
+    [InlineData("same-report-1.3.0")]
+    [InlineData("same-report-1.4.0")]
     [InlineData(SimpleSample)]
     public void TheDeclarationMatchesThePackageManifest(string id)
     {
@@ -173,8 +199,10 @@ public sealed class PackageManifestsTests
         {
             var manifest = PackageManifests.Of(id);
             var files = new FolderTemplatePackageFiles(PackageFolder(id));
+            var adapter = TemplateEngineAdapters.All()
+                .Single(candidate => string.Equals(candidate.Engine, manifest.Engine, StringComparison.Ordinal));
 
-            var prepared = new ScribanTemplateAdapter().Prepare(manifest, files);
+            var prepared = adapter.Prepare(manifest, files);
 
             Assert.True(prepared.Has(TemplatePart.DocumentStart));
             Assert.True(prepared.Has(TemplatePart.Row));

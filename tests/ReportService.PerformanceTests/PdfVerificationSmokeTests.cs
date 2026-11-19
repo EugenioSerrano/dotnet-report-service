@@ -99,8 +99,8 @@ public sealed class PdfVerificationSmokeTests
         var package = Path.Combine(templates, Package);
         var manifest = Manifest();
 
-        var large = await PrintAndMeasureAsync(LargeFixture, package, fixtures, templates, output, manifest, cancellationToken);
-        var wide = await PrintAndMeasureAsync(WideFixture, package, fixtures, templates, output, manifest, cancellationToken);
+        var large = await PrintAndMeasureAsync(LargeFixture, package, fixtures, templates, output, manifest, new ScribanTemplateAdapter(), cancellationToken);
+        var wide = await PrintAndMeasureAsync(WideFixture, package, fixtures, templates, output, manifest, new ScribanTemplateAdapter(), cancellationToken);
 
         using var process = Process.GetCurrentProcess();
         var measures = new List<Threshold>
@@ -213,7 +213,7 @@ public sealed class PdfVerificationSmokeTests
         // The same composition the measured documents go through: the product's reader, render
         // context and composer, then the units the checks compare against.
         var templates = Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
-        var (_, text, _) = Compose(StreamFixture, Path.Combine(templates, Package), Manifest(), folder);
+        var (_, text, _) = Compose(StreamFixture, Path.Combine(templates, Package), Manifest(), new ScribanTemplateAdapter(), folder);
         var units = text.Units;
         var pages = StreamPages(units, RecordsPerPage);
         var evidence = new JsonObject
@@ -289,6 +289,7 @@ public sealed class PdfVerificationSmokeTests
         string templates,
         string output,
         RenderManifest manifest,
+        ITemplateEngineAdapter adapter,
         CancellationToken cancellationToken)
     {
         var container = new ContainerBuilder(HostImage)
@@ -313,11 +314,12 @@ public sealed class PdfVerificationSmokeTests
             var result = Path.Combine(output, fixture + ".json");
             using var document = JsonDocument.Parse(await File.ReadAllTextAsync(result, cancellationToken).ConfigureAwait(false));
             var pdf = Path.Combine(output, document.RootElement.GetProperty("pdf").GetString()!);
+            var renderMs = document.RootElement.TryGetProperty("durationMs", out var duration) ? duration.GetInt64() : 0L;
             Assert.True(
                 document.RootElement.TryGetProperty("verificationPassed", out var passed) && passed.GetBoolean(),
                 $"{fixture} was printed and did not pass the product verification; there is nothing to measure.");
 
-            var (composed, text, source) = Compose(fixture, package, manifest, fixtures);
+            var (composed, text, source) = Compose(fixture, package, manifest, adapter, fixtures);
             var verifier = new BlockVerifier();
             var settings = PdfPageSettingsRules.Resolve(manifest.PdfOutput).Settings
                 ?? throw new InvalidOperationException("the package declares no usable page");
@@ -377,7 +379,8 @@ public sealed class PdfVerificationSmokeTests
                 share,
                 last!.Pages,
                 last.Words,
-                peak);
+                peak,
+                renderMs);
         }
     }
 
@@ -418,6 +421,7 @@ public sealed class PdfVerificationSmokeTests
         string fixture,
         string package,
         RenderManifest manifest,
+        ITemplateEngineAdapter adapter,
         string fixtures)
     {
         var snapshot = File.ReadAllBytes(Path.Combine(fixtures, fixture + ".json"));
@@ -437,8 +441,8 @@ public sealed class PdfVerificationSmokeTests
         }
 
         var files = new FolderTemplatePackageFiles(package);
-        var template = new ScribanTemplateAdapter().Prepare(manifest, files);
-        var composer = new BlockComposer(new ScribanTemplateAdapter(), TimeProvider.System);
+        var template = adapter.Prepare(manifest, files);
+        var composer = new BlockComposer(TimeProvider.System);
         var composition = composer.Compose(
             new CompositionRequest(
                 template,
@@ -447,6 +451,8 @@ public sealed class PdfVerificationSmokeTests
                 records,
                 new CompositionRender("es-AR", "America/Argentina/Buenos_Aires", DateTimeOffset.UnixEpoch),
                 manifest.GroupKey),
+            adapter,
+            new PresentationSettings(System.Globalization.CultureInfo.GetCultureInfo("es-AR"), TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires"), DateTimeOffset.UnixEpoch),
             CancellationToken.None);
         var text = new TextUnitExtractor().Extract(composition);
         var block = new BlockFacts(
@@ -463,6 +469,195 @@ public sealed class PdfVerificationSmokeTests
             manifest.Pdf.Verification,
             IsFirstBlock: true);
         return (composition, text, source);
+    }
+
+    /// <summary>
+    /// The same report printed by each of the three engines, verified against the same thresholds
+    /// as the large document above: B1000 composed and printed by Scriban, Handlebars and Liquid,
+    /// then read, aligned and checked twenty times each. Each engine's render time is recorded as
+    /// a measurement - no committed target exists for it - and a document that cannot be printed
+    /// or does not pass the verification fails the case, because there is nothing to measure.
+    /// </summary>
+    /// <param name="version">The version of the one report, which names its engine.</param>
+    /// <param name="engine">The engine that version declares.</param>
+    [Theory]
+    [InlineData("1.0.0", "scriban")]
+    [InlineData("1.1.0", "handlebars")]
+    [InlineData("1.2.0", "liquid")]
+    public async Task TheVerificationOfEveryEngineMeetsTheSameThresholds(string version, string engine)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        Directory.CreateDirectory(Root);
+        var fixtures = Path.Combine(Root, "fixtures");
+        WriteFixtures(fixtures);
+        var output = Path.Combine(Root, "out-" + engine);
+        Directory.CreateDirectory(output);
+        var packages = Path.Combine(Root, "packages");
+        PrepareSameReportPackages(packages);
+        var manifest = SameReportManifest(engine);
+        var adapter = SameReportAdapter(engine);
+
+        var measured = await PrintAndMeasureAsync(
+            LargeFixture,
+            "same-report-" + version,
+            fixtures,
+            packages,
+            output,
+            manifest,
+            adapter,
+            cancellationToken);
+
+        var report = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["environment"] = ReferenceEnvironment(),
+            ["base_image_digest"] = BaseImageDigest(),
+            ["machine"] = Environment.MachineName,
+            ["engine"] = engine,
+            ["version"] = version,
+            ["fixture"] = LargeFixture,
+            ["document"] = new { pages = measured.Pages, words = measured.Words },
+            ["render_time_ms"] = measured.RenderMs,
+            ["warmups"] = WarmUps,
+            ["runs"] = Runs,
+            ["measures"] = new[]
+            {
+                new
+                {
+                    name = "verification " + LargeFixture + " (whole)",
+                    unit = "s",
+                    p50 = Round(Percentile(measured.Whole, 0.50)),
+                    p95 = Round(Percentile(measured.Whole, 0.95)),
+                    p99 = Round(Percentile(measured.Whole, 0.99)),
+                    threshold = LargeVerificationP95Seconds,
+                    verdict = Percentile(measured.Whole, 0.95) <= LargeVerificationP95Seconds ? "pass" : "miss",
+                },
+                new
+                {
+                    name = "verification " + LargeFixture + " per page",
+                    unit = "s/page",
+                    p50 = Round(Percentile(measured.PerPage, 0.50)),
+                    p95 = Round(Percentile(measured.PerPage, 0.95)),
+                    p99 = Round(Percentile(measured.PerPage, 0.99)),
+                    threshold = WidePerPageP95Seconds,
+                    verdict = Percentile(measured.PerPage, 0.95) <= WidePerPageP95Seconds ? "pass" : "miss",
+                },
+            },
+        };
+
+        var path = Path.Combine(RunEnvironment.EvidenceDirectory(), "performance-same-report-" + engine + ".json");
+        await File.WriteAllTextAsync(
+            path,
+            JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
+            Encoding.UTF8,
+            cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            $"engine {engine} ({version}): render {measured.RenderMs} ms, verification p95 "
+            + $"{Round(Percentile(measured.Whole, 0.95))} s, pages {measured.Pages}");
+
+        Assert.Equal(Runs, measured.Whole.Count);
+        Assert.True(
+            Percentile(measured.Whole, 0.95) <= LargeVerificationP95Seconds,
+            $"the {engine} document's verification missed the verification smoke's threshold; the numbers are in {path}");
+    }
+
+    // The one report's package versions as the host knows them: one folder per version, named
+    // so the host's package id names the engine it prints with.
+    private static void PrepareSameReportPackages(string target)
+    {
+        var source = Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+        foreach (var version in Directory.GetDirectories(source))
+        {
+            CopyFolder(version, Path.Combine(target, "same-report-" + Path.GetFileName(version)));
+        }
+    }
+
+    private static void CopyFolder(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+        foreach (var file in Directory.GetFiles(source))
+        {
+            File.Copy(file, Path.Combine(target, Path.GetFileName(file)), overwrite: true);
+        }
+
+        foreach (var folder in Directory.GetDirectories(source))
+        {
+            CopyFolder(folder, Path.Combine(target, Path.GetFileName(folder)));
+        }
+    }
+
+    private static ITemplateEngineAdapter SameReportAdapter(string engine) => engine switch
+    {
+        "handlebars" => new HandlebarsTemplateAdapter(),
+        "liquid" => new FluidTemplateAdapter(),
+        _ => new ScribanTemplateAdapter(),
+    };
+
+    // The one report's declaration, as its packages declare it: the three parts of the engine,
+    // its stylesheet, its page, and the two fields it prints as they are.
+    private static RenderManifest SameReportManifest(string engine)
+    {
+        var extension = engine switch
+        {
+            "handlebars" => "hbs",
+            "liquid" => "liquid",
+            _ => "sbn",
+        };
+        var manifest = new ReportService.TemplatePackages.Manifest.TemplateManifest
+        {
+            ManifestVersion = "1.0",
+            Id = "same-report",
+            Version = "1.0.0",
+            Engine = engine switch
+            {
+                "handlebars" => ReportService.TemplatePackages.Manifest.TemplateEngine.Handlebars,
+                "liquid" => ReportService.TemplatePackages.Manifest.TemplateEngine.LiquidFluid,
+                _ => ReportService.TemplatePackages.Manifest.TemplateEngine.Scriban,
+            },
+            DeclaredEngineVersion = engine switch
+            {
+                "handlebars" => "2.4.3",
+                "liquid" => "2.40.0",
+                _ => "7.5.1",
+            },
+            Outputs = new ReportService.TemplatePackages.Manifest.TemplateOutputs
+            {
+                Html = new ReportService.TemplatePackages.Manifest.TemplateHtmlOutput
+                {
+                    Parts = new ReportService.TemplatePackages.Manifest.TemplateParts
+                    {
+                        DocumentStart = "html/document-start.html." + extension,
+                        Row = "html/row.html." + extension,
+                        DocumentEnd = "html/document-end.html." + extension,
+                    },
+                    Styles = ["html/styles.css"],
+                },
+                Pdf = new ReportService.TemplatePackages.Manifest.TemplatePdfOutput
+                {
+                    Paper = "A4",
+                    Orientation = "portrait",
+                    MarginMm = new ReportService.TemplatePackages.Manifest.TemplateMargins { Top = 15, Right = 12, Bottom = 18, Left = 12 },
+                    PageTotals = new ReportService.TemplatePackages.Manifest.TemplatePageTotals { Enabled = false },
+                    Verification = new ReportService.TemplatePackages.Manifest.TemplatePdfVerification
+                    {
+                        Anchors = new ReportService.TemplatePackages.Manifest.TemplatePdfAnchors
+                        {
+                            Header = ["$.reportTitle", "$.customer.name", "$.currency", "$.totals.recordCount"],
+                            Item = ["$.sequence", "$.description"],
+                        },
+                    },
+                },
+            },
+            LocaleDefaults = new ReportService.TemplatePackages.Manifest.TemplateLocaleDefaults
+            {
+                Culture = "es-AR",
+                TimeZone = "America/Argentina/Buenos_Aires",
+            },
+        };
+
+        return RenderManifestMapping.From(
+            manifest,
+            manifest.Engine!.Value,
+            manifest.DeclaredEngineVersion!);
     }
 
     private static RenderManifest Manifest()
@@ -608,5 +803,6 @@ public sealed class PdfVerificationSmokeTests
         IReadOnlyList<double> SourceShare,
         int Pages,
         int Words,
-        double? ContainerMemoryPeakMiB);
+        double? ContainerMemoryPeakMiB,
+        long RenderMs);
 }

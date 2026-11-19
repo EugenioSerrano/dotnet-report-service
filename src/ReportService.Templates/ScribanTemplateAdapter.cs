@@ -22,8 +22,8 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
     /// <summary>The engine name the adapter composes, as a package manifest names it.</summary>
     public const string EngineName = "scriban";
 
-    /// <summary>The package's declared engine version this adapter composes.</summary>
-    public const string PinnedVersion = "7.5.1";
+    /// <summary>The engine version the build resolved, read from the engine's own assembly.</summary>
+    public static readonly string EngineVersion = EngineVersions.Of(typeof(Template));
 
     /// <summary>The most loop iterations one render may take.</summary>
     public const int LoopLimit = 10_000;
@@ -39,6 +39,9 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
 
     /// <inheritdoc />
     public string Engine => EngineName;
+
+    /// <inheritdoc />
+    public string Version => EngineVersion;
 
     /// <inheritdoc />
     public PreparedTemplate Prepare(RenderManifest manifest, ITemplatePackageFiles files)
@@ -60,7 +63,7 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
             }
 
             var source = files.ReadAllText(path);
-            var template = Template.Parse(source, path, parserOptions: null, lexerOptions: null);
+            var template = ScribanParsing.Parse(path, source);
             if (template.HasErrors)
             {
                 throw new TemplatePackageException($"The {TemplatePartNames.Of(part)} part of the package cannot be parsed: {string.Join("; ", template.Messages)}");
@@ -77,11 +80,13 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         PreparedTemplate template,
         TemplatePart part,
         RenderContext context,
+        PresentationSettings presentation,
         GuardedWriter writer,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(presentation);
         ArgumentNullException.ThrowIfNull(writer);
 
         var scribanTemplate = (Template)template.Part(part);
@@ -101,12 +106,18 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         };
         templateContext.PushOutput(new TextWriterOutput(writer));
         ApplyEscapingPolicy(templateContext);
+        RemoveHostClock(templateContext);
+
+        // One global scope for the part: the values of the render model and the nine
+        // presentation functions, which are bound to this block's settings and to nothing else.
+        var globals = new ScriptObject(context.Members().Count() + PresentationFunctionTable.FunctionCount);
         foreach (var member in context.Members())
         {
-            var globals = new ScriptObject(1);
             globals[member.Key] = ToScriptValue(member.Value);
-            templateContext.PushGlobal(globals);
         }
+
+        ScribanPresentationFunctions.Register(globals, presentation);
+        templateContext.PushGlobal(globals);
 
         var rendered = TemplatePartNames.Of(part);
         try
@@ -116,6 +127,10 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
             {
                 writer.Write(text);
             }
+        }
+        catch (PresentationRefusedException)
+        {
+            throw;
         }
         catch (Scriban.Syntax.ScriptRuntimeException exception)
         {
@@ -147,6 +162,31 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         }
 
         html["escape"] = DynamicCustomFunction.Create(new Func<string?, object?>(value => HtmlEncodingPolicy.Encode(value)));
+    }
+
+    /// <summary>
+    /// Removes the engine's own clock functions: a template's "now" is the job's acceptance
+    /// instant, which it reads from the render model, so no function may answer the host's
+    /// clock instead.
+    /// </summary>
+    private static void RemoveHostClock(TemplateContext context)
+    {
+        if (context.BuiltinObject is not ScriptObject builtins)
+        {
+            return;
+        }
+
+        Remove(builtins, "date", "now");
+        Remove(builtins, "date", "now_utc");
+        Remove(builtins, "time", "now");
+    }
+
+    private static void Remove(ScriptObject builtins, string member, string function)
+    {
+        if (builtins[member] is ScriptObject functions)
+        {
+            functions.Remove(function);
+        }
     }
 
     /// <summary>Converts a plain value of the render model into the engine's own plain value.</summary>
