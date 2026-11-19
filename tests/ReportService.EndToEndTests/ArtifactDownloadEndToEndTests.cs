@@ -362,11 +362,6 @@ public sealed class ArtifactDownloadEndToEndTests : IDisposable
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
-            if (string.Equals(relative, "sample.json", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
             var text = File.ReadAllText(file);
             if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
             {

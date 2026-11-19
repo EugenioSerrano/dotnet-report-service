@@ -29,9 +29,6 @@ namespace ReportService.IntegrationTests.Jobs;
 /// </summary>
 internal sealed class RenderWorkerHost : IAsyncDisposable
 {
-    /// <summary>The sample document of a template, which is no part of its package.</summary>
-    private const string SampleDocument = "sample.json";
-
     private readonly WebApplicationFactory<PdfWorker> _worker;
 
     private readonly TemplateSourceClass _source;
@@ -134,8 +131,8 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
             }
         });
 
-    // The sample template's own files, every one except the sample document, under the version
-    // its manifest declares.
+    // The sample template's own files, the sample document included, under the version its
+    // manifest declares.
     private static (string Version, IReadOnlyDictionary<string, byte[]> Files) SamplePackage(string templateId)
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", templateId);
@@ -143,11 +140,6 @@ internal sealed class RenderWorkerHost : IAsyncDisposable
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
-            if (string.Equals(relative, SampleDocument, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
             files[relative] = File.ReadAllBytes(file);
         }
 

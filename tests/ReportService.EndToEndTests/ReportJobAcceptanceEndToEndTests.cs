@@ -324,9 +324,9 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
 
     private const string Version = "1.0.0";
 
-    // The sample document the job's data is: the version's own, uploaded unchanged. It is the
-    // one file of the template package the class leaves out, because the package is what the
-    // render reads and the sample is what the case sends.
+    // The sample document the job's data is: the version's own, uploaded unchanged. The package
+    // the render worker takes carries that same file too, so the sample is both part of the
+    // version and the data a case submits.
     private const string SamplePath = "sample.json";
 
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
@@ -524,8 +524,9 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
 
     // The sample template's own package, with the corrections these cases need: the owner, one
     // named font family, and the version printed in the header. The stylesheet link is the
-    // sample's own (relative to the package root), and the sample document itself is left out
-    // because it is the case's upload rather than a part of what the render reads.
+    // sample's own (relative to the package root), and the sample document itself is part of
+    // the package: the version's own sample belongs to it, and the case uploads the same file
+    // as its job's data.
     private static Dictionary<string, byte[]> PackageFiles()
     {
         var root = Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
@@ -533,11 +534,6 @@ public sealed class ReportJobCompletionEndToEndTests : IDisposable
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
-            if (string.Equals(relative, SamplePath, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
             var text = File.ReadAllText(file);
             if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
             {
