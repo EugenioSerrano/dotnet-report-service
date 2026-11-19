@@ -6,6 +6,7 @@ engineVersion: "2.40.0"
 dataContract:
   version: "1.0"
   profile: header-items-v1
+  schema: schema.json
 outputs:
   html:
     documentStart: html/document-start.html.liquid

@@ -6,6 +6,7 @@ engineVersion: "7.5.1"
 dataContract:
   version: "1.0"
   profile: header-items-v1
+  schema: schema.json
 outputs:
   html:
     documentStart: html/document-start.html.sbn
