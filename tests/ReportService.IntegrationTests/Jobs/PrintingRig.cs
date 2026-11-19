@@ -526,11 +526,6 @@ internal sealed class PrintingRig : IAsyncDisposable
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
-            if (string.Equals(relative, "sample.json", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
             package[relative] = File.ReadAllBytes(file);
         }
 
