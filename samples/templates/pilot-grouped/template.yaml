@@ -25,7 +25,7 @@ outputs:
     chunkLayout: page-boundary
     pageNumbering: global
     pageTotals:
-      enabled: true
+      enabled: false
       amountField: amount
       scale: 2
     verification:
