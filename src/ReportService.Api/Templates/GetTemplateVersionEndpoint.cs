@@ -95,9 +95,9 @@ public static partial class GetTemplateVersionEndpoint
             return ServiceUnavailable(context, logger);
         }
 
-        // Another consumer's version is answered exactly like one that was never taken: the
-        // owner is the record's, never the caller's, and sharing is not offered yet.
-        if (record is null || !string.Equals(record.OwnerConsumerId, consumerId, StringComparison.Ordinal))
+        // Another consumer's version is answered exactly like one that was never taken; a shared
+        // version is visible to every registered consumer.
+        if (record is null || !TemplateVersionVisibility.MayUse(record, consumerId))
         {
             return NotFound(context, logger);
         }
