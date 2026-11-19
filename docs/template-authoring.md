@@ -169,11 +169,50 @@ every part of the template:
 
 Values are plain: objects, arrays, strings, booleans and null; a number is the
 invariant text of its exact decimal, so `0.10` prints as `0.10` and never as
-`0.1`. Every value is HTML-encoded when the template escapes it; printing a
-value without escaping is the template author's decision and is visible in the
-template. No formatting function of the host is available: format in the
-template or in the data.
+`0.1`. Every data value must be encoded: end a Scriban output with
+`| html.escape` (Liquid and Handlebars encode `{{ }}` for you), and the take
+refuses a version that writes a data value without it. No formatting function of
+the host is available: format in the template or in the data.
 
 Templates are written for one engine, named by the manifest. This release prints
 with the Scriban adapter; the other engines arrive with their own adapter and
 the same context.
+
+## What the service checks when it takes a version
+
+A version is read, checked and kept the first time a job references it — never
+by the HTTP request, which answers `202` before anything is read. The checks run
+in one fixed order and the **first** refusal ends the take; nothing is written
+for a refused version, so it can be checked again later, and its message names
+the file to fix. A version whose publication record is unchanged is refused
+again; the fix is a new version.
+
+| # | Check | What it refuses, and what the message names |
+|---|-------|---------------------------------------------|
+| 1 | The manifest | the data profile (only `header-items-v1`), `dataContract.version` and `maxDepth`, the required parts, every path the manifest names (outside the package or absent), the declarations this release does not deliver (`aggregates`, `dataContract.verifiedTotals`, `partitioning.groupOrder`), and the PDF page settings: `paper` (`A4` or `Letter`), `orientation` (`portrait` or `landscape`) and four margins in millimetres leaving at least 50 mm printable — the message names `outputs.pdf.<field>` and never its value |
+| 2 | `schema.json` | anything outside the template profile: the dialect, a keyword outside the list, `$id`/`$anchor`, a file or remote `$ref`, an unknown `format`, a pattern over 1 KiB, depth over 64, a schema over 64 KiB, both envelope roots missing — with the rule and a pointer into the schema; and a pattern that repeats a part which repeats without limit |
+| 3 | `sample.json` | a sample that does not follow the data format, or one that breaks the schema: the message names the first violation's path and rule, never a value. The whole check has 10 seconds |
+| 4 | the anchors | an `outputs.pdf.verification.anchors` path the schema does not declare at the header or the record root |
+| 5 | the parts' syntax | a syntax error in a part or an included file, with the file and, when the engine gives it, the line and column — the engine's own message is never shown |
+| 6 | includes and assets | an include that is not a fixed name, points outside the package, names no file the render loads (in Scriban, an include must be a declared part), carries another engine's extension or makes a cycle; a stylesheet or asset the manifest or a part refers to and the package does not hold; a `data:` URL outside an image |
+| 7 | the lint | a data output that is not escaped (Scriban: end it with `\| html.escape`), a raw output, a forbidden function, a data value inside a script, style, URL or event-handler attribute or an unquoted attribute value, and a Liquid range that is not fixed or has more than 10 000 values |
+| 8 | the engine version | an `engineVersion` whose major differs from the engine this deployment renders with |
+
+**How the lint and the includes are read.** The escaping and sandbox rules and the
+include names are read from each file's text, for all three engines; the engine's
+own parser still decides syntax. The scan refuses an expression it cannot classify
+— it never ignores one — and what a text scan cannot see (a context assembled
+across several parts, an include whose name a helper builds) is left to template
+review.
+
+**One known limitation.** A page setting of the wrong JSON kind — `marginMm.top:
+"15"`, a string — is refused as a generic `TEMPLATE_INVALID` by the manifest's
+typed view before the field-level check runs, so that one case's message does not
+name the field. Every value-level fault is named: an absent member, an unknown
+paper or orientation, a negative margin, and a printable area under 50 mm name
+`outputs.pdf.<field>`.
+
+A refused version logs the reason and a stable rule name, and the job that
+referenced it ends `failed` with the code (`TEMPLATE_INVALID` or
+`UNSUPPORTED_CAPABILITY`). The authoring guide is the contract: if a package
+passes the take, the render can parse it.

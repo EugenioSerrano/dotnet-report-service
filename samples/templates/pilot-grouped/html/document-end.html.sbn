@@ -1,7 +1,7 @@
 </table>
 <section class="document-totals">
-  <p>Records: {{ header.totals.recordCount }}</p>
-  <p>Total: {{ header.totals.amount }} {{ header.currency | html.escape }}</p>
+  <p>Records: {{ header.totals.recordCount | html.escape }}</p>
+  <p>Total: {{ header.totals.amount | html.escape }} {{ header.currency | html.escape }}</p>
 </section>
 </body>
 </html>

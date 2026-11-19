@@ -1,2 +1,2 @@
-    <tr class="group-subtotal"><td colspan="6">Subtotal {{ group.groupId | html.escape }}</td><td class="num">{{ aggregates.groupAmount }}</td></tr>
+    <tr class="group-subtotal"><td colspan="6">Subtotal {{ group.groupId | html.escape }}</td><td class="num">{{ aggregates.groupAmount | html.escape }}</td></tr>
   </tbody>

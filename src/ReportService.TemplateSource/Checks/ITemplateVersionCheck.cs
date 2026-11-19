@@ -3,20 +3,22 @@ using ReportService.TemplatePackages.Manifest;
 namespace ReportService.TemplateSource.Checks;
 
 /// <summary>
-/// What a take-time check is given: the version being taken, its manifest and
-/// the directory the package was copied to. A check reads and never writes; it
+/// What a take-time check is given: the version being taken, its manifest and the
+/// directory the package was copied to. A check reads and never writes; it
 /// answers whether the version may be taken, and what an author must fix when
 /// it may not.
 /// </summary>
 /// <param name="TemplateId">The template's identifier.</param>
 /// <param name="Version">The version being taken.</param>
 /// <param name="Manifest">The typed view of the manifest.</param>
+/// <param name="ManifestJson">The manifest's stored document, exactly as the take parsed and will record it.</param>
 /// <param name="PackageDirectory">The directory the package's files were copied to.</param>
 /// <param name="SourceDescriptorSha256">The publication record's hash the files were verified against.</param>
 public sealed record TemplateCandidate(
     string TemplateId,
     string Version,
     TemplateManifest Manifest,
+    string ManifestJson,
     string PackageDirectory,
     string SourceDescriptorSha256);
 

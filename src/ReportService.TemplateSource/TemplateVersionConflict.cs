@@ -105,6 +105,34 @@ public sealed class TemplateVersionConflict
         return true;
     }
 
+    /// <summary>
+    /// Reports that an exact reference met more than one publication record for one
+    /// version: the take refuses it, and this warning is the operator's record of
+    /// why. It names the template, the version, how many records the source listed
+    /// and the job, never a key or a byte.
+    /// </summary>
+    /// <param name="templateId">The template the reference names.</param>
+    /// <param name="version">The version the reference names.</param>
+    /// <param name="publicationCount">How many publication records the source listed for it.</param>
+    /// <param name="reportJobId">The job the take runs for, when there is one.</param>
+    public void ReportDuplicatePublication(string templateId, string version, int publicationCount, string? reportJobId = null)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(templateId);
+        ArgumentException.ThrowIfNullOrEmpty(version);
+        ArgumentOutOfRangeException.ThrowIfLessThan(publicationCount, 2);
+
+        _logger.LogWarning(
+            new EventId(EventIds.VersionConflict, EventName),
+            "{Code} template {TemplateId} version {Version} is published {PublicationCount} times in the template source; the reference is refused. "
+            + "Publish the version once, or publish a new version. Observation {Observation}, job {ReportJobId}",
+            Code,
+            templateId,
+            version,
+            publicationCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Observations.DuplicatePublication,
+            reportJobId ?? "(none)");
+    }
+
     /// <summary>The identifiers of this category's events.</summary>
     public static class EventIds
     {
@@ -120,5 +148,8 @@ public sealed class TemplateVersionConflict
 
         /// <summary>The source lists another publication record for a version already taken.</summary>
         public const string PublicationChanged = "publication_changed";
+
+        /// <summary>An exact reference met more than one publication record for one version.</summary>
+        public const string DuplicatePublication = "duplicate_publication";
     }
 }
