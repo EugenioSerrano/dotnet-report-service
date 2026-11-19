@@ -153,11 +153,16 @@ internal static partial class Program
             new CompositionBlock(Index: 0, RecordCount: records.Count, FirstRecordOrdinal: 1, IsFirst: true, IsLast: true),
             header,
             records,
-            new CompositionRender(Culture: null, TimeZone: null, Clock: FixedClock),
+            new CompositionRender(Culture: "es-AR", TimeZone: "America/Argentina/Buenos_Aires", Clock: FixedClock),
             manifest.GroupKey);
 
         var composer = new BlockComposer(adapter, TimeProvider.System);
-        var composed = composer.Compose(composition);
+        var composed = composer.Compose(
+            composition,
+            PresentationSettingsResolver.Resolve(new PresentationValues(
+                composition.Render.Culture,
+                composition.Render.TimeZone,
+                composition.Render.Clock)));
         if (mutation is not null && !KnownBad.IsHtmlLevel(mutation))
         {
             composed = KnownBad.ApplyComposition(mutation, composed);

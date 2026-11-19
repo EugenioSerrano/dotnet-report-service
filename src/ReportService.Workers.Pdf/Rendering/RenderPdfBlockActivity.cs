@@ -183,8 +183,8 @@ public sealed class RenderPdfBlockActivity(
                 header,
                 records,
                 new CompositionRender(
-                    manifest.LocaleDefaults.Culture,
-                    manifest.LocaleDefaults.TimeZone,
+                    state.Job.Culture,
+                    state.Job.TimeZone,
                     state.Job.ReportClock),
                 manifest.GroupKey);
 
@@ -204,7 +204,23 @@ public sealed class RenderPdfBlockActivity(
                 IsFirstBlock: input.BlockIndex == 0,
                 work.Path);
 
-            var outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            BlockRenderOutcome outcome;
+            try
+            {
+                outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (PresentationUnavailable unavailable)
+            {
+                // The job's culture, time zone or clock is absent or unusable: nothing was
+                // composed, and the same job would fail the same way on every attempt.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: presentation unavailable at {Field}",
+                    input.BlockIndex,
+                    input.OutputId,
+                    unavailable.Field);
+                throw Refuse(ExecutionFailed, unavailable.Message);
+            }
+
             RecordTheRender(outcome);
             if (!outcome.Passed)
             {

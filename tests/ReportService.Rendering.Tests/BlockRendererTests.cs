@@ -129,6 +129,22 @@ public sealed class BlockRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task AJobWithoutACultureIsRefusedBeforeAnythingIsComposed()
+    {
+        var printer = new RecordingPrinter();
+        var request = Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None), "<p>nothing</p>");
+
+        var refusal = await Assert.ThrowsAsync<PresentationUnavailable>(() => Renderer(printer).RenderAsync(
+            request with { Composition = request.Composition with { Render = request.Composition.Render with { Culture = null } } },
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(PresentationUnavailable.Fields.Culture, refusal.Field);
+        Assert.DoesNotContain("nothing", refusal.Message, StringComparison.Ordinal);
+        Assert.False(printer.Called);
+        Assert.False(Directory.Exists(Path.Combine(work, "printed")));
+    }
+
+    [Fact]
     public async Task ThePageRuleOfTheResolvedPageIsGivenToThePrinter()
     {
         var printer = new RecordingPrinter();
@@ -248,7 +264,7 @@ public sealed class BlockRendererTests : IDisposable
             new CompositionBlock(0, records?.Count ?? 0, 1, IsFirst: true, IsLast: true),
             new Dictionary<string, object?>(),
             [.. (records ?? []).Select(record => new ComposedRecord(record.Ordinal, record.Values))],
-            new CompositionRender(null, null, DateTimeOffset.UnixEpoch),
+            new CompositionRender("es-AR", "America/Argentina/Buenos_Aires", DateTimeOffset.UnixEpoch),
             GroupKey: null);
 
         return new BlockRenderRequest(

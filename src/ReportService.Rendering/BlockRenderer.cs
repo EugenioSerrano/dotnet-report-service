@@ -120,7 +120,12 @@ public sealed class BlockRenderer(
             (double)settings.MarginBottomMm,
             (double)settings.MarginLeftMm);
 
-        var composed = Compose(request, cancellationToken, out var composeMs);
+        var presentation = PresentationSettingsResolver.Resolve(new PresentationValues(
+            request.Composition.Render.Culture,
+            request.Composition.Render.TimeZone,
+            request.Composition.Render.Clock));
+
+        var composed = Compose(request, presentation, cancellationToken, out var composeMs);
         if (blockMutation is not null)
         {
             composed = blockMutation.Apply(composed);
@@ -238,14 +243,14 @@ public sealed class BlockRenderer(
         };
     }
 
-    private ComposedBlock Compose(BlockRenderRequest request, CancellationToken cancellationToken, out double composeMs)
+    private ComposedBlock Compose(BlockRenderRequest request, PresentationSettings settings, CancellationToken cancellationToken, out double composeMs)
     {
         using var span = Source.StartActivity("compose");
         span?.SetTag("block.index", request.BlockIndex);
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
-            return composer.Compose(request.Composition, cancellationToken);
+            return composer.Compose(request.Composition, settings, cancellationToken);
         }
         finally
         {

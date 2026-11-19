@@ -95,10 +95,14 @@ public sealed record CompositionRequest(
 /// </summary>
 public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider clock)
 {
-    /// <summary>Composes <paramref name="request"/>.</summary>
-    public ComposedBlock Compose(CompositionRequest request, CancellationToken cancellationToken = default)
+    /// <summary>Composes <paramref name="request"/> with the block's fixed presentation.</summary>
+    /// <param name="request">The package, the block, the header and the records.</param>
+    /// <param name="settings">The culture, time zone and clock one resolution resolved for the block.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    public ComposedBlock Compose(CompositionRequest request, PresentationSettings settings, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(settings);
         if (request.Block.RecordCount != request.Records.Count)
         {
             throw new TemplateInputException(
@@ -110,7 +114,7 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
         using var text = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1 << 16, leaveOpen: true);
         var writer = new GuardedWriter(text, clock);
 
-        Compose(request, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, settings, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
 
         string? groupKey = null;
         for (var i = 0; i < request.Records.Count; i++)
@@ -121,20 +125,20 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
             if (startsGroup)
             {
                 groupKey = key;
-                ComposeGroup(request, key, first: true, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, settings, key, first: true, record.Ordinal, writer, fragments, cancellationToken);
             }
 
-            Compose(request, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, writer, fragments, cancellationToken);
+            Compose(request, settings, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, writer, fragments, cancellationToken);
 
             var endsGroup = request.GroupKey is not null
                 && (i == request.Records.Count - 1 || !SameKey(KeyOf(request, request.Records[i + 1]), key));
             if (endsGroup)
             {
-                ComposeGroup(request, key, first: false, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, settings, key, first: false, record.Ordinal, writer, fragments, cancellationToken);
             }
         }
 
-        Compose(request, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, settings, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, writer, fragments, cancellationToken);
 
         text.Flush();
         var html = stream.ToArray();
@@ -148,6 +152,7 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
 
     private void ComposeGroup(
         CompositionRequest request,
+        PresentationSettings settings,
         string? key,
         bool first,
         long ordinal,
@@ -163,11 +168,12 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
         }
 
         var group = RenderContextFactory.Group(key, first, continuesFromPreviousBlock: false, continuesInNextBlock: false);
-        Compose(request, part, kind, null, group, ordinal, writer, fragments, cancellationToken);
+        Compose(request, settings, part, kind, null, group, ordinal, writer, fragments, cancellationToken);
     }
 
     private void Compose(
         CompositionRequest request,
+        PresentationSettings settings,
         TemplatePart part,
         FragmentKind kind,
         IReadOnlyDictionary<string, object?>? item,
@@ -195,7 +201,7 @@ public sealed class BlockComposer(ITemplateEngineAdapter adapter, TimeProvider c
             group,
             block,
             RenderContextFactory.NoAggregates,
-            RenderContextFactory.Render(request.Render.Culture, request.Render.TimeZone, request.Render.Clock));
+            RenderContextFactory.Render(settings.Culture.Name, settings.TimeZone.Id, settings.Clock));
 
         var start = checked((int)writer.BytesWritten);
         adapter.RenderPart(request.Template, part, context, writer, cancellationToken);

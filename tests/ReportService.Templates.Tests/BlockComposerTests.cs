@@ -11,6 +11,11 @@ public sealed class BlockComposerTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 2, 5, 0, 0, TimeSpan.Zero);
 
+    private static readonly PresentationSettings Settings = new(
+        System.Globalization.CultureInfo.GetCultureInfo("en-US"),
+        TimeZoneInfo.Utc,
+        DateTimeOffset.UnixEpoch);
+
     private static readonly (TemplatePart Part, string Source)[] Integrity =
     [
         (TemplatePart.DocumentStart, "<html><body>"),
@@ -106,6 +111,7 @@ public sealed class BlockComposerTests
             Records("""{"sequence":1}"""),
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
             GroupKey: null),
+            Settings,
             TestContext.Current.CancellationToken));
     }
 
@@ -132,7 +138,8 @@ public sealed class BlockComposerTests
             RenderContextFactory.Header("{}"u8.ToArray()),
             records,
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
-            groupKey));
+            groupKey),
+            Settings);
     }
 
     private static ComposedRecord[] Records(params string[] json) =>

@@ -107,7 +107,8 @@ public sealed class ScribanTemplateAdapterTests
             RenderContextFactory.Header(Encoding.UTF8.GetBytes(header)),
             [.. records.Select((json, index) => new ComposedRecord(index + 1, RenderContextFactory.Header(Encoding.UTF8.GetBytes(json))))],
             new CompositionRender("en", "UTC", DateTimeOffset.UnixEpoch),
-            groupKey));
+            groupKey),
+            new PresentationSettings(System.Globalization.CultureInfo.GetCultureInfo("en-US"), TimeZoneInfo.Utc, DateTimeOffset.UnixEpoch));
     }
 
     private static PreparedTemplate Prepare((TemplatePart Part, string Source)[] parts, string engine = ScribanTemplateAdapter.EngineName)
