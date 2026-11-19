@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
@@ -23,7 +24,10 @@ namespace ReportService.IntegrationTests.Templates;
 /// version, an untaken version and a malformed one are answered with the same
 /// not-found document - the request's own trace identifier aside, and compared on
 /// every header's name and value as well - without a storage read; and a consumer
-/// the deployment does not know is refused before anything is read.
+/// the deployment does not know is refused before anything is read. The demo's
+/// three answers - the shared version's, a non-shared foreign one's and an untaken
+/// one's - are also saved with the run's evidence, each with its status, its
+/// headers and its body, the request's trace identifier included.
 /// </summary>
 public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
@@ -176,6 +180,14 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.Equal("Template not found", answer.GetProperty("title").GetString());
         Assert.Equal((int)HttpStatusCode.NotFound, answer.GetProperty("status").GetInt32());
         Assert.Equal("The template version was not found.", answer.GetProperty("detail").GetString());
+
+        // The demo's two refusals are saved with the run: the non-shared foreign version's answer
+        // and the untaken one's, each as it was sent, so the equality of the first with the second
+        // can be re-checked by eye.
+        var foreignPath = await WriteAnswerEvidenceAsync("template-version-foreign.response.txt", other, cancellationToken);
+        var untakenPath = await WriteAnswerEvidenceAsync("template-version-untaken.response.txt", untaken, cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            "evidence: " + foreignPath + Environment.NewLine + "evidence: " + untakenPath);
     }
 
     [Fact]
@@ -242,6 +254,11 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
         Assert.True(root.GetProperty("shared").GetBoolean());
         Assert.False(root.TryGetProperty("commitSha", out _));
+
+        // The demo's shared answer is saved with the run: the owner's ten members as every
+        // registered consumer reads them, the request's own trace identifier included.
+        var evidencePath = await WriteAnswerEvidenceAsync("template-version-shared.response.txt", byOther, cancellationToken);
+        TestContext.Current.TestOutputHelper?.WriteLine("evidence: " + evidencePath);
     }
 
     [Fact]
@@ -327,6 +344,27 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.False(root.TryGetProperty("commitSha", out _));
         Assert.True(root.GetProperty("shared").GetBoolean());
         Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
+    }
+
+    // The answer as it was sent: the status line, every header and the body, the request's own
+    // trace identifier included, written into the run's evidence folder so a person can re-check the
+    // demo's equality with a version that does not exist by eye.
+    private static async Task<string> WriteAnswerEvidenceAsync(
+        string fileName,
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var answer = new StringBuilder();
+        answer.Append("HTTP/").Append(response.Version).Append(' ')
+            .Append((int)response.StatusCode).Append(' ').Append(response.StatusCode).AppendLine();
+        foreach (var header in response.Headers.Concat(response.Content.Headers).OrderBy(header => header.Key, StringComparer.Ordinal))
+        {
+            answer.Append(header.Key).Append(": ").Append(string.Join(", ", header.Value)).AppendLine();
+        }
+
+        answer.AppendLine();
+        answer.Append(await response.Content.ReadAsStringAsync(cancellationToken));
+        return RunEnvironment.WriteEvidence(fileName, Encoding.UTF8.GetBytes(answer.ToString()));
     }
 
     private async Task<TemplateVersionRecord> GivenTakenVersionAsync(
