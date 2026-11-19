@@ -80,10 +80,13 @@ API:
   `[A-Za-z0-9._-]{1,128}`. Comparison is ordinal.
 - A consumer that is registered may read, **including one that was made
   inactive**: a version it owns stays readable, as an upload's status does.
-- Only the **owner** of a version reads it. Another consumer's version is
-  answered exactly like one that was never taken, so the operation never tells a
-  consumer which templates exist outside its own. Sharing a version with other
-  consumers is not offered yet.
+- The **owner** of a version reads it, and so does **every registered consumer
+  when the version is `shared`**: the answer is the owner's own, member for
+  member - the publication descriptor's hash and the files the take verified
+  included. Another consumer's version that is not `shared` is answered exactly
+  like one that was never taken, so a non-shared version outside the consumer's
+  own tells it nothing. A shared version is visible to every registered
+  consumer, and its answer names its owner and the `shared` flag.
 
 ## Refusals
 
@@ -94,11 +97,11 @@ form of the two names, and finally the record.
 | Case | HTTP | `code` |
 |------|------|--------|
 | No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` |
-| The version was never taken, belongs to another consumer, or its name cannot be a taken version | 404 | `TEMPLATE_NOT_FOUND` |
+| The version was never taken, belongs to another consumer and is not shared, or its name cannot be a taken version | 404 | `TEMPLATE_NOT_FOUND` |
 | The service could not read its own records | 503 | `SERVICE_UNAVAILABLE` |
 
-`404` is the same document for all four of its cases — an absent version, another
-consumer's version, an untaken version and a malformed name — and the same
+`404` is the same document for all four of its cases - an absent version, another
+consumer's non-shared version, an untaken version and a malformed name - and the same
 constant detail: **"The template version was not found."** The caller learns
 nothing about which versions exist or how their names are formed.
 

@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A taken template version's metadata is readable by every registered consumer when the version
+  is shared: the answer is the owner's own, the publication descriptor's hash, the package hash
+  and the files the take verified included, while another consumer's non-shared version still
+  answers exactly as a version that does not exist.
 - A template version is read from the deployment's object storage, through the
   deployment's own store and the `template-source` class: the version's publication
   record is opened with the hash its own name carries and the size the listing gave,

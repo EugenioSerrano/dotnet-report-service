@@ -251,6 +251,152 @@ public sealed class GetTemplateVersionEndpointTests
         Assert.DoesNotContain("store did not answer", problem, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task ASharedVersionIsVisibleToEveryConsumerWithTheOwnersAnswer()
+    {
+        using var host = new TemplateVersionApiHost();
+        var record = host.Seed(shared: true, storageTaken: true);
+
+        using var byOwner = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest(record.TemplateId, record.Version, TemplateVersionApiHost.Owner),
+            TestContext.Current.CancellationToken);
+        using var byOther = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest(record.TemplateId, record.Version, TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, byOwner.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, byOther.StatusCode);
+
+        var ownerAnswer = await AnswerAsync(byOwner);
+        var otherAnswer = await AnswerAsync(byOther);
+        Assert.Equal(
+            [
+                "engine", "engineVersion", "objects", "owner", "packageHash",
+                "shared", "sourceDescriptorHash", "takenAt", "templateId", "version",
+            ],
+            otherAnswer.EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(ownerAnswer.GetRawText(), otherAnswer.GetRawText());
+        Assert.Equal(TemplateVersionApiHost.Owner, otherAnswer.GetProperty("owner").GetString());
+        Assert.True(otherAnswer.GetProperty("shared").GetBoolean());
+        Assert.Equal(2, host.Store.FindCalls);
+    }
+
+    [Fact]
+    public async Task TheFlagBelongsToTheVersionAndNotToTheTemplate()
+    {
+        using var host = new TemplateVersionApiHost();
+        host.Seed(templateId: "invoice-energy", version: "1.0.0", shared: false);
+        host.Seed(templateId: "invoice-energy", version: "1.1.0", shared: true);
+
+        using var privateVersion = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.0.0", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+        using var sharedVersion = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.1.0", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, privateVersion.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, sharedVersion.StatusCode);
+    }
+
+    [Fact]
+    public async Task ASharedVersionsAnswerIsOneAnswerOfItsOwnAndOutsideTheNotFoundGroup()
+    {
+        using var host = new TemplateVersionApiHost();
+        host.Seed(shared: false, version: "1.0.0");
+        host.Seed(shared: true, version: "1.1.0");
+
+        using var foreign = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.0.0", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+        using var untaken = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "9.9.9", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+        using var absent = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("no-such-template", "9.9.9", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+        using var shared = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.1.0", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+
+        // The comparison covers the status, every header's name and value (the clock aside) and every
+        // member of the document (the request's own identifier aside), so one document means one answer.
+        var reference = await TemplateVersionApiHost.ProblemAsync(absent);
+        Assert.Contains("status=404", reference, StringComparison.Ordinal);
+        Assert.Contains("Content-Type=application/problem+json", reference, StringComparison.Ordinal);
+        Assert.Equal(reference, await TemplateVersionApiHost.ProblemAsync(foreign));
+        Assert.Equal(reference, await TemplateVersionApiHost.ProblemAsync(untaken));
+        Assert.Equal(HttpStatusCode.OK, shared.StatusCode);
+        Assert.NotEqual(reference, await TemplateVersionApiHost.ProblemAsync(shared));
+        Assert.Equal(4, host.Store.FindCalls);
+    }
+
+    [Fact]
+    public async Task AnInactiveConsumerReadsASharedVersionButNotAnotherConsumersPrivateOne()
+    {
+        using var host = new TemplateVersionApiHost();
+        host.Seed(owner: TemplateVersionApiHost.Owner, version: "1.1.0", shared: true);
+        host.Seed(owner: TemplateVersionApiHost.Owner, version: "1.0.0", shared: false);
+
+        using var shared = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.1.0", TemplateVersionApiHost.Inactive),
+            TestContext.Current.CancellationToken);
+        using var privateVersion = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.0.0", TemplateVersionApiHost.Inactive),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, shared.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, privateVersion.StatusCode);
+    }
+
+    [Fact]
+    public async Task AReaderThatIsNotRegisteredIsRefusedTheSameWayForASharedAndANonSharedVersion()
+    {
+        using var host = new TemplateVersionApiHost();
+        host.Seed(version: "1.1.0", shared: true);
+        host.Seed(version: "1.0.0", shared: false);
+
+        using var forShared = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.1.0", "unknown-system"),
+            TestContext.Current.CancellationToken);
+        using var forPrivate = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("invoice-energy", "1.0.0", "unknown-system"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, forShared.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, forPrivate.StatusCode);
+        Assert.Equal(
+            await TemplateVersionApiHost.ProblemAsync(forShared),
+            await TemplateVersionApiHost.ProblemAsync(forPrivate));
+        Assert.Equal(ErrorCodes.ConsumerUnknown, await CodeAsync(forShared));
+        Assert.Equal(0, host.Store.FindCalls);
+    }
+
+    [Fact]
+    public async Task ARecordWhoseStoredManifestDeclaresSharedButWhoseColumnDoesNotIsNotVisible()
+    {
+        using var host = new TemplateVersionApiHost();
+        var record = TemplateVersionRecords.Sample(shared: false);
+        var manifestDeclaringShared = record.Manifest with { Shared = true };
+        host.Store.Seed(record with
+        {
+            Manifest = manifestDeclaringShared,
+            ManifestJson = """{"shared":true}""",
+        });
+
+        using var foreign = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest(record.TemplateId, record.Version, TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+        using var absent = await host.Client.SendAsync(
+            TemplateVersionApiHost.ReadRequest("no-such-template", "9.9.9", TemplateVersionApiHost.Other),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        Assert.Equal(
+            await TemplateVersionApiHost.ProblemAsync(absent),
+            await TemplateVersionApiHost.ProblemAsync(foreign));
+    }
+
     private static async Task<JsonElement> AnswerAsync(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);

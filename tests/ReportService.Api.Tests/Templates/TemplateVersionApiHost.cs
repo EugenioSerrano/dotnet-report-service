@@ -83,23 +83,27 @@ internal sealed class TemplateVersionApiHost : IDisposable
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version.</param>
     /// <param name="storageTaken">Whether the version records the object-store publication provenance instead of a commit.</param>
+    /// <param name="shared">Whether every consumer may use the version.</param>
     public TemplateVersionRecord Seed(
         DateTimeOffset? takenAt = null,
         string owner = Owner,
         string templateId = "invoice-energy",
         string version = "1.1.0",
-        bool storageTaken = false)
+        bool storageTaken = false,
+        bool shared = false)
     {
         var record = storageTaken
             ? TemplateVersionRecords.StorageSample(
                 templateId: templateId,
                 version: version,
                 owner: owner,
+                shared: shared,
                 takenAt: takenAt ?? TakenAt)
             : TemplateVersionRecords.Sample(
                 templateId: templateId,
                 version: version,
                 owner: owner,
+                shared: shared,
                 takenAt: takenAt ?? TakenAt);
         Store.Seed(record);
         return record;
@@ -122,18 +126,30 @@ internal sealed class TemplateVersionApiHost : IDisposable
         return message;
     }
 
-    /// <summary>The problem document of <paramref name="response"/>, without its trace identifier.</summary>
+    /// <summary>
+    /// The answer as one comparable document: the status, the headers (the clock aside) and the
+    /// problem's members (the request's own identifier aside) - the product's one not-found answer, so
+    /// two refusals are compared on every member, header and value that could tell a version's
+    /// existence apart, and never on the clock or the request's identifier.
+    /// </summary>
     /// <param name="response">The answer.</param>
     public static async Task<string> ProblemAsync(HttpResponseMessage response)
     {
         using var body = System.Text.Json.JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        return string.Join(
+        var members = string.Join(
             ';',
             body.RootElement.EnumerateObject()
                 .Where(member => member.Name != "traceId")
                 .OrderBy(member => member.Name, StringComparer.Ordinal)
                 .Select(member => member.Name + "=" + member.Value.GetRawText()));
+        var headers = string.Join(
+            ';',
+            response.Headers.Concat(response.Content.Headers)
+                .Where(header => !string.Equals(header.Key, "Date", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(header => header.Key, StringComparer.Ordinal)
+                .Select(header => header.Key + "=" + string.Join(",", header.Value)));
+        return $"{(int)response.StatusCode};{headers};{members}";
     }
 
     /// <inheritdoc />

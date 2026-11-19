@@ -15,18 +15,21 @@ using ReportService.Testing;
 namespace ReportService.IntegrationTests.Templates;
 
 /// <summary>
-/// The owner's metadata read against the record a take wrote, on real PostgreSQL
-/// and the API's own host: its owner reads the ten members the version is
-/// described by, with the publication provenance a storage-taken version carries
-/// and with a pre-change version's null provenance; another consumer, an untaken
-/// version and a malformed one are answered with the same not-found document -
-/// the request's own trace identifier aside - without a storage read; and a
-/// consumer the deployment does not know is refused before anything is read.
+/// The metadata read against the record a take wrote, on real PostgreSQL and the
+/// API's own host: its owner reads the ten members the version is described by,
+/// with the publication provenance a storage-taken version carries and with a
+/// pre-change version's null provenance; a version flagged shared is read by every
+/// registered consumer with that same answer, while another consumer's non-shared
+/// version, an untaken version and a malformed one are answered with the same
+/// not-found document - the request's own trace identifier aside, and compared on
+/// every header's name and value as well - without a storage read; and a consumer
+/// the deployment does not know is refused before anything is read.
 /// </summary>
 public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
     private const string Owner = "billing-system";
     private const string Other = "reporting-portal";
+    private const string Inactive = "consumer-c";
     private const string Unknown = "not-a-consumer";
 
     private readonly PostgresFixture _fixture;
@@ -186,21 +189,165 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData(Owner, true, HttpStatusCode.OK)]
+    [InlineData(Owner, false, HttpStatusCode.OK)]
+    [InlineData(Other, true, HttpStatusCode.OK)]
+    [InlineData(Other, false, HttpStatusCode.NotFound)]
+    public async Task TheFourCombinationsOfOwnerAndSharingAnswerAsTheRuleSays(
+        string consumer,
+        bool shared,
+        HttpStatusCode expected)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var record = await GivenTakenVersionAsync(cancellationToken, shared: shared);
+
+        using var response = await GetAsync(record.TemplateId, record.Version, consumer, cancellationToken);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ASharedVersionIsVisibleToEveryConsumerWithTheOwnersAnswer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var record = await GivenTakenVersionAsync(cancellationToken, storageTaken: true, shared: true);
+
+        using var byOwner = await GetAsync(record.TemplateId, record.Version, Owner, cancellationToken);
+        using var byOther = await GetAsync(record.TemplateId, record.Version, Other, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, byOwner.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, byOther.StatusCode);
+
+        var ownerBody = await byOwner.Content.ReadAsStringAsync(cancellationToken);
+        var otherBody = await byOther.Content.ReadAsStringAsync(cancellationToken);
+        Assert.Equal(ownerBody, otherBody);
+
+        using var document = JsonDocument.Parse(otherBody);
+        var root = document.RootElement;
+        Assert.Equal(10, root.EnumerateObject().Count());
+        Assert.Equal(record.TemplateId, root.GetProperty("templateId").GetString());
+        Assert.Equal(record.Version, root.GetProperty("version").GetString());
+        Assert.Equal("sha256:" + record.SourceDescriptorSha256, root.GetProperty("sourceDescriptorHash").GetString());
+        var objects = root.GetProperty("objects").EnumerateArray().ToArray();
+        Assert.Equal(record.SourceObjects!.Length, objects.Length);
+        for (var index = 0; index < objects.Length; index++)
+        {
+            Assert.Equal(record.SourceObjects[index].Path, objects[index].GetProperty("path").GetString());
+            Assert.Equal(record.SourceObjects[index].Size, objects[index].GetProperty("size").GetInt64());
+            Assert.Equal(record.SourceObjects[index].Sha256, objects[index].GetProperty("sha256").GetString());
+        }
+
+        Assert.Equal("sha256:" + record.PackageSha256, root.GetProperty("packageHash").GetString());
+        Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
+        Assert.True(root.GetProperty("shared").GetBoolean());
+        Assert.False(root.TryGetProperty("commitSha", out _));
+    }
+
+    [Fact]
+    public async Task ASharedVersionIsNotAnsweredAsNotFound()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var record = await GivenTakenVersionAsync(cancellationToken, storageTaken: true, shared: true);
+
+        using var shared = await GetAsync(record.TemplateId, record.Version, Other, cancellationToken);
+        using var absent = await GetAsync("no-such-template", "9.9.9", Other, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, shared.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, absent.StatusCode);
+
+        // The envelope - the status and every header's name and value, the clock aside - and the
+        // document are the shared answer's own: neither belongs to the one not-found answer.
+        Assert.NotEqual(EnvelopeOf(absent), EnvelopeOf(shared));
+        Assert.DoesNotContain(
+            "TEMPLATE_NOT_FOUND",
+            await shared.Content.ReadAsStringAsync(cancellationToken),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TwoVersionsOfOneTemplateAnswerDifferentlyWhenOneIsSharedAndTheOtherIsNot()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await GivenTakenVersionAsync(cancellationToken, version: "1.0.0", shared: false);
+        await GivenTakenVersionAsync(cancellationToken, version: "1.1.0", shared: true);
+
+        using var privateVersion = await GetAsync("invoice-energy", "1.0.0", Other, cancellationToken);
+        using var sharedVersion = await GetAsync("invoice-energy", "1.1.0", Other, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, privateVersion.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, sharedVersion.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnInactiveConsumerReadsASharedVersionAndItsOwnButNotAnotherConsumersPrivateOne()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await GivenTakenVersionAsync(cancellationToken, version: "1.1.0", shared: true);
+        await GivenTakenVersionAsync(cancellationToken, version: "1.0.0", shared: false);
+        await GivenTakenVersionAsync(cancellationToken, version: "2.0.0", owner: Inactive);
+
+        using var shared = await GetAsync("invoice-energy", "1.1.0", Inactive, cancellationToken);
+        using var privateVersion = await GetAsync("invoice-energy", "1.0.0", Inactive, cancellationToken);
+        using var own = await GetAsync("invoice-energy", "2.0.0", Inactive, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, shared.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, privateVersion.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, own.StatusCode);
+    }
+
+    [Fact]
+    public async Task ASharedVersionIsAddressedByItsExactBuildMetadataAndNotByItsPlainVersion()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await GivenTakenVersionAsync(cancellationToken, shared: true, version: "1.0.0+build.1");
+
+        using var exact = await GetAsync("invoice-energy", "1.0.0+build.1", Other, cancellationToken);
+        using var plain = await GetAsync("invoice-energy", "1.0.0", Other, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, exact.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, plain.StatusCode);
+    }
+
+    [Fact]
+    public async Task APreChangeSharedVersionAnswersWithoutProvenanceToEveryConsumer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var record = await GivenTakenVersionAsync(cancellationToken, storageTaken: false, shared: true);
+
+        using var response = await GetAsync(record.TemplateId, record.Version, Other, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        Assert.Equal(10, root.EnumerateObject().Count());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("sourceDescriptorHash").ValueKind);
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("objects").ValueKind);
+        Assert.False(root.TryGetProperty("commitSha", out _));
+        Assert.True(root.GetProperty("shared").GetBoolean());
+        Assert.Equal(record.OwnerConsumerId, root.GetProperty("owner").GetString());
+    }
+
     private async Task<TemplateVersionRecord> GivenTakenVersionAsync(
         CancellationToken cancellationToken,
         bool storageTaken = false,
-        string version = "1.1.0")
+        string version = "1.1.0",
+        bool shared = false,
+        string owner = Owner)
     {
         var record = storageTaken
             ? TemplateVersionRecords.StorageSample(
                 "invoice-energy",
                 version,
-                owner: Owner,
+                owner: owner,
+                shared: shared,
                 takenAt: new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero))
             : TemplateVersionRecords.Sample(
                 "invoice-energy",
                 version,
-                owner: Owner,
+                owner: owner,
+                shared: shared,
                 takenAt: new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
         var store = new PostgresTemplateVersionStore(_dataSource!);
         Assert.True((await store.TryInsertAsync(record, cancellationToken)).WasInserted);
@@ -232,15 +379,16 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
             .ToArray();
     }
 
-    // The headers of the answer, the clock aside. The length follows the one member that is the
-    // request's own, so it is compared by name and never by value.
+    // The answer's envelope as one comparable document: the status and every header's name and
+    // value, the clock aside. Two answers are the same answer only when neither the status nor a
+    // header differs; the length is included with the value the server sent.
     private static string EnvelopeOf(HttpResponseMessage response) =>
-        string.Join(
+        $"{(int)response.StatusCode};" + string.Join(
             ';',
             response.Headers.Concat(response.Content.Headers)
-                .Select(header => header.Key)
-                .Where(name => !string.Equals(name, "Date", StringComparison.OrdinalIgnoreCase))
-                .Order(StringComparer.Ordinal));
+                .Where(header => !string.Equals(header.Key, "Date", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(header => header.Key, StringComparer.Ordinal)
+                .Select(header => header.Key + "=" + string.Join(",", header.Value)));
 
     // The request's own trace identifier: present in every answer, different for every request,
     // and the one member that is not the condition's. It is replaced by one fixed text so that
@@ -266,7 +414,7 @@ public sealed class TemplateVersionReadTests : IClassFixture<PostgresFixture>, I
         File.WriteAllText(
             registry,
             $$"""
-            { "consumers": [ { "consumerId": "{{Owner}}", "active": true }, { "consumerId": "{{Other}}", "active": true } ] }
+            { "consumers": [ { "consumerId": "{{Owner}}", "active": true }, { "consumerId": "{{Other}}", "active": true }, { "consumerId": "{{Inactive}}", "active": false } ] }
             """);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
