@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The access rules of the report-job reads — the status read, the artifact list and the
+  download — are stated in one place: the consumer registry as the gate, its one refusal
+  for a missing or unknown consumer, another consumer's job or file answered exactly as a
+  missing one, an inactive consumer keeping the results it already produced, and a
+  registry change taking effect without a restart. The refusal counter's `job-status`,
+  `artifact-list` and `artifact-download` values are covered by tests.
 - A taken template version's metadata is readable by every registered consumer when the version
   is shared: the answer is the owner's own, the publication descriptor's hash, the package hash
   and the files the take verified included, while another consumer's non-shared version still

@@ -9,6 +9,35 @@ the work that follows.
 The job's published files are listed and downloaded through the two operations
 described below, after the status read that follows them.
 
+## Who may read a job
+
+The status read, the list and the download are answered only to the consumer the
+job belongs to. Every one of them takes the consumer header, and the service
+checks it against the consumer registry before it reads a record or opens a
+stored file:
+
+- a request with no consumer header, an unusable one, or one that is not in the
+  registry is refused with the one `403 CONSUMER_UNKNOWN` answer. It is the same
+  document on all three operations and for every value that is not a usable
+  identity, and it says nothing about the job or the file;
+- another consumer's job or file is answered exactly as one that does not exist:
+  the same status, code, members and text, so a request cannot learn that the job
+  exists. A malformed identifier is refused without a database read, and a file
+  that exists but belongs to another consumer is answered the same way. A file
+  whose expiry has passed is answered `410 ARTIFACT_EXPIRED` — but only to its
+  owner; to anyone else it is still "not found";
+- a consumer made inactive keeps reading, listing and downloading the results it
+  already has. Removing it from the registry refuses it instead; adding it back
+  restores its access, with its jobs and files untouched;
+- a change to the registry takes effect without a restart: the service reads the
+  registry's current snapshot for each request, and a new snapshot is in force
+  for the next request after the change is accepted.
+
+Refusals of an unknown consumer on these three reads are counted on the API's
+`reportservice.consumer.refusals` instrument with the operation `job-status`,
+`artifact-list` or `artifact-download`; a job or file that was not found is not a
+consumer refusal counted there.
+
 ## Follow a job
 
 ```http

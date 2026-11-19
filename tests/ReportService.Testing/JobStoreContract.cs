@@ -652,6 +652,150 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AStatusReadAnswersNothingForAJobInEveryStateOfAnotherConsumer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string other = "another-consumer";
+
+        var queued = await AcceptedAsync(cancellationToken);
+        var running = await AcceptedAsync(cancellationToken);
+        Assert.Equal(
+            TransitionOutcome.Applied,
+            (await Store.TransitionJobAsync(running.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken)).Outcome);
+        Assert.Equal(
+            TransitionOutcome.Applied,
+            (await Store.TransitionJobAsync(running.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken)).Outcome);
+        var failed = await AcceptedAsync(cancellationToken);
+        Assert.Equal(
+            JobFailureOutcome.Applied,
+            await Store.FailJobAsync(failed.ReportJobId, "QUOTA_EXCEEDED", "block", Now, cancellationToken));
+        var (succeeded, _) = await PublishedAsync(live: true, cancellationToken);
+
+        foreach (var acceptance in new[] { queued, running, failed, succeeded })
+        {
+            Assert.NotNull(await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken));
+            Assert.Null(await Store.FindStatusAsync(acceptance.ReportJobId, other, cancellationToken));
+        }
+    }
+
+    [Fact]
+    public async Task AListOfAJobWithNoArtifactWithALiveOneOrAnExpiredOneIsNothingForAnotherConsumer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string other = "another-consumer";
+
+        var empty = await AcceptedAsync(cancellationToken);
+        var (live, _) = await PublishedAsync(live: true, cancellationToken);
+        var (expired, _) = await PublishedAsync(live: false, cancellationToken);
+
+        var ownerEmpty = await Store.ListArtifactsAsync(empty.ReportJobId, Consumer, cancellationToken);
+        Assert.NotNull(ownerEmpty);
+        Assert.Empty(ownerEmpty!.Artifacts);
+        Assert.NotNull(await Store.ListArtifactsAsync(live.ReportJobId, Consumer, cancellationToken));
+        Assert.NotNull(await Store.ListArtifactsAsync(expired.ReportJobId, Consumer, cancellationToken));
+
+        foreach (var acceptance in new[] { empty, live, expired })
+        {
+            // Never an empty view: a foreign job is no job, whatever it holds.
+            Assert.Null(await Store.ListArtifactsAsync(acceptance.ReportJobId, other, cancellationToken));
+        }
+    }
+
+    [Fact]
+    public async Task AnArtifactOfAnotherConsumerIsNothingForALiveOneForAnExpiredOneAndUnderEitherJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string other = "another-consumer";
+
+        var (live, liveArtifactId) = await PublishedAsync(live: true, cancellationToken);
+        var (expired, expiredArtifactId) = await PublishedAsync(live: false, cancellationToken);
+        var otherOwned = Acceptance(
+            await SeedAsync(UploadState.Ready, other, cancellationToken),
+            other);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(otherOwned, Now, cancellationToken));
+        await Store.TransitionOutputAsync(otherOwned.OutputId, Now, cancellationToken);
+        var otherArtifact = ArtifactOf(otherOwned.ReportJobId, otherOwned.OutputId, NextArtifactId(), OutputFormat.Pdf);
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(otherArtifact, cancellationToken)).Outcome);
+
+        // Another consumer on the owner's job and artifact: live and expired.
+        Assert.Null(await Store.FindArtifactAsync(live.ReportJobId, liveArtifactId, other, cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(expired.ReportJobId, expiredArtifactId, other, cancellationToken));
+
+        // The consumer's own job with another consumer's artifact, and the other way round.
+        Assert.Null(await Store.FindArtifactAsync(
+            live.ReportJobId, otherArtifact.ArtifactId, Consumer, cancellationToken));
+        Assert.Null(await Store.FindArtifactAsync(
+            otherOwned.ReportJobId, liveArtifactId, Consumer, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ConsumersWhoseIdentifiersDifferByCaseOrSuffixAreAnsweredOnlyTheirOwn()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var consumers = new[] { "consumer-a", "Consumer-A", "consumer-ab" };
+        var seeded = new List<(string Consumer, JobAcceptance Acceptance, string ArtifactId)>();
+
+        foreach (var consumerId in consumers)
+        {
+            var uploadId = await SeedAsync(UploadState.Ready, consumerId, cancellationToken);
+            var acceptance = Acceptance(uploadId, consumerId);
+            Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+            await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+            var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, NextArtifactId(), OutputFormat.Pdf);
+            Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+            seeded.Add((consumerId, acceptance, artifact.ArtifactId));
+        }
+
+        foreach (var own in seeded)
+        {
+            Assert.NotNull(await Store.FindStatusAsync(own.Acceptance.ReportJobId, own.Consumer, cancellationToken));
+            Assert.NotNull(await Store.ListArtifactsAsync(own.Acceptance.ReportJobId, own.Consumer, cancellationToken));
+            Assert.NotNull(await Store.FindArtifactAsync(
+                own.Acceptance.ReportJobId, own.ArtifactId, own.Consumer, cancellationToken));
+
+            foreach (var foreign in seeded.Where(entry => !string.Equals(entry.Consumer, own.Consumer, StringComparison.Ordinal)))
+            {
+                Assert.Null(await Store.FindStatusAsync(foreign.Acceptance.ReportJobId, own.Consumer, cancellationToken));
+                Assert.Null(await Store.ListArtifactsAsync(foreign.Acceptance.ReportJobId, own.Consumer, cancellationToken));
+                Assert.Null(await Store.FindArtifactAsync(
+                    foreign.Acceptance.ReportJobId, foreign.ArtifactId, own.Consumer, cancellationToken));
+            }
+        }
+    }
+
+    /// <summary>Accepts one job over a fresh ready upload and answers its acceptance.</summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected async Task<JobAcceptance> AcceptedAsync(CancellationToken cancellationToken)
+    {
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        return acceptance;
+    }
+
+    /// <summary>Accepts one job and publishes its one artifact, live or already expired.</summary>
+    /// <param name="live">Whether the artifact's expiry is still ahead of the store's clock.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected async Task<(JobAcceptance Acceptance, string ArtifactId)> PublishedAsync(
+        bool live,
+        CancellationToken cancellationToken)
+    {
+        var acceptance = await AcceptedAsync(cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, NextArtifactId(), OutputFormat.Pdf);
+        if (!live)
+        {
+            artifact = artifact with { CreatedAt = Now.AddDays(-8), ExpiresAt = Now.AddDays(-1) };
+        }
+
+        Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
+        return (acceptance, artifact.ArtifactId);
+    }
+
+    /// <summary>A fresh artifact identifier, so two publications of one case never share one.</summary>
+    private string NextArtifactId() =>
+        "artifact-" + (++_sequence).ToString("x32", System.Globalization.CultureInfo.InvariantCulture);
+
+    [Fact]
     public async Task TheListOrdersItsArtifactsByFormatWhateverTheOrderTheyWerePublishedIn()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
