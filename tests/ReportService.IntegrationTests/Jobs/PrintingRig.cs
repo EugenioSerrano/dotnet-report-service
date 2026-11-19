@@ -900,8 +900,6 @@ internal sealed class JobStateRow
 
     public string? OutputErrorReason { get; set; }
 
-    public string? OutputId { get; set; }
-
     public string? ArtifactId { get; set; }
 
     public string? ObjectKey { get; set; }
