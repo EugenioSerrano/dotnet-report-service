@@ -105,6 +105,23 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
+    public void APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
+    {
+        // The engine may raise a filter's exception as its own: what the renderer reads is
+        // still the block's typed refusal, never the generic failure of a part that could not
+        // render, so the consumer gets DATA_INVALID with its reason.
+        var refusal = Assert.Throws<PresentationRefusedException>(() => EngineCases.Compose(
+            Engine,
+            [(TemplatePart.Row, "<tr><td>{{ item.amount | format_number: \"N2\" }}</td></tr>")],
+            header: "{}",
+            records: ["""{"amount":123456789012345678901234567890123}"""]));
+
+        Assert.Equal("DATA_INVALID", refusal.Failure.Code);
+        Assert.Equal("number-out-of-range", refusal.Failure.Reason);
+        Assert.Equal("format_number", refusal.Failure.Function);
+    }
+
+    [Fact]
     public void AComparisonIsARealBooleanTakenByTheEnginesOwnIf()
     {
         var block = EngineCases.Compose(

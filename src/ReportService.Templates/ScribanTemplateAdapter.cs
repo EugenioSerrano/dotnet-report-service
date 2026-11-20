@@ -134,6 +134,15 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         }
         catch (Scriban.Syntax.ScriptRuntimeException exception)
         {
+            // A presentation refusal raised by one of the nine functions is the block's own
+            // typed refusal, whatever the engine wrapped it in: it reaches the renderer as the
+            // refusal it is, so the consumer reads DATA_INVALID or TEMPLATE_INVALID with its
+            // reason, never the generic code of a step that could not finish.
+            if (Find<PresentationRefusedException>(exception) is { } refusal)
+            {
+                throw refusal;
+            }
+
             throw new TemplatePackageException($"The {rendered} part failed to render: {exception.Message}");
         }
         catch (InvalidOperationException exception)
@@ -187,6 +196,22 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         {
             functions.Remove(function);
         }
+    }
+
+    // The first exception of <typeparamref name="TException"/> in the chain an engine wrapped a
+    // refusal in, so a typed refusal is never lost to the engine's own exception type.
+    private static TException? Find<TException>(Exception exception)
+        where TException : Exception
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is TException found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Converts a plain value of the render model into the engine's own plain value.</summary>

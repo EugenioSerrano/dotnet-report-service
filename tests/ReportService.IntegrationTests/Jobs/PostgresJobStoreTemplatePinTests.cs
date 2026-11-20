@@ -143,7 +143,7 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
         Assert.True((await Versions!.TryInsertAsync(record, cancellationToken)).WasInserted);
         var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
 
-        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
 
         Assert.True(state.WasWrittenByThisCall);
         var pin = Assert.IsType<TemplatePin>((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
@@ -166,7 +166,7 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
         await TakenAsync(version, cancellationToken);
         var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
 
-        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken);
+        var state = await Store.PinTemplateAsync(reference.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken, presentation: null);
 
         Assert.True(state.WasWrittenByThisCall);
         var pin = Assert.IsType<TemplatePin>((await Store.FindTemplateReferenceAsync(reference.ReportJobId, cancellationToken))!.Pin);
@@ -185,7 +185,7 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
         Assert.True((await Versions!.TryInsertAsync(record, cancellationToken)).WasInserted);
         var reference = await AcceptedReferenceAsync(version: version, cancellationToken: cancellationToken);
         var pinned = Assert.IsType<TemplatePin>(
-            (await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken)).Pin);
+            (await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null)).Pin);
 
         var descriptor = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(
             "UPDATE report_service.template_references SET source_descriptor_sha256 = @Other WHERE report_job_id = @ReportJobId",
@@ -308,7 +308,7 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
         var cancellationToken = TestContext.Current.CancellationToken;
         var version = await TakenAsync("1.0.0", cancellationToken);
         var reference = await AcceptedReferenceAsync(version: "1.0.0", cancellationToken: cancellationToken);
-        var pinned = await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var pinned = await Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
         Assert.True(pinned.WasWrittenByThisCall);
 
         // A pin is set once: what a job renders is fixed and cannot be rewritten afterwards.
@@ -331,12 +331,13 @@ public sealed class PostgresJobStoreTemplatePinTests : JobStoreContract, IClassF
 
         // Two attempts reach the row at the same time with different bytes: exactly one of them
         // writes, the other is answered the pin the first committed — never one of its own.
-        var first = Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var first = Store.PinTemplateAsync(reference.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
         var second = Store.PinTemplateAsync(
             reference.ReportJobId,
             PinOf(version, hash: new string('b', 64)),
             Now.AddSeconds(2),
-            cancellationToken);
+            cancellationToken,
+            presentation: null);
         var states = await Task.WhenAll(first, second);
 
         Assert.Single(states, state => state.WasWrittenByThisCall);

@@ -309,7 +309,12 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
     }
 
-    private async Task RecordTakenAsync(string templateId, string version, Dictionary<string, byte[]> files, CancellationToken cancellationToken)
+    private async Task RecordTakenAsync(
+        string templateId,
+        string version,
+        Dictionary<string, byte[]> files,
+        CancellationToken cancellationToken,
+        string? engineVersion = null)
     {
         var sources = files
             .Select(file => new PackageFileSource(
@@ -346,7 +351,11 @@ internal sealed class PrintingRig : IAsyncDisposable
             {
                 ManifestVersion = manifest.ManifestVersion!,
                 Engine = manifest.Engine!.Value,
-                EngineVersion = TemplateEngineCatalog.VersionOf(manifest.Engine.Value),
+
+                // The version the record fixes is the one the take would have fixed: the
+                // deployment's own, unless the case records the version a package declares and
+                // the deployment does not run, which is what the refusal cases carry.
+                EngineVersion = engineVersion ?? TemplateEngineCatalog.VersionOf(manifest.Engine.Value),
                 PackageSize = bytes.LongLength,
                 FileCount = files.Count,
                 ObjectKey = key,
@@ -478,10 +487,13 @@ internal sealed class PrintingRig : IAsyncDisposable
     public async Task<DateTimeOffset> ReportClockAsync(string reportJobId, CancellationToken cancellationToken)
     {
         await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
-        return await connection.ExecuteScalarAsync<DateTimeOffset>(new CommandDefinition(
+        // The column is a timestamp without a zone holding UTC, so it is read as the instant it
+        // is and answered in UTC: the report's clock is that instant, in whatever zone it prints.
+        var clock = await connection.ExecuteScalarAsync<DateTime>(new CommandDefinition(
             "SELECT report_clock FROM report_service.report_jobs WHERE report_job_id = @ReportJobId",
             new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken));
+        return new DateTimeOffset(DateTime.SpecifyKind(clock, DateTimeKind.Utc));
     }
 
     /// <summary>How many blocks of one output the composition committed.</summary>
@@ -524,7 +536,11 @@ internal sealed class PrintingRig : IAsyncDisposable
             .Replace("version: \"1.0.0\"", "version: \"" + version + "\"", StringComparison.Ordinal)
             .Replace("engineVersion: \"7.5.1\"", "engineVersion: \"" + engineVersion + "\"", StringComparison.Ordinal);
         files["template.yaml"] = Encoding.UTF8.GetBytes(manifest);
-        await RecordTakenAsync(SameReport, version, files, cancellationToken);
+
+        // The record fixes the version the package declares, which the deployment does not run:
+        // the refusal is the mismatch between the record and the adapters, decided before
+        // anything is composed.
+        await RecordTakenAsync(SameReport, version, files, cancellationToken, engineVersion);
     }
 
     /// <summary>Waits for the job to reach a terminal status and answers what the record says.</summary>
@@ -556,6 +572,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         return await connection.QuerySingleOrDefaultAsync<JobStateRow>(new CommandDefinition(
             """
             SELECT j.status AS "Status", j.error_code AS "ErrorCode", j.error_reason AS "ErrorReason",
+                   j.error_message AS "ErrorMessage",
                    o.output_id AS "OutputId",
                    o.status AS "OutputStatus", o.error_code AS "OutputErrorCode", o.error_reason AS "OutputErrorReason",
                    a.artifact_id AS "ArtifactId", a.object_key AS "ObjectKey",
@@ -663,6 +680,26 @@ internal sealed class PrintingRig : IAsyncDisposable
         sample["items"] = built;
         sample["header"]!["totals"]!["recordCount"] = records;
         return Encoding.UTF8.GetBytes(sample.ToJsonString());
+    }
+
+    /// <summary>
+    /// The one report's own document: the sample's records, each carrying the instant the report
+    /// prints as its date in the job's culture and time zone. The sample's contract has no date
+    /// field, so the report's own snapshot adds the one its row prints.
+    /// </summary>
+    /// <param name="records">How many records the snapshot holds.</param>
+    public static byte[] SameReportSnapshot(int records)
+    {
+        var snapshot = JsonNode.Parse(Encoding.UTF8.GetString(Snapshot(records)))!;
+
+        // One instant for every record, at 02:30 UTC: the day it prints is the day the job's
+        // own zone says it is, which is what the presentation has to show.
+        foreach (var item in snapshot["items"]!.AsArray())
+        {
+            item!["date"] = "2026-03-14T02:30:00Z";
+        }
+
+        return Encoding.UTF8.GetBytes(snapshot.ToJsonString());
     }
 
     /// <summary>The sample template's header with no record at all: the empty report.</summary>
@@ -891,6 +928,9 @@ internal sealed class JobStateRow
     public string? ErrorCode { get; set; }
 
     public string? ErrorReason { get; set; }
+
+    /// <summary>The message the failing step carried for a consumer, as the job records it.</summary>
+    public string? ErrorMessage { get; set; }
 
     public string? OutputId { get; set; }
 

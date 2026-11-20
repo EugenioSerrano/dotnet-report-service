@@ -44,6 +44,20 @@ public sealed class TemplateResolutionActivitiesTests
     }
 
     [Fact]
+    public async Task ABindingCompletesTheJobsPresentationFromThePackageItTakes()
+    {
+        using var rig = await Rig.CreateAsync("1.1.0");
+        rig.Take("1.1.0", localeCulture: "es-AR", localeTimeZone: "America/Argentina/Buenos_Aires");
+
+        var result = await rig.PrepareAsync();
+
+        Assert.Equal(PrepareTemplateOutcome.Pinned, result.Outcome);
+        var state = await rig.Jobs.FindForWorkflowAsync(rig.ReportJobId, TestContext.Current.CancellationToken);
+        Assert.Equal("es-AR", state!.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", state.Job.TimeZone);
+    }
+
+    [Fact]
     public async Task ATakenVersionAnotherConsumerOwnsAndDoesNotShareIsRefusedAsNotFound()
     {
         using var rig = await Rig.CreateAsync("1.1.0");
@@ -109,6 +123,39 @@ public sealed class TemplateResolutionActivitiesTests
 
         Assert.Equal(PrepareTemplateOutcome.Pinned, second.Outcome);
         Assert.Equal("1.1.0", rig.Jobs.ReferenceOf(rig.ReportJobId)!.Pin!.ResolvedVersion);
+    }
+
+    [Fact]
+    public async Task APinCompletesAJobThatNamedNoPresentationWithThePackagesOwn()
+    {
+        using var rig = await Rig.CreateAsync(null);
+
+        var result = await rig.PinAsync(
+            "1.1.0",
+            taken: true,
+            localeCulture: "es-AR",
+            localeTimeZone: "America/Argentina/Buenos_Aires");
+
+        Assert.Equal(PrepareTemplateOutcome.Pinned, result.Outcome);
+        var state = await rig.Jobs.FindForWorkflowAsync(rig.ReportJobId, TestContext.Current.CancellationToken);
+        Assert.Equal("es-AR", state!.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", state.Job.TimeZone);
+    }
+
+    [Fact]
+    public async Task APinNeverReplacesThePresentationTheRequestNamed()
+    {
+        using var rig = await Rig.CreateAsync(null, culture: "en-us", timeZone: "Asia/Tokyo");
+
+        await rig.PinAsync(
+            "1.1.0",
+            taken: true,
+            localeCulture: "es-AR",
+            localeTimeZone: "America/Argentina/Buenos_Aires");
+
+        var state = await rig.Jobs.FindForWorkflowAsync(rig.ReportJobId, TestContext.Current.CancellationToken);
+        Assert.Equal("en-us", state!.Job.Culture);
+        Assert.Equal("Asia/Tokyo", state.Job.TimeZone);
     }
 
     [Fact]
@@ -256,7 +303,7 @@ public sealed class TemplateResolutionActivitiesTests
 
         public string ReportJobId { get; private set; } = string.Empty;
 
-        public static async Task<Rig> CreateAsync(string? version)
+        public static async Task<Rig> CreateAsync(string? version, string? culture = null, string? timeZone = null)
         {
             var cancellationToken = TestContext.Current.CancellationToken;
             var rig = new Rig();
@@ -299,7 +346,11 @@ public sealed class TemplateResolutionActivitiesTests
                 uploadId,
                 Template,
                 version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-                version);
+                version)
+            {
+                Culture = culture,
+                TimeZone = timeZone,
+            };
             Assert.IsType<JobAcceptanceResult.Accepted>(await rig.Jobs.AcceptAsync(acceptance, Now, cancellationToken));
             rig.ReportJobId = acceptance.ReportJobId;
 
@@ -310,17 +361,39 @@ public sealed class TemplateResolutionActivitiesTests
         /// <param name="version">The version that was taken.</param>
         /// <param name="owner">The consumer it belongs to.</param>
         /// <param name="shared">Whether every consumer may use it.</param>
-        public void Take(string version, string owner = Consumer, bool shared = false) =>
-            Versions.Seed(TemplateVersionRecords.Sample(templateId: Template, version: version, owner: owner, shared: shared));
+        /// <param name="localeCulture">The culture the package declares as its own, when it declares one.</param>
+        /// <param name="localeTimeZone">The time zone the package declares as its own, when it declares one.</param>
+        public void Take(
+            string version,
+            string owner = Consumer,
+            bool shared = false,
+            string? localeCulture = null,
+            string? localeTimeZone = null) =>
+            Versions.Seed(TemplateVersionRecords.Sample(
+                templateId: Template,
+                version: version,
+                owner: owner,
+                shared: shared,
+                localeCulture: localeCulture,
+                localeTimeZone: localeTimeZone));
 
         public Task<PrepareTemplateResult> PrepareAsync() =>
             new ActivityEnvironment().RunAsync(() => Activities.PrepareTemplateAsync(new PrepareTemplateInput(ReportJobId)));
 
-        public Task<TemplatePinResult> PinAsync(string version, bool taken)
+        public Task<TemplatePinResult> PinAsync(
+            string version,
+            bool taken,
+            string? localeCulture = null,
+            string? localeTimeZone = null)
         {
             if (taken)
             {
-                Versions.Seed(TemplateVersionRecords.Sample(templateId: Template, version: version, owner: Consumer));
+                Versions.Seed(TemplateVersionRecords.Sample(
+                    templateId: Template,
+                    version: version,
+                    owner: Consumer,
+                    localeCulture: localeCulture,
+                    localeTimeZone: localeTimeZone));
             }
 
             return new ActivityEnvironment().RunAsync(() => Activities.PinTemplateAsync(new PinTemplateInput(ReportJobId, Template, version)));

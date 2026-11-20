@@ -9,9 +9,10 @@ dataContract:
   schema: schema.json
 outputs:
   html:
-    documentStart: html/document-start.html.hbs
-    row: html/row.html.hbs
-    documentEnd: html/document-end.html.hbs
+    parts:
+      documentStart: html/document-start.html.hbs
+      row: html/row.html.hbs
+      documentEnd: html/document-end.html.hbs
     styles: [html/styles.css]
   pdf:
     paper: A4

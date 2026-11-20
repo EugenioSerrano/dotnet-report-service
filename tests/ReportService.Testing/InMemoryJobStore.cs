@@ -1,4 +1,5 @@
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.Uploads;
 
@@ -310,7 +311,8 @@ public sealed partial class InMemoryJobStore : IJobStore
         string reportJobId,
         TemplatePin pin,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TemplateLocaleDefaults? presentation)
     {
         Interlocked.Increment(ref _writeCalls);
         ArgumentNullException.ThrowIfNull(reportJobId);
@@ -336,6 +338,15 @@ public sealed partial class InMemoryJobStore : IJobStore
             }
 
             _references[reportJobId] = reference with { Pin = pin };
+
+            // The job is fixed to the presentation its package declares, for the member the
+            // request left open; a value already set is never replaced, as the database's
+            // set-once guard refuses a change of it. The step's own read of the reference
+            // answers the same two values, as the store's statement joins the job for them.
+            var culture = job.Culture ?? presentation?.Culture;
+            var timeZone = job.TimeZone ?? presentation?.TimeZone;
+            _jobs[reportJobId] = job with { Culture = culture, TimeZone = timeZone };
+            _references[reportJobId] = _references[reportJobId] with { Culture = culture, TimeZone = timeZone };
             return Task.FromResult(TemplatePinState.Pinned(pin));
         }
     }

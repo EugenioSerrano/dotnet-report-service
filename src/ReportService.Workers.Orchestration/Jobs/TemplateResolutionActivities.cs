@@ -229,8 +229,11 @@ public sealed class TemplateResolutionActivities(
     }
 
     // The pin write and the log line of every path: the first committed pin is the answer,
-    // whatever this attempt read, and a job that ended meanwhile is left as it is. Null is
-    // the terminal answer, so a caller can never mistake it for one of the pinned paths.
+    // whatever this attempt read, and a job that ended meanwhile is left as it is. The same
+    // write fixes the job's presentation from the package's declared locale defaults, so a
+    // render always reads a culture and a time zone the acceptance either named or left to
+    // the version it took. Null is the terminal answer, so a caller can never mistake it for
+    // one of the pinned paths.
     private async Task<PrepareTemplateResult?> PinAsync(
         string reportJobId,
         TemplateVersionRecord record,
@@ -240,7 +243,12 @@ public sealed class TemplateResolutionActivities(
     {
         var now = clock.GetUtcNow();
         var state = await jobs
-            .PinTemplateAsync(reportJobId, TemplatePin.From(record, now), now, ActivityExecutionContext.Current.CancellationToken)
+            .PinTemplateAsync(
+                reportJobId,
+                TemplatePin.From(record, now),
+                now,
+                ActivityExecutionContext.Current.CancellationToken,
+                record.Manifest.LocaleDefaults)
             .ConfigureAwait(false);
         if (state.JobTerminal)
         {
