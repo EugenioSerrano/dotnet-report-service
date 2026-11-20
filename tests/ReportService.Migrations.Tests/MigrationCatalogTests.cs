@@ -41,12 +41,44 @@ public sealed class MigrationCatalogTests
 
     private const string Presentation = "0015_presentation-provenance.sql";
 
+    private const string RowBound = "0016_pdf-row-bound.sql";
+
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(Presentation, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(RowBound, MigrationCatalog.ExpectedVersion);
+    }
+
+    /// <summary>
+    /// The sixteenth script states whether a PDF output was refused by the row bound, beside
+    /// the partition it belongs to: two nullable text columns - the code, checked against the
+    /// one code this version writes, and the reason it carries - and the pair check that admits
+    /// them only together. The output's own failure reason is not this script's:
+    /// <c>report_outputs.error_reason</c> arrives with the fourteenth. It adds no table, drops
+    /// nothing, creates no index and rewrites no other column. That the server applies it, and
+    /// refuses a code without its reason, is a case against a real database, never a reading of
+    /// this text.
+    /// </summary>
+    [Fact]
+    public void TheRowBoundScriptAddsTheRefusalPairToThePartitionsAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == RowBound);
+
+        Assert.Contains("ALTER TABLE report_service.partitions", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN pdf_refusal_code   text NULL CHECK (pdf_refusal_code = 'ROW_BOUND_EXCEEDED')", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN pdf_refusal_reason text NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT partitions_pdf_refusal_pair CHECK ((pdf_refusal_code IS NULL) = (pdf_refusal_reason IS NULL))", script.Sql, StringComparison.Ordinal);
+        Assert.Equal(2, CountOf(script.Sql, "ADD COLUMN"));
+        Assert.Equal(1, CountOf(script.Sql, "ADD CONSTRAINT"));
+        Assert.DoesNotContain("report_outputs", script.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CREATE INDEX", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -117,7 +149,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(15, MigrationCatalog.Scripts.Count);
+        Assert.Equal(16, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -138,9 +170,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(15, MigrationCatalog.Scripts.Count);
-        Assert.Equal(Presentation, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(Presentation, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(16, MigrationCatalog.Scripts.Count);
+        Assert.Equal(RowBound, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(RowBound, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -297,8 +329,8 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == OutputReason);
 
-        Assert.Equal(15, MigrationCatalog.Scripts.Count);
-        Assert.Equal(Presentation, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(16, MigrationCatalog.Scripts.Count);
+        Assert.Equal(RowBound, MigrationCatalog.Scripts[^1].Name);
         Assert.Equal(1, CountOf(script.Sql, "ALTER TABLE"));
         Assert.Equal(1, CountOf(script.Sql, "ADD COLUMN"));
         Assert.Contains("ALTER TABLE report_service.report_outputs", script.Sql, StringComparison.Ordinal);

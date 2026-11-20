@@ -220,7 +220,24 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>Creates a ready upload of <paramref name="document"/> and answers its identifier.</summary>
     /// <param name="document">The snapshot's bytes.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    public async Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken, string consumer = Consumer)
+    /// <param name="consumer">The consumer the upload belongs to.</param>
+    public Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken, string consumer = Consumer) =>
+        ReadyUploadAsync(document, UploadContentEncoding.None, cancellationToken, consumer);
+
+    /// <summary>
+    /// Creates a ready upload of <paramref name="document"/>, stored with
+    /// <paramref name="encoding"/>: a gzip-stored snapshot is written compressed, and its record
+    /// carries the uncompressed document's size and SHA-256 beside the stored bytes' own.
+    /// </summary>
+    /// <param name="document">The snapshot's bytes.</param>
+    /// <param name="encoding">How the bytes are stored.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <param name="consumer">The consumer the upload belongs to.</param>
+    public async Task<string> ReadyUploadAsync(
+        byte[] document,
+        UploadContentEncoding encoding,
+        CancellationToken cancellationToken,
+        string consumer = Consumer)
     {
         var now = DateTimeOffset.UtcNow;
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
@@ -236,19 +253,37 @@ internal sealed class PrintingRig : IAsyncDisposable
                 now,
                 now.AddHours(1)),
             cancellationToken);
-        Assert.True(await uploads.TryStartTransferAsync(uploadId, consumer, UploadContentEncoding.None, now, cancellationToken));
+
+        var stored = document;
+        if (encoding == UploadContentEncoding.Gzip)
+        {
+            using var compressed = new MemoryStream();
+            await using (var gzip = new System.IO.Compression.GZipStream(
+                compressed,
+                System.IO.Compression.CompressionLevel.SmallestSize,
+                leaveOpen: true))
+            {
+                await gzip.WriteAsync(document, cancellationToken);
+            }
+
+            stored = compressed.ToArray();
+        }
+
+        var documentSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document));
+        var storedSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(stored));
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, consumer, encoding, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(
             uploadId,
             UploadContentOutcome.Complete,
             document.LongLength,
-            document.LongLength,
-            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document)),
+            stored.LongLength,
+            storedSha256,
             now,
             cancellationToken));
         Assert.True(await uploads.ConfirmAsync(uploadId, consumer, null, now, now, now.AddHours(1), cancellationToken));
 
         var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
-        using var content = new MemoryStream(document, writable: false);
+        using var content = new MemoryStream(stored, writable: false);
         var written = await Objects.WriteAsync(key, content, cancellationToken);
         Assert.True(written.Succeeded);
         _snapshotOf[uploadId] = document;
@@ -259,12 +294,12 @@ internal sealed class PrintingRig : IAsyncDisposable
                     uploadId,
                     consumer,
                     key,
-                    UploadContentEncoding.None,
+                    encoding,
                     DataProfile.HeaderItemsV1,
-                    written.Value!.Sha256,
+                    documentSha256,
                     document.LongLength,
-                    written.Value.Sha256,
-                    written.Value.Size,
+                    storedSha256,
+                    stored.LongLength,
                     now),
                 now,
                 cancellationToken));

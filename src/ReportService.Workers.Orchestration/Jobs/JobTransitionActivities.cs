@@ -18,7 +18,12 @@ public sealed record TransitionOutputInput(string OutputId);
 /// <summary>What ending one output is asked to do.</summary>
 /// <param name="OutputId">The identifier of the output.</param>
 /// <param name="ErrorCode">The code of the condition that ended it.</param>
-public sealed record FailOutputInput(string OutputId, string ErrorCode);
+/// <param name="Reason">
+/// The diagnostic recorded beside the code, or <see langword="null"/> when the condition carries
+/// none. A failure of the output's own execution passes none; the data step's refusal passes the
+/// reason it kept.
+/// </param>
+public sealed record FailOutputInput(string OutputId, string ErrorCode, string? Reason);
 
 /// <summary>What closing a job from its outputs is asked to do.</summary>
 /// <param name="ReportJobId">The identifier of the job.</param>
@@ -162,6 +167,7 @@ public sealed class JobTransitionActivities(
         var outcome = await jobs.FailOutputAsync(
             input.OutputId,
             input.ErrorCode,
+            input.Reason,
             clock.GetUtcNow(),
             ActivityExecutionContext.Current.CancellationToken).ConfigureAwait(false);
 
