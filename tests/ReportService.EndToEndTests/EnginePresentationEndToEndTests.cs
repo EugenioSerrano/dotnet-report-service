@@ -339,7 +339,11 @@ public sealed class EnginePresentationEndToEndTests : IDisposable
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT report_clock FROM report_service.report_jobs WHERE report_job_id = @id";
         command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
-        return (DateTimeOffset)(await command.ExecuteScalarAsync(cancellationToken))!;
+
+        // Npgsql reads a timestamptz as a UTC DateTime, as the job store does for this column;
+        // the instant is lifted to DateTimeOffset by stating the zone the database already returns.
+        var value = (DateTime)(await command.ExecuteScalarAsync(cancellationToken))!;
+        return new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
     }
 
     private static async Task<PublishedJob> WaitForSucceededAsync(
