@@ -212,13 +212,13 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         var work = Path.Combine(_scratchRoot, Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         try
         {
-            var html = Compose(htmlPrepared, htmlPart, request, sample, render, presentation, budgetToken, takeToken);
+            var html = await Compose(htmlPrepared, htmlPart, request, sample, render, presentation, budgetToken, takeToken);
             if (html.Attempt is { } htmlRefusal)
             {
                 return htmlRefusal;
             }
 
-            var block = Compose(blockPrepared, blockPart, request, sample, render, presentation, budgetToken, takeToken);
+            var block = await Compose(blockPrepared, blockPart, request, sample, render, presentation, budgetToken, takeToken);
             if (block.Attempt is { } blockRefusal)
             {
                 return blockRefusal;
@@ -343,7 +343,7 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         }
     }
 
-    private Composed Compose(
+    private async Task<Composed> Compose(
         PreparedTemplate prepared,
         PartRecordingAdapter part,
         SampleRequest request,
@@ -356,7 +356,7 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         var started = Stopwatch.GetTimestamp();
         try
         {
-            var block = _composer.Compose(
+            var block = await _composer.ComposeAsync(
                 new CompositionRequest(
                     prepared,
                     sample.Block,

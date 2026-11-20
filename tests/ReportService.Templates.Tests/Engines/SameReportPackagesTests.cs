@@ -103,7 +103,7 @@ public sealed class SameReportPackagesTests
     /// would move the delivered reference.
     /// </summary>
     [Fact]
-    public void EveryVersionPrintsEveryFieldItsSourceCarriesInSourceOrder()
+    public async Task EveryVersionPrintsEveryFieldItsSourceCarriesInSourceOrder()
     {
         (string Sequence, string Date, string Description, string Amount)[] expected =
         [
@@ -121,7 +121,7 @@ public sealed class SameReportPackagesTests
 
         foreach (var (version, engine) in versions)
         {
-            var text = Compose(version, engine).Text;
+            var text = (await Compose(version, engine)).Text;
 
             Assert.Contains("<h1>Monthly statement</h1>", text, StringComparison.Ordinal);
             Assert.Contains("Acme", text, StringComparison.Ordinal);
@@ -141,7 +141,6 @@ public sealed class SameReportPackagesTests
         }
     }
 
-    private static ComposedBlock Compose(string version, string engine, string[]? records = null)
     private static async Task<ComposedBlock> Compose(string version, string engine, string[]? records = null)
     {
         var adapter = engine switch

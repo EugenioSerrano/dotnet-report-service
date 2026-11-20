@@ -110,7 +110,7 @@ public sealed class SampleGatePackagesTests
         var partitioned = Assert.IsType<SampleRead.Partitioned>(sample).Sample;
 
         return new BlockComposer(new ManualTimeProvider(settings.Clock))
-            .Compose(
+            .ComposeAsync(
                 new CompositionRequest(
                     prepared,
                     partitioned.Block,
@@ -120,6 +120,7 @@ public sealed class SampleGatePackagesTests
                     GroupKey: null),
                 adapter,
                 settings)
+            .GetAwaiter().GetResult()
             .Html;
     }
 
