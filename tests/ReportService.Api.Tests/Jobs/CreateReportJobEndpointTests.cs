@@ -471,8 +471,19 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(other)), "K1"), cancellationToken);
         var problem = await JobApiHost.AnswerAsync(conflict);
 
+        // The same key naming an upload this consumer does not have is still the key's answer:
+        // the conflict, never a missing upload.
+        using var absent = await _host.Client.SendAsync(
+            WithKey(
+                JobApiHost.CreateRequest(
+                    JobApiHost.Consumer,
+                    JobApiHost.Body("upload-ffffffffffffffffffffffffffffffff")),
+                "K1"),
+            cancellationToken);
+
         Assert.Equal(HttpStatusCode.Accepted, accepted.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, absent.StatusCode);
         Assert.Equal("IDEMPOTENCY_CONFLICT", problem.GetProperty("code").GetString());
         Assert.Equal("Idempotency key conflict", problem.GetProperty("title").GetString());
         Assert.Equal("The idempotency key was already used with a different request.", problem.GetProperty("detail").GetString());

@@ -136,7 +136,7 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
         Assert.Equal(1, await CountAsync("report_jobs", cancellationToken));
         Assert.Equal(1, await CountAsync("report_outputs", cancellationToken));
         Assert.Equal(1, await CountAsync("template_references", cancellationToken));
-        Assert.Equal(1, await CountAsync("intents", cancellationToken));
+        Assert.Equal(1, await StartJobIntentsAsync(cancellationToken));
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
             responses.Where(response => response.StatusCode == HttpStatusCode.Accepted)
                 .Select(response => response.ReportJobId).Distinct(StringComparer.Ordinal));
         Assert.Equal(1, await CountAsync("report_jobs", cancellationToken));
-        Assert.Equal(1, await CountAsync("intents", cancellationToken));
+        Assert.Equal(1, await StartJobIntentsAsync(cancellationToken));
     }
 
     [Fact]
@@ -217,6 +217,14 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
         Assert.DoesNotContain(_logs.Lines, line => line.Contains(Planted, StringComparison.Ordinal));
 
         // The job's identifier is on the repeat's request span, and the key is on no span at all.
+        // The span ends when the request pipeline finishes, which can trail the answer the client
+        // read, so the case waits for the tag rather than racing it.
+        await Wait.UntilAsync(
+            "the repeat's request span to carry the first job's identifier",
+            _ => Task.FromResult(counter.SpanValues.Contains(first.ReportJobId)),
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromMilliseconds(100),
+            cancellationToken);
         Assert.Contains(first.ReportJobId, counter.SpanValues);
         Assert.DoesNotContain(counter.SpanValues, value => value.Contains(Planted, StringComparison.Ordinal));
     }
@@ -247,6 +255,17 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
             cancellationToken)).ToArray();
 
         return await Task.WhenAll(pending);
+    }
+
+    // One job's start request is one row of the intent table; the upload steps a case seeds its
+    // data with write a start-upload-verification intent of their own, which is no part of what an
+    // acceptance decides.
+    private async Task<long> StartJobIntentsAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM report_service.intents WHERE kind = 'start-job'",
+            cancellationToken: cancellationToken));
     }
 
     private async Task<long> CountAsync(string table, CancellationToken cancellationToken)
@@ -337,7 +356,10 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
         }
     }
 
-    // Hears the acceptance counter and every span's tags for the length of one case.
+    // Hears the acceptance counter and the request spans' tags for the length of one case. The
+    // span a request runs under is the host's own, so the listener follows the API's framework
+    // source beside the service's; a case asserts only values of its own, which no other suite's
+    // span can carry.
     private sealed class CounterListener : IDisposable
     {
         private readonly MeterListener _meter = new();
@@ -379,7 +401,8 @@ public sealed class JobIdempotencyOverHttpTests : IClassFixture<PostgresFixture>
 
             _activities = new ActivityListener
             {
-                ShouldListenTo = source => source.Name.StartsWith("ReportService", StringComparison.Ordinal),
+                ShouldListenTo = source => source.Name.StartsWith("ReportService", StringComparison.Ordinal)
+                    || source.Name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal),
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
                 ActivityStopped = activity =>
                 {

@@ -418,7 +418,7 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
         await using var dataSource = NpgsqlDataSource.Create(connectionString);
         var uploads = new PostgresUploadStore(dataSource);
         var store = new PostgresJobStore(dataSource);
-        var acceptance = await AcceptedOnAsync(uploads, store, cancellationToken);
+        var acceptance = await AcceptedBeforeTheExpiryColumnAsync(dataSource, uploads, cancellationToken);
         Assert.Equal(TransitionOutcome.Applied, await store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
 
         // The row a publication wrote before the change: it carries no expiry at all.
@@ -531,11 +531,13 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
         Assert.Equal(1, read);
     }
 
-    // A job accepted on a ready upload of its own, over stores opened on a database of the case's
-    // own: the state the cases that need a publication start from.
-    private static async Task<JobAcceptance> AcceptedOnAsync(
+    // A job accepted on a ready upload of its own, over the statements the schema of that era
+    // carries: a database at 0012 has no idempotency_key and no fingerprint, so the store of this
+    // build - which always names them - cannot write it, and the state the backfill case starts
+    // from is written here as the build of that era wrote it.
+    private static async Task<JobAcceptance> AcceptedBeforeTheExpiryColumnAsync(
+        NpgsqlDataSource dataSource,
         PostgresUploadStore uploads,
-        PostgresJobStore store,
         CancellationToken cancellationToken)
     {
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
@@ -585,7 +587,27 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
             TemplateReferenceForm.Exact,
             "1.0.0",
             AcceptanceIdentity.For(uploadId));
-        Assert.IsType<JobAcceptanceResult.Accepted>(await store.AcceptAsync(acceptance, Now, cancellationToken));
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(
+            """"""
+            INSERT INTO report_service.report_jobs
+                (report_job_id, consumer_id, upload_id, status, report_clock, created_at)
+            VALUES (@ReportJobId, @ConsumerId, @UploadId, 'QUEUED', @Now, @Now);
+
+            INSERT INTO report_service.report_outputs
+                (output_id, report_job_id, format, status)
+            VALUES (@OutputId, @ReportJobId, 'PDF', 'PENDING');
+
+            INSERT INTO report_service.template_references
+                (report_job_id, template_id, reference_form, requested_version)
+            VALUES (@ReportJobId, 'pilot-grouped', 'EXACT', '1.0.0');
+
+            INSERT INTO report_service.intents
+                (kind, subject_id, status, attempts, created_at, next_attempt_at)
+            VALUES ('start-job', @ReportJobId, 'PENDING', 0, @Now, @Now)
+            """""",
+            new { acceptance.ReportJobId, acceptance.OutputId, ConsumerId = Consumer, UploadId = uploadId, Now },
+            cancellationToken: cancellationToken));
         return acceptance;
     }
 
