@@ -89,6 +89,7 @@ public sealed class TelemetryEndpointTests : IDisposable
             ErrorCodes.ConsumerUnknown,
             ConsumerRefusalMetrics.CreateOperation,
             "missing");
+        api.Services.GetRequiredService<ArtifactDownloadMetrics>().IntegrityFailure();
         api.Services.GetRequiredService<MeterProvider>().ForceFlush();
 
         using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.MetricsRoute, UriKind.Relative), Cancellation);
