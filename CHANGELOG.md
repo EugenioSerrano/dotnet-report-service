@@ -77,6 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The shipped sample templates now name their font family (`"Liberation Sans",
   sans-serif`) and declare no printed page totals, so every sample the product ships
   passes its own take.
+- A template version published more than once is never chosen by a reference that
+  names the template only: the service logs `TEMPLATE_VERSION_CONFLICT` naming the
+  version and the duplicate publication, skips it like any invalid version, and the
+  job uses the newest valid release below it. A correction is published under a new
+  version; the template guide says so.
 
 ### Changed
 
