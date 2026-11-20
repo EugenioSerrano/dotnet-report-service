@@ -9,6 +9,7 @@ using ReportService.Jobs;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
@@ -646,8 +647,8 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
         public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FailJobAsync(reportJobId, code, reason, message, now, cancellationToken);
 
-        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken, TemplateLocaleDefaults? presentation) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken, presentation);
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.BeginInputWaitAsync(reportJobId, cancellationToken);
