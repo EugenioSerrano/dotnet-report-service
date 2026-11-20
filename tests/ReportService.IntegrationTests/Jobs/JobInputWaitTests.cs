@@ -382,6 +382,7 @@ public sealed class JobInputWaitTests : IClassFixture<PostgresFixture>, IAsyncLi
         Assert.Equal("FAILED", job!.Status);
         Assert.Equal("INPUT_NOT_FOUND", job.ErrorCode);
         Assert.Equal("input-expired", job.ErrorReason);
+        await WaitForUploadAsync(uploadId, UploadStatus.Expired, cancellationToken);
         Assert.Equal("EXPIRED", await UploadStatusAsync(uploadId, cancellationToken));
     }
 
