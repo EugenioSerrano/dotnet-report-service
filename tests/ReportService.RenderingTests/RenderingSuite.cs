@@ -38,6 +38,8 @@ public sealed class RenderingSuite : IAsyncLifetime
     ];
 
     private readonly string root = Path.Combine(Path.GetTempPath(), "report-service-rendering-" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
+
+    private bool anyFailure;
     private readonly Dictionary<string, RenderOutcome> rendersInRun = new(StringComparer.Ordinal);
     private int renders;
 
@@ -62,11 +64,17 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <summary>The one report in five versions: three engines in the base locale and two locale variants.</summary>
     public static string SameReportDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
 
+    /// <summary>The takeable family the sample-render evidence prints: three versions, one engine each.</summary>
+    public static string SampleGateDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+
     /// <summary>The three versions that print the one report in three engines, under the base locale.</summary>
     public static IReadOnlyList<string> SameReportEngines => ["same-report-1.0.0", "same-report-1.1.0", "same-report-1.2.0"];
 
     /// <summary>The base locale and the two locale variants of the one report.</summary>
     public static IReadOnlyList<string> SameReportLocales => ["same-report-1.0.0", "same-report-1.3.0", "same-report-1.4.0"];
+
+    /// <summary>The three takeable versions of the sample-gate family, under the suite's flat names.</summary>
+    public static IReadOnlyList<string> SampleGateEnginePackages => ["sample-gate-1.0.0", "sample-gate-1.1.0", "sample-gate-1.2.0"];
 
     /// <summary>The declarations of the two packages.</summary>
     public static string ExpectationsDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "OracleExpectations");
@@ -76,6 +84,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     {
         Directory.CreateDirectory(OutputDirectory);
         WriteFixtures();
+        PrepareSampleGateFixture();
         PreparePackages();
         await BuildImagesAsync().ConfigureAwait(false);
     }
@@ -83,15 +92,12 @@ public sealed class RenderingSuite : IAsyncLifetime
     /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
-        try
-        {
-            Directory.Delete(root, recursive: true);
-        }
-        catch (IOException)
-        {
-            // The evidence stays in the temporary folder; a run never fails for it.
-        }
-
+        // The root is kept for every run - the fixtures, the mounted packages, every result
+        // JSON, every printed PDF and every host log - and named here. A suite cannot see a
+        // test's own assertion, so keeping only the runs it can classify as failed would
+        // still delete the evidence of the red a case reports after a successful render.
+        Console.Error.WriteLine(
+            $"The rendering run {(anyFailure ? "failed" : "finished")}; its root is kept at {root}");
         return ValueTask.CompletedTask;
     }
 
@@ -132,11 +138,12 @@ public sealed class RenderingSuite : IAsyncLifetime
             command.AddRange(["--ambient-culture", ambientCulture]);
         }
 
-        var (exit, _) = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
+        var (exit, logs) = await RunContainerAsync(HostImage, command, new[] { (FixturesDirectory, "/fixtures"), (PackagesDirectory, "/packages"), (OutputDirectory, "/out") }).ConfigureAwait(false);
         var resultPath = Path.Combine(OutputDirectory, stem + ".json");
         if (exit != 0)
         {
-            throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; the manifest of the run is in {resultPath}.");
+            KeepFailure(stem, exit, logs, resultPath);
+            throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; its host log and result are in {OutputDirectory}.");
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
@@ -156,7 +163,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     public async Task<RenderOutcome> RenderWithoutPageSettingsAsync(string fixtureId, string package)
     {
         const string stem = "page-settings-unset";
-        var (exit, _) = await RunContainerAsync(
+        var (exit, logs) = await RunContainerAsync(
             HostImage,
             [
                 "render", "--fixture", $"/fixtures/{fixtureId}.json", "--template", $"/packages/{package}", "--out", "/out",
@@ -166,7 +173,8 @@ public sealed class RenderingSuite : IAsyncLifetime
         var resultPath = Path.Combine(OutputDirectory, stem + ".json");
         if (exit != 0)
         {
-            throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; the manifest of the run is in {resultPath}.");
+            KeepFailure(stem, exit, logs, resultPath);
+            throw new InvalidOperationException($"The rendering host exited {exit} for {stem}; its host log and result are in {OutputDirectory}.");
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
@@ -234,11 +242,12 @@ public sealed class RenderingSuite : IAsyncLifetime
             (OutputDirectory, "/out", AccessMode.ReadWrite),
         ];
 
-        var (exit, _) = await RunContainerAsync(HostImage, command, mounts).ConfigureAwait(false);
+        var (exit, logs) = await RunContainerAsync(HostImage, command, mounts).ConfigureAwait(false);
         var resultPath = Path.Combine(OutputDirectory, "sample.json");
         if (exit != 0)
         {
-            throw new InvalidOperationException($"The rendering host exited {exit} for the shipped sample {sampleId}; its result would be in {resultPath}.");
+            KeepFailure(sampleId, exit, logs, resultPath);
+            throw new InvalidOperationException($"The rendering host exited {exit} for the shipped sample {sampleId}; its host log and result are in {OutputDirectory}.");
         }
 
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
@@ -348,6 +357,21 @@ public sealed class RenderingSuite : IAsyncLifetime
     // declaration in place of the canonical one, so the four geometries never drift into
     // four sets of files. Each version of the one report is mounted under a flat name so
     // the host's package id names the engine and the locale it prints under.
+    /// <summary>
+    /// Writes the takeable family's own <c>sample.json</c> as a fixture: the core tier prints
+    /// the three versions on the data the package declares, so the page is schema-valid - the
+    /// delivered pilot fixtures carry no <c>unitPrice</c> and no <c>quantity</c>, which this
+    /// family's schema requires.
+    /// </summary>
+    private void PrepareSampleGateFixture()
+    {
+        Directory.CreateDirectory(FixturesDirectory);
+        File.Copy(
+            Path.Combine(SampleGateDirectory, "1.0.0", "sample.json"),
+            Path.Combine(FixturesDirectory, "sample-gate.json"),
+            overwrite: true);
+    }
+
     private void PreparePackages()
     {
         Directory.CreateDirectory(PackagesDirectory);
@@ -373,6 +397,67 @@ public sealed class RenderingSuite : IAsyncLifetime
         {
             CopyFolder(version, Path.Combine(PackagesDirectory, "same-report-" + Path.GetFileName(version)));
         }
+
+        // The takeable family: the same flat naming, so the host prints a folder
+        // whose id names the engine it declares.
+        foreach (var version in Directory.GetDirectories(SampleGateDirectory))
+        {
+            CopyFolder(version, Path.Combine(PackagesDirectory, "sample-gate-" + Path.GetFileName(version)));
+        }
+    }
+
+    /// <summary>Keeps a failed render's own output beside its result and marks the run failed.</summary>
+    /// <param name="stem">The render's name.</param>
+    /// <param name="exit">The host's exit code.</param>
+    /// <param name="logs">What the host wrote to its own output.</param>
+    /// <param name="resultPath">Where its result would be.</param>
+    private void KeepFailure(string stem, long exit, string logs, string resultPath)
+    {
+        anyFailure = true;
+        Directory.CreateDirectory(OutputDirectory);
+        File.WriteAllText(
+            Path.Combine(OutputDirectory, stem + ".host.log"),
+            "exit=" + exit.ToString(CultureInfo.InvariantCulture) + Environment.NewLine + logs);
+        if (!File.Exists(resultPath))
+        {
+            File.WriteAllText(resultPath + ".missing", "the host wrote no result");
+        }
+    }
+
+    /// <summary>
+    /// Runs the take's own <c>sample</c> verb on one package folder in the product image and
+    /// answers what it decided - the sample render the take gates on, printed and verified in
+    /// the same image the core tier prints in.
+    /// </summary>
+    /// <param name="packageFolder">The package folder, mounted read-only.</param>
+    /// <param name="name">The name of the run.</param>
+    public async Task<SampleRenderOutcome> SampleAsync(string packageFolder, string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageFolder);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var outFolder = Path.Combine(root, "samples", name);
+        Directory.CreateDirectory(outFolder);
+        var (exit, logs) = await RunContainerAsync(
+            HostImage,
+            ["sample", "--template", "/package", "--out", "/out", "--name", name],
+            new[] { (packageFolder, "/package"), (outFolder, "/out") }).ConfigureAwait(false);
+        var resultPath = Path.Combine(outFolder, name + ".json");
+        if (exit != 0)
+        {
+            KeepFailure(name, exit, logs, resultPath);
+            throw new InvalidOperationException($"The sample verb exited {exit} for {name}; its host log and result are in {outFolder}.");
+        }
+
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(resultPath).ConfigureAwait(false));
+        var result = document.RootElement;
+        return new SampleRenderOutcome(
+            result.GetProperty("outcome").GetString()!,
+            result.GetProperty("failureKind").GetString(),
+            result.GetProperty("failurePart").GetString(),
+            result.GetProperty("failureReason").GetString(),
+            result.GetProperty("htmlSha256").GetString(),
+            result.GetProperty("pages").GetInt32(),
+            result.GetProperty("htmlBytes").GetInt64());
     }
 
     private static void CopyFolder(string source, string target)
@@ -484,6 +569,23 @@ public sealed class RenderingSuite : IAsyncLifetime
         }
     }
 }
+
+/// <summary>What the take's own sample verb decided on one package.</summary>
+/// <param name="Outcome">One of the sample verb's outcomes: rendered, refused or unavailable.</param>
+/// <param name="FailureKind">The refusal's class, when it refused.</param>
+/// <param name="FailurePart">The package-relative file the refusal names, when it names one.</param>
+/// <param name="FailureReason">The verification's reason word or the reader's code, when one applies.</param>
+/// <param name="HtmlSha256">The SHA-256 of the composed HTML, when it rendered.</param>
+/// <param name="Pages">How many pages the printed sample holds.</param>
+/// <param name="HtmlBytes">The size of the composed HTML.</param>
+public sealed record SampleRenderOutcome(
+    string Outcome,
+    string? FailureKind,
+    string? FailurePart,
+    string? FailureReason,
+    string? HtmlSha256,
+    int Pages,
+    long HtmlBytes);
 
 /// <summary>One printed document: what it was rendered from and where it is.</summary>
 /// <param name="Fixture">The fixture the block was read from.</param>

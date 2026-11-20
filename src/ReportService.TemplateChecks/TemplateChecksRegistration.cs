@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ReportService.TemplateChecks.Checks;
 using ReportService.TemplateChecks.PdfConstraints;
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateSource.Checks;
 
 namespace ReportService.TemplateChecks;
@@ -22,7 +23,10 @@ public static class TemplateDocumentBase
 /// <summary>
 /// Registers the take checks in the fixed order. The order is the contract: the same
 /// package always reports the same first refusal, and a later check may trust what an
-/// earlier one confirmed.
+/// earlier one confirmed. The twelve checks are the eleven static ones and the sample
+/// render last: it needs the process to have registered the <c>ISampleRenderer</c> of
+/// the renderer it runs on, and it is the last thing between a well-formed package and
+/// its being kept.
 /// </summary>
 public static class TemplateChecksRegistration
 {
@@ -40,6 +44,7 @@ public static class TemplateChecksRegistration
         "PageAccountingCheck",
         "NamedFontFamilyCheck",
         "BottomAlignedGridCellCheck",
+        "sample-render",
     ];
 
     /// <summary>Registers the checks the take runs, in the fixed order.</summary>
@@ -61,6 +66,7 @@ public static class TemplateChecksRegistration
         services.AddSingleton<ITemplateVersionCheck, PageAccountingCheck>();
         services.AddSingleton<ITemplateVersionCheck, NamedFontFamilyCheck>();
         services.AddSingleton<ITemplateVersionCheck, BottomAlignedGridCellCheck>();
+        services.AddSingleton<ITemplateVersionCheck, SampleRenderCheck>();
         return services;
     }
 }

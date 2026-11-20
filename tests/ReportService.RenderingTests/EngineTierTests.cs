@@ -60,6 +60,42 @@ public sealed class EngineTierTests(RenderingSuite suite)
     }
 
     /// <summary>
+    /// The takeable family, printed through the worker image over one snapshot: the three
+    /// versions of <c>sample-gate</c> compose the same report to byte-identical HTML, the
+    /// product verifies each printed page, and the independent judge passes it - the same
+    /// three engines the take gates on, held at the printed page as well.
+    /// </summary>
+    /// <param name="fixture">The snapshot printed.</param>
+    [Theory]
+    [InlineData("sample-gate")]
+    public async Task TheThreeTakeableVersionsPrintTheSameReportAndBothReadingsPassIt(string fixture)
+    {
+        var renders = new List<RenderOutcome>();
+        foreach (var package in RenderingSuite.SampleGateEnginePackages)
+        {
+            renders.Add(await suite.RenderAsync(fixture, package));
+        }
+
+        foreach (var render in renders)
+        {
+            Assert.True(
+                render.VerificationPassed,
+                $"{fixture} with {render.Package}: the product's verification refused it ({render.VerificationReason}).");
+        }
+
+        var hash = renders[0].HtmlSha256;
+        Assert.False(string.IsNullOrEmpty(hash), $"{fixture}: the host reported no hash of the composed HTML.");
+        foreach (var render in renders.Skip(1))
+        {
+            Assert.Equal(hash, render.HtmlSha256);
+        }
+
+        // The takeable family is read by the product only: the independent judge's
+        // expectations are recorded per delivered fixture family, and section 8.1 asks the
+        // production verification for these three versions.
+    }
+
+    /// <summary>
     /// The conformance threshold the decision states for every engine or adapter change: the
     /// three engines compose the same report to byte-identical HTML under culture <c>es-AR</c>
     /// and under the invariant culture, and with the renders running in parallel. The ambient

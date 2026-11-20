@@ -427,7 +427,7 @@ public sealed class TemplateVersionStoreTests : IClassFixture<PostgresFixture>, 
         await store.TryInsertAsync(record, cancellationToken);
 
     private static TemplateVersionRecord Record(string templateId) =>
-        TemplateVersionRecords.Sample(templateId, "1.1.0", engineVersion: TemplateEngineCatalog.ScribanVersion);
+        TemplateVersionRecords.Sample(templateId, "1.1.0", engineVersion: "7.5.1");
 
     /// <summary>Seeds one accepted job over a ready upload and its exact template reference.</summary>
     /// <param name="templateId">The template the reference names.</param>

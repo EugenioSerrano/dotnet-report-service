@@ -135,3 +135,102 @@ public sealed class TestTemplatePackageTests
         Assert.Contains("href=\"https://report.invalid/html/styles.css\"", start, StringComparison.Ordinal);
     }
 }
+
+/// <summary>
+/// The takeable fixture family added for the sample render: three versions of one
+/// report that compose the same bytes, each carrying its owner and its own
+/// <c>sample.json</c>, held to its own files so a package that changes without its
+/// declaration fails here. The delivered <c>same-report</c> family is not this
+/// family and is not edited.
+/// </summary>
+public sealed class SampleGatePackageTests
+{
+    private static readonly string[] Versions = ["1.0.0", "1.1.0", "1.2.0"];
+
+    private static readonly (string Version, string Engine, string EngineVersion, string Extension)[] Expected =
+    [
+        ("1.0.0", "scriban", "7.5.1", "sbn"),
+        ("1.1.0", "handlebars", "2.4.3", "hbs"),
+        ("1.2.0", "liquid", "2.40.0", "liquid"),
+    ];
+
+    private static string Family => Path.Combine(
+        RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+
+    [Fact]
+    public void TheFamilyHoldsTheThreeVersionsTheTakeSeeds()
+    {
+        Assert.Equal(
+            Versions,
+            Directory.GetDirectories(Family).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("1.0.0", "scriban", "7.5.1", "sbn")]
+    [InlineData("1.1.0", "handlebars", "2.4.3", "hbs")]
+    [InlineData("1.2.0", "liquid", "2.40.0", "liquid")]
+    public void EachVersionDeclaresItsOwnEngineAndItsOwnFiles(string version, string engine, string engineVersion, string extension)
+    {
+        var folder = Path.Combine(Family, version);
+        var declaration = File.ReadAllText(Path.Combine(folder, "template.yaml"));
+
+        Assert.Contains("id: sample-gate", declaration, StringComparison.Ordinal);
+        Assert.Contains($"version: \"{version}\"", declaration, StringComparison.Ordinal);
+        Assert.Contains("owner: billing-system", declaration, StringComparison.Ordinal);
+        Assert.Contains("shared: false", declaration, StringComparison.Ordinal);
+        Assert.Contains($"engine: {engine}", declaration, StringComparison.Ordinal);
+        Assert.Contains($"engineVersion: \"{engineVersion}\"", declaration, StringComparison.Ordinal);
+        Assert.Contains("culture: es-AR", declaration, StringComparison.Ordinal);
+        Assert.Contains("timeZone: America/Argentina/Buenos_Aires", declaration, StringComparison.Ordinal);
+        Assert.Contains("item: [\"$.sequence\", \"$.description\"]", declaration, StringComparison.Ordinal);
+
+        foreach (var part in new[] { "document-start", "row", "document-end" })
+        {
+            Assert.True(
+                File.Exists(Path.Combine(folder, "html", $"{part}.html.{extension}")),
+                $"{version} declares and must hold html/{part}.{extension}");
+            Assert.Contains($"html/{part}.html.{extension}", declaration, StringComparison.Ordinal);
+        }
+
+        Assert.True(File.Exists(Path.Combine(folder, "schema.json")));
+        Assert.True(File.Exists(Path.Combine(folder, "sample.json")));
+        Assert.True(File.Exists(Path.Combine(folder, "html", "styles.css")));
+    }
+
+    [Theory]
+    [InlineData("1.0.0")]
+    [InlineData("1.1.0")]
+    [InlineData("1.2.0")]
+    public void TheSampleCarriesTheThreeRecordsTheReportPrints(string version)
+    {
+        var sample = File.ReadAllText(Path.Combine(Family, version, "sample.json"));
+
+        using var document = System.Text.Json.JsonDocument.Parse(sample);
+        var items = document.RootElement.GetProperty("items");
+        Assert.Equal(3, items.GetArrayLength());
+        Assert.Equal(3, document.RootElement.GetProperty("header").GetProperty("totals").GetProperty("recordCount").GetInt32());
+        foreach (var item in items.EnumerateArray())
+        {
+            foreach (var field in new[] { "sequence", "date", "description", "quantity", "unitPrice", "amount" })
+            {
+                Assert.True(item.TryGetProperty(field, out _), $"{version}'s sample holds no {field}");
+            }
+        }
+    }
+
+    [Fact]
+    public void TheDeliveredSameReportFamilyIsUntouched()
+    {
+        var sameReport = Path.Combine(
+            RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+
+        foreach (var version in Directory.GetDirectories(sameReport))
+        {
+            Assert.False(File.Exists(Path.Combine(version, "sample.json")), $"{version} gained a sample");
+            Assert.DoesNotContain(
+                "owner:",
+                File.ReadAllText(Path.Combine(version, "template.yaml")),
+                StringComparison.Ordinal);
+        }
+    }
+}

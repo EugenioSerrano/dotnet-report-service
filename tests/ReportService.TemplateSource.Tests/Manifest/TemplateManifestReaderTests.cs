@@ -45,7 +45,7 @@ public sealed class TemplateManifestReaderTests
         Assert.Equal("dev-consumer", manifest.Owner);
         Assert.False(manifest.Shared);
         Assert.Equal(TemplateEngine.Scriban, manifest.Engine);
-        Assert.Equal(TemplateEngineCatalog.ScribanVersion, manifest.DeclaredEngineVersion);
+        Assert.Equal("7.5.1", manifest.DeclaredEngineVersion);
         Assert.Equal("schema.json", manifest.DataContract?.Schema);
         Assert.NotNull(manifest.Outputs?.Html?.Parts?.DocumentStart);
         Assert.Equal(15m, manifest.Outputs?.Pdf?.MarginMm?.Top);

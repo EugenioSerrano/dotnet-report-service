@@ -7,6 +7,7 @@ using ReportService.Storage;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Resolution;
 using ReportService.Testing;
+using ReportService.Testing.TemplateChecks;
 using ReportService.Workers.Pdf.Templates;
 using Temporalio.Exceptions;
 
@@ -123,6 +124,7 @@ public sealed class TemplateResolutionRegistrationTests
             ["TemplateSource:Store:Filesystem:CreateIfMissing"] = "false",
         });
         builder.Services.AddSingleton<IObjectStore>(new NoObjects());
+        builder.Services.AddSingleton<ReportService.TemplateChecks.Sample.ISampleRenderer>(new InMemorySampleRenderer().AlwaysRendered());
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();

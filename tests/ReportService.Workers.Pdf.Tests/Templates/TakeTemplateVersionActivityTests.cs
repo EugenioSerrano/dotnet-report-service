@@ -1,3 +1,5 @@
+using ReportService.TemplateChecks.Sample;
+using ReportService.TemplateSource.Checks;
 using ReportService.TemplateSource.Take;
 using ReportService.Testing;
 using ReportService.Workers.Pdf.Templates;
@@ -110,6 +112,36 @@ public sealed class TakeTemplateVersionActivityTests
         Assert.Contains("not found", failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task ARenderDeadlineEndsTheActivityWithTheTypedRenderTimeoutRetryably()
+    {
+        await using var harness = new TakeHarness();
+        harness.Seed("invoice-energy", "1.1.0");
+        var activity = new TakeTemplateVersionActivity(
+            harness.Take(checks: [new UnavailableCheck(SampleUnavailableCause.RenderTimeout)]));
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
+            () => RunAsync(activity, "invoice-energy", "1.1.0", "billing-system"));
+
+        Assert.Equal(TemplateTakeCodes.RenderTimeout, failure.ErrorType);
+        Assert.False(failure.NonRetryable);
+    }
+
+    [Fact]
+    public async Task ACrashedRenderEndsTheActivityWithExecutionFailedRetryably()
+    {
+        await using var harness = new TakeHarness();
+        harness.Seed("invoice-energy", "1.1.0");
+        var activity = new TakeTemplateVersionActivity(
+            harness.Take(checks: [new UnavailableCheck(SampleUnavailableCause.RenderCrash)]));
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
+            () => RunAsync(activity, "invoice-energy", "1.1.0", "billing-system"));
+
+        Assert.Equal(TemplateTakeCodes.ExecutionFailed, failure.ErrorType);
+        Assert.False(failure.NonRetryable);
+    }
+
     private static Task<TakeTemplateVersionResult> RunAsync(
         TakeTemplateVersionActivity activity,
         string templateId,
@@ -117,6 +149,15 @@ public sealed class TakeTemplateVersionActivityTests
         string consumer) =>
         new ActivityEnvironment().RunAsync(
             () => activity.RunAsync(new TakeTemplateVersionInput(templateId, version, consumer, "job-1")));
+
+    /// <summary>A render that could not run, raised out of the seam exactly as the check raises it.</summary>
+    private sealed class UnavailableCheck(SampleUnavailableCause cause) : ITemplateVersionCheck
+    {
+        public string Name => "sample-render-unavailable";
+
+        public Task<TemplateCheckResult> CheckAsync(TemplateCandidate candidate, CancellationToken cancellationToken) =>
+            throw new SampleRenderUnavailableException(cause);
+    }
 }
 
 

@@ -290,3 +290,50 @@ A refused version logs the reason and a stable rule name, and the job that
 referenced it ends `failed` with the code (`TEMPLATE_INVALID` or
 `UNSUPPORTED_CAPABILITY`). The authoring guide is the contract: if a package
 passes the take, the render can parse it.
+
+## The sample the service renders before it takes the version
+
+The twelfth and last check does not read the package: it **renders** it. The
+version's own `sample.json` is composed to HTML, laid out and printed to PDF with
+the engine the version declares, verified with the product's own verification,
+and then rendered once more with the same header and **zero records**. Before
+this check passes, nothing of the version is kept.
+
+- **`sample.json` is the data the version is tried on.** It follows the same
+  `header-items-v1` envelope a job sends, and the third check has already
+  validated it against the package's `schema.json`. It is the version's own
+  sample - not a fixture of the service, and never a job's data.
+- **One block.** A sample is one block: at most 2 000 records and at most 1 MiB
+  of record content. A larger sample is refused before anything is composed -
+  `sample.json: the sample holds N records and M bytes of record data, where one
+  block holds at most 2 000 records and 1 MiB. Reduce the sample to a single
+  block's worth of records.`
+- **A sample the reader rejects is a refusal, not a crash.** A `sample.json` that
+  does not follow the data format (for instance, no header) is refused in the
+  same form: `sample.json: the sample does not follow the data format
+  (<reason>). Correct the sample.`
+- **The two renders.** The ordinary sample must print and verify - the page must
+  carry the values the parts composed, the anchors the manifest declares, and the
+  rows in the sample's order - and the empty sample must still print the
+  report's header. A template that prints nothing at all for zero records is
+  refused `sample-empty` here, at take, not at a consumer's job.
+- **What a refusal names.** The package-relative file, what is wrong and what to
+  fix; the engine's own message is never shown, because it carries template
+  text. The families are `sample-engine-error`, `sample-engine-limit`,
+  `sample-output-limit`, `sample-over-bound`, `sample-format`,
+  `sample-not-printed` and `sample-empty`.
+- **It is bounded.** Each of the two renders has a 20-second deadline
+  (`Templates:Sample:RenderBudgetSeconds`, validated to at most 22 s), well below
+  the take's own 240-second deadline. A render that does not finish, or a browser
+  that goes away, is **not** a refusal of the version: the take is retried, and
+  the job ends with `RENDER_TIMEOUT` only when its attempts are exhausted.
+- **It is observable.** Each take writes one line under
+  `ReportService.TemplateChecks.Sample` - `check=sample-render`, the rule, the
+  file, the engine and the figures - and a `template.sample` span on the
+  process's own `ReportService` source. Neither carries a value of the sample.
+
+Anchors are part of this contract: an `outputs.pdf.verification.anchors` path is
+a field the template must print **as it is and unconditionally**. A header field
+the document parts do not print is refused at take:
+`template.yaml: $.customer.id is declared as an anchor but the template does not
+print it as it is. Print the field as it is, or remove it from the anchor list.`

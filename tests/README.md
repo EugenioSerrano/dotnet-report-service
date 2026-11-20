@@ -357,6 +357,17 @@ whose cell is bottom-aligned by its own rule for two engines and by the
 container's for the third, the same defect in a package whose sample cannot show
 it, and the one package that breaks all three PDF constraints at once).
 
+The take's own evidence is a family of its own:
+`TemplatePackages/sample-gate/` holds three versions of one report - Scriban,
+Handlebars and Liquid - each with its `owner` and its own `sample.json`, which
+is what makes a package takeable. The family is never composed as evidence of
+another family: `SampleGatePackagesTests` holds the three engines to byte-
+identical composed HTML under both ambient cultures, `SampleControlTierTests`
+runs the take's `sample` verb on it and on its two known-bad mutations (a row
+that prints no text, an anchor the parts do not print) in the rendering image,
+and the two integration classes take it through the real source and job. The
+delivered `same-report` family stays untouched as the composition reference.
+
 ## The report job suite
 
 The same project holds the tests of one report job's own work: `ReportJobActivitiesTests`

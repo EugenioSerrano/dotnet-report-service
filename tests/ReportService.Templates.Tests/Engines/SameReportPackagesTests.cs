@@ -93,6 +93,54 @@ public sealed class SameReportPackagesTests
         Assert.Equal(scriban.Text, liquid.Text);
     }
 
+    /// <summary>
+    /// The source-values control: each version's composed text carries every field its own
+    /// source records hold - the sequence, the date, the description and the amount, in source
+    /// order - and every header field the parts print, so an adapter that presents a value
+    /// differently is caught against the data, not only against its peers. The delivered
+    /// family's records carry no quantity and no unit price and no delivered part prints them,
+    /// so the comparison covers every field the family carries; changing the family for them
+    /// would move the delivered reference.
+    /// </summary>
+    [Fact]
+    public void EveryVersionPrintsEveryFieldItsSourceCarriesInSourceOrder()
+    {
+        (string Sequence, string Date, string Description, string Amount)[] expected =
+        [
+            ("1", "29/10/2026", "First record", "1.000,00"),
+            ("2", "31/10/2026", "Second record", "-0,50"),
+            ("3", "01/11/2026", "Third record", "0,00"),
+        ];
+
+        (string Version, string Engine)[] versions =
+        [
+            ("1.0.0", ScribanTemplateAdapter.EngineName),
+            ("1.1.0", HandlebarsTemplateAdapter.EngineName),
+            ("1.2.0", FluidTemplateAdapter.EngineName),
+        ];
+
+        foreach (var (version, engine) in versions)
+        {
+            var text = Compose(version, engine).Text;
+
+            Assert.Contains("<h1>Monthly statement</h1>", text, StringComparison.Ordinal);
+            Assert.Contains("Acme", text, StringComparison.Ordinal);
+            Assert.Contains("ARS", text, StringComparison.Ordinal);
+            Assert.Contains("3</p>", text, StringComparison.Ordinal);
+
+            var previous = -1;
+            foreach (var (sequence, date, description, amount) in expected)
+            {
+                foreach (var field in new[] { ">" + sequence + "<", date, description, amount })
+                {
+                    var index = text.IndexOf(field, previous + 1, StringComparison.Ordinal);
+                    Assert.True(index >= 0, $"{version} ({engine}) prints no '{field}' after its previous field");
+                    previous = index;
+                }
+            }
+        }
+    }
+
     private static ComposedBlock Compose(string version, string engine, string[]? records = null)
     {
         var adapter = engine switch

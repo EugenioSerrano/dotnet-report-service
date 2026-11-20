@@ -1,0 +1,17 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "datasetId": "pilot-simple",
+    "reportTitle": "Monthly statement",
+    "generatedAt": "2026-11-01T12:00:00Z",
+    "seed": 7,
+    "currency": "ARS",
+    "customer": { "id": "acme", "name": "Acme" },
+    "totals": { "recordCount": 3, "amount": 999.50 }
+  },
+  "items": [
+    { "sequence": 1, "date": "2026-10-30T02:30:00Z", "description": "Consulting", "quantity": 2, "unitPrice": 500.00, "amount": 1000.00 },
+    { "sequence": 2, "date": "2026-10-31T12:00:00Z", "description": "Support plan", "quantity": 1, "unitPrice": -0.50, "amount": -0.50 },
+    { "sequence": 3, "date": "2026-11-01T23:30:00Z", "description": "Hosting", "quantity": 1, "unitPrice": 0, "amount": 0 }
+  ]
+}

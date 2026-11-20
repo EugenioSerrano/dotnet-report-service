@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A template version is taken only after its sample renders to HTML and PDF
+  with the engine the version declares, and then once more with zero records: a
+  version whose sample cannot render, print or verify is refused
+  `TEMPLATE_INVALID` naming the package-relative file and the fix, nothing is
+  kept, and the empty report must still print its header. Each take writes one
+  `sample-render` log line and a `template.sample` span, and the two renders run
+  under a 20-second budget (`Templates:Sample:RenderBudgetSeconds`, at most 22
+  seconds). The three engines are peers: a version names the one it is written
+  for.
 - A PDF report whose detail data carries a text value above 256 KiB of UTF-8 is
   refused before printing: the job and its PDF output end `failed` with
   `ROW_BOUND_EXCEEDED`, no page is rendered and nothing is published, and the job

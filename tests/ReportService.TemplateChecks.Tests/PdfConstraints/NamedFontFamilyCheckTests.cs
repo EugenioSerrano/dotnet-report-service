@@ -649,9 +649,10 @@ public sealed class NamedFontFamilyCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("PageAccountingCheck", order[^3]);
-        Assert.Equal("NamedFontFamilyCheck", order[^2]);
-        Assert.Equal("BottomAlignedGridCellCheck", order[^1]);
+        Assert.Equal("PageAccountingCheck", order[^4]);
+        Assert.Equal("NamedFontFamilyCheck", order[^3]);
+        Assert.Equal("BottomAlignedGridCellCheck", order[^2]);
+        Assert.Equal("sample-render", order[^1]);
     }
 
     private static async Task<TemplateCheckResult> CheckAsync(

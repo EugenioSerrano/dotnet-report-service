@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateSource.Checks;
 
 namespace ReportService.TemplateChecks;
@@ -41,6 +42,9 @@ public static class TemplateRefusal
 
         /// <summary>The sample does not follow the data format.</summary>
         public const string SampleFormat = "sample-format";
+
+        /// <summary>The package holds no <c>sample.json</c>.</summary>
+        public const string SampleMissing = "sample-missing";
 
         /// <summary>The sample breaks its schema.</summary>
         public const string SampleViolation = "sample-violation";
@@ -104,6 +108,37 @@ public static class TemplateRefusal
 
         /// <summary>The checks ran out of their share of the take's deadline.</summary>
         public const string Budget = "check-budget";
+
+        /// <summary>The engine raised while rendering a part of the sample that parsed.</summary>
+        public const string SampleEngineError = "sample-engine-error";
+
+        /// <summary>The engine's own limit was reached on the sample's data.</summary>
+        public const string SampleEngineLimit = "sample-engine-limit";
+
+        /// <summary>The sample's render produced more output than a template may produce.</summary>
+        public const string SampleOutputLimit = "sample-output-limit";
+
+        /// <summary>The sample is larger than one block.</summary>
+        public const string SampleOverBound = "sample-over-bound";
+
+        /// <summary>The printed sample does not carry what its parts composed.</summary>
+        public const string SampleNotPrinted = "sample-not-printed";
+
+        /// <summary>The sample cannot print a report with no records.</summary>
+        public const string SampleEmpty = "sample-empty";
+
+        /// <summary>The rule label of a sample that could not be rendered or printed.</summary>
+        /// <param name="kind">The class of the failure.</param>
+        public static string SampleOf(SampleFailureKind kind) => kind switch
+        {
+            SampleFailureKind.EngineError => SampleEngineError,
+            SampleFailureKind.EngineLimit => SampleEngineLimit,
+            SampleFailureKind.GuardOutput => SampleOutputLimit,
+            SampleFailureKind.OverBound => SampleOverBound,
+            SampleFailureKind.EmptySample => SampleEmpty,
+            SampleFailureKind.Unreadable => SampleFormat,
+            _ => SampleNotPrinted,
+        };
     }
 
     /// <summary>Refuses a version with the message form the author reads.</summary>

@@ -96,7 +96,7 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         Assert.Equal(64, record.SourceDescriptorSha256!.Length);
         Assert.Equal($"template-source/{Template}/published/{Version}/{record.SourceDescriptorSha256}.json", record.SourceDescriptorKey);
         Assert.Equal(TemplateEngine.Scriban, record.Engine);
-        Assert.Equal(TemplateEngineCatalog.ScribanVersion, record.EngineVersion);
+        Assert.Equal("7.5.1", record.EngineVersion);
         Assert.Equal("schema.json", record.SchemaRef);
         Assert.Equal(5, record.FileCount);
         Assert.Equal(_clock.Now, record.TakenAt);
@@ -475,6 +475,26 @@ public sealed class TemplateTakeTests : IAsyncDisposable
         Assert.Empty(_versions.Records);
     }
 
+    /// <summary>
+    /// A take that passes its own deadline ends with the code a render's deadline trip
+    /// carries - retryable, with nothing written - and never with the generic execution code.
+    /// The check sees the take's linked token, so the case does not wait the deadline out.
+    /// </summary>
+    [Fact]
+    public async Task ACheckThatEndsOnTheTakesDeadlineLeavesRenderTimeoutRetryableAndWritesNothing()
+    {
+        await _source.PublishAsync(Template, Version, Package());
+        _checks.Add(new EndsOnTheDeadlineCheck());
+
+        var outcome = await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
+
+        var refused = Assert.IsType<RefusedVersion>(outcome);
+        Assert.Equal(TemplateTakeCodes.RenderTimeout, refused.Code);
+        Assert.True(refused.Retryable);
+        Assert.Empty(_versions.Records);
+        Assert.Empty(await KeysAsync(TemplatePackageKeys.ClassPrefix));
+    }
+
     private async Task<IReadOnlyList<string>> KeysAsync(string prefix)
     {
         var keys = new List<string>();
@@ -505,6 +525,15 @@ public sealed class TemplateTakeTests : IAsyncDisposable
     {
         var taken = Assert.IsType<TakenVersion>(outcome);
         return taken.Version;
+    }
+
+    /// <summary>A check that ends exactly as a render on the take's deadline token does.</summary>
+    private sealed class EndsOnTheDeadlineCheck : ITemplateVersionCheck
+    {
+        public string Name => "ends-on-the-deadline";
+
+        public Task<TemplateCheckResult> CheckAsync(TemplateCandidate candidate, CancellationToken cancellationToken) =>
+            throw new OperationCanceledException("the take's deadline elapsed", cancellationToken);
     }
 
     private static Dictionary<string, byte[]> Package(

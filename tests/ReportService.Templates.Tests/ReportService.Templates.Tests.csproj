@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
   </ItemGroup>
 
 </Project>

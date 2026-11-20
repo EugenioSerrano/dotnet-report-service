@@ -344,6 +344,60 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
     }
 
+    /// <summary>The takeable family of the test library: three versions of one report, one engine each.</summary>
+    public const string SampleGate = "sample-gate";
+
+    /// <summary>The three takeable versions, one engine each.</summary>
+    public static IReadOnlyList<string> SampleGateEngines { get; } = ["1.0.0", "1.1.0", "1.2.0"];
+
+    /// <summary>Publishes one version of the takeable family into the source, untaken.</summary>
+    /// <param name="version">The version to publish.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public Task PublishSampleGateAsync(string version, CancellationToken cancellationToken) =>
+        Source.PublishAsync(SampleGate, version, SampleGateFiles(version));
+
+    /// <summary>
+    /// Publishes a variant of one takeable version: the folder is read, its declaration is
+    /// re-labelled to <paramref name="version"/>, the mutation is applied, and the result is
+    /// published untaken - the shape a version whose sample does not render has.
+    /// </summary>
+    /// <param name="folderVersion">The takeable version whose files the variant starts from.</param>
+    /// <param name="version">The version the variant declares and is published as.</param>
+    /// <param name="mutate">The change that makes the variant the case's own.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public Task PublishSampleGateVariantAsync(
+        string folderVersion,
+        string version,
+        Action<Dictionary<string, byte[]>> mutate,
+        CancellationToken cancellationToken)
+    {
+        var files = SampleGateFiles(folderVersion);
+        var declaration = Encoding.UTF8.GetString(files["template.yaml"])
+            .Replace("version: \"" + folderVersion + "\"", "version: \"" + version + "\"", StringComparison.Ordinal);
+        files["template.yaml"] = Encoding.UTF8.GetBytes(declaration);
+        mutate(files);
+        return Source.PublishAsync(SampleGate, version, files);
+    }
+
+    private static Dictionary<string, byte[]> SampleGateFiles(string version)
+    {
+        var folder = Path.Combine(
+            RepositoryPaths.Root,
+            "tests",
+            "ReportService.Testing",
+            "TemplatePackages",
+            SampleGate,
+            version);
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(folder, file).Replace(Path.DirectorySeparatorChar, '/');
+            files[relative] = File.ReadAllBytes(file);
+        }
+
+        return files;
+    }
+
     private async Task RecordTakenAsync(
         string templateId,
         string version,
