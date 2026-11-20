@@ -10,7 +10,7 @@ using ReportService.Testing.TemplateChecks;
 
 namespace ReportService.TemplateChecks.Tests;
 
-/// <summary>The twelve checks, their order, and the refusals an author reads.</summary>
+/// <summary>The thirteen checks, their order, and the refusals an author reads.</summary>
 public sealed class TemplateChecksTests
 {
     [Fact]
@@ -22,7 +22,8 @@ public sealed class TemplateChecksTests
             .BuildServiceProvider();
         var names = services.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToArray();
         Assert.Equal(TemplateChecksRegistration.Order, names);
-        Assert.Equal(SampleRenderCheck.CheckName, names[^1]);
+        Assert.Equal(AtBoundSampleCheck.CheckName, names[^1]);
+        Assert.Equal(SampleRenderCheck.CheckName, names[^2]);
     }
 
     [Fact]

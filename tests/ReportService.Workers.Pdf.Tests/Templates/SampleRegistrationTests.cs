@@ -15,18 +15,19 @@ using ReportService.Workers.Pdf.Templates;
 namespace ReportService.Workers.Pdf.Tests.Templates;
 
 /// <summary>
-/// The composition the worker runs: the take's twelve checks in their fixed order with
-/// the sample render last, the sample renderer the take's check resolves to the one
-/// implementation over the registered capability, and the API project naming none of
-/// the take's, the engine's or the renderer's assemblies. A wiring error is invisible
-/// to a hermetic suite, so it is asserted here where the process is built.
+/// The composition the worker runs: the take's thirteen checks in their fixed order with
+/// the record at the row bound last and the sample render before it, the sample renderer
+/// the take's check resolves to the one implementation over the registered capability,
+/// and the API project naming none of the take's, the engine's or the renderer's
+/// assemblies. A wiring error is invisible to a hermetic suite, so it is asserted here
+/// where the process is built.
 /// </summary>
 public sealed class SampleRegistrationTests
 {
     private static readonly string Root = FindRoot();
 
     [Fact]
-    public void TheWorkerResolvesTheSampleRendererAndTheTwelveChecksInOrder()
+    public void TheWorkerResolvesTheSampleRendererAndTheThirteenChecksInOrder()
     {
         using var host = Build();
 
@@ -34,9 +35,10 @@ public sealed class SampleRegistrationTests
         Assert.IsType<PdfSampleRenderer>(renderer);
 
         var checks = host.Services.GetServices<ITemplateVersionCheck>().ToArray();
-        Assert.Equal(12, checks.Length);
+        Assert.Equal(13, checks.Length);
         Assert.Equal(TemplateChecksRegistration.Order, checks.Select(check => check.Name));
-        Assert.Equal(SampleRenderCheck.CheckName, checks[^1].Name);
+        Assert.Equal(AtBoundSampleCheck.CheckName, checks[^1].Name);
+        Assert.Equal(SampleRenderCheck.CheckName, checks[^2].Name);
     }
 
     [Fact]

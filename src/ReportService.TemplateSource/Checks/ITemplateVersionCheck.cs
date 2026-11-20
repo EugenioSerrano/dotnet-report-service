@@ -64,8 +64,8 @@ public static class TemplateCheckCodes
 /// One check a version passes before it is taken. The eleven static checks and the
 /// sample render are registered by <c>AddTemplateVersionChecks</c>, in their fixed
 /// order, each as a check of its own, so a refusal always names the check that made
-/// it. The sample render is the twelfth and last; it runs after everything a parse
-/// can decide.
+/// it. The sample render is the twelfth, and the at-bound record the thirteenth and
+/// last; they run after everything a parse can decide.
 /// </summary>
 public interface ITemplateVersionCheck
 {

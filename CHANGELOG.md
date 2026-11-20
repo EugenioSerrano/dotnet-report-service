@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A PDF template version is taken only after a record whose largest text field is
+  exactly 256 KiB of UTF-8 - the row bound - is printed with every character on the
+  service's own print path and checked against the data contract: a version whose
+  page drops, alters or hides part of that record is refused
+  `TEMPLATE_INVALID` with the rule `at-bound-sample`, naming the file and the
+  field's path, and nothing of the version is kept. The field is the first place
+  the version's own data contract can carry that much text - the record's own
+  field, a field inside an object or an array, a member an open record admits, the
+  text side of a nullable field, or a field reached only through a combined,
+  conditional, dependent or fixed-position shape - item anchors first; a field
+  whose own limit or shape cannot hold 256 KiB is skipped; a version whose
+  contract can carry 256 KiB nowhere is taken, and so is one whose sample carries
+  no detail record (its record is built from the contract). The check writes one
+  `at-bound-sample` log line per take and never carries a value of the data.
 - A job request may carry an `Idempotency-Key` header: the key binds the job it creates
   to the consumer that sent it, and a request repeated with the same key is answered the
   first job - the same `202`, the same identifier, nothing written - instead of creating a
