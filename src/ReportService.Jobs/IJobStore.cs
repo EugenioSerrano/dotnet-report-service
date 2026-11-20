@@ -197,14 +197,17 @@ public interface IJobStore
     /// <summary>Ends one output that has not ended yet with the code of the condition.</summary>
     /// <param name="outputId">The identifier of the output.</param>
     /// <param name="code">The code of the condition that ended it.</param>
+    /// <param name="reason">The diagnostic recorded beside the code, or <see langword="null"/> when the condition carries none.</param>
     /// <param name="now">The instant the failure is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken);
+    Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
     /// Closes a job from the states its outputs imply, in one transaction: every output
     /// succeeded makes the job succeeded, a failed output makes it failed with that output's
-    /// code. A job that already ended, or whose outputs have not all ended, is left as it is.
+    /// code and - when it carries one - its own diagnostic; an output that carries none keeps
+    /// the fixed reason of an output-scoped failure. A job that already ended, or whose outputs
+    /// have not all ended, is left as it is.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="now">The instant the close is decided at, in UTC.</param>

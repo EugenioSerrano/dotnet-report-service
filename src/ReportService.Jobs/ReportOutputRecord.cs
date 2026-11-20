@@ -20,8 +20,10 @@ public sealed record ReportOutputRecord(
     public string? ErrorCode { get; init; }
 
     /// <summary>
-    /// The fixed reason recorded beside <see cref="ErrorCode"/> when the whole job failed; null
-    /// when the output ended on its own or carries no reason.
+    /// The diagnostic recorded beside <see cref="ErrorCode"/> when the output failed, when it
+    /// carries one; null when it ended without one or has not ended. A job-scoped failure
+    /// carries the job's own fixed reason; a failure of the output's own carries its
+    /// diagnostic.
     /// </summary>
     public string? ErrorReason { get; init; }
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using ReportService.Data;
 using ReportService.Jobs;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Telemetry;
@@ -159,9 +160,10 @@ public sealed class ReportJobWorkflow
                 options).ConfigureAwait(true);
         }
 
+        PartitionResult partition;
         try
         {
-            await Workflow.ExecuteActivityAsync(
+            partition = await Workflow.ExecuteActivityAsync(
                 (ValidateAndPartitionActivity activities) => activities.RunAsync(new ValidateAndPartitionInput(input.ReportJobId)),
                 PdfOutputActivityOptions.Create()).ConfigureAwait(true);
         }
@@ -183,11 +185,13 @@ public sealed class ReportJobWorkflow
         }
 
         // The step that prints what the data step admitted: the job moves to running, the
-        // one PDF output it asked for is looked up - a workflow reads nothing itself - and
-        // that output is produced by its own execution on the same queue, which prints and
-        // verifies the block and publishes it. A failure of any of the three steps ends the
-        // job with the code the failure carries, so no run stops with the job left running.
-        // The whole path is gated by its own patch, so every recorded run replays unchanged.
+        // one PDF output it asked for is looked up - a workflow reads nothing itself - and,
+        // when the pass refused that output by the row bound, it ends with the reason the
+        // pass kept before any child exists for it; otherwise that output is produced by its
+        // own execution on the same queue, which prints and verifies the block and publishes
+        // it. A failure of any of the steps ends the job with the code the failure carries,
+        // so no run stops with the job left running. The whole path is gated by its own
+        // patch, so every recorded run replays unchanged.
         if (Workflow.Patched(PrintingPathPatch))
         {
             try
@@ -201,14 +205,26 @@ public sealed class ReportJobWorkflow
                     (PdfOutputActivities activities) => activities.FindPdfOutputAsync(new FindPdfOutputInput(input.ReportJobId)),
                     options).ConfigureAwait(true);
 
-                await Workflow.ExecuteChildWorkflowAsync(
-                    (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
-                        new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
-                    new ChildWorkflowOptions
-                    {
-                        Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
-                        ParentClosePolicy = ParentClosePolicy.RequestCancel,
-                    }).ConfigureAwait(true);
+                if (partition.PdfRefusal is { } refusal)
+                {
+                    // The data step refused this output: it ends here, with the output's code
+                    // and the reason the pass kept, and no child is started for it.
+                    await Workflow.ExecuteActivityAsync(
+                        (JobTransitionActivities activities) => activities.FailOutputAsync(
+                            new FailOutputInput(output.OutputId, refusal.Code, refusal.Reason)),
+                        options).ConfigureAwait(true);
+                }
+                else
+                {
+                    await Workflow.ExecuteChildWorkflowAsync(
+                        (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                            new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
+                        new ChildWorkflowOptions
+                        {
+                            Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
+                            ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                        }).ConfigureAwait(true);
+                }
             }
             catch (ActivityFailureException failure)
             {

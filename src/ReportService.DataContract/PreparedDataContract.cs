@@ -80,6 +80,22 @@ public sealed class PreparedDataContract : IDisposable
     /// <returns>The verdict over the document.</returns>
     public ContractCheck CheckEnvelope(ReadOnlyMemory<byte> envelope) => Evaluate(_root, envelope);
 
+    /// <summary>
+    /// Renders a field's path relative to one value, in the form every data diagnostic of this
+    /// service names a field with: declared member names as <c>.name</c> or <c>['name']</c>, a
+    /// name the schema does not declare as <c>.*</c>, array positions as <c>[n]</c>, and the
+    /// whole path capped at 1 024 bytes. It names a position and never a value.
+    /// </summary>
+    /// <param name="value">The value's own bytes, as the reader yielded them.</param>
+    /// <param name="instanceLocation">The field's JSON Pointer inside the value, as the schema's results name it.</param>
+    /// <returns>The path, in the <c>$.name</c> form the diagnostics carry.</returns>
+    public string RenderFieldPath(ReadOnlyMemory<byte> value, string instanceLocation)
+    {
+        ArgumentNullException.ThrowIfNull(instanceLocation);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return RenderPath(value, instanceLocation, keyword: string.Empty);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

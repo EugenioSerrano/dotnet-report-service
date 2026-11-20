@@ -62,6 +62,9 @@ public static class JobHistoryFixtures
     /// <summary>A job whose input is ready at its first check and whose run reaches the finalising step.</summary>
     public const string FinalizedFile = "report-job-finalized.json";
 
+    /// <summary>A job whose PDF output the row bound refused: the output ends with the reason and no child starts.</summary>
+    public const string RowBoundRefusedFile = "report-job-row-bound-refused.json";
+
     /// <summary>A job whose reference named a version already taken: the step binds it without the source.</summary>
     public const string TemplateBoundFile = "report-job-template-bound.json";
 
@@ -168,6 +171,17 @@ public static class JobHistoryFixtures
         InputWaitOptions.DefaultContinueAsNewAfter);
 
     /// <summary>
+    /// A job whose PDF output the row bound refused: the data step commits the refusal with the
+    /// partition and returns it, the run moves to running, looks the output up and ends it with
+    /// the code and the reason the pass kept, and no child execution is ever started for it.
+    /// </summary>
+    public static readonly JobHistoryFixture RowBoundRefused = new(
+        RowBoundRefusedFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter,
+        MeasuredEvents: 59);
+
+    /// <summary>
     /// A job whose reference named a version already taken at its first check: the step binds
     /// that version with one read, the source is never read, and the run continues through the
     /// data step and the finalising step under the settings of a job that did not wait.
@@ -233,6 +247,7 @@ public static class JobHistoryFixtures
         RefusedSnapshot,
         TemplateThatCannotBeUsed,
         Finalized,
+        RowBoundRefused,
         TemplateBound,
         TemplateTaken,
         TemplateByName,

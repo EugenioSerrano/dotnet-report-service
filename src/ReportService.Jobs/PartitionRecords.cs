@@ -14,6 +14,8 @@ namespace ReportService.Jobs;
 /// <param name="IndexSha256">The SHA-256 of the index page, lower-case hexadecimal.</param>
 /// <param name="IndexSizeBytes">The size of the index page.</param>
 /// <param name="CommittedAt">When the partition became durable, in UTC.</param>
+/// <param name="PdfRefusalCode">The code the PDF output was refused with, when the pass refused it.</param>
+/// <param name="PdfRefusalReason">The stored reason of that refusal, kept with the partition so a repeated pass answers it.</param>
 public sealed record PartitionRecord(
     string ReportJobId,
     int PartitionerVersion,
@@ -23,7 +25,9 @@ public sealed record PartitionRecord(
     string IndexObjectKey,
     string IndexSha256,
     long IndexSizeBytes,
-    DateTimeOffset CommittedAt);
+    DateTimeOffset CommittedAt,
+    string? PdfRefusalCode = null,
+    string? PdfRefusalReason = null);
 
 /// <summary>One rendered block of an output, committed once under a write-once key.</summary>
 /// <param name="OutputId">The identifier of the output the block belongs to.</param>

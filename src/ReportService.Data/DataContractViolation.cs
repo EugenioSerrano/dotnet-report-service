@@ -19,6 +19,9 @@ public sealed class DataContractViolation : Exception
     /// <summary>A limit of the reader or of the partitioner was reached.</summary>
     public const string QuotaExceeded = "QUOTA_EXCEEDED";
 
+    /// <summary>A string value of a detail record is larger than the PDF row bound admits.</summary>
+    public const string RowBoundExceeded = "ROW_BOUND_EXCEEDED";
+
     /// <summary>The code of the condition that stopped the pass.</summary>
     public string Code { get; }
 
@@ -41,7 +44,7 @@ public sealed class DataContractViolation : Exception
     public string? Keyword { get; }
 
     /// <summary>Describes a refusal of the document.</summary>
-    /// <param name="code">One of <see cref="DataInvalid"/>, <see cref="RecordTooLarge"/> or <see cref="QuotaExceeded"/>.</param>
+    /// <param name="code">One of <see cref="DataInvalid"/>, <see cref="RecordTooLarge"/>, <see cref="QuotaExceeded"/> or <see cref="RowBoundExceeded"/>.</param>
     /// <param name="reason">Why it is invalid, or <see langword="null"/> when the code names no reason.</param>
     /// <param name="limit">The limit that was reached, or <see langword="null"/> when no limit was.</param>
     /// <param name="ordinal">The ordinal of the record the pass stopped at.</param>

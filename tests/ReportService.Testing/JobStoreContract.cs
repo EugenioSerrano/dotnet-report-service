@@ -370,10 +370,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
         await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
 
-        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
         Assert.Equal(
             OutputFailureOutcome.AlreadyTerminal,
-            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
 
         var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
         Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
@@ -381,6 +381,59 @@ public abstract class JobStoreContract : IAsyncLifetime
         var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.Equal("PAGINATION_FAILED", state!.Job.ErrorCode);
         Assert.Equal("output-failed", state.Job.ErrorReason);
+    }
+
+    [Fact]
+    public async Task APartitionsRefusalIsRecordedWithItAndAnsweredOnARepeat()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        const string Code = "ROW_BOUND_EXCEEDED";
+        const string Reason =
+            "the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description";
+        var partition = Partition(acceptance.ReportJobId) with
+        {
+            PdfRefusalCode = Code,
+            PdfRefusalReason = Reason,
+        };
+
+        var first = await Store.CommitPartitionAsync(partition, cancellationToken);
+        var repeated = await Store.CommitPartitionAsync(Partition(acceptance.ReportJobId), cancellationToken);
+        var read = await Store.FindPartitionAsync(acceptance.ReportJobId, cancellationToken);
+
+        Assert.Equal(PartitionCommitOutcome.Committed, first.Outcome);
+        Assert.Equal(Code, first.Existing.PdfRefusalCode);
+        Assert.Equal(PartitionCommitOutcome.AlreadyCommitted, repeated.Outcome);
+        Assert.Equal(Code, repeated.Existing.PdfRefusalCode);
+        Assert.Equal(Reason, repeated.Existing.PdfRefusalReason);
+        Assert.Equal(Code, read!.PdfRefusalCode);
+        Assert.Equal(Reason, read.PdfRefusalReason);
+    }
+
+    [Fact]
+    public async Task TheReasonOfAFailedOutputIsReadBackAndCopiedToTheJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        const string Code = "ROW_BOUND_EXCEEDED";
+        const string Reason =
+            "the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description";
+
+        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, Code, Reason, Now, cancellationToken));
+        var failed = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(Reason, Assert.Single(failed!.Outputs).ErrorReason);
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Failed, closed.Status);
+        Assert.Equal(Code, closed.ErrorCode);
+        Assert.Equal(Code, state!.Job.ErrorCode);
+        Assert.Equal(Reason, state.Job.ErrorReason);
     }
 
     [Fact]

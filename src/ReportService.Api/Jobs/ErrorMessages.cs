@@ -17,6 +17,9 @@ public static class ErrorMessages
     /// <summary>The code of a refusal because the report's data does not fit the limit applied to it.</summary>
     public const string QuotaExceeded = "QUOTA_EXCEEDED";
 
+    /// <summary>The code of a refusal because one text field of a detail record is larger than the PDF output admits.</summary>
+    public const string RowBoundExceeded = "ROW_BOUND_EXCEEDED";
+
     /// <summary>The sentence of a refusal the record count stopped: the record and the limit applied.</summary>
     private const string RecordsSentence =
         "The PDF report was not printed: record {0} exceeds this version's limit of {1} records per report (one block). Send a smaller report.";
@@ -24,6 +27,10 @@ public static class ErrorMessages
     /// <summary>The sentence of a refusal the record's bytes stopped: the record and the byte limit applied.</summary>
     private const string BytesSentence =
         "The PDF report was not printed: record {0} exceeds this version's limit of {1} bytes of record data per report (one block). Send a smaller report.";
+
+    /// <summary>The sentence of a refusal the row bound stopped: the record, the field, its size and the bound.</summary>
+    private const string RowBoundSentence =
+        "Record {0} has a text field at {1} of {2} bytes of UTF-8; the PDF output accepts at most {3} bytes per field. Shorten that field.";
 
     // The stored reason is the data step's whole sentence: the code, then the reason it names
     // (the dimension that was crossed and the value applied), then the limit's own token and
@@ -44,6 +51,21 @@ public static class ErrorMessages
     private const string LimitKey = " limit=";
 
     private const string BlockLimit = "block";
+
+    /// <summary>The reason word of the row bound's refusal.</summary>
+    private const string FieldTooLarge = "field-too-large";
+
+    /// <summary>The limit token of the row bound's refusal.</summary>
+    private const string RowBoundLimit = "row-bound";
+
+    private const string SizeKey = " size=";
+
+    private const string BoundKey = " bound=";
+
+    private const string PathKey = " path=";
+
+    /// <summary>The most bytes of UTF-8 one text field of a detail record may carry: a larger bound is not this version's.</summary>
+    private const int FieldBoundBytes = 262_144;
 
     private const string OrdinalKey = " ordinal=";
 
@@ -66,24 +88,126 @@ public static class ErrorMessages
     {
         ArgumentNullException.ThrowIfNull(logger);
 
-        if (reason is null || !string.Equals(code, QuotaExceeded, StringComparison.Ordinal))
+        if (reason is null)
         {
             return null;
         }
 
-        if (!TryParseRefusal(reason, out var dimension, out var applied, out var ordinal))
+        if (string.Equals(code, QuotaExceeded, StringComparison.Ordinal))
         {
-            logger.LogWarning(
-                "A stored failure of {ErrorCode} carries a reason this build cannot put in words; the answer names no message for it",
-                code);
-            return null;
+            if (!TryParseRefusal(reason, out var dimension, out var applied, out var ordinal))
+            {
+                WarnUnreadable(QuotaExceeded, logger);
+                return null;
+            }
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                dimension == BlockDimension.Records ? RecordsSentence : BytesSentence,
+                ordinal,
+                applied);
         }
 
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            dimension == BlockDimension.Records ? RecordsSentence : BytesSentence,
-            ordinal,
-            applied);
+        if (string.Equals(code, RowBoundExceeded, StringComparison.Ordinal))
+        {
+            if (!TryParseRowBound(reason, out var ordinal, out var size, out var bound, out var path))
+            {
+                WarnUnreadable(RowBoundExceeded, logger);
+                return null;
+            }
+
+            return string.Format(CultureInfo.InvariantCulture, RowBoundSentence, ordinal, path, size, bound);
+        }
+
+        return null;
+    }
+
+    // A reason this build cannot read is reported once, naming the code and never the text a
+    // consumer could not use anyway.
+    private static void WarnUnreadable(string code, ILogger logger) =>
+        logger.LogWarning(
+            "A stored failure of {ErrorCode} carries a reason this build cannot put in words; the answer names no message for it",
+            code);
+
+    // The row bound's reason, read in the delivered key order and read whole: the reason word,
+    // the field's size and the bound it crossed, the limit's token, the record and its start,
+    // and the field's path closing the sentence. A key out of order, an absent one, a size that
+    // is not above the bound, a bound this version does not apply, a negative position or a
+    // path the renderer could not have written all answer false.
+    private static bool TryParseRowBound(
+        string reason,
+        out int ordinal,
+        out long size,
+        out long bound,
+        out string path)
+    {
+        ordinal = 0;
+        size = 0;
+        bound = 0;
+        path = string.Empty;
+
+        if (!reason.StartsWith(ViolationPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var rest = reason.AsSpan(ViolationPrefix.Length);
+
+        if (!TryTakeToSpace(ref rest, out var storedCode) || !storedCode.SequenceEqual(RowBoundExceeded))
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, CodeSeparator)
+            || !TryTake(ref rest, FieldTooLarge)
+            || !TryTake(ref rest, SizeKey)
+            || !TryTakeToSpace(ref rest, out var sizeText)
+            || !long.TryParse(sizeText, NumberStyles.None, CultureInfo.InvariantCulture, out size)
+            || size < 1)
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, BoundKey)
+            || !TryTakeToSpace(ref rest, out var boundText)
+            || !long.TryParse(boundText, NumberStyles.None, CultureInfo.InvariantCulture, out bound)
+            || bound != FieldBoundBytes
+            || size <= bound)
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, LimitKey)
+            || !TryTakeToSpace(ref rest, out var limitText)
+            || !limitText.SequenceEqual(RowBoundLimit))
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, OrdinalKey)
+            || !TryTakeToSpace(ref rest, out var ordinalText)
+            || !int.TryParse(ordinalText, NumberStyles.None, CultureInfo.InvariantCulture, out ordinal)
+            || ordinal < 1)
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, OffsetKey)
+            || !TryTakeToSpace(ref rest, out var offsetText)
+            || !long.TryParse(offsetText, NumberStyles.None, CultureInfo.InvariantCulture, out var offset)
+            || offset < 0)
+        {
+            return false;
+        }
+
+        if (!TryTake(ref rest, PathKey) || rest.IsEmpty || rest[0] != '$')
+        {
+            return false;
+        }
+
+        // The path closes the sentence, so a declared name holding a space stays part of it.
+        path = rest.ToString();
+        return true;
     }
 
     // The reason's own shape, read in its fixed order and read whole: a key out of order, an
