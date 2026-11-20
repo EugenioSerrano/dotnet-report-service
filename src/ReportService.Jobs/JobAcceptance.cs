@@ -13,6 +13,7 @@ namespace ReportService.Jobs;
 /// <param name="TemplateId">The template's identifier, as the request wrote it.</param>
 /// <param name="ReferenceForm">Whether the request named a version.</param>
 /// <param name="RequestedVersion">The version the request named; null for a reference by name.</param>
+/// <param name="Fingerprint">The identity of the request, computed from what it asked for and never from state.</param>
 public sealed record JobAcceptance(
     string ReportJobId,
     string OutputId,
@@ -20,8 +21,16 @@ public sealed record JobAcceptance(
     string UploadId,
     string TemplateId,
     TemplateReferenceForm ReferenceForm,
-    string? RequestedVersion)
+    string? RequestedVersion,
+    RequestFingerprint Fingerprint)
 {
+    /// <summary>
+    /// The idempotency key the request carried, kept exactly as it was received; null when
+    /// the request carried none. A key is bound to the job this acceptance creates, for the
+    /// consumer that sent it, and is never reassigned.
+    /// </summary>
+    public string? IdempotencyKey { get; init; }
+
     /// <summary>
     /// The release version a by-name reference may fall back to when the template source
     /// cannot be checked, chosen at acceptance from the versions already taken; null for an

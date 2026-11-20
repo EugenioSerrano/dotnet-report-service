@@ -20,11 +20,33 @@ public interface IJobStore
     /// <param name="now">The instant the acceptance is decided at, in UTC; the job's clock and its creation are this instant.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
     /// <returns>
-    /// The job as committed, or <see cref="JobAcceptanceResult.UploadUnusable"/> when the
-    /// upload is absent for this consumer, not confirmed yet, refused, expired or overdue —
-    /// in which case nothing was written.
+    /// The job as committed; or <see cref="JobAcceptanceResult.UploadUnusable"/> when the
+    /// upload is absent for this consumer, not confirmed yet, refused, expired or overdue;
+    /// or <see cref="JobAcceptanceResult.SameRequest"/> / <see cref="JobAcceptanceResult.DifferentRequest"/>
+    /// when the acceptance's key is already bound — in every one of those cases nothing was
+    /// written. The key is decided inside the transaction, by the unique index, before the
+    /// upload is looked at, so a request that races another with the same key always receives
+    /// the winner's job rather than a refusal about an upload it would no longer see.
     /// </returns>
     Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads a job by the idempotency key a request bound to it, for the consumer that sent
+    /// that request, and compares the key's stored fingerprint with
+    /// <paramref name="fingerprint"/>. A bound row never changes, so this is a plain read
+    /// that takes no lock; a key of another consumer is not found, and nothing reveals that
+    /// it exists.
+    /// </summary>
+    /// <param name="consumerId">The declared consumer that owns the key.</param>
+    /// <param name="idempotencyKey">The key exactly as the request sent it.</param>
+    /// <param name="fingerprint">The identity of the request being answered.</param>
+    /// <param name="cancellationToken">The request's cancellation token.</param>
+    /// <returns>The key's answer: unused, the same request, or a different one.</returns>
+    Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Reads a job, its outputs and the state of the upload it reports on, by the

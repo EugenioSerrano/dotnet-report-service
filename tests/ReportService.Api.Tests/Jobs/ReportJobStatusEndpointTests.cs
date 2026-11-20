@@ -379,7 +379,8 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, JobApiHost.Now, cancellationToken));
         return (acceptance.ReportJobId, acceptance.OutputId);
     }
@@ -471,7 +472,13 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.AcceptAsync(acceptance, now, cancellationToken);
 
-        public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) =>
+        inner.FindByIdempotencyKeyAsync(consumerId, idempotencyKey, fingerprint, cancellationToken);
+    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.FindForWorkflowAsync(reportJobId, cancellationToken);
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) =>

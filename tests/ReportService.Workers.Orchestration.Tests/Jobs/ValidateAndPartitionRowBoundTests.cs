@@ -567,7 +567,8 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
                 cancellationToken));
 
         var accepted = await Jobs.AcceptAsync(
-            new JobAcceptance(ReportJobId, OutputId, ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0"),
+            new JobAcceptance(ReportJobId, OutputId, ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0",
+            ReportService.Testing.AcceptanceIdentity.For(UploadId)),
             Now,
             cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
@@ -636,7 +637,13 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.AcceptAsync(acceptance, now, cancellationToken);
 
-        public async Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) =>
+        inner.FindByIdempotencyKeyAsync(consumerId, idempotencyKey, fingerprint, cancellationToken);
+    public async Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
             await inner.FindForWorkflowAsync(reportJobId, cancellationToken) is { } state
                 ? state with { Outputs = [.. state.Outputs.Select(output => output with { Format = OutputFormat.Html })] }
                 : null;
