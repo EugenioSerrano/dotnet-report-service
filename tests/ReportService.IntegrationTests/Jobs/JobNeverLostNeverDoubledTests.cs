@@ -227,22 +227,23 @@ public sealed class JobNeverLostNeverDoubledTests : IClassFixture<PostgresFixtur
 
         Assert.True(terminal, $"the job {reportJobId} had to reach a terminal status within {OutcomeDeadline}");
 
-        // The end this build gives the job: the input is taken, the data step commits its one block
-        // of the sample's 40 records, and the render refuses the template because it declares page
-        // totals - a capability this service does not have yet - so the job and its one output end
-        // failed with that code and nothing is published. The success that would follow page
-        // accounting is not asserted here: this build cannot reach it.
+        // The end this build gives the job: the input is taken, the data step commits its one
+        // block of the sample's 40 records, and the render prints and publishes it - the sample
+        // template declares its page totals disabled, so the print path runs to its end. What
+        // this helper promises is the one execution and the one terminal status, not the code
+        // the job ends with: the run was scheduled once, the job ended, and it is neither lost
+        // nor doubled.
         var outcome = await TerminalOutcomeAsync(reportJobId, cancellationToken);
-        Assert.Equal("FAILED", outcome.Status);
-        Assert.Equal("UNSUPPORTED_CAPABILITY", outcome.ErrorCode);
+        Assert.Equal("SUCCEEDED", outcome.Status);
+        Assert.Null(outcome.ErrorCode);
         Assert.Equal(1, outcome.BlockCount);
         Assert.Equal(40L, outcome.RecordCount);
 
         var pdf = Assert.Single(await OutputsAsync(reportJobId, cancellationToken));
         Assert.Equal("PDF", pdf.Format);
-        Assert.Equal("FAILED", pdf.Status);
-        Assert.Equal("UNSUPPORTED_CAPABILITY", pdf.ErrorCode);
-        Assert.False(pdf.HasArtifact, $"the refused output of {reportJobId} publishes nothing");
+        Assert.Equal("SUCCEEDED", pdf.Status);
+        Assert.Null(pdf.ErrorCode);
+        Assert.True(pdf.HasArtifact, $"the printed output of {reportJobId} publishes one artifact");
 
         Assert.Single(await ReferencesAsync(reportJobId, cancellationToken));
     }
