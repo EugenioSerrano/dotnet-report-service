@@ -24,6 +24,9 @@ public static class TemplateFailureCodes
     /// <summary>The step found a record it needs absent, or reached a state it cannot pin.</summary>
     public const string ExecutionFailed = "EXECUTION_FAILED";
 
+    /// <summary>A render the take ran passed its own deadline; the version may be retried later.</summary>
+    public const string RenderTimeout = "RENDER_TIMEOUT";
+
     /// <summary>The reason recorded with <see cref="NotFound"/>.</summary>
     public const string NotFoundReason = "template-not-found";
 
@@ -38,6 +41,9 @@ public static class TemplateFailureCodes
 
     /// <summary>The reason recorded when the step itself failed, whatever the cause.</summary>
     public const string StepFailedReason = "template-step-failed";
+
+    /// <summary>The reason recorded with <see cref="RenderTimeout"/>.</summary>
+    public const string RenderTimeoutReason = "render-timeout";
 
     /// <summary>The reason recorded when the job's own template record could not be found.</summary>
     public const string RecordMissingReason = "template-record-missing";
@@ -66,6 +72,7 @@ public static class TemplateFailureCodes
         SourceUnavailable,
         UnsupportedCapability,
         ExecutionFailed,
+        RenderTimeout,
     ];
 
     /// <summary>True when <paramref name="errorType"/> is a code the step maps to a job failure.</summary>
@@ -86,6 +93,7 @@ public static class TemplateFailureCodes
         (Invalid, _) => InvalidReason,
         (SourceUnavailable, _) => SourceUnavailableReason,
         (UnsupportedCapability, _) => UnsupportedCapabilityReason,
+        (RenderTimeout, _) => RenderTimeoutReason,
         (ExecutionFailed, RecordMissingMessage) => RecordMissingReason,
         _ => StepFailedReason,
     };

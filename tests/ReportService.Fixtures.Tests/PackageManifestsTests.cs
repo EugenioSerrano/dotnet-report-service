@@ -21,9 +21,16 @@ public sealed class PackageManifestsTests
 
     private static string SameReportDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
 
+    private static string SampleGateDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+
     private static IReadOnlyList<string> SameReportIds =>
         [.. Directory.GetDirectories(SameReportDirectory)
             .Select(folder => PackageManifests.SameReportPrefix + Path.GetFileName(folder))
+            .Order(StringComparer.Ordinal)];
+
+    private static IReadOnlyList<string> SampleGateIds =>
+        [.. Directory.GetDirectories(SampleGateDirectory)
+            .Select(folder => PackageManifests.SampleGatePrefix + Path.GetFileName(folder))
             .Order(StringComparer.Ordinal)];
 
     /// <summary>
@@ -43,6 +50,7 @@ public sealed class PackageManifestsTests
             .Append(SimpleSample)
             .Concat(new[] { "page-frame-a4-landscape", "page-frame-letter-portrait", "page-frame-letter-landscape" })
             .Concat(SameReportIds)
+            .Concat(SampleGateIds)
             .Order(StringComparer.Ordinal)
             .ToList();
 
@@ -62,6 +70,15 @@ public sealed class PackageManifestsTests
         if (id.StartsWith(PackageManifests.SameReportPrefix, StringComparison.Ordinal))
         {
             var version = Path.Combine(SameReportDirectory, id[PackageManifests.SameReportPrefix.Length..]);
+            if (Directory.Exists(version))
+            {
+                return version;
+            }
+        }
+
+        if (id.StartsWith(PackageManifests.SampleGatePrefix, StringComparison.Ordinal))
+        {
+            var version = Path.Combine(SampleGateDirectory, id[PackageManifests.SampleGatePrefix.Length..]);
             if (Directory.Exists(version))
             {
                 return version;
@@ -98,6 +115,9 @@ public sealed class PackageManifestsTests
     [InlineData("same-report-1.2.0")]
     [InlineData("same-report-1.3.0")]
     [InlineData("same-report-1.4.0")]
+    [InlineData("sample-gate-1.0.0")]
+    [InlineData("sample-gate-1.1.0")]
+    [InlineData("sample-gate-1.2.0")]
     [InlineData(SimpleSample)]
     public void EveryDeclaredFileIsInThePackage(string id)
     {
@@ -137,6 +157,9 @@ public sealed class PackageManifestsTests
     [InlineData("same-report-1.2.0")]
     [InlineData("same-report-1.3.0")]
     [InlineData("same-report-1.4.0")]
+    [InlineData("sample-gate-1.0.0")]
+    [InlineData("sample-gate-1.1.0")]
+    [InlineData("sample-gate-1.2.0")]
     [InlineData(SimpleSample)]
     public void TheDeclarationMatchesThePackageManifest(string id)
     {

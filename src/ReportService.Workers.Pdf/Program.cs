@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
+using ReportService.TemplateChecks.Sample;
 using ReportService.Workers.Pdf;
 using ReportService.Workers.Pdf.Rendering;
 using ReportService.Workers.Pdf.Templates;
@@ -36,6 +37,11 @@ public sealed class PdfWorkerProgram
         builder.AddTemplateTakeWork();
         builder.AddTemplateResolutionWork();
         builder.AddPdfRenderingWork();
+
+        // The take's sample render: the one renderer over the capability registered above,
+        // and its instruments. The take resolves the check; the check resolves this port.
+        builder.Services.AddSingleton<SampleRenderMetrics>();
+        builder.Services.AddSingleton<ISampleRenderer, PdfSampleRenderer>();
 
         var app = builder.Build();
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });

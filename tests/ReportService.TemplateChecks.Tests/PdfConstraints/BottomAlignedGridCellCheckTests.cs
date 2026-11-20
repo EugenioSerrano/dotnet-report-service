@@ -516,15 +516,20 @@ public sealed class BottomAlignedGridCellCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("PageAccountingCheck", order[^3]);
-        Assert.Equal("NamedFontFamilyCheck", order[^2]);
-        Assert.Equal("BottomAlignedGridCellCheck", order[^1]);
+        Assert.Equal("PageAccountingCheck", order[^4]);
+        Assert.Equal("NamedFontFamilyCheck", order[^3]);
+        Assert.Equal("BottomAlignedGridCellCheck", order[^2]);
+        Assert.Equal("sample-render", order[^1]);
 
-        using var provider = new ServiceCollection().AddTemplateVersionChecks().BuildServiceProvider();
+        using var provider = new ServiceCollection()
+            .AddSingleton<ReportService.TemplateChecks.Sample.ISampleRenderer>(new ReportService.Testing.TemplateChecks.InMemorySampleRenderer().AlwaysRendered())
+            .AddTemplateVersionChecks()
+            .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();
-        Assert.Equal("PageAccountingCheck", names[^3]);
-        Assert.Equal("NamedFontFamilyCheck", names[^2]);
-        Assert.Equal("BottomAlignedGridCellCheck", names[^1]);
+        Assert.Equal("PageAccountingCheck", names[^4]);
+        Assert.Equal("NamedFontFamilyCheck", names[^3]);
+        Assert.Equal("BottomAlignedGridCellCheck", names[^2]);
+        Assert.Equal("sample-render", names[^1]);
     }
 
     private static async Task<TemplateCheckResult> CheckAsync(string stylesheet, string? row = null)

@@ -57,6 +57,22 @@ public sealed class TemplateEngineTests
     }
 
     [Fact]
+    public void TheThreePinsAreTheFallbackBeforeAnyProcessFeedsTheCatalog()
+    {
+        // No process that feeds is loaded here: this assembly cannot reach
+        // ReportService.Templates, so the table can only be the build's pins.
+        Assert.Equal(
+            ["7.5.1", "2.4.3", "2.40.0"],
+            TemplateEngineCatalog.Registration.Select(row => row.Value));
+        Assert.Equal(
+            [TemplateEngine.Scriban, TemplateEngine.Handlebars, TemplateEngine.LiquidFluid],
+            TemplateEngineCatalog.Registration.Select(row => row.Key));
+        Assert.DoesNotContain(
+            typeof(TemplateEngineCatalog).Assembly.GetReferencedAssemblies(),
+            reference => string.Equals(reference.Name, "ReportService.Templates", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TheCatalogNamesOneVersionPerEngine()
     {
         Assert.Equal("7.5.1", TemplateEngineCatalog.VersionOf(TemplateEngine.Scriban));
@@ -86,7 +102,7 @@ public sealed class TemplateEngineTests
             Shared: true,
             "1.0",
             TemplateEngine.Handlebars,
-            TemplateEngineCatalog.HandlebarsVersion,
+            "2.4.3",
             "schema.json",
             new string('1', 40),
             new string('2', 40),

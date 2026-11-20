@@ -21,8 +21,18 @@ internal static class PackageManifests
     /// <summary>The prefix a version of the same report is printed under, so the flat package folder names its engine.</summary>
     public const string SameReportPrefix = "same-report-";
 
+    /// <summary>The prefix a takeable sample-gate version is printed under, beside the delivered family.</summary>
+    public const string SampleGatePrefix = "sample-gate-";
+
     /// <summary>The five versions of the same report: three engines in the base locale and two other locales.</summary>
     public static IReadOnlyList<string> SameReportVersions { get; } = ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"];
+
+    /// <summary>The three takeable versions of the sample-gate family, one engine each.</summary>
+    public static IReadOnlyList<string> SampleGateVersions { get; } = ["1.0.0", "1.1.0", "1.2.0"];
+
+    /// <summary>The three takeable versions, under the flat names the suite mounts them as.</summary>
+    public static IReadOnlyList<string> SampleGatePackages { get; } =
+        [.. SampleGateVersions.Select(version => SampleGatePrefix + version)];
 
     /// <summary>The three versions that print the report in three engines, under the base locale.</summary>
     public static IReadOnlyList<string> SameReportEngines { get; } = [SameReportPrefix + "1.0.0", SameReportPrefix + "1.1.0", SameReportPrefix + "1.2.0"];
@@ -41,6 +51,7 @@ internal static class PackageManifests
         PageFrame + "-letter-portrait",
         "pilot-simple",
         .. SameReportVersions.Select(version => SameReportPrefix + version),
+        .. SampleGatePackages,
     ];
 
     /// <summary>The four geometries the page-frame package is printed on.</summary>
@@ -69,6 +80,7 @@ internal static class PackageManifests
             PageFrame + "-letter-portrait" => PageFrameManifest(LetterPortrait),
             PageFrame + "-letter-landscape" => PageFrameManifest(LetterLandscape),
             _ when id.StartsWith(SameReportPrefix, StringComparison.Ordinal) => SameReport(id[SameReportPrefix.Length..]),
+            _ when id.StartsWith(SampleGatePrefix, StringComparison.Ordinal) => SameReport(id[SampleGatePrefix.Length..]),
             _ => TestPackage(),
         };
     }

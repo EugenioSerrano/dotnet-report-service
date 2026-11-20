@@ -18,6 +18,7 @@ public sealed class TemplateStepFailuresTests
     [InlineData("TEMPLATE_INVALID", "template-invalid")]
     [InlineData("TEMPLATE_SOURCE_UNAVAILABLE", "template-source-unavailable")]
     [InlineData("UNSUPPORTED_CAPABILITY", "unsupported-capability")]
+    [InlineData("RENDER_TIMEOUT", "render-timeout")]
     public void ARefusalKeepsItsCodeAndItsConstantReason(string code, string reason)
     {
         var mapped = Map(code, "what the consumer has to fix");
@@ -25,6 +26,17 @@ public sealed class TemplateStepFailuresTests
         Assert.Equal(code, mapped.Code);
         Assert.Equal(reason, mapped.Reason);
         Assert.Equal("what the consumer has to fix", mapped.Message);
+    }
+
+    [Fact]
+    public void ARenderTimeoutIsMappedAndIsNotReplacedByTheStepsOwnCode()
+    {
+        var mapped = Map("RENDER_TIMEOUT", "the sample render did not finish within its deadline");
+
+        Assert.Equal("RENDER_TIMEOUT", mapped.Code);
+        Assert.Equal("render-timeout", mapped.Reason);
+        Assert.Equal("the sample render did not finish within its deadline", mapped.Message);
+        Assert.True(TemplateFailureCodes.IsTemplateCode("RENDER_TIMEOUT"));
     }
 
     [Fact]

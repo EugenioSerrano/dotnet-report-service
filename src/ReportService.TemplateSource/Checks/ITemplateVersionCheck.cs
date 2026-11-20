@@ -61,10 +61,11 @@ public static class TemplateCheckCodes
 }
 
 /// <summary>
-/// One check a version passes before it is taken. This build registers none:
-/// the schema and syntax checks, the sample render and the PDF constraints are
-/// added by later changes, each as a check of its own, so a refusal always
-/// names the check that made it.
+/// One check a version passes before it is taken. The eleven static checks and the
+/// sample render are registered by <c>AddTemplateVersionChecks</c>, in their fixed
+/// order, each as a check of its own, so a refusal always names the check that made
+/// it. The sample render is the twelfth and last; it runs after everything a parse
+/// can decide.
 /// </summary>
 public interface ITemplateVersionCheck
 {
