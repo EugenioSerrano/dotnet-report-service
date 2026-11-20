@@ -351,6 +351,49 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ABoundKeyIsAnsweredBeforeAnAbsentOrNotOwnedUpload()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        // The key is bound and the request is the one that bound it, though it now names an
+        // upload this consumer does not have: a bound key is answered its job, never a refusal
+        // about the upload. (The identity is passed as the same one on purpose: it is what the
+        // first request wrote, and it is the key's answer this case pins, not the reference.)
+        var absent = "upload-" + new string('f', 32);
+        var sameRequest = acceptance with
+        {
+            UploadId = absent,
+            ReportJobId = JobIdentifier.Create(),
+            OutputId = JobIdentifier.CreateOutput(),
+        };
+        Assert.Equal(
+            acceptance.ReportJobId,
+            Assert.IsType<JobAcceptanceResult.SameRequest>(
+                await Store.AcceptAsync(sameRequest, Now, cancellationToken)).ReportJobId);
+
+        // A different request under the same key, naming an upload of another consumer: the
+        // key's answer is the conflict, not the upload's.
+        var foreign = await SeedAsync(UploadState.Ready, "another-consumer", cancellationToken);
+        var conflict = Acceptance(foreign, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.DifferentRequest>(await Store.AcceptAsync(conflict, Now, cancellationToken));
+
+        // Without a key, the same absent reference is the unusable upload a first request is
+        // answered with.
+        Assert.IsType<JobAcceptanceResult.UploadUnusable>(
+            await Store.AcceptAsync(Acceptance(absent), Now, cancellationToken));
+
+        // Neither refused request bound anything, and the first job is still the key's row.
+        Assert.Equal(
+            acceptance.ReportJobId,
+            Assert.IsType<IdempotencyLookup.SameRequest>(
+                await Store.FindByIdempotencyKeyAsync(Consumer, "K1", acceptance.Fingerprint, cancellationToken))
+                .ReportJobId);
+    }
+
+    [Fact]
     public async Task AJobWithoutAKeyIsAcceptedAndTwoSuchJobsCoexist()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

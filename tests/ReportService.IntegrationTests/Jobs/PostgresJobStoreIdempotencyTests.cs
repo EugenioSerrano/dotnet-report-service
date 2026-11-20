@@ -165,7 +165,7 @@ public sealed class PostgresJobStoreIdempotencyTests : IClassFixture<PostgresFix
             "consumer_id = 'another-consumer'",
             $"upload_id = '{await ReadyUploadAsync(cancellationToken)}'",
             "idempotency_key = 'K2'",
-            $"fingerprint = '{IdentityOf(uploadId, "1.0.0").Value}'",
+            $"fingerprint = '{IdentityOf(uploadId, "1.1.0").Value}'",
         ];
         foreach (var assignment in refused)
         {
@@ -236,7 +236,7 @@ public sealed class PostgresJobStoreIdempotencyTests : IClassFixture<PostgresFix
     public async Task ALoserIsAnsweredTheWinnersJobWhenTheUploadIsUnusableToIt()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var uploadId = await ReadyUploadAsync(cancellationToken);
+        var uploadId = await ReadyUploadAsync(verifying: true, Now.AddMinutes(30), cancellationToken);
         var fingerprint = IdentityOf(uploadId, "1.0.0");
 
         // (a) The upload is overdue by the loser's later clock while the winner is open: the
@@ -383,9 +383,19 @@ public sealed class PostgresJobStoreIdempotencyTests : IClassFixture<PostgresFix
         AcceptanceIdentity.For(uploadId, version);
 
     private async Task<string> ReadyUploadAsync(CancellationToken cancellationToken) =>
-        await ReadyUploadAsync(verifying: false, cancellationToken);
+        await ReadyUploadAsync(verifying: false, Now.AddHours(5), cancellationToken);
 
-    private async Task<string> ReadyUploadAsync(bool verifying, CancellationToken cancellationToken)
+    private async Task<string> ReadyUploadAsync(bool verifying, CancellationToken cancellationToken) =>
+        await ReadyUploadAsync(verifying, Now.AddHours(5), cancellationToken);
+
+    // A confirmed upload is usable until its verification deadline, and a ready one never
+    // becomes unusable by time - the snapshot it fixed is immutable. A case that needs an
+    // upload the service refuses by time alone therefore seeds a verifying one with a deadline
+    // before the instant it judges at.
+    private async Task<string> ReadyUploadAsync(
+        bool verifying,
+        DateTimeOffset verificationDeadline,
+        CancellationToken cancellationToken)
     {
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
         await _uploads.CreateAsync(
@@ -404,7 +414,7 @@ public sealed class PostgresJobStoreIdempotencyTests : IClassFixture<PostgresFix
         Assert.True(await _uploads.RecordTransferAsync(
             uploadId, UploadContentOutcome.Complete, 900, 900, new string('a', 64), Now.AddMinutes(-20), cancellationToken));
         Assert.True(await _uploads.ConfirmAsync(
-            uploadId, Consumer, null, Now.AddMinutes(-21), Now.AddMinutes(-20), Now.AddHours(5), cancellationToken));
+            uploadId, Consumer, null, Now.AddMinutes(-21), Now.AddMinutes(-20), verificationDeadline, cancellationToken));
         if (!verifying)
         {
             Assert.Equal(

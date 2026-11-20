@@ -216,9 +216,10 @@ public sealed partial class InMemoryJobStore : IJobStore
 
         lock (_gate)
         {
-            // The key is answered before the upload is looked at, exactly as the real store's
-            // unique index decides the race before its upload check: a repeat of an accepted
-            // request keeps answering its first job whatever the upload has become since.
+            // The key is answered first, even when the request names an upload this consumer does
+            // not have: the real store writes the row as the key's gate and answers a bound key
+            // from the row it bound, so a repeat never learns about the upload. Only a request
+            // without a bound key is refused on the upload's reference or its state.
             if (acceptance.IdempotencyKey is { } key
                 && _idempotency.TryGetValue((acceptance.ConsumerId, key), out var bound))
             {

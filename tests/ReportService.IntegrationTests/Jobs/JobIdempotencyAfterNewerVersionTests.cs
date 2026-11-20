@@ -44,6 +44,7 @@ namespace ReportService.IntegrationTests.Jobs;
 public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<PostgresFixture>, IAsyncLifetime
 {
     private const string ConsumerA = "consumer-a";
+    private const string Owner = ByNameFixtures.Owner;
     private const string Template = ByNameFixtures.Template;
     private const string First = ByNameFixtures.First;
     private const string Second = ByNameFixtures.Second;
@@ -146,21 +147,24 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
         var cancellationToken = TestContext.Current.CancellationToken;
 
         // The first job is accepted by name with a key and pinned to the release it took.
-        var first = await AcceptedJobAsync(version: null, key: "K1", cancellationToken);
+        var firstUpload = await ReadyUploadAsync(cancellationToken);
+        var first = await AcceptedJobAsync(firstUpload, version: null, key: "K1", cancellationToken);
         Assert.Equal(First, await PinnedVersionAsync(first, cancellationToken));
         var positions = await SnapshotAsync(cancellationToken);
 
         // A newer release is published and taken, by a job that names it exactly.
         await ByNameFixtures.SeedAsync(_source!, Second);
-        var second = await AcceptedJobAsync(version: Second, key: "K2", cancellationToken);
+        var second = await AcceptedJobAsync(
+            await ReadyUploadAsync(cancellationToken), version: Second, key: "K2", cancellationToken);
         Assert.Equal(Second, await PinnedVersionAsync(second, cancellationToken));
         Assert.NotEqual(first, second);
 
         var afterTake = await SnapshotAsync(cancellationToken);
 
-        // The same request with the same key is answered its first job: still pinned to the
-        // version it took, with no new job, no new start request and no new take.
-        var repeat = await SubmitAsync(version: null, key: "K1", cancellationToken);
+        // The same request with the same key - its own upload included - is answered its first
+        // job: still pinned to the version it took, with no new job, no new start request and no
+        // new take.
+        var repeat = await SubmitAsync(firstUpload, version: null, key: "K1", cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, repeat.StatusCode);
         Assert.Equal(first, ReportJobIdOf(await repeat.Content.ReadAsStringAsync(cancellationToken)));
         Assert.Equal(First, await PinnedVersionAsync(first, cancellationToken));
@@ -170,15 +174,20 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
         Assert.Equal(afterTake.TakenVersions, (await SnapshotAsync(cancellationToken)).TakenVersions);
 
         // The same request under a new key is a new job, pinned to the newer release.
-        var newer = await AcceptedJobAsync(version: null, key: "K3", cancellationToken);
+        var newer = await AcceptedJobAsync(
+            await ReadyUploadAsync(cancellationToken), version: null, key: "K3", cancellationToken);
         Assert.NotEqual(first, newer);
         Assert.Equal(Second, await PinnedVersionAsync(newer, cancellationToken));
         Assert.Equal(positions.Jobs + 2, (await SnapshotAsync(cancellationToken)).Jobs);
     }
 
-    private async Task<string> AcceptedJobAsync(string? version, string key, CancellationToken cancellationToken)
+    private async Task<string> AcceptedJobAsync(
+        string uploadId,
+        string? version,
+        string key,
+        CancellationToken cancellationToken)
     {
-        using var response = await SubmitAsync(version, key, cancellationToken);
+        using var response = await SubmitAsync(uploadId, version, key, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         Assert.True(
             response.StatusCode == HttpStatusCode.Accepted,
@@ -186,10 +195,13 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
         return ReportJobIdOf(body);
     }
 
-    private async Task<HttpResponseMessage> SubmitAsync(string? version, string key, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> SubmitAsync(
+        string uploadId,
+        string? version,
+        string key,
+        CancellationToken cancellationToken)
     {
         using var api = _api!.CreateClient();
-        var uploadId = await ReadyUploadAsync(cancellationToken);
         var template = version is null
             ? $$"""{"id":"{{Template}}"}"""
             : $$"""{"id":"{{Template}}","version":"{{version}}"}""";
@@ -200,7 +212,7 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
                 Encoding.UTF8,
                 "application/json"),
         };
-        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, ConsumerA);
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Owner);
         request.Headers.TryAddWithoutValidation(IdempotencyKeyHeader.HeaderName, key);
         return await api.SendAsync(request, cancellationToken);
     }
@@ -278,7 +290,8 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
             registry,
             $$"""
             { "consumers": [
-                { "consumerId": "{{ConsumerA}}", "active": true } ] }
+                { "consumerId": "{{ConsumerA}}", "active": true },
+                { "consumerId": "{{Owner}}", "active": true } ] }
             """);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -347,7 +360,7 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
         await uploads.CreateAsync(
             new UploadRecord(
                 uploadId,
-                ConsumerA,
+                Owner,
                 UploadMode.ApiStream,
                 DataProfile.HeaderItemsV1,
                 UploadStatus.Created,
@@ -355,16 +368,16 @@ public sealed class JobIdempotencyAfterNewerVersionTests : IClassFixture<Postgre
                 now,
                 now.AddHours(1)),
             cancellationToken);
-        Assert.True(await uploads.TryStartTransferAsync(uploadId, ConsumerA, UploadContentEncoding.None, now, cancellationToken));
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, Owner, UploadContentEncoding.None, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(
             uploadId, UploadContentOutcome.Complete, 900, 900, new string('a', 64), now, cancellationToken));
-        Assert.True(await uploads.ConfirmAsync(uploadId, ConsumerA, null, now, now, now.AddHours(1), cancellationToken));
+        Assert.True(await uploads.ConfirmAsync(uploadId, Owner, null, now, now, now.AddHours(1), cancellationToken));
         Assert.Equal(
             SnapshotCommitResult.Committed,
             await uploads.CommitReadyAsync(
                 new SnapshotRecord(
                     uploadId,
-                    ConsumerA,
+                    Owner,
                     ObjectKey.FromSegments("snapshots", uploadId, "a"),
                     UploadContentEncoding.None,
                     DataProfile.HeaderItemsV1,

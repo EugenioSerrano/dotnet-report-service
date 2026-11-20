@@ -66,6 +66,15 @@ public sealed partial class PostgresJobStore : IJobStore
         WHERE consumer_id = @ConsumerId AND idempotency_key = @IdempotencyKey
         """;
 
+    // The constraint the job row's upload reference is held by: a request naming an upload this
+    // consumer does not have cannot be written, and the savepoint lets that refusal be answered
+    // instead of ending the transaction.
+    private const string UploadReferenceConstraint = "report_jobs_upload_id_fkey";
+
+    private const string JobInsertSavepoint = "SAVEPOINT report_jobs_insert";
+
+    private const string JobInsertRollback = "ROLLBACK TO SAVEPOINT report_jobs_insert";
+
     private const string InsertOutputSql = """
         INSERT INTO report_service.report_outputs
             (output_id, report_job_id, format, status, error_code, started_at, finished_at)
@@ -299,16 +308,45 @@ public sealed partial class PostgresJobStore : IJobStore
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
 
-            // The job row is written first, so the unique index decides a race on the key before
-            // anything else is looked at: a request that loses the race receives the winner's job
-            // whatever it would have made of the upload. A request without a key is outside the
+            // The job row is the key's gate, exactly as the plan fixes it: the insert runs first,
+            // so the unique index decides a race on the key before anything else is looked at. The
+            // row names the upload through a foreign key, so a request naming an upload this
+            // consumer does not have cannot be written at all; the savepoint lets that refusal be
+            // answered instead of ending the transaction, and the key is read after it - so a
+            // request whose key is bound receives the key's answer and never a refusal about an
+            // upload the bound job already exists for. A request without a key is outside the
             // partial index and can never meet a conflict here.
-            var inserted = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
-                InsertJobSql,
-                parameters,
-                transaction,
-                CommandTimeoutSeconds,
+            await connection.ExecuteAsync(new CommandDefinition(
+                JobInsertSavepoint,
+                transaction: transaction,
+                commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            string? inserted;
+            try
+            {
+                inserted = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
+                    InsertJobSql,
+                    parameters,
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+            }
+            catch (PostgresException exception) when (
+                exception.SqlState == PostgresErrorCodes.ForeignKeyViolation
+                && string.Equals(exception.ConstraintName, UploadReferenceConstraint, StringComparison.Ordinal))
+            {
+                // The row cannot name an upload this consumer does not have. The key is answered
+                // from what a committed row already says, and only a request without one (or with
+                // an unbound key) is refused as an unusable upload.
+                await connection.ExecuteAsync(new CommandDefinition(
+                    JobInsertRollback,
+                    transaction: transaction,
+                    commandTimeout: CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+                return await AnswerWithoutTheRowAsync(connection, transaction, acceptance, cancellationToken)
+                    .ConfigureAwait(false);
+            }
 
             if (inserted is null)
             {
@@ -654,6 +692,39 @@ public sealed partial class PostgresJobStore : IJobStore
 
     private static bool IsSameRequest(BoundRequestRow bound, RequestFingerprint fingerprint) =>
         string.Equals(bound.Fingerprint, fingerprint.Value, StringComparison.Ordinal);
+
+    // The answer of an insert the upload reference refused: the key, when the request carried a
+    // bound one, is read from the committed row it bound - the read runs after the rollback to the
+    // savepoint and before the transaction is rolled back - and only a request without a key, or
+    // with one nothing is bound to, is refused as an unusable upload.
+    private static async Task<JobAcceptanceResult> AnswerWithoutTheRowAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        JobAcceptance acceptance,
+        CancellationToken cancellationToken)
+    {
+        if (acceptance.IdempotencyKey is null)
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            return new JobAcceptanceResult.UploadUnusable();
+        }
+
+        var bound = await connection.QuerySingleOrDefaultAsync<BoundRequestRow>(new CommandDefinition(
+            SelectBoundRequestSql,
+            new { acceptance.ConsumerId, acceptance.IdempotencyKey },
+            transaction,
+            CommandTimeoutSeconds,
+            cancellationToken: cancellationToken)).ConfigureAwait(false);
+        await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+        if (bound is null)
+        {
+            return new JobAcceptanceResult.UploadUnusable();
+        }
+
+        return IsSameRequest(bound, acceptance.Fingerprint)
+            ? new JobAcceptanceResult.SameRequest(bound.ReportJobId)
+            : new JobAcceptanceResult.DifferentRequest();
+    }
 
     // The key rule the API applies, stated again at the store's own boundary: 1 to 255 visible
     // ASCII characters. A value the product never produces is a fault of the caller, and the
