@@ -104,6 +104,8 @@ public sealed class ReportPdfOutputWorkflow
         "UNSUPPORTED_CAPABILITY",
         "QUOTA_EXCEEDED",
         "RENDER_TIMEOUT",
+        "DATA_INVALID",
+        "TEMPLATE_INVALID",
         "EXECUTION_FAILED",
     };
 

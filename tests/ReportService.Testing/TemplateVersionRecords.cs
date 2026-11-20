@@ -49,6 +49,9 @@ public static class TemplateVersionRecords
     /// <param name="schemaRef">The package-relative path of the schema.</param>
     /// <param name="packageSha256">The hash of the package's bytes.</param>
     /// <param name="takenAt">When the version was taken.</param>
+    /// <param name="commitSha">The commit the version was read at.</param>
+    /// <param name="localeCulture">The culture the package declares as its own, when it declares one.</param>
+    /// <param name="localeTimeZone">The time zone the package declares as its own, when it declares one.</param>
     public static TemplateVersionRecord Sample(
         string templateId = "invoice-energy",
         string version = "1.1.0",
@@ -59,8 +62,13 @@ public static class TemplateVersionRecords
         string schemaRef = "schema/data.schema.json",
         string packageSha256 = PackageSha256,
         DateTimeOffset? takenAt = null,
-        string commitSha = CommitSha)
+        string commitSha = CommitSha,
+        string? localeCulture = null,
+        string? localeTimeZone = null)
     {
+        var locale = localeCulture is null && localeTimeZone is null
+            ? null
+            : new TemplateLocaleDefaults { Culture = localeCulture, TimeZone = localeTimeZone };
         var manifest = new TemplateManifest
         {
             ManifestVersion = "1.0",
@@ -76,6 +84,7 @@ public static class TemplateVersionRecords
                 Version = "1.0",
                 Schema = schemaRef,
             },
+            LocaleDefaults = locale,
         };
 
         var document = new JsonObject
@@ -94,6 +103,14 @@ public static class TemplateVersionRecords
                 ["schema"] = schemaRef,
             },
         };
+        if (locale is not null)
+        {
+            document["localeDefaults"] = new JsonObject
+            {
+                ["culture"] = locale.Culture,
+                ["timeZone"] = locale.TimeZone,
+            };
+        }
 
         return new TemplateVersionRecord(
             templateId,

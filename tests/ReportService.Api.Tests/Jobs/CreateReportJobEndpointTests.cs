@@ -2,6 +2,7 @@ using System.Net;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -692,8 +693,9 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             string reportJobId,
             TemplatePin pin,
             DateTimeOffset now,
-            CancellationToken cancellationToken) =>
-            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
+            CancellationToken cancellationToken,
+            TemplateLocaleDefaults? presentation) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken, presentation);
 
         public Task<TransitionJobResult> TransitionJobAsync(
             string reportJobId,
@@ -790,7 +792,8 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             string reportJobId,
             TemplatePin pin,
             DateTimeOffset now,
-            CancellationToken cancellationToken) =>
+            CancellationToken cancellationToken,
+            TemplateLocaleDefaults? presentation) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
 
         public Task<TransitionJobResult> TransitionJobAsync(

@@ -1192,6 +1192,91 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task APinCompletesThePresentationTheAcceptanceLeftOpen()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var written = await Store.PinTemplateAsync(
+            acceptance.ReportJobId,
+            PinOf(version),
+            Now.AddSeconds(1),
+            cancellationToken,
+            new TemplateLocaleDefaults { Culture = "es-AR", TimeZone = "America/Argentina/Buenos_Aires" });
+
+        Assert.True(written.WasWrittenByThisCall);
+
+        // The job the render reads carries the presentation the version declared, and the
+        // step's own read of the reference answers the same two values.
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("es-AR", state!.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", state.Job.TimeZone);
+
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("es-AR", reference!.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", reference.TimeZone);
+
+        // The value is completed once: a later attempt cannot give the job another one, and
+        // the pin that was committed first still answers for the version.
+        var second = await Store.PinTemplateAsync(
+            acceptance.ReportJobId,
+            PinOf(version, hash: new string('b', 64)),
+            Now.AddSeconds(2),
+            cancellationToken,
+            new TemplateLocaleDefaults { Culture = "en-GB", TimeZone = "Europe/Madrid" });
+
+        Assert.False(second.WasWrittenByThisCall);
+        var afterSecondPin = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("es-AR", afterSecondPin!.Job.Culture);
+        Assert.Equal("America/Argentina/Buenos_Aires", afterSecondPin.Job.TimeZone);
+    }
+
+    [Fact]
+    public async Task APinKeepsThePresentationTheAcceptanceNamed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken)) with
+        {
+            Culture = "en-us",
+            TimeZone = "Asia/Tokyo",
+        };
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        await Store.PinTemplateAsync(
+            acceptance.ReportJobId,
+            PinOf(version),
+            Now.AddSeconds(1),
+            cancellationToken,
+            new TemplateLocaleDefaults { Culture = "es-AR", TimeZone = "America/Argentina/Buenos_Aires" });
+
+        // What the request named is the job's, in its own spelling: a package of another
+        // culture can never move a report that was accepted in this one.
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal("en-us", state!.Job.Culture);
+        Assert.Equal("Asia/Tokyo", state.Job.TimeZone);
+    }
+
+    [Fact]
+    public async Task APinOfAPackageThatDeclaresNoPresentationLeavesTheJobWithoutOne()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var version = await TakenAsync("1.0.0", cancellationToken);
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
+
+        // A package that declares none completes nothing: the render refuses the job, which
+        // is the stop the approved plan names, never a guess.
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Null(state!.Job.Culture);
+        Assert.Null(state.Job.TimeZone);
+    }
+
+    [Fact]
     public async Task APresentationOfTheShortestAndLongestLengthIsStoredWhole()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -1229,8 +1314,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
 
-        var first = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
-        var second = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version, hash: new string('b', 64)), Now.AddSeconds(2), cancellationToken);
+        var first = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
+        var second = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version, hash: new string('b', 64)), Now.AddSeconds(2), cancellationToken, presentation: null);
 
         Assert.True(first.WasWrittenByThisCall);
         Assert.Equal(version, first.Pin!.ResolvedVersion);
@@ -1252,8 +1337,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         // shape the second attempt carries.
         var gitAcceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(gitAcceptance, Now, cancellationToken);
-        var gitFirst = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken);
-        var storageSecond = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(2), cancellationToken);
+        var gitFirst = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(1), cancellationToken, presentation: null);
+        var storageSecond = await Store.PinTemplateAsync(gitAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(2), cancellationToken, presentation: null);
 
         Assert.True(gitFirst.WasWrittenByThisCall);
         Assert.False(storageSecond.WasWrittenByThisCall);
@@ -1265,8 +1350,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         // And the reverse: a storage-shaped pin first, a legacy one after it.
         var storageAcceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(storageAcceptance, Now, cancellationToken);
-        var storageFirst = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
-        var gitSecond = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(2), cancellationToken);
+        var storageFirst = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
+        var gitSecond = await Store.PinTemplateAsync(storageAcceptance.ReportJobId, PinOfGit(version), Now.AddSeconds(2), cancellationToken, presentation: null);
 
         Assert.True(storageFirst.WasWrittenByThisCall);
         Assert.False(gitSecond.WasWrittenByThisCall);
@@ -1284,7 +1369,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
         await Store.FailJobAsync(acceptance.ReportJobId, "TEMPLATE_NOT_FOUND", "template-not-found", "The template or template version was not found.", Now, cancellationToken);
 
-        var state = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken);
+        var state = await Store.PinTemplateAsync(acceptance.ReportJobId, PinOf(version), Now.AddSeconds(1), cancellationToken, presentation: null);
 
         Assert.True(state.JobTerminal);
         Assert.Null(state.Pin);

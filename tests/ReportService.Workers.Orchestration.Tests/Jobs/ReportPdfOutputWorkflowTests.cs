@@ -30,6 +30,8 @@ public sealed class ReportPdfOutputWorkflowTests
     [InlineData("UNSUPPORTED_CAPABILITY")]
     [InlineData("QUOTA_EXCEEDED")]
     [InlineData("RENDER_TIMEOUT")]
+    [InlineData("DATA_INVALID")]
+    [InlineData("TEMPLATE_INVALID")]
     [InlineData("EXECUTION_FAILED")]
     public void ADomainFailureKeepsTheCodeItCarries(string code)
     {
