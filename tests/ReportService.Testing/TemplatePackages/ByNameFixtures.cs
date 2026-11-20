@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using ReportService.Testing.TemplateSource;
 
 namespace ReportService.Testing.TemplatePackages;
@@ -153,6 +155,42 @@ public static class ByNameFixtures
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Publishes one version and then a second publication record under the same
+    /// version text, as a publisher that published a version twice does: the two
+    /// records name different file sets, so each record's own SHA-256 - and
+    /// therefore the object key it is written at - differs.
+    /// </summary>
+    /// <param name="source">The template source class the cases read.</param>
+    /// <param name="templateId">The template's identifier.</param>
+    /// <param name="version">The version both records name.</param>
+    public static async Task SeedDuplicatePublicationAsync(
+        TemplateSourceClass source,
+        string templateId,
+        string version)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentException.ThrowIfNullOrEmpty(templateId);
+        ArgumentException.ThrowIfNullOrEmpty(version);
+
+        var first = Valid(templateId, version);
+        await source.PublishAsync(templateId, version, first).ConfigureAwait(false);
+
+        // The second publication names a file set of its own: every file of the
+        // first one, and one more the first record never mentioned.
+        const string Extra = "docs/second-publication.txt";
+        var extra = Encoding.UTF8.GetBytes("This version was published a second time.");
+        await source.WriteFileAsync(templateId, version, Extra, extra).ConfigureAwait(false);
+
+        var files = first
+            .Select(file => (Path: file.Key, Size: (long)file.Value.Length, Sha256: TemplateSourceClass.Sha256(file.Value)))
+            .Append((Path: Extra, Size: (long)extra.Length, Sha256: TemplateSourceClass.Sha256(extra)))
+            .OrderBy(file => file.Path, StringComparer.Ordinal)
+            .ToArray();
+        await source.WriteRecordAsync(templateId, version, DescriptorJson(templateId, version, files))
+            .ConfigureAwait(false);
+    }
+
     /// <summary>A package the product's own rules accept.</summary>
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="version">The version the folder and the manifest declare.</param>
@@ -185,4 +223,22 @@ public static class ByNameFixtures
         NotAVersion => Valid(templateId, "1.3.0"),
         _ => Valid(templateId, version),
     };
+
+    /// <summary>The bytes of a publication record naming the files it lists.</summary>
+    private static byte[] DescriptorJson(
+        string templateId,
+        string version,
+        IReadOnlyList<(string Path, long Size, string Sha256)> files)
+    {
+        var body = new
+        {
+            descriptorVersion = "1.0",
+            templateId,
+            version,
+            files = files.Select(file => new { path = file.Path, size = file.Size, sha256 = file.Sha256 }).ToArray(),
+            fileCount = files.Count,
+            totalSize = files.Sum(file => file.Size),
+        };
+        return JsonSerializer.SerializeToUtf8Bytes(body);
+    }
 }

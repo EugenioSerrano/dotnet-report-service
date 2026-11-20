@@ -34,7 +34,7 @@ public sealed record TemplateVersionCandidate(string Version, SemanticVersion Se
 
 /// <summary>
 /// The candidate set of one resolution and its order. The set is the union of
-/// the version names the source listed at the commit and the versions the store
+/// the version names the source enumerated and the versions the store
 /// already holds, de-duplicated by ordinal string equality. A name that is not
 /// a semantic version, a pre-release, and a taken version the consumer may not
 /// use are excluded with their reason. The rest are ordered newest first by
@@ -62,7 +62,7 @@ public sealed class TemplateVersionCandidates
     public IReadOnlyList<CandidateSkip> Skipped { get; }
 
     /// <summary>Builds the candidate set of one resolution.</summary>
-    /// <param name="sourceVersions">The names the source listed at the commit, in the order it answered them.</param>
+    /// <param name="sourceVersions">The names the source enumerated, in the order it answered them.</param>
     /// <param name="taken">The records the store holds for the template.</param>
     /// <param name="requestingConsumerId">The consumer the resolution runs for.</param>
     public static TemplateVersionCandidates Build(

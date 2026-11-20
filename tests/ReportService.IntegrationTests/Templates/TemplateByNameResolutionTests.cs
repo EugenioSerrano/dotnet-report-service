@@ -271,6 +271,46 @@ public sealed class TemplateByNameResolutionTests : IClassFixture<PostgresFixtur
     }
 
     [Fact]
+    public async Task ATwicePublishedVersionIsSkippedAndTheOlderTakenOneUsed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAsync(ByNameFixtures.First);
+        await TakeAsync(Template, ByNameFixtures.First, cancellationToken);
+
+        // The version is published twice and no copy of it is taken: two records
+        // under one version text, each naming its own file set.
+        await ByNameFixtures.SeedDuplicatePublicationAsync(_source!, Template, ByNameFixtures.Second);
+        _sourceStore!.Clear();
+
+        var result = await ResolveAsync(Template, ByNameFixtures.Owner, cancellationToken);
+
+        // The older taken release answers, and the job is not refused.
+        Assert.Equal(ResolveTemplateVersionOutcomes.Resolved, result.Outcome);
+        Assert.Equal(ByNameFixtures.First, result.Version);
+
+        // Nothing is taken for the duplicate: no record, and no write under its version.
+        Assert.Null(await RowOrNullAsync(Template, ByNameFixtures.Second, cancellationToken));
+        Assert.DoesNotContain(
+            _sourceStore.Operations,
+            operation => operation.Verb == "write"
+                && operation.Target.Contains($"/files/{ByNameFixtures.Second}/", StringComparison.Ordinal));
+
+        // The take logged the conflict it found, and the walk logged the skip.
+        Assert.Contains(
+            _logs.Lines,
+            line => line.Contains(TemplateVersionConflict.Code, StringComparison.Ordinal)
+                && line.Contains($"version {ByNameFixtures.Second}", StringComparison.Ordinal)
+                && line.Contains(TemplateVersionConflict.Observations.DuplicatePublication, StringComparison.Ordinal));
+        Assert.Contains(
+            _logs.Lines,
+            line => line.Contains("template.by_name.skipped", StringComparison.Ordinal)
+                && line.Contains($"version {ByNameFixtures.Second}", StringComparison.Ordinal)
+                && line.Contains("reason refused", StringComparison.Ordinal)
+                && line.Contains(TemplateResolutionCodes.TemplateInvalid, StringComparison.Ordinal)
+                && line.Contains("published more than once", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task NothingValidEndsWithTemplateInvalidNamingTheNewestVersion()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
