@@ -11,9 +11,15 @@ namespace ReportService.RenderingHost;
 /// of the job's: the record count the header prints as it is, each row's date and amount, and
 /// the acceptance instant the document's close prints. It acts on the composition before the
 /// expected text is extracted, the way the other composition controls do, so the product's own
-/// checks read the same wrong text they would print - and the anchored record count is what
-/// they can still hold to the block's records. The judge, which computes its expectation from
-/// the snapshot and the package's declared culture and zone, refuses the document on its own.
+/// checks read the same wrong text they would print.
+/// The header prints the record count twice - in the customer line and in the records
+/// paragraph - and the anchor check passes when the anchored value appears anywhere in the
+/// document parts. A single occurrence left in the job's culture would satisfy that check, so
+/// the control presents every occurrence and refuses to run when the presentation changes no
+/// text or when a raw occurrence survives in either document part: a third print added to a
+/// template later fails it loudly instead of passing it silently.
+/// The judge, which computes its expectation from the snapshot and the package's declared
+/// culture and zone, refuses the document on its own.
 /// </summary>
 internal sealed partial class InvariantCulturePresentation(
     IReadOnlyList<ComposedRecord> records,
@@ -54,19 +60,73 @@ internal sealed partial class InvariantCulturePresentation(
             stream.Write(bytes);
         }
 
-        return new ComposedBlock(stream.ToArray(), fragments);
+        var mutated = new ComposedBlock(stream.ToArray(), fragments);
+        GuardNoRawCount(mutated);
+        return mutated;
     }
 
-    // The header prints the record count as it is: the control presents it as a number in the
-    // invariant culture, the one value of the document the product's checks still bind to the
-    // snapshot.
+    // The header prints the record count as it is: the control presents every occurrence of it
+    // as a number in the invariant culture. The premise is the presentation itself - a count
+    // whose invariant text is the raw token would leave the printed text unchanged, so the
+    // control could not discriminate at all - and the result is guarded over the whole
+    // composed block once the rewrite is done.
     private string CountText(string text)
     {
         var raw = Member(header, "totals", "recordCount");
         var presented = decimal.TryParse(raw, NumberStyles.Number, Invariant, out var number)
             ? number.ToString("N0", Invariant)
             : raw;
-        return CustomerLine().Replace(text, match => match.Groups[1].Value + presented + match.Groups[3].Value, count: 1);
+        if (string.Equals(presented, raw, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                $"The control cannot discriminate: the record count '{raw}' is presented as '{presented}' in the invariant culture, the same text, so presenting it changes nothing.");
+        }
+
+        text = CustomerLine().Replace(text, match => match.Groups[1].Value + presented + match.Groups[3].Value, count: 1);
+        return RecordsLine().Replace(text, match => match.Groups[1].Value + presented + match.Groups[3].Value, count: 1);
+    }
+
+    // The anchor check reads the text of the document parts and passes when the anchored value
+    // appears anywhere in it, so one surviving occurrence would satisfy the check whatever the
+    // control presents. The control therefore refuses to exist in that state: a third print
+    // added to a template later fails here, loudly, instead of being silently satisfied.
+    private void GuardNoRawCount(ComposedBlock block)
+    {
+        var raw = Member(header, "totals", "recordCount");
+        var inStart = Occurrences(block, raw, FragmentKind.DocumentStart);
+        var inEnd = Occurrences(block, raw, FragmentKind.DocumentEnd);
+        if (inStart + inEnd > 0)
+        {
+            throw new InvalidDataException(
+                $"The control presents the record count '{raw}' in the invariant culture, but the raw text survives in the document parts (document start: {inStart}, document end: {inEnd}); the anchor check would accept the document through it.");
+        }
+    }
+
+    private static int Occurrences(ComposedBlock block, string raw, FragmentKind kind)
+    {
+        if (raw.Length == 0)
+        {
+            return 0;
+        }
+
+        var occurrences = 0;
+        foreach (var fragment in block.Fragments)
+        {
+            if (fragment.Kind != kind)
+            {
+                continue;
+            }
+
+            var text = block.TextOf(fragment);
+            for (var index = text.IndexOf(raw, StringComparison.Ordinal);
+                index >= 0;
+                index = text.IndexOf(raw, index + raw.Length, StringComparison.Ordinal))
+            {
+                occurrences++;
+            }
+        }
+
+        return occurrences;
     }
 
     private string RowText(string html, ComposedRecord record)
@@ -117,6 +177,9 @@ internal sealed partial class InvariantCulturePresentation(
 
     [GeneratedRegex("(<p class=\"customer\">[^<]* &middot; [^<]* &middot; )([^<]*)(</p>)", RegexOptions.CultureInvariant)]
     private static partial Regex CustomerLine();
+
+    [GeneratedRegex("(<p class=\"records\">Records: )([^<]*)(</p>)", RegexOptions.CultureInvariant)]
+    private static partial Regex RecordsLine();
 
     [GeneratedRegex("(<td class=\"col-date\">)([^<]*)(</td>)", RegexOptions.CultureInvariant)]
     private static partial Regex DateCell();
