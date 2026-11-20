@@ -194,7 +194,12 @@ public sealed class JobTransitionActivitiesTests
 
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

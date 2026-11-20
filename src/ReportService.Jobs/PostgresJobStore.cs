@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using Npgsql;
@@ -46,10 +47,23 @@ public sealed partial class PostgresJobStore : IJobStore
     private const string InsertJobSql = """
         INSERT INTO report_service.report_jobs
             (report_job_id, consumer_id, upload_id, status, stage, report_clock, error_code,
-             error_reason, culture, time_zone, created_at, started_at, finished_at)
+             error_reason, culture, time_zone, created_at, started_at, finished_at,
+             idempotency_key, fingerprint)
         VALUES
             (@ReportJobId, @ConsumerId, @UploadId, 'QUEUED', NULL, @Now, NULL, NULL,
-             @Culture, @TimeZone, @Now, NULL, NULL)
+             @Culture, @TimeZone, @Now, NULL, NULL, @IdempotencyKey, @Fingerprint)
+        ON CONFLICT (consumer_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+        DO NOTHING
+        RETURNING report_job_id
+        """;
+
+    // The answer a key already gives: the job it is bound to and the request that bound it.
+    // The row is found for its consumer alone, so another consumer's key is not found at all.
+    private const string SelectBoundRequestSql = """
+        SELECT report_job_id AS "ReportJobId",
+               fingerprint   AS "Fingerprint"
+        FROM report_service.report_jobs
+        WHERE consumer_id = @ConsumerId AND idempotency_key = @IdempotencyKey
         """;
 
     private const string InsertOutputSql = """
@@ -210,12 +224,45 @@ public sealed partial class PostgresJobStore : IJobStore
     }
 
     /// <inheritdoc />
+    public async Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(consumerId);
+        GuardKey(idempotencyKey);
+        GuardFingerprint(fingerprint);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var row = await connection.QuerySingleOrDefaultAsync<BoundRequestRow>(new CommandDefinition(
+                SelectBoundRequestSql,
+                new { ConsumerId = consumerId, IdempotencyKey = idempotencyKey },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return row is null ? new IdempotencyLookup.None() : Answer(row, fingerprint);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<JobAcceptanceResult> AcceptAsync(
         JobAcceptance acceptance,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(acceptance);
+        GuardFingerprint(acceptance.Fingerprint);
+        if (acceptance.IdempotencyKey is { } sentKey)
+        {
+            GuardKey(sentKey);
+        }
+
         var parameters = new
         {
             acceptance.ReportJobId,
@@ -228,13 +275,19 @@ public sealed partial class PostgresJobStore : IJobStore
             acceptance.BaselineVersion,
             acceptance.Culture,
             acceptance.TimeZone,
+            acceptance.IdempotencyKey,
+            Fingerprint = acceptance.Fingerprint.Value,
             Now = UtcInstant(now),
         };
 
         try
         {
             await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-            await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+            // Read Committed is the level the idempotency decision needs: a second request with
+            // a key waits for the first to end and, once it commits, sees its row.
+            await using var transaction = await connection
+                .BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
             await connection.ExecuteAsync(new CommandDefinition(
                 IdleTimeoutStatement,
                 transaction: transaction,
@@ -245,6 +298,42 @@ public sealed partial class PostgresJobStore : IJobStore
                 transaction: transaction,
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            // The job row is written first, so the unique index decides a race on the key before
+            // anything else is looked at: a request that loses the race receives the winner's job
+            // whatever it would have made of the upload. A request without a key is outside the
+            // partial index and can never meet a conflict here.
+            var inserted = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
+                InsertJobSql,
+                parameters,
+                transaction,
+                CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            if (inserted is null)
+            {
+                // A request with this key is committed - this one waited for it if it was open.
+                // Its row cannot change, so reading it now answers the request exactly.
+                var bound = await connection.QuerySingleOrDefaultAsync<BoundRequestRow>(new CommandDefinition(
+                    SelectBoundRequestSql,
+                    new { acceptance.ConsumerId, acceptance.IdempotencyKey },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                if (bound is null)
+                {
+                    // The insert met the key's index and the row it met is not readable: the
+                    // transaction's own view is broken, and no answer can be given from it.
+                    throw new JobStoreUnavailableException(
+                        null,
+                        new InvalidOperationException("an acceptance whose key inserted no job found no job bound to the key"));
+                }
+
+                return IsSameRequest(bound, acceptance.Fingerprint)
+                    ? new JobAcceptanceResult.SameRequest(bound.ReportJobId)
+                    : new JobAcceptanceResult.DifferentRequest();
+            }
 
             // The upload is held from here to the commit, so nothing can refuse or expire it
             // between the moment it is found usable and the moment the job is durable.
@@ -261,12 +350,6 @@ public sealed partial class PostgresJobStore : IJobStore
                 return new JobAcceptanceResult.UploadUnusable();
             }
 
-            await connection.ExecuteAsync(new CommandDefinition(
-                InsertJobSql,
-                parameters,
-                transaction,
-                CommandTimeoutSeconds,
-                cancellationToken: cancellationToken)).ConfigureAwait(false);
             await connection.ExecuteAsync(new CommandDefinition(
                 InsertOutputSql,
                 parameters,
@@ -562,6 +645,46 @@ public sealed partial class PostgresJobStore : IJobStore
                 now);
     }
 
+    // The answer a bound key gives: the job it named, or the conflict of a request that asked
+    // for something else. The stored identity and the request's are compared ordinally.
+    private static IdempotencyLookup Answer(BoundRequestRow bound, RequestFingerprint fingerprint) =>
+        IsSameRequest(bound, fingerprint)
+            ? new IdempotencyLookup.SameRequest(bound.ReportJobId)
+            : new IdempotencyLookup.DifferentRequest();
+
+    private static bool IsSameRequest(BoundRequestRow bound, RequestFingerprint fingerprint) =>
+        string.Equals(bound.Fingerprint, fingerprint.Value, StringComparison.Ordinal);
+
+    // The key rule the API applies, stated again at the store's own boundary: 1 to 255 visible
+    // ASCII characters. A value the product never produces is a fault of the caller, and the
+    // message never carries the value.
+    private static void GuardKey(string idempotencyKey)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(idempotencyKey);
+        if (idempotencyKey.Length > 255)
+        {
+            throw new ArgumentException("an idempotency key is at most 255 characters", nameof(idempotencyKey));
+        }
+
+        foreach (var character in idempotencyKey)
+        {
+            if (character is < '!' or > '~')
+            {
+                throw new ArgumentException("an idempotency key is visible ASCII text", nameof(idempotencyKey));
+            }
+        }
+    }
+
+    // A fingerprint is the stored form and nothing else: the store never writes a value the
+    // encoder could not have produced.
+    private static void GuardFingerprint(RequestFingerprint fingerprint)
+    {
+        if (!RequestFingerprint.IsWellFormed(fingerprint.Value))
+        {
+            throw new ArgumentException("a request fingerprint is a stored v<N>:<hex> value", nameof(fingerprint));
+        }
+    }
+
     // The server returns timestamptz as a UTC DateTime; the record keeps the same instant with an offset of zero.
     private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
 
@@ -792,5 +915,13 @@ public sealed partial class PostgresJobStore : IJobStore
             StartedAt = StartedAt is { } started ? Utc(started) : null,
             FinishedAt = FinishedAt is { } finished ? Utc(finished) : null,
         };
+    }
+
+    // The job a committed key is bound to, with the request identity it was bound by.
+    private sealed class BoundRequestRow
+    {
+        public string ReportJobId { get; set; } = string.Empty;
+
+        public string Fingerprint { get; set; } = string.Empty;
     }
 }

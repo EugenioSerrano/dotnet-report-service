@@ -223,6 +223,171 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AKeyBoundToAJobIsFoundAsTheSameRequestAndAnotherIdentityAsADifferentRequest()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        var same = await Store.FindByIdempotencyKeyAsync(Consumer, "K1", acceptance.Fingerprint, cancellationToken);
+        var different = await Store.FindByIdempotencyKeyAsync(
+            Consumer,
+            "K1",
+            RequestIdentity(Consumer, await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken), "1.0.0"),
+            cancellationToken);
+
+        Assert.Equal(acceptance.ReportJobId, Assert.IsType<IdempotencyLookup.SameRequest>(same).ReportJobId);
+        Assert.IsType<IdempotencyLookup.DifferentRequest>(different);
+        Assert.IsType<IdempotencyLookup.None>(
+            await Store.FindByIdempotencyKeyAsync(Consumer, "K2", acceptance.Fingerprint, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AnotherConsumerUsingTheSameKeyIsAnsweredNoneAndItsOwnAcceptanceCreatesItsJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var first = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken), idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(first, Now, cancellationToken));
+
+        var otherConsumer = "other-consumer";
+        Assert.IsType<IdempotencyLookup.None>(
+            await Store.FindByIdempotencyKeyAsync(otherConsumer, "K1", first.Fingerprint, cancellationToken));
+
+        var second = Acceptance(
+            await SeedAsync(UploadState.Ready, otherConsumer, cancellationToken),
+            otherConsumer,
+            idempotencyKey: "K1");
+        var result = await Store.AcceptAsync(second, Now, cancellationToken);
+
+        Assert.Equal(second.ReportJobId, Assert.IsType<JobAcceptanceResult.Accepted>(result).Job.ReportJobId);
+        Assert.NotEqual(first.ReportJobId, second.ReportJobId);
+        Assert.Equal(
+            second.ReportJobId,
+            Assert.IsType<IdempotencyLookup.SameRequest>(
+                await Store.FindByIdempotencyKeyAsync(otherConsumer, "K1", second.Fingerprint, cancellationToken)).ReportJobId);
+    }
+
+    [Fact]
+    public async Task ARepeatedAcceptanceAnswersTheFirstJobAndLeavesItExactlyAsItWas()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        var job = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+
+        // The repeat is built with the same identity and new identifiers: it must not write a
+        // second job, and the first job's own row is the one that stays.
+        var repeat = acceptance with { ReportJobId = JobIdentifier.Create(), OutputId = JobIdentifier.CreateOutput() };
+        var result = await Store.AcceptAsync(repeat, Now.AddMinutes(5), cancellationToken);
+
+        Assert.Equal(acceptance.ReportJobId, Assert.IsType<JobAcceptanceResult.SameRequest>(result).ReportJobId);
+        var after = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(job!.Job, after!.Job);
+        Assert.Equal(job.UploadStatus, after.UploadStatus);
+        Assert.Equal(job.Outputs.Select(output => output.OutputId), after.Outputs.Select(output => output.OutputId));
+        Assert.Equal(reference, await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AConflictingAcceptanceIsAnsweredDifferentRequestAndLeavesTheFirstJobExactlyAsItWas()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        var job = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        var reference = await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken);
+
+        var other = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var conflict = Acceptance(other, idempotencyKey: "K1");
+        var result = await Store.AcceptAsync(conflict, Now, cancellationToken);
+
+        Assert.IsType<JobAcceptanceResult.DifferentRequest>(result);
+        Assert.Null(await Store.FindForWorkflowAsync(conflict.ReportJobId, cancellationToken));
+        var after = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(job!.Job, after!.Job);
+        Assert.Equal(job.UploadStatus, after.UploadStatus);
+        Assert.Equal(job.Outputs.Select(output => output.OutputId), after.Outputs.Select(output => output.OutputId));
+        Assert.Equal(reference, await Store.FindTemplateReferenceAsync(acceptance.ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ARepeatIsStillAnsweredAfterTheFirstJobsUploadWasRejected()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        Assert.True(await Uploads.CommitRejectedAsync(
+            uploadId,
+            UploadRejectionCode.DataInvalid,
+            UploadRejectionReason.Truncated,
+            Now.AddMinutes(1),
+            cancellationToken));
+
+        var result = await Store.AcceptAsync(
+            acceptance with { ReportJobId = JobIdentifier.Create() }, Now.AddMinutes(2), cancellationToken);
+
+        Assert.Equal(acceptance.ReportJobId, Assert.IsType<JobAcceptanceResult.SameRequest>(result).ReportJobId);
+    }
+
+    [Fact]
+    public async Task ARepeatIsStillAnsweredAfterTheFirstJobsUploadPassedItsExpiry()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Verifying, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId, idempotencyKey: "K1");
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+
+        // The upload expires an hour after the acceptance; the repeat is made two hours later,
+        // when the upload is unusable to a request that would look at it.
+        var result = await Store.AcceptAsync(acceptance, Now.AddHours(2), cancellationToken);
+
+        Assert.Equal(acceptance.ReportJobId, Assert.IsType<JobAcceptanceResult.SameRequest>(result).ReportJobId);
+    }
+
+    [Fact]
+    public async Task AJobWithoutAKeyIsAcceptedAndTwoSuchJobsCoexist()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var first = Acceptance(uploadId);
+        var second = Acceptance(uploadId);
+
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(first, Now, cancellationToken));
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(second, Now, cancellationToken));
+
+        Assert.NotNull(await Store.FindForWorkflowAsync(first.ReportJobId, cancellationToken));
+        Assert.NotNull(await Store.FindForWorkflowAsync(second.ReportJobId, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ParallelAcceptionsOfOneRequestUnderOneKeyCreateOneJob()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var first = Acceptance(uploadId, idempotencyKey: "K1");
+
+        var attempts = Enumerable.Range(0, 32)
+            .Select(_ => first with { ReportJobId = JobIdentifier.Create(), OutputId = JobIdentifier.CreateOutput() })
+            .ToArray();
+
+        var results = await Task.WhenAll(
+            attempts.Select(attempt => Task.Run(() => Store.AcceptAsync(attempt, Now, cancellationToken), cancellationToken)));
+
+        var accepted = results.OfType<JobAcceptanceResult.Accepted>().ToArray();
+        Assert.Single(accepted);
+        Assert.All(
+            results.OfType<JobAcceptanceResult.SameRequest>(),
+            answer => Assert.Equal(accepted[0].Job.ReportJobId, answer.ReportJobId));
+        Assert.Equal(31, results.OfType<JobAcceptanceResult.SameRequest>().Count());
+    }
+
+    [Fact]
     public async Task APartitionIsRecordedOnceAndReadBack()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -1616,14 +1781,41 @@ public abstract class JobStoreContract : IAsyncLifetime
     /// <param name="uploadId">The upload the job reports on.</param>
     /// <param name="consumerId">The consumer the job is accepted for.</param>
     /// <param name="version">The version the acceptance names; null for a reference by name.</param>
-    protected JobAcceptance Acceptance(string uploadId, string consumerId = Consumer, string? version = "1.0.0") => new(
-        JobIdentifier.Create(),
-        JobIdentifier.CreateOutput(),
-        consumerId,
-        uploadId,
-        "pilot-grouped",
-        version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-        version);
+    /// <param name="fingerprint">The identity of the request; the one of this acceptance when null.</param>
+    /// <param name="idempotencyKey">The key the request carried; null when it carried none.</param>
+    protected JobAcceptance Acceptance(
+        string uploadId,
+        string consumerId = Consumer,
+        string? version = "1.0.0",
+        RequestFingerprint? fingerprint = null,
+        string? idempotencyKey = null)
+    {
+        var acceptance = new JobAcceptance(
+            JobIdentifier.Create(),
+            JobIdentifier.CreateOutput(),
+            consumerId,
+            uploadId,
+            "pilot-grouped",
+            version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
+            version,
+            fingerprint ?? RequestIdentity(consumerId, uploadId, version));
+        return idempotencyKey is null ? acceptance : acceptance with { IdempotencyKey = idempotencyKey };
+    }
+
+    /// <summary>
+    /// The identity of one request as this contract computes it: a deterministic value over the
+    /// consumer, the upload and the version, so the same request has the same identity and a
+    /// different one has a different identity. It is deliberately not the product's encoder —
+    /// the contract exercises the store, and the encoder has its own cases.
+    /// </summary>
+    /// <param name="consumerId">The consumer the request was sent by.</param>
+    /// <param name="uploadId">The upload the request names.</param>
+    /// <param name="version">The version the request names; null for a reference by name.</param>
+    protected static RequestFingerprint RequestIdentity(string consumerId, string uploadId, string? version) =>
+        RequestFingerprint.FromDigest(
+            System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(
+                    "request-identity/v1\n" + consumerId + "\n" + uploadId + "\n" + (version ?? "(none)"))));
 
     /// <summary>Creates an upload and drives it to <paramref name="state"/> through the upload store's own steps.</summary>
     /// <param name="state">The state the upload must be in.</param>

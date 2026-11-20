@@ -809,7 +809,8 @@ public sealed class ReportJobHistoryCapture
                 uploadId,
                 TemplateId,
                 version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-                version) with
+                version,
+                AcceptanceIdentity.For(uploadId, version)) with
             {
                 // A by-name job records the version it may fall back to when the source cannot
                 // be checked; an exact one has no baseline.

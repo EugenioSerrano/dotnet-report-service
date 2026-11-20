@@ -42,13 +42,14 @@ public sealed class MigrationCatalogTests
     private const string Presentation = "0015_presentation-provenance.sql";
 
     private const string RowBound = "0016_pdf-row-bound.sql";
+    private const string JobIdempotency = "0017_job-idempotency.sql";
 
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound, JobIdempotency }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(RowBound, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(JobIdempotency, MigrationCatalog.ExpectedVersion);
     }
 
     /// <summary>
@@ -79,6 +80,48 @@ public sealed class MigrationCatalogTests
         Assert.DoesNotContain("UPDATE", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The seventeenth script states the identity of a job's request and the key a consumer
+    /// may bind to it: two nullable columns with their form and pair checks, the partial
+    /// unique index that decides one job per consumer and key, and the guard function the
+    /// job table already carries, replaced so the one trigger refuses a change of the four
+    /// members that identify the request. It adds no table, drops nothing, backfills nothing
+    /// and rewrites no row. That the server applies it, and refuses what it says it refuses,
+    /// is a case against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheJobIdempotencyScriptAddsTheKeyAndTheIdentityAndReplacesTheGuard()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == JobIdempotency);
+
+        Assert.Contains("ALTER TABLE report_service.report_jobs", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN idempotency_key text NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CHECK (idempotency_key ~ '^[!-~]{1,255}$')", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD COLUMN fingerprint     text NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CHECK (fingerprint ~ '^v[1-9][0-9]{0,2}:[0-9a-f]{64}$')", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("ADD CONSTRAINT report_jobs_key_needs_fingerprint", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CHECK (idempotency_key IS NULL OR fingerprint IS NOT NULL)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE UNIQUE INDEX report_jobs_idempotency", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("(consumer_id, idempotency_key)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE idempotency_key IS NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE OR REPLACE FUNCTION report_service.report_jobs_locale_guard()", script.Sql, StringComparison.Ordinal);
+
+        // The four members that identify the request are the guard's, on the one trigger the
+        // table already carries: no second trigger and no second function is created.
+        Assert.Contains("NEW.consumer_id     IS DISTINCT FROM OLD.consumer_id", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("NEW.upload_id       IS DISTINCT FROM OLD.upload_id", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("NEW.idempotency_key IS DISTINCT FROM OLD.idempotency_key", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("NEW.fingerprint     IS DISTINCT FROM OLD.fingerprint", script.Sql, StringComparison.Ordinal);
+        Assert.Equal(0, CountOf(script.Sql, "CREATE TRIGGER"));
+        Assert.Equal(2, CountOf(script.Sql, "ADD COLUMN"));
+        Assert.Equal(1, CountOf(script.Sql, "CREATE UNIQUE INDEX"));
+        Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -149,7 +192,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(16, MigrationCatalog.Scripts.Count);
+        Assert.Equal(17, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -170,9 +213,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(16, MigrationCatalog.Scripts.Count);
-        Assert.Equal(RowBound, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(RowBound, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(17, MigrationCatalog.Scripts.Count);
+        Assert.Equal(JobIdempotency, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(JobIdempotency, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -329,8 +372,8 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == OutputReason);
 
-        Assert.Equal(16, MigrationCatalog.Scripts.Count);
-        Assert.Equal(RowBound, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(17, MigrationCatalog.Scripts.Count);
+        Assert.Equal(JobIdempotency, MigrationCatalog.Scripts[^1].Name);
         Assert.Equal(1, CountOf(script.Sql, "ALTER TABLE"));
         Assert.Equal(1, CountOf(script.Sql, "ADD COLUMN"));
         Assert.Contains("ALTER TABLE report_service.report_outputs", script.Sql, StringComparison.Ordinal);

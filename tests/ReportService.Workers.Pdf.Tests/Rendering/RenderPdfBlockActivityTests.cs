@@ -784,6 +784,11 @@ internal sealed class FakeJobStore : IJobStore
     public Task<PartitionRecord?> FindPartitionAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult(Partition);
 
+    public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult<JobStateRecord?>(new JobStateRecord(
             new ReportJobRecord(reportJobId, "consumer", "upload", ReportJobStatus.Running, new DateTimeOffset(2026, 3, 1, 12, 30, 0, TimeSpan.Zero), DateTimeOffset.UnixEpoch)

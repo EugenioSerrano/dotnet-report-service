@@ -282,7 +282,8 @@ public sealed class UploadVerificationNotificationTests : IClassFixture<Postgres
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId));
         var accepted = await store.AcceptAsync(acceptance, DateTimeOffset.UtcNow, cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
         return acceptance.ReportJobId;

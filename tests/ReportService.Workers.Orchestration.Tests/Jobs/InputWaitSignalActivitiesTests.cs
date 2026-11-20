@@ -188,7 +188,8 @@ public sealed class InputWaitSignalActivitiesTests
                 uploadId,
                 "pilot-grouped",
                 TemplateReferenceForm.Exact,
-                "1.0.0");
+                "1.0.0",
+                ReportService.Testing.AcceptanceIdentity.For(uploadId));
             Assert.IsType<JobAcceptanceResult.Accepted>(await Jobs.AcceptAsync(acceptance, at, TestContext.Current.CancellationToken));
             return acceptance.ReportJobId;
         }
@@ -219,7 +220,12 @@ public sealed class InputWaitSignalActivitiesTests
 
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

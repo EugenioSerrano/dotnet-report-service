@@ -421,7 +421,8 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, Now, cancellationToken));
         return (acceptance.ReportJobId, acceptance.OutputId);
     }

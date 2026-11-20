@@ -263,7 +263,8 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
             uploadId,
             "pilot-simple",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await Jobs.AcceptAsync(acceptance, Now, cancellationToken));
         return acceptance;
     }

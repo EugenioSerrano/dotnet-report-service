@@ -47,6 +47,12 @@ public static class CreateReportJobEndpoint
     /// <summary>What an answer says when a job could not be accepted for a cause on the service's side.</summary>
     public const string ServiceUnavailableTitle = "Service unavailable";
 
+    /// <summary>What an answer says when a key was already used with a different request.</summary>
+    public const string ConflictTitle = "Idempotency key conflict";
+
+    /// <summary>What an answer says about a reused key. It never names the key or the first job.</summary>
+    public const string ConflictDetail = "The idempotency key was already used with a different request.";
+
     /// <summary>What an answer says when the job records could not be reached.</summary>
     public const string ServiceUnavailableDetail =
         "The job could not be accepted; the service cannot complete the request now.";
@@ -80,6 +86,27 @@ public static class CreateReportJobEndpoint
         }
 
         var consumerId = gate.ConsumerId!;
+
+        // The key's form is decided before the body is read and before any record is touched:
+        // it depends on the request alone, and a request that repeats an accepted one always
+        // passes it, exactly as it did the first time.
+        var header = IdempotencyKeyHeader.Read(context.Request);
+        if (header is IdempotencyKeyHeader.Result.Invalid invalid)
+        {
+            return Refuse(
+                context,
+                metrics,
+                logger,
+                ErrorCodes.RequestInvalid,
+                StatusCodes.Status400BadRequest,
+                RequestInvalidDetails.Title,
+                invalid.Problem.Detail,
+                invalid.Problem.Reason,
+                invalid.Problem.Extensions);
+        }
+
+        var idempotencyKey = (header as IdempotencyKeyHeader.Result.Present)?.Key;
+
         var read = await CreateReportJobRequestReader.ReadAsync(context.Request, context.RequestAborted)
             .ConfigureAwait(false);
         switch (read)
@@ -170,6 +197,7 @@ public static class CreateReportJobEndpoint
                     clock,
                     logger,
                     consumerId,
+                    idempotencyKey,
                     acceptedPresentation.Locale,
                     accepted.Request).ConfigureAwait(false);
 
@@ -186,6 +214,7 @@ public static class CreateReportJobEndpoint
         TimeProvider clock,
         ILogger logger,
         string consumerId,
+        string? idempotencyKey,
         RequestedLocale presentation,
         CreateReportJobRequest request)
     {
@@ -194,6 +223,48 @@ public static class CreateReportJobEndpoint
         if (!UploadIdentifier.IsWellFormed(request.UploadId))
         {
             return NotFound(context, metrics, logger);
+        }
+
+        // The request's identity is computed from what it asked for and nothing else: no store,
+        // no clock, no version resolved later. Every accepted job records it, with or without a key.
+        var fingerprint = RequestFingerprintEncoder.Compute(consumerId, request);
+
+        // A key already bound is answered here, before the state the request names is looked at,
+        // so a retry always receives its first job even when its upload has become unusable or a
+        // version it named has been taken by another consumer since. From here the client's
+        // connection is not observed.
+        if (idempotencyKey is not null)
+        {
+            IdempotencyLookup lookup;
+            try
+            {
+                lookup = await store
+                    .FindByIdempotencyKeyAsync(consumerId, idempotencyKey, fingerprint, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch (JobStoreUnavailableException exception)
+            {
+                logger.LogWarning("The idempotency key of a job request could not be read ({ExceptionType})", exception.GetType().Name);
+                return Refuse(
+                    context,
+                    metrics,
+                    logger,
+                    ErrorCodes.ServiceUnavailable,
+                    StatusCodes.Status503ServiceUnavailable,
+                    ServiceUnavailableTitle,
+                    ServiceUnavailableDetail,
+                    RefusalReasons.StoreUnavailable);
+            }
+
+            if (lookup is IdempotencyLookup.SameRequest repeat)
+            {
+                return Replay(context, metrics, logger, repeat.ReportJobId);
+            }
+
+            if (lookup is IdempotencyLookup.DifferentRequest)
+            {
+                return Conflict(context, metrics, logger);
+            }
         }
 
         // The versions already taken are read once, after every free check: a version this
@@ -243,8 +314,10 @@ public static class CreateReportJobEndpoint
             request.UploadId,
             request.TemplateId,
             request.TemplateVersion is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-            request.TemplateVersion)
+            request.TemplateVersion,
+            fingerprint)
         {
+            IdempotencyKey = idempotencyKey,
             BaselineVersion = availability.BaselineVersion,
             Culture = presentation.Culture,
             TimeZone = presentation.TimeZone,
@@ -271,9 +344,17 @@ public static class CreateReportJobEndpoint
                 RefusalReasons.StoreUnavailable);
         }
 
-        if (result is JobAcceptanceResult.UploadUnusable)
+        switch (result)
         {
-            return NotFound(context, metrics, logger);
+            case JobAcceptanceResult.UploadUnusable:
+                return NotFound(context, metrics, logger);
+
+            case JobAcceptanceResult.SameRequest repeat:
+                // The request raced another with the same key and the winner committed first.
+                return Replay(context, metrics, logger, repeat.ReportJobId);
+
+            case JobAcceptanceResult.DifferentRequest:
+                return Conflict(context, metrics, logger);
         }
 
         var job = ((JobAcceptanceResult.Accepted)result).Job;
@@ -283,12 +364,38 @@ public static class CreateReportJobEndpoint
         // The reference's form is the log's, never a sent value: the syntax check has
         // already decided the request may name it.
         logger.LogInformation(
-            "Job {ReportJobId} accepted for upload {UploadId} ({ReferenceForm})",
+            "Job {ReportJobId} accepted for upload {UploadId} ({ReferenceForm}, {KeyUse})",
             job.ReportJobId,
             job.UploadId,
-            TemplateReferenceSyntax.FormOf(request.TemplateVersion));
+            TemplateReferenceSyntax.FormOf(request.TemplateVersion),
+            idempotencyKey is null ? KeyUseWithout : KeyUseWith);
         return Results.Accepted(statusUrl, ReportJobAcceptedResponse.From(job, statusUrl));
     }
+
+    // The answer to a repeat is the first answer, replayed: the consumer that lost it receives
+    // exactly it, and the job's current state is the status read's. Nothing is written here.
+    private static IResult Replay(HttpContext context, JobAcceptanceMetrics metrics, ILogger logger, string reportJobId)
+    {
+        var statusUrl = $"{RoutePrefix}/{reportJobId}";
+        Activity.Current?.SetTag(JobIdTag, reportJobId);
+        metrics.Repeated();
+        logger.LogInformation("Job {ReportJobId} returned for a repeated request", reportJobId);
+        return Results.Accepted(
+            statusUrl,
+            new ReportJobAcceptedResponse(reportJobId, JobWireValues.ToWire(ReportJobStatus.Queued), statusUrl));
+    }
+
+    // The one answer of a reused key: never the key, never the first job's identifier.
+    private static IResult Conflict(HttpContext context, JobAcceptanceMetrics metrics, ILogger logger) =>
+        Refuse(
+            context,
+            metrics,
+            logger,
+            ErrorCodes.IdempotencyConflict,
+            StatusCodes.Status409Conflict,
+            ConflictTitle,
+            ConflictDetail,
+            RefusalReasons.KeyReused);
 
     // Null when the request asks for what this increment offers; otherwise the one refusal and its log reason.
     private static (string Detail, string Reason)? UnsupportedDetail(CreateReportJobRequest request)
@@ -395,6 +502,13 @@ public static class CreateReportJobEndpoint
 
         public const string NotFound = "not-found";
 
+        public const string KeyReused = "key-reused";
+
         public const string StoreUnavailable = "store-unavailable";
     }
+
+    // The key use a log line names, a constant of the two cases there are.
+    private const string KeyUseWith = "with-key";
+
+    private const string KeyUseWithout = "without-key";
 }
