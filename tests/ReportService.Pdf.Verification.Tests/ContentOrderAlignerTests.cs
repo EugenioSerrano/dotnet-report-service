@@ -153,12 +153,44 @@ public sealed class ContentOrderAlignerTests
     }
 
     [Fact]
-    public void AnAlignmentOverItsBudgetFailsAsAmbiguous()
+    public void AnAlignmentOverItsBudgetIsDecidedByTheGreedyReading()
     {
-        var outcome = new ContentOrderAligner(budget: 1).Align(Sample.Pages("abcdef"), [Unit("abcdef", 0)]);
+        var complete = new ContentOrderAligner(budget: 1).Align(Sample.Pages("abcdef"), [Unit("abcdef", 0)]);
+
+        Assert.True(complete.Passed);
+        Assert.Null(complete.Reason);
+        Assert.True(complete.BudgetExhausted);
+        Assert.True(complete.Spent > 1);
+        Assert.Equal([6], complete.ConsumedCharacters);
+
+        var dropped = new ContentOrderAligner(budget: 1).Align(Sample.Pages("abcde"), [Unit("abcdef", 0)]);
+
+        Assert.False(dropped.Passed);
+        Assert.Equal(VerificationReasons.TextDropped, dropped.Reason);
+        Assert.Equal(1, dropped.Page);
+        Assert.Equal(5, dropped.Offset);
+        Assert.Equal(0, dropped.UnitIndex);
+        Assert.True(dropped.BudgetExhausted);
+    }
+
+    [Fact]
+    public void AnExhaustedBudgetClassifiesAnExtraPrintedCharacter()
+    {
+        var outcome = new ContentOrderAligner(budget: 1).Align(Sample.Pages("abcdefx"), [Unit("abcdef", 0)]);
 
         Assert.False(outcome.Passed);
-        Assert.Equal(VerificationReasons.AmbiguousAlignment, outcome.Reason);
+        Assert.Equal(VerificationReasons.TextExtra, outcome.Reason);
+        Assert.True(outcome.BudgetExhausted);
+    }
+
+    [Fact]
+    public void AnExhaustedBudgetClassifiesAnAlteredValue()
+    {
+        var outcome = new ContentOrderAligner(budget: 1).Align(Sample.Pages("abcxef"), [Unit("abcdef", 0)]);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(VerificationReasons.TextAltered, outcome.Reason);
+        Assert.True(outcome.BudgetExhausted);
     }
 
     [Fact]

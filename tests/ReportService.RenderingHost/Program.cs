@@ -163,6 +163,7 @@ internal static partial class Program
                 VerificationUnit: null,
                 VerificationOffset: null,
                 VerificationField: pageSettings.UnusableField,
+                VerificationMs: null,
                 Pages: 0,
                 Words: 0);
             await WriteResultAsync(outFolder, name, refusal).ConfigureAwait(false);
@@ -274,6 +275,7 @@ internal static partial class Program
         int? verificationUnit = null;
         int? verificationOffset = null;
         string? verificationField = null;
+        long? verificationMs = null;
         if (sourceCheck.Passed)
         {
             var verification = verifier.Verify(new PrintedCheckInput(
@@ -291,6 +293,7 @@ internal static partial class Program
             verificationUnit = verification.UnitIndex;
             verificationOffset = verification.Offset;
             verificationField = verification.Field;
+            verificationMs = verification.ReadAndAlignMs;
         }
 
         var bytes = await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false);
@@ -311,6 +314,7 @@ internal static partial class Program
             VerificationUnit: verificationUnit,
             VerificationOffset: verificationOffset,
             VerificationField: verificationField,
+            VerificationMs: verificationMs,
             Pages: pages,
             Words: words);
 
@@ -371,6 +375,7 @@ internal static partial class Program
 /// <param name="VerificationUnit">The unit its verification stopped at, or null.</param>
 /// <param name="VerificationOffset">The offset within the page its verification stopped at, or null.</param>
 /// <param name="VerificationField">The manifest path of a page-setting refusal, or null.</param>
+/// <param name="VerificationMs">How long reading the document and aligning it took, in milliseconds, or null when the verification did not run.</param>
 /// <param name="Pages">How many pages the verification read.</param>
 /// <param name="Words">How many words the verification read.</param>
 internal sealed record RenderResult(
@@ -390,6 +395,7 @@ internal sealed record RenderResult(
     int? VerificationUnit,
     int? VerificationOffset,
     string? VerificationField,
+    long? VerificationMs,
     int Pages,
     int Words);
 
@@ -411,6 +417,7 @@ internal static partial class KnownBad
     [
         "AnchorDoubleEncoded",
         "AnchorTruncated",
+        "BoundCharDropped",
         "HeaderAnchorDropped",
         "NC-F",
         "NC-L",
@@ -427,7 +434,7 @@ internal static partial class KnownBad
 
     /// <summary>Whether the control acts on the printed page rather than on the composition.</summary>
     /// <param name="name">The control's name.</param>
-    public static bool IsHtmlLevel(string name) => name is "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
+    public static bool IsHtmlLevel(string name) => name is "BoundCharDropped" or "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
 
     /// <summary>Whether the control links a package stylesheet before the page rule.</summary>
     /// <param name="name">The control's name.</param>
@@ -484,6 +491,11 @@ internal static partial class KnownBad
             throw new InvalidDataException($"The control '{name}' needs a block with records.");
         }
 
+        if (name == "BoundCharDropped" && rows.Count < 2)
+        {
+            throw new InvalidDataException("The control 'BoundCharDropped' needs a block with at least two records.");
+        }
+
         var first = rows[0];
         var last = rows[Math.Min(2, rows.Count - 1)];
         return name switch
@@ -500,6 +512,8 @@ internal static partial class KnownBad
             "AnchorDoubleEncoded" => Replace(block, first, ChangeLongestText(block.TextOf(first), text => text.Replace("&", "&amp;", StringComparison.Ordinal))),
             // C-4: a heading the document start prints is dropped.
             "HeaderAnchorDropped" => ReplaceHeader(block, _ => string.Empty),
+            // C-2/C-4: the bound record's printed value loses one character after extraction.
+            "BoundCharDropped" => Replace(block, rows[1], ChangeLongestText(block.TextOf(rows[1]), text => text[..^1])),
             // C-2: a word of a row is not printed.
             "NC-W" => Replace(block, last, ChangeLongestText(block.TextOf(last), DropLastWord)),
             // C-2: a row's text is printed twice.

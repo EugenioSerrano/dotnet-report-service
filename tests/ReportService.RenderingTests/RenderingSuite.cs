@@ -183,6 +183,9 @@ public sealed class RenderingSuite : IAsyncLifetime
         var field = result.TryGetProperty("verificationField", out var reportedField) && reportedField.ValueKind == JsonValueKind.String
             ? reportedField.GetString()
             : null;
+        long? verificationMs = result.TryGetProperty("verificationMs", out var reportedMs) && reportedMs.ValueKind == JsonValueKind.Number
+            ? reportedMs.GetInt64()
+            : null;
         return new RenderOutcome(
             fixtureId,
             package,
@@ -192,7 +195,8 @@ public sealed class RenderingSuite : IAsyncLifetime
             reason,
             field,
             ExpectationOf(package),
-            htmlSha256);
+            htmlSha256,
+            verificationMs);
     }
 
     /// <summary>The declaration file of the package: the page frame's geometries are filed under their own names, and each locale of the one report has its own.</summary>
@@ -352,6 +356,11 @@ public sealed class RenderingSuite : IAsyncLifetime
             CopyFolder(folder, Path.Combine(PackagesDirectory, Path.GetFileName(folder)));
         }
 
+        // The shipped sample is printed with a generated fixture: the suite copies the
+        // package a consumer copies, so the print is the one the sample's own folder
+        // declares and never a second, drifting copy of it.
+        CopyFolder(Path.Combine(SamplesDirectory, "pilot-simple"), Path.Combine(PackagesDirectory, "pilot-simple"));
+
         foreach (var variant in new[] { PageFramePackage + "-a4-landscape", PageFramePackage + "-letter-portrait", PageFramePackage + "-letter-landscape" })
         {
             var target = Path.Combine(PackagesDirectory, variant);
@@ -486,6 +495,7 @@ public sealed class RenderingSuite : IAsyncLifetime
 /// <param name="VerificationField">The manifest path of a page-setting refusal, or null.</param>
 /// <param name="Expectation">The declaration file the judge reads it against.</param>
 /// <param name="HtmlSha256">The SHA-256 of the HTML the print was laid out from, lower-case hexadecimal.</param>
+/// <param name="VerificationMs">How long reading the document and aligning it took, in milliseconds, or null when the verification did not run.</param>
 public sealed record RenderOutcome(
     string Fixture,
     string Package,
@@ -495,7 +505,8 @@ public sealed record RenderOutcome(
     string? VerificationReason,
     string? VerificationField,
     string Expectation,
-    string? HtmlSha256);
+    string? HtmlSha256,
+    long? VerificationMs);
 
 /// <summary>One printed shipped sample: where the document is and what the product's verification said about it.</summary>
 /// <param name="Pdf">The PDF the print wrote.</param>

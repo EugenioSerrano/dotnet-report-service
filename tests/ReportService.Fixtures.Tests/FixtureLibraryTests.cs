@@ -49,11 +49,13 @@ public sealed class FixtureLibraryTests
     [Fact]
     public void TheLibraryIsTheNamedCoreSet()
     {
-        Assert.Equal(11, FixtureGenerator.Ids.Count);
+        Assert.Equal(17, FixtureGenerator.Ids.Count);
         Assert.Equal(
             [
                 "A1-esc", "B100", "B1000", "F26K-a", "GE30", "K1",
                 "K0", "T300u", "X256K", "X256K-one-over", "X64K",
+                "boundAscii", "boundThreeByte", "boundTwoByte",
+                "overAscii", "overThreeByte", "overTwoByte",
             ],
             FixtureGenerator.Ids);
     }
@@ -110,6 +112,12 @@ public sealed class FixtureLibraryTests
     [InlineData("X256K", 100)]
     [InlineData("X256K-one-over", 100)]
     [InlineData("X64K", 100)]
+    [InlineData("boundAscii", 3)]
+    [InlineData("boundThreeByte", 3)]
+    [InlineData("boundTwoByte", 3)]
+    [InlineData("overAscii", 3)]
+    [InlineData("overThreeByte", 3)]
+    [InlineData("overTwoByte", 3)]
     public void TheSnapshotHoldsTheRecordsItDeclares(string id, int records)
     {
         var fixture = Generator.Build(id);

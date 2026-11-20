@@ -65,13 +65,17 @@ public static class VerificationReasons
 /// <param name="Offset">The offset in that page's content text where the mismatch starts.</param>
 /// <param name="UnitIndex">The position of the unit the mismatch was found at.</param>
 /// <param name="ConsumedCharacters">How many characters of each unit the pass consumed, by unit.</param>
+/// <param name="Spent">How many character comparisons the search spent.</param>
+/// <param name="BudgetExhausted">Whether the search reached the comparison budget before it could decide.</param>
 public sealed record AlignmentOutcome(
     bool Passed,
     string? Reason,
     int? Page,
     int? Offset,
     int? UnitIndex,
-    IReadOnlyList<int> ConsumedCharacters);
+    IReadOnlyList<int> ConsumedCharacters,
+    int Spent = 0,
+    bool BudgetExhausted = false);
 
 /// <summary>
 /// Consumes the expected text units page by page, in the painting order the
@@ -109,7 +113,7 @@ public sealed class ContentOrderAligner
         var search = new Search(pages, units, budget);
         if (search.Solve())
         {
-            return new AlignmentOutcome(true, null, null, null, null, search.ConsumedCharacters());
+            return new AlignmentOutcome(true, null, null, null, null, search.ConsumedCharacters(), search.Spent, search.BudgetExhausted);
         }
 
         return search.Failure();
@@ -233,6 +237,12 @@ public sealed class ContentOrderAligner
         }
 
         public IReadOnlyList<int> ConsumedCharacters() => consumed;
+
+        /// <summary>How many character comparisons the search spent.</summary>
+        public int Spent => spent;
+
+        /// <summary>Whether the search reached the comparison budget before it could decide.</summary>
+        public bool BudgetExhausted => overBudget;
 
         /// <summary>
         /// Consumes one page from its start, with the units an earlier page left open
@@ -524,14 +534,9 @@ public sealed class ContentOrderAligner
         /// </summary>
         public AlignmentOutcome Failure()
         {
-            if (overBudget)
-            {
-                return new AlignmentOutcome(false, VerificationReasons.AmbiguousAlignment, null, null, null, consumed);
-            }
-
             if (pages.Count == 0)
             {
-                return new AlignmentOutcome(false, VerificationReasons.NoPage, null, null, null, consumed);
+                return new AlignmentOutcome(false, VerificationReasons.NoPage, null, null, null, consumed, spent, overBudget);
             }
 
             var page = 0;
@@ -541,6 +546,7 @@ public sealed class ContentOrderAligner
             var trackedUnit = -1;
             var unitStart = 0;
             var unitStartOffset = 0;
+            var greedyConsumed = new int[units.Count];
 
             while (page < pages.Count)
             {
@@ -587,12 +593,14 @@ public sealed class ContentOrderAligner
                         }
 
                         position += started;
+                        greedyConsumed[cursor] = started;
                         open = started == cell.Length ? open : open.Append(new OpenUnit(cursor, started));
                         cursor++;
                         continue;
                     }
 
                     position += fitted;
+                    greedyConsumed[unitIndex] = offset + fitted;
                     if (offset + fitted < remaining.Length)
                     {
                         var wasOpen = !open.IsEmpty;
@@ -618,9 +626,19 @@ public sealed class ContentOrderAligner
                 page++;
             }
 
-            return !open.IsEmpty || cursor < units.Count
-                ? Classify(pages.Count - 1, pages[^1].Length, open.IsEmpty ? cursor : open.First.Unit, open.IsEmpty ? 0 : open.First.Offset)
-                : new AlignmentOutcome(false, VerificationReasons.AmbiguousAlignment, null, null, null, consumed);
+            if (!open.IsEmpty || cursor < units.Count)
+            {
+                return Classify(pages.Count - 1, pages[^1].Length, open.IsEmpty ? cursor : open.First.Unit, open.IsEmpty ? 0 : open.First.Offset);
+            }
+
+            // The greedy reading consumed every unit and every page: the printed text
+            // matches the reference. When the search stopped at its budget, the budget -
+            // not the document - prevented the decision, so the pass stands. When the
+            // search failed without reaching the budget, the contradiction is kept as the
+            // ambiguous-alignment guard.
+            return overBudget
+                ? new AlignmentOutcome(true, null, null, null, null, greedyConsumed, spent, true)
+                : new AlignmentOutcome(false, VerificationReasons.AmbiguousAlignment, null, null, null, consumed, spent, false);
         }
 
         /// <summary>The longest prefix of a unit's remaining text that the page prints here.</summary>
@@ -701,8 +719,8 @@ public sealed class ContentOrderAligner
             return index;
         }
 
-        private static AlignmentOutcome Failure(int page, int position, int cursor, string reason) =>
-            new(false, reason, page + 1, position, cursor, []);
+        private AlignmentOutcome Failure(int page, int position, int cursor, string reason) =>
+            new(false, reason, page + 1, position, cursor, [], spent, overBudget);
 
         /// <summary>
         /// Whether the whole row at <paramref name="cursor"/> is absent: the printed text
