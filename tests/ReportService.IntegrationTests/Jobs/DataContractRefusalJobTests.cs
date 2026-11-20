@@ -33,15 +33,13 @@ namespace ReportService.IntegrationTests.Jobs;
 /// stored through the upload path, a job is accepted for it and its execution is run by the
 /// real orchestration worker against a real PostgreSQL, a real workflow engine and a
 /// temporary storage root. Every refused case asserts two readings of one outcome — the row
-/// the failure is stored in, and, once the job status read is served, the consumer's own
-/// read of it — and the controls assert that a snapshot the profile admits is partitioned
-/// and not refused.
+/// the failure is stored in, and the consumer's own read of that job through the status
+/// answer its acceptance pointed it at — and the controls assert that a snapshot the profile
+/// admits is partitioned and not refused.
 /// <para>
 /// This class is kept out of a run that cannot print by its trait. On a build whose job
 /// execution does not yet read the snapshot, every case fails by name rather than skipping:
-/// no stored failure can carry a reason there, so such a run cannot be a covering one. The
-/// second reading of every case — <see cref="StatusReadNotServed"/> — is added before the
-/// covering run is attempted.
+/// no stored failure can carry a reason there, so such a run cannot be a covering one.
 /// </para>
 /// </summary>
 [Trait("Requires", "printing")]
@@ -64,17 +62,6 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
     /// <summary>The message a run on a build without the data-contract step fails with.</summary>
     public const string DataStepNotOnThisCommit =
         "the data-contract step is not on this commit: the job's execution ended without reading its snapshot, so no stored failure can name a refusal and this run cannot be a covering run.";
-
-    /// <summary>
-    /// The reading every case still owes: the job status read a consumer uses to learn its
-    /// job failed. No job status read is served yet — only the template-version and the
-    /// upload reads are mapped — so the second reading of this class is added, and this note
-    /// removed, when that read is delivered, and before the covering run is attempted. A run
-    /// of this class without it is not the run the acceptance criterion needs, and the
-    /// message above says so.
-    /// </summary>
-    public const string StatusReadNotServed =
-        "the consumer's job status read is not served on this commit: the class asserts the stored row only, so this run cannot be a covering run.";
 
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromSeconds(90);
 
@@ -331,16 +318,18 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         await AssertPartitionedAsync(Document(header: _sampleHeader));
 
     // One job per refused snapshot, plain and inside a complete gzip stream: the stored row
-    // carries the reason and the ordinal of the case, no partition, block, index object or
-    // artifact is written for it, and no marker of the case's own document reaches the stored
-    // reason or a log line. For a duplicated member the marker is the repeated name itself.
+    // carries the reason and the ordinal of the case, and the consumer's own status answer
+    // carries the same failure — the code, the instant the job ended and one PDF output that
+    // failed with no artifact. No partition, block, index object or artifact is written for
+    // it, and no marker of the case's own document reaches the stored reason, the status
+    // answer or a log line. For a duplicated member the marker is the repeated name itself.
     private async Task AssertRefusedAsync(string reason, int ordinal, byte[] document, params string[] markers)
     {
         for (var compressed = 0; compressed < 2; compressed++)
         {
             var cancellationToken = TestContext.Current.CancellationToken;
             var uploadId = await StoreAsync(document, compressed == 1, cancellationToken);
-            var reportJobId = await AcceptAsync(uploadId, cancellationToken);
+            var (reportJobId, statusUrl) = await AcceptAsync(uploadId, cancellationToken);
             await WaitForOutcomeAsync(reportJobId, cancellationToken);
 
             var row = await RowAsync(reportJobId, cancellationToken);
@@ -357,11 +346,33 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
             Assert.Empty(StoredObjects(reportJobId, "block"));
             Assert.Empty(StoredObjects(reportJobId, "index"));
 
+            // The second reading: what the consumer is told at the address its acceptance gave it.
+            var statusRead = await ReadStatusAsync(statusUrl, cancellationToken);
+            using (var answer = JsonDocument.Parse(statusRead))
+            {
+                var root = answer.RootElement;
+                Assert.Equal("failed", root.GetProperty("status").GetString());
+                Assert.Equal("DATA_INVALID", root.GetProperty("errorCode").GetString());
+                Assert.True(
+                    root.GetProperty("finishedAt").ValueKind == JsonValueKind.String,
+                    "a failed job's status answer carries the instant it ended");
+                var outputs = root.GetProperty("outputs").EnumerateArray().ToList();
+                Assert.Single(outputs);
+                var output = outputs[0];
+                Assert.Equal("pdf", output.GetProperty("format").GetString());
+                Assert.Equal("failed", output.GetProperty("status").GetString());
+                Assert.Equal("DATA_INVALID", output.GetProperty("errorCode").GetString());
+                Assert.True(
+                    output.GetProperty("artifactId").ValueKind == JsonValueKind.Null,
+                    "a refused job's output published no file");
+            }
+
             var logs = string.Join('\n', _logs.Lines);
             foreach (var marker in markers)
             {
                 Assert.DoesNotContain(marker, row.ErrorReason, StringComparison.Ordinal);
                 Assert.DoesNotContain(marker, logs, StringComparison.Ordinal);
+                Assert.DoesNotContain(marker, statusRead, StringComparison.Ordinal);
             }
         }
     }
@@ -373,7 +384,7 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         {
             var cancellationToken = TestContext.Current.CancellationToken;
             var uploadId = await StoreAsync(document, compressed == 1, cancellationToken);
-            var reportJobId = await AcceptAsync(uploadId, cancellationToken);
+            var (reportJobId, _) = await AcceptAsync(uploadId, cancellationToken);
             await WaitForOutcomeAsync(reportJobId, cancellationToken);
 
             var row = await RowAsync(reportJobId, cancellationToken);
@@ -406,6 +417,21 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         }
 
         Assert.True(terminal, $"the job {reportJobId} had to reach a terminal status within {OutcomeDeadline}");
+    }
+
+    // The consumer's own reading of the job, at the address its acceptance answered with.
+    // Every refused case makes it after the stored row: the row says what the failure is, and
+    // this says what the job's owner is told through the delivered status read. Both read the
+    // same records, so the two readings must agree.
+    private async Task<string> ReadStatusAsync(string statusUrl, CancellationToken cancellationToken)
+    {
+        using var client = _api!.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(statusUrl, UriKind.Relative));
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
+        using var response = await client.SendAsync(request, cancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore, "every status answer has to be uncacheable");
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
     private async Task<string> StoreAsync(byte[] document, bool compressed, CancellationToken cancellationToken)
@@ -511,7 +537,7 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         return found;
     }
 
-    private async Task<string> AcceptAsync(string uploadId, CancellationToken cancellationToken)
+    private async Task<(string ReportJobId, string StatusUrl)> AcceptAsync(string uploadId, CancellationToken cancellationToken)
     {
         using var client = _api!.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
@@ -525,7 +551,8 @@ public sealed class DataContractRefusalJobTests : IClassFixture<PostgresFixture>
         using var response = await client.SendAsync(request, cancellationToken);
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
-        return document.RootElement.GetProperty("reportJobId").GetString()!;
+        var accepted = document.RootElement;
+        return (accepted.GetProperty("reportJobId").GetString()!, accepted.GetProperty("statusUrl").GetString()!);
     }
 
     // The taken version this class's jobs are pinned to, recorded in the class's own
