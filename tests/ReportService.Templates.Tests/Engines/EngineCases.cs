@@ -52,7 +52,7 @@ internal static class EngineCases
         _ => new ScribanTemplateAdapter(),
     };
 
-    public static ComposedBlock Compose(
+    public static async Task<ComposedBlock> Compose(
         string engine,
         (TemplatePart Part, string Source)[] parts,
         string header,
@@ -63,7 +63,7 @@ internal static class EngineCases
         var adapter = AdapterOf(engine);
         var prepared = adapter.Prepare(Manifest(engine, parts), Files(engine, parts));
         var composer = new BlockComposer(new ManualTimeProvider(Clock));
-        return composer.Compose(
+        return await composer.ComposeAsync(
             new CompositionRequest(
                 prepared,
                 new CompositionBlock(0, records.Length, 1, IsFirst: true, IsLast: true),
@@ -77,7 +77,7 @@ internal static class EngineCases
                     (settings ?? BuenosAires).Clock),
                 groupKey),
             adapter,
-            settings ?? BuenosAires);
+            settings ?? BuenosAires).ConfigureAwait(false);
     }
 
     public static MemoryPackageFiles Files(string engine, (TemplatePart Part, string Source)[] parts) =>

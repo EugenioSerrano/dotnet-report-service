@@ -43,13 +43,14 @@ public sealed class MigrationCatalogTests
 
     private const string RowBound = "0016_pdf-row-bound.sql";
     private const string JobIdempotency = "0017_job-idempotency.sql";
+    private const string AttemptCauses = "0018_pdf-attempt-causes.sql";
 
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound, JobIdempotency }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound, JobIdempotency, AttemptCauses }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(JobIdempotency, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(AttemptCauses, MigrationCatalog.ExpectedVersion);
     }
 
     /// <summary>
@@ -192,7 +193,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(17, MigrationCatalog.Scripts.Count);
+        Assert.Equal(18, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -213,9 +214,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(17, MigrationCatalog.Scripts.Count);
-        Assert.Equal(JobIdempotency, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(JobIdempotency, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(18, MigrationCatalog.Scripts.Count);
+        Assert.Equal(AttemptCauses, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(AttemptCauses, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -372,8 +373,8 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == OutputReason);
 
-        Assert.Equal(17, MigrationCatalog.Scripts.Count);
-        Assert.Equal(JobIdempotency, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(18, MigrationCatalog.Scripts.Count);
+        Assert.Equal(AttemptCauses, MigrationCatalog.Scripts[^1].Name);
         Assert.Equal(1, CountOf(script.Sql, "ALTER TABLE"));
         Assert.Equal(1, CountOf(script.Sql, "ADD COLUMN"));
         Assert.Contains("ALTER TABLE report_service.report_outputs", script.Sql, StringComparison.Ordinal);
@@ -387,6 +388,42 @@ public sealed class MigrationCatalogTests
         Assert.DoesNotContain("DEFAULT", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ADD CONSTRAINT", script.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("CREATE INDEX", script.Sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The eighteenth script states the cause a rendering attempt recorded before it ended,
+    /// keyed as the orchestration decision states it - output, block and attempt - and
+    /// restricted to the two deadline classes of the guard and the watchdog. It creates one
+    /// table with its primary key and its four checks, adds no column to a table that exists,
+    /// backfills nothing and rewrites no row. The comment states how long the rows are kept.
+    /// That the server applies it, and refuses a third cause and a repeated attempt, is a case
+    /// against a real database, never a reading of this text.
+    /// </summary>
+    [Fact]
+    public void TheAttemptCauseScriptCreatesTheKeyedTableAndNothingElse()
+    {
+        var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == AttemptCauses);
+
+        Assert.Contains("CREATE TABLE report_service.pdf_attempt_causes (", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("output_id    text        NOT NULL REFERENCES report_service.report_outputs (output_id)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("block_index  integer     NOT NULL CHECK (block_index >= 0)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("attempt      integer     NOT NULL CHECK (attempt >= 1)", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("cause        text        NOT NULL CHECK (cause IN ('watchdog-deadline', 'guard-deadline'))", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("recorded_at  timestamptz NOT NULL", script.Sql, StringComparison.Ordinal);
+        Assert.Contains("PRIMARY KEY (output_id, block_index, attempt)", script.Sql, StringComparison.Ordinal);
+
+        // Kept with the job's own metadata: the retention cleanup of a later version removes
+        // them with it, and the comment says so in the product's words.
+        Assert.Contains("retention", script.Sql, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Equal(1, CountOf(script.Sql, "CREATE TABLE"));
+        Assert.DoesNotContain("ALTER TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ADD COLUMN", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CREATE INDEX", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DELETE", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("INSERT", script.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DROP", script.Sql, StringComparison.OrdinalIgnoreCase);
     }
 
     private static int CountOf(string text, string token)

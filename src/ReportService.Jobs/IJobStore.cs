@@ -250,6 +250,27 @@ public interface IJobStore
     Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Records the deadline class one rendering attempt ended with, once per output, block
+    /// and attempt. The first row for an attempt wins: a repeat, from a race or from a step
+    /// that arrives twice, writes nothing and answers that the row exists already.
+    /// </summary>
+    /// <param name="cause">The attempt and the deadline class it ended with.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <returns>Whether this call wrote the row.</returns>
+    Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads the last cause recorded for one block of an output - the row with the greatest
+    /// attempt - or <see langword="null"/> when no attempt recorded one. A crash records
+    /// nothing, so "the last recorded" is the most recent attempt that could write.
+    /// </summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="blockIndex">The block's position in the output's partition.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <returns>The last recorded cause, or <see langword="null"/> when there is none.</returns>
+    Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Reads one job as its owner reads it, in one snapshot: the job, its outputs in the
     /// fixed format order and the identifier of each published output. The read is scoped
     /// by the consumer that owns the job, so a job of another consumer answers the same as

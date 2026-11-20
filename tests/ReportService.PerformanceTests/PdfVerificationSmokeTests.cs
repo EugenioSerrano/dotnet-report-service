@@ -213,7 +213,7 @@ public sealed class PdfVerificationSmokeTests
         // The same composition the measured documents go through: the product's reader, render
         // context and composer, then the units the checks compare against.
         var templates = Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
-        var (_, text, _) = Compose(StreamFixture, Path.Combine(templates, Package), Manifest(), new ScribanTemplateAdapter(), folder);
+        var (_, text, _) = await Compose(StreamFixture, Path.Combine(templates, Package), Manifest(), new ScribanTemplateAdapter(), folder);
         var units = text.Units;
         var pages = StreamPages(units, RecordsPerPage);
         var evidence = new JsonObject
@@ -319,7 +319,7 @@ public sealed class PdfVerificationSmokeTests
                 document.RootElement.TryGetProperty("verificationPassed", out var passed) && passed.GetBoolean(),
                 $"{fixture} was printed and did not pass the product verification; there is nothing to measure.");
 
-            var (composed, text, source) = Compose(fixture, package, manifest, adapter, fixtures);
+            var (composed, text, source) = await Compose(fixture, package, manifest, adapter, fixtures);
             var verifier = new BlockVerifier();
             var settings = PdfPageSettingsRules.Resolve(manifest.PdfOutput).Settings
                 ?? throw new InvalidOperationException("the package declares no usable page");
@@ -417,7 +417,7 @@ public sealed class PdfVerificationSmokeTests
     // The composition of the fixture with the package, in process, exactly as the worker does
     // it: the block read with the data contract's reader, its values mapped to the render
     // context, and the package's prepared parts composed in block mode.
-    private static (ComposedBlock Composed, ExtractedText Text, SourceCheckInput Source) Compose(
+    private static async Task<(ComposedBlock Composed, ExtractedText Text, SourceCheckInput Source)> Compose(
         string fixture,
         string package,
         RenderManifest manifest,
@@ -443,7 +443,7 @@ public sealed class PdfVerificationSmokeTests
         var files = new FolderTemplatePackageFiles(package);
         var template = adapter.Prepare(manifest, files);
         var composer = new BlockComposer(TimeProvider.System);
-        var composition = composer.Compose(
+        var composition = await composer.ComposeAsync(
             new CompositionRequest(
                 template,
                 new CompositionBlock(0, records.Count, 1, IsFirst: true, IsLast: true),

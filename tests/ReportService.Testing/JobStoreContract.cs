@@ -644,6 +644,78 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(Reason, state.Job.ErrorReason);
     }
 
+    /// <summary>
+    /// An attempt's cause is written once: a second recording of the same output, block and
+    /// attempt - even with another deadline class - writes nothing and answers that the row
+    /// exists, so the first cause an attempt recorded stays the one a read returns.
+    /// </summary>
+    [Fact]
+    public async Task AnAttemptCauseIsRecordedOnceAndARepeatChangesNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        Assert.Equal(
+            AttemptCauseOutcome.Recorded,
+            await Store.RecordAttemptCauseAsync(
+                new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.GuardDeadline, Now),
+                cancellationToken));
+        Assert.Equal(
+            AttemptCauseOutcome.AlreadyRecorded,
+            await Store.RecordAttemptCauseAsync(
+                new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now.AddSeconds(1)),
+                cancellationToken));
+
+        var row = await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken);
+        Assert.NotNull(row);
+        Assert.Equal(1, row!.Attempt);
+        Assert.Equal(AttemptCauseVocabulary.GuardDeadline, row.Cause);
+        Assert.Equal(Now, row.RecordedAt);
+    }
+
+    /// <summary>
+    /// "The last recorded cause" is the row with the greatest attempt: the read answers the
+    /// third attempt after the three were recorded, an attempt that recorded nothing is no
+    /// row at all, and a row of another output is never visible to this one's read.
+    /// </summary>
+    [Fact]
+    public async Task TheLastCauseAcrossAttemptsIsTheOneReadAndAnotherOutputIsInvisible()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+        var other = await AcceptedAsync(cancellationToken);
+
+        await Store.RecordAttemptCauseAsync(
+            new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            cancellationToken);
+        await Store.RecordAttemptCauseAsync(
+            new AttemptCause(acceptance.OutputId, 0, 2, AttemptCauseVocabulary.WatchdogDeadline, Now.AddMinutes(1)),
+            cancellationToken);
+        await Store.RecordAttemptCauseAsync(
+            new AttemptCause(acceptance.OutputId, 0, 3, AttemptCauseVocabulary.GuardDeadline, Now.AddMinutes(2)),
+            cancellationToken);
+
+        var last = await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken);
+        Assert.NotNull(last);
+        Assert.Equal(3, last!.Attempt);
+        Assert.Equal(AttemptCauseVocabulary.GuardDeadline, last.Cause);
+        Assert.Equal(Now.AddMinutes(2), last.RecordedAt);
+
+        // The block no attempt recorded, and the other output's row, are not this read's.
+        Assert.Null(await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 1, cancellationToken));
+        Assert.Null(await Store.FindLastAttemptCauseAsync(other.OutputId, 0, cancellationToken));
+
+        await Store.RecordAttemptCauseAsync(
+            new AttemptCause(other.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            cancellationToken);
+        Assert.Equal(
+            AttemptCauseVocabulary.GuardDeadline,
+            (await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken))!.Cause);
+        Assert.Equal(
+            AttemptCauseVocabulary.WatchdogDeadline,
+            (await Store.FindLastAttemptCauseAsync(other.OutputId, 0, cancellationToken))!.Cause);
+    }
+
     [Fact]
     public async Task RecordingTheWaitOfAQueuedJobAppliesTheStageAndARepeatChangesNothing()
     {

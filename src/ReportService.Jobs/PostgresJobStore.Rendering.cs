@@ -154,6 +154,26 @@ public sealed partial class PostgresJobStore
            AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
         """;
 
+    private const string InsertAttemptCauseSql = """
+        INSERT INTO report_service.pdf_attempt_causes
+            (output_id, block_index, attempt, cause, recorded_at)
+        VALUES
+            (@OutputId, @BlockIndex, @Attempt, @Cause, @RecordedAt)
+        ON CONFLICT (output_id, block_index, attempt) DO NOTHING
+        """;
+
+    private const string SelectLastAttemptCauseSql = """
+        SELECT output_id   AS "OutputId",
+               block_index AS "BlockIndex",
+               attempt     AS "Attempt",
+               cause       AS "Cause",
+               recorded_at AS "RecordedAt"
+        FROM report_service.pdf_attempt_causes
+        WHERE output_id = @OutputId AND block_index = @BlockIndex
+        ORDER BY attempt DESC
+        LIMIT 1
+        """;
+
     private const string RaisePartitionProgressSql = """
         UPDATE report_service.report_jobs
            SET records_read  = GREATEST(records_read, @RecordCount),
@@ -641,8 +661,60 @@ public sealed partial class PostgresJobStore
         }
     }
 
-    // The guard of every commit that makes a result visible: a job that is ending or has
-    // ended publishes nothing, and neither does an output that is no longer running.
+    /// <inheritdoc />
+    public async Task<AttemptCauseOutcome> RecordAttemptCauseAsync(
+        AttemptCause cause,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(cause);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var changed = await connection.ExecuteAsync(new CommandDefinition(
+                InsertAttemptCauseSql,
+                new
+                {
+                    OutputId = cause.OutputId,
+                    BlockIndex = cause.BlockIndex,
+                    Attempt = cause.Attempt,
+                    Cause = cause.Cause,
+                    RecordedAt = UtcInstant(cause.RecordedAt),
+                },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return changed > 0 ? AttemptCauseOutcome.Recorded : AttemptCauseOutcome.AlreadyRecorded;
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<AttemptCause?> FindLastAttemptCauseAsync(
+        string outputId,
+        int blockIndex,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var row = await connection.QuerySingleOrDefaultAsync<AttemptCauseRow>(new CommandDefinition(
+                SelectLastAttemptCauseSql,
+                new { OutputId = outputId, BlockIndex = blockIndex },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return row?.ToRecord();
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
     private static async Task<GuardRow?> GuardAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -669,6 +741,22 @@ public sealed partial class PostgresJobStore
         public string JobStatus { get; set; } = string.Empty;
 
         public string OutputStatus { get; set; } = string.Empty;
+    }
+
+    // The cause row Dapper maps: the five columns the read selects, the instant in UTC.
+    private sealed class AttemptCauseRow
+    {
+        public string OutputId { get; set; } = string.Empty;
+
+        public int BlockIndex { get; set; }
+
+        public int Attempt { get; set; }
+
+        public string Cause { get; set; } = string.Empty;
+
+        public DateTime RecordedAt { get; set; }
+
+        public AttemptCause ToRecord() => new(OutputId, BlockIndex, Attempt, Cause, Utc(RecordedAt));
     }
 
     private sealed class OutputStatusRow

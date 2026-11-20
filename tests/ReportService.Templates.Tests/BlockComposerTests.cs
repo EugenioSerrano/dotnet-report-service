@@ -26,9 +26,9 @@ public sealed class BlockComposerTests
     ];
 
     [Fact]
-    public void ABlockIsComposedInTheOrderOfItsParts()
+    public async Task ABlockIsComposedInTheOrderOfItsParts()
     {
-        var block = Compose(Integrity, Records("""{"sequence":1}""", """{"sequence":2}""", """{"sequence":3}"""));
+        var block = await Compose(Integrity, Records("""{"sequence":1}""", """{"sequence":2}""", """{"sequence":3}"""));
 
         Assert.Equal(
             [FragmentKind.DocumentStart, FragmentKind.Row, FragmentKind.Row, FragmentKind.Row, FragmentKind.DocumentEnd],
@@ -39,9 +39,9 @@ public sealed class BlockComposerTests
     }
 
     [Fact]
-    public void EveryRowFragmentCarriesTheOrdinalOfItsRecord()
+    public async Task EveryRowFragmentCarriesTheOrdinalOfItsRecord()
     {
-        var block = Compose(Integrity, Records("""{"sequence":8}""", """{"sequence":9}"""));
+        var block = await Compose(Integrity, Records("""{"sequence":8}""", """{"sequence":9}"""));
 
         Assert.Equal([1L, 2L], block.Rows.Select(fragment => fragment.RecordOrdinal));
         Assert.Equal(0L, block.Fragments[0].RecordOrdinal);
@@ -49,9 +49,9 @@ public sealed class BlockComposerTests
     }
 
     [Fact]
-    public void AFragmentNamesItsOwnBytes()
+    public async Task AFragmentNamesItsOwnBytes()
     {
-        var block = Compose(Integrity, Records("""{"sequence":1}""", """{"sequence":2}"""));
+        var block = await Compose(Integrity, Records("""{"sequence":1}""", """{"sequence":2}"""));
 
         foreach (var fragment in block.Fragments)
         {
@@ -62,9 +62,9 @@ public sealed class BlockComposerTests
     }
 
     [Fact]
-    public void TheGroupPartsWrapEachGroup()
+    public async Task TheGroupPartsWrapEachGroup()
     {
-        var block = Compose(
+        var block = await Compose(
             Integrity,
             Records("""{"groupId":"G1","sequence":1}""", """{"groupId":"G1","sequence":2}""", """{"groupId":"G2","sequence":3}"""),
             groupKey: "groupId");
@@ -88,9 +88,9 @@ public sealed class BlockComposerTests
     }
 
     [Fact]
-    public void TheEmptyBlockInvokesOnlyItsDocumentParts()
+    public async Task TheEmptyBlockInvokesOnlyItsDocumentParts()
     {
-        var block = Compose(Integrity, Records());
+        var block = await Compose(Integrity, Records());
 
         Assert.Equal([FragmentKind.DocumentStart, FragmentKind.DocumentEnd], block.Fragments.Select(fragment => fragment.Kind));
         Assert.Empty(block.Rows);
@@ -99,12 +99,12 @@ public sealed class BlockComposerTests
     }
 
     [Fact]
-    public void ABlockThatDoesNotHoldTheRecordsItDeclaresIsRefused()
+    public async Task ABlockThatDoesNotHoldTheRecordsItDeclaresIsRefused()
     {
         var template = Prepare(Integrity);
         var composer = new BlockComposer(new ManualTimeProvider(Now));
 
-        Assert.Throws<TemplateInputException>(() => composer.Compose(new CompositionRequest(
+        await Assert.ThrowsAsync<TemplateInputException>(() => composer.ComposeAsync(new CompositionRequest(
             template,
             new CompositionBlock(0, 2, 1, IsFirst: true, IsLast: true),
             RenderContextFactory.Header("{}"u8.ToArray()),
@@ -129,11 +129,11 @@ public sealed class BlockComposerTests
         return count;
     }
 
-    private static ComposedBlock Compose((TemplatePart Part, string Source)[] parts, ComposedRecord[] records, string? groupKey = null)
+    private static async Task<ComposedBlock> Compose((TemplatePart Part, string Source)[] parts, ComposedRecord[] records, string? groupKey = null)
     {
         var template = Prepare(parts);
         var composer = new BlockComposer(new ManualTimeProvider(Now));
-        return composer.Compose(new CompositionRequest(
+        return await composer.ComposeAsync(new CompositionRequest(
             template,
             new CompositionBlock(0, records.Length, records.Length == 0 ? 1 : records[0].Ordinal, IsFirst: true, IsLast: true),
             RenderContextFactory.Header("{}"u8.ToArray()),

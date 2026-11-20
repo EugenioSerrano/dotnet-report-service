@@ -775,6 +775,10 @@ internal sealed class FakeJobStore : IJobStore
 
     public PartCommit? Committed { get; private set; }
 
+    public List<AttemptCause> Causes { get; } = [];
+
+    public Action? OnRecordCause { get; set; }
+
     public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
         Task.FromResult(Part);
 
@@ -840,6 +844,19 @@ internal sealed class FakeJobStore : IJobStore
     public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken)
+    {
+        OnRecordCause?.Invoke();
+        Causes.Add(cause);
+        return Task.FromResult(AttemptCauseOutcome.Recorded);
+    }
+
+    public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+        Task.FromResult(Causes
+            .Where(cause => string.Equals(cause.OutputId, outputId, StringComparison.Ordinal) && cause.BlockIndex == blockIndex)
+            .OrderByDescending(cause => cause.Attempt)
+            .FirstOrDefault());
 }
 
 /// <summary>The version store as the step reads it.</summary>

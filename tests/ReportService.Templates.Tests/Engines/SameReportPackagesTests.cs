@@ -54,7 +54,7 @@ public sealed class SameReportPackagesTests
 
     [Theory]
     [MemberData(nameof(Versions))]
-    public void EachVersionDeclaresItsOwnEngineAndComposesTheSameReport(string version, string engine, string engineVersion)
+    public async Task EachVersionDeclaresItsOwnEngineAndComposesTheSameReport(string version, string engine, string engineVersion)
     {
         var folder = FolderOf(version);
         var declaration = File.ReadAllText(Path.Combine(folder, "template.yaml"));
@@ -62,7 +62,7 @@ public sealed class SameReportPackagesTests
         Assert.Contains($"engine: {engine}", declaration, StringComparison.Ordinal);
         Assert.Contains($"engineVersion: \"{engineVersion}\"", declaration, StringComparison.Ordinal);
 
-        var block = Compose(version, engine);
+        var block = await Compose(version, engine);
         Assert.Contains("<h1>Monthly statement</h1>", block.Text, StringComparison.Ordinal);
         Assert.Contains("1.000,00", block.Text, StringComparison.Ordinal);
         Assert.Contains("-0,50", block.Text, StringComparison.Ordinal);
@@ -70,11 +70,11 @@ public sealed class SameReportPackagesTests
     }
 
     [Fact]
-    public void TheThreeVersionsComposeTheSameReportToByteIdenticalHtml()
+    public async Task TheThreeVersionsComposeTheSameReportToByteIdenticalHtml()
     {
-        var scriban = Compose("1.0.0", ScribanTemplateAdapter.EngineName);
-        var handlebars = Compose("1.1.0", HandlebarsTemplateAdapter.EngineName);
-        var liquid = Compose("1.2.0", FluidTemplateAdapter.EngineName);
+        var scriban = await Compose("1.0.0", ScribanTemplateAdapter.EngineName);
+        var handlebars = await Compose("1.1.0", HandlebarsTemplateAdapter.EngineName);
+        var liquid = await Compose("1.2.0", FluidTemplateAdapter.EngineName);
 
         Assert.Equal(scriban.Text, handlebars.Text);
         Assert.Equal(scriban.Text, liquid.Text);
@@ -83,11 +83,11 @@ public sealed class SameReportPackagesTests
     }
 
     [Fact]
-    public void AnEmptyReportComposesTheSameDocumentOnEveryEngine()
+    public async Task AnEmptyReportComposesTheSameDocumentOnEveryEngine()
     {
-        var scriban = Compose("1.0.0", ScribanTemplateAdapter.EngineName, records: []);
-        var handlebars = Compose("1.1.0", HandlebarsTemplateAdapter.EngineName, records: []);
-        var liquid = Compose("1.2.0", FluidTemplateAdapter.EngineName, records: []);
+        var scriban = await Compose("1.0.0", ScribanTemplateAdapter.EngineName, records: []);
+        var handlebars = await Compose("1.1.0", HandlebarsTemplateAdapter.EngineName, records: []);
+        var liquid = await Compose("1.2.0", FluidTemplateAdapter.EngineName, records: []);
 
         Assert.Equal(scriban.Text, handlebars.Text);
         Assert.Equal(scriban.Text, liquid.Text);
@@ -142,6 +142,7 @@ public sealed class SameReportPackagesTests
     }
 
     private static ComposedBlock Compose(string version, string engine, string[]? records = null)
+    private static async Task<ComposedBlock> Compose(string version, string engine, string[]? records = null)
     {
         var adapter = engine switch
         {
@@ -153,7 +154,7 @@ public sealed class SameReportPackagesTests
         var prepared = adapter.Prepare(ManifestOf(version, engine), files);
         var data = records ?? Records;
         var settings = EngineCases.BuenosAires;
-        return new BlockComposer(new ManualTimeProvider(settings.Clock)).Compose(
+        return await new BlockComposer(new ManualTimeProvider(settings.Clock)).ComposeAsync(
             new CompositionRequest(
                 prepared,
                 new CompositionBlock(0, data.Length, 1, IsFirst: true, IsLast: true),

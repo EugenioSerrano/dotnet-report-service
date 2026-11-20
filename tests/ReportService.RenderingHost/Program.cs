@@ -225,7 +225,7 @@ internal static partial class Program
             manifest.GroupKey);
 
         var composer = new BlockComposer(TimeProvider.System);
-        var composed = composer.Compose(
+        var composed = await composer.ComposeAsync(
             composition,
             adapter,
             PresentationSettingsResolver.Resolve(new PresentationValues(

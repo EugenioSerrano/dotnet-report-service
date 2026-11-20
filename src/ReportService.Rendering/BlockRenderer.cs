@@ -137,18 +137,21 @@ public sealed class BlockRenderer(
             request.Composition.Render.TimeZone,
             request.Composition.Render.Clock));
 
-        var composed = Compose(request, adapter, presentation, cancellationToken, out var composeMs);
+        var composed = await ComposeAsync(request, adapter, presentation, cancellationToken).ConfigureAwait(false);
+        var composeMs = composed.ComposeMs;
+        var block = composed.Block;
+
         if (blockMutation is not null)
         {
-            composed = blockMutation.Apply(composed);
+            block = blockMutation.Apply(block);
         }
 
-        var text = new TextUnitExtractor().Extract(composed);
+        var text = new TextUnitExtractor().Extract(block);
         var source = new SourceCheckInput(
             request.Partition,
             request.Index,
             request.Block,
-            composed,
+            block,
             text,
             request.Manifest.Pdf.Verification,
             request.IsFirstBlock);
@@ -196,7 +199,7 @@ public sealed class BlockRenderer(
         // The page rule is the last element of the document the service serves, so it
         // follows every package stylesheet in the cascade. The test-only HTML control
         // acts after it, which is how a known-bad stylesheet can override the page.
-        var html = pageRule.AppendTo(composed.Text);
+        var html = pageRule.AppendTo(block.Text);
         if (htmlMutation is not null)
         {
             html = htmlMutation.Apply(html);
@@ -206,6 +209,11 @@ public sealed class BlockRenderer(
         using (var printSpan = Source.StartActivity("print"))
         {
             printSpan?.SetTag("block.index", blockIndex);
+
+            // The print hook: a test's stall is awaited here, inside the print step and before
+            // the printer is asked for a document, so the activity neither writes nor returns -
+            // exactly what the worker's watchdog exists to stop.
+            await composer.StallAsync(RenderPhase.Print, cancellationToken).ConfigureAwait(false);
             print = await printer.PrintAsync(html, pageRule, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
             printSpan?.SetTag("print.aborted_requests", print.AbortedRequests);
             printSpan?.SetTag("print.console_errors", print.ConsoleErrors);
@@ -219,7 +227,7 @@ public sealed class BlockRenderer(
                 pdfPath,
                 blockIndex,
                 frame,
-                composed,
+                block,
                 text,
                 sourceChecksMs)) with
             {
@@ -255,19 +263,23 @@ public sealed class BlockRenderer(
         };
     }
 
-    private ComposedBlock Compose(BlockRenderRequest request, ITemplateEngineAdapter adapter, PresentationSettings settings, CancellationToken cancellationToken, out double composeMs)
+    private async Task<(ComposedBlock Block, double ComposeMs)> ComposeAsync(
+        BlockRenderRequest request,
+        ITemplateEngineAdapter adapter,
+        PresentationSettings settings,
+        CancellationToken cancellationToken)
     {
         using var span = Source.StartActivity("compose");
         span?.SetTag("block.index", request.BlockIndex);
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
-            return composer.Compose(request.Composition, adapter, settings, cancellationToken);
+            var block = await composer.ComposeAsync(request.Composition, adapter, settings, cancellationToken).ConfigureAwait(false);
+            return (block, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
         finally
         {
-            composeMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-            span?.SetTag("compose.duration_ms", composeMs);
+            span?.SetTag("compose.duration_ms", System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
     }
 

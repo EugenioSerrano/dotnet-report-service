@@ -11,9 +11,9 @@ public sealed class FluidTemplateAdapterTests
     private const string Engine = FluidTemplateAdapter.EngineName;
 
     [Fact]
-    public void EveryDataOutputIsEncodedWithTheProductPolicy()
+    public async Task EveryDataOutputIsEncodedWithTheProductPolicy()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.DocumentStart, "<p>{{ header.name }}</p>")],
             header: """{"name":"<a & \"b\" 'c' \u00e9\u00a0>"}""",
@@ -25,9 +25,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void TheNumbersOfTheContextPrintAsTheyWereGiven()
+    public async Task TheNumbersOfTheContextPrintAsTheyWereGiven()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.Row, "<tr><td>{{ item.unitPrice }}</td><td>{{ item.quantity }}</td></tr>")],
             header: "{}",
@@ -59,9 +59,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void AnIncludeNamesADeclaredPartOfThePackage()
+    public async Task AnIncludeNamesADeclaredPartOfThePackage()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [
                 (TemplatePart.DocumentStart, "<p>{% include 'documentEnd' %}</p>"),
@@ -74,16 +74,16 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void AnIncludeOfSomethingThePackageDoesNotDeclareIsRefused()
+    public async Task AnIncludeOfSomethingThePackageDoesNotDeclareIsRefused()
     {
-        Assert.Throws<TemplatePackageException>(() =>
+        await Assert.ThrowsAsync<TemplatePackageException>(() =>
             EngineCases.Compose(Engine, [(TemplatePart.DocumentStart, "{% include '../../etc/passwd' %}")], header: "{}", records: []));
     }
 
     [Fact]
-    public void ThePresentationTablePresentsThroughTheFiltersWithTheBlocksCulture()
+    public async Task ThePresentationTablePresentsThroughTheFiltersWithTheBlocksCulture()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.Row, "<tr><td>{{ item.amount | format_number: \"N2\" }}</td><td>{{ item.date | format_date: \"dd/MM/yyyy\" }}</td></tr>")],
             header: "{}",
@@ -93,9 +93,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void TheBlocksClockIsTheAcceptanceInstantInTheBlocksZone()
+    public async Task TheBlocksClockIsTheAcceptanceInstantInTheBlocksZone()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.DocumentStart, "{{ render.clock | format_date: \"dd/MM/yyyy HH:mm\" }}")],
             header: "{}",
@@ -105,12 +105,12 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
+    public async Task APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
     {
         // The engine may raise a filter's exception as its own: what the renderer reads is
         // still the block's typed refusal, never the generic failure of a part that could not
         // render, so the consumer gets DATA_INVALID with its reason.
-        var refusal = Assert.Throws<PresentationRefusedException>(() => EngineCases.Compose(
+        var refusal = await Assert.ThrowsAsync<PresentationRefusedException>(() => EngineCases.Compose(
             Engine,
             [(TemplatePart.Row, "<tr><td>{{ item.amount | format_number: \"N2\" }}</td></tr>")],
             header: "{}",
@@ -122,9 +122,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void AComparisonIsARealBooleanTakenByTheEnginesOwnIf()
+    public async Task AComparisonIsARealBooleanTakenByTheEnginesOwnIf()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.Row, "{% assign positive = item.amount | num_gt: \"0\" %}{% if positive %}true{% else %}false{% endif %}")],
             header: "{}",
@@ -134,9 +134,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void ASignPrintsItsTextAndIsNeverACondition()
+    public async Task ASignPrintsItsTextAndIsNeverACondition()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.Row, "{{ item.amount | num_sign }}|{% assign sign = item.amount | num_sign %}{% if sign %}truthy{% else %}falsey{% endif %}")],
             header: "{}",
@@ -148,9 +148,9 @@ public sealed class FluidTemplateAdapterTests
     }
 
     [Fact]
-    public void NothingAPartAssignsReachesTheNextPart()
+    public async Task NothingAPartAssignsReachesTheNextPart()
     {
-        var block = EngineCases.Compose(
+        var block = await EngineCases.Compose(
             Engine,
             [(TemplatePart.DocumentStart, "{% assign shared = 5 %}"), (TemplatePart.Row, "<tr><td>{{ shared }}</td></tr>")],
             header: "{}",
