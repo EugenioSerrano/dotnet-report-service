@@ -6,11 +6,9 @@ namespace ReportService.Api.Tests.Artifacts;
 
 /// <summary>
 /// Listens to the two instruments a download counts on, so a case can say how many
-/// transfers were cut and how many stored objects could not be read. Every host builds
-/// its own meter of the same name, so the listener enables whatever is published after it
-/// started: a case starts listening before its host handles a request, and reads the
-/// difference around the one request it made. Nothing else in the process counts on these
-/// instruments, so a measurement is always the case's own.
+/// transfers were cut and how many stored objects could not be read. It hears the meter
+/// its own case names and no other: a host of that case publishes on that identity, and
+/// a neighbour's measurement of the same instrument never reaches these counts.
 /// </summary>
 internal sealed class DownloadInstruments : IDisposable
 {
@@ -19,13 +17,15 @@ internal sealed class DownloadInstruments : IDisposable
     private long _missingObjects;
 
     /// <summary>Starts listening, before the host that counts is asked to serve anything.</summary>
-    public DownloadInstruments()
+    /// <param name="meterName">The meter the case's own hosts publish their instruments on.</param>
+    public DownloadInstruments(string meterName)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(meterName);
         _listener = new MeterListener
         {
             InstrumentPublished = (instrument, listener) =>
             {
-                if (string.Equals(instrument.Meter.Name, TelemetryDefaults.MeterName, StringComparison.Ordinal)
+                if (string.Equals(instrument.Meter.Name, meterName, StringComparison.Ordinal)
                     && instrument.Name is ArtifactDownloadMetrics.IntegrityFailuresInstrumentName
                         or ArtifactDownloadMetrics.MissingObjectsInstrumentName)
                 {

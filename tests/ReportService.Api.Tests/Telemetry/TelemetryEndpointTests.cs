@@ -24,12 +24,14 @@ public sealed class TelemetryEndpointTests : IDisposable
 {
     private readonly TemporaryDirectory _storage = new();
 
-    /// <summary>The instruments the product declares, by the names it has always exported.</summary>
+    /// <summary>The instruments the product declares, one entry per instrument the API's meter delivers.</summary>
     private static readonly string[] ProductInstrumentNames =
     [
         BuildInfoMetric.InstrumentName,
         JobAcceptanceMetrics.InstrumentName,
         ConsumerRefusalMetrics.InstrumentName,
+        ArtifactDownloadMetrics.IntegrityFailuresInstrumentName,
+        ArtifactDownloadMetrics.MissingObjectsInstrumentName,
     ];
 
     public void Dispose() => _storage.Dispose();
@@ -89,6 +91,9 @@ public sealed class TelemetryEndpointTests : IDisposable
             ErrorCodes.ConsumerUnknown,
             ConsumerRefusalMetrics.CreateOperation,
             "missing");
+        var downloads = api.Services.GetRequiredService<ArtifactDownloadMetrics>();
+        downloads.IntegrityFailure();
+        downloads.MissingObject();
         api.Services.GetRequiredService<MeterProvider>().ForceFlush();
 
         using var response = await client.GetAsync(new Uri(TelemetryDiagnostics.MetricsRoute, UriKind.Relative), Cancellation);
@@ -108,13 +113,15 @@ public sealed class TelemetryEndpointTests : IDisposable
             instruments.Where(instrument => ProductInstrumentNames.Contains(instrument.Name)),
             instrument => Assert.Equal(TelemetryDefaults.MeterName, instrument.Meter));
 
-        // The closed table of the meter that scope name names: the API's three instruments,
-        // each with the quantity it has always carried, and no fourth.
+        // The closed table of the meter that scope name names: the API's five instruments,
+        // each with the unit and type the product declares, and no sixth.
         var expected = new (string Name, string Unit, string Type)[]
         {
             (BuildInfoMetric.InstrumentName, string.Empty, "Gauge"),
             (JobAcceptanceMetrics.InstrumentName, "{request}", "Sum"),
             (ConsumerRefusalMetrics.InstrumentName, "{request}", "Sum"),
+            (ArtifactDownloadMetrics.IntegrityFailuresInstrumentName, "{download}", "Sum"),
+            (ArtifactDownloadMetrics.MissingObjectsInstrumentName, "{download}", "Sum"),
         };
         Assert.Equal(
             expected.OrderBy(row => row.Name, StringComparer.Ordinal),
