@@ -15,6 +15,7 @@ public sealed partial class InMemoryJobStore
     private readonly Dictionary<string, PartitionRecord> _partitions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PartCommit> _parts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ArtifactRecord> _artifacts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AttemptCause> _attemptCauses = new(StringComparer.Ordinal);
 
     /// <summary>The partition a job's data step recorded, when it did.</summary>
     /// <param name="reportJobId">The identifier of the job.</param>
@@ -390,6 +391,52 @@ public sealed partial class InMemoryJobStore
         }
     }
 
+    /// <inheritdoc />
+    public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(
+        AttemptCause cause,
+        CancellationToken cancellationToken)
+    {
+        Interlocked.Increment(ref _writeCalls);
+        ArgumentNullException.ThrowIfNull(cause);
+        if (!AttemptCauseVocabulary.IsDeadline(cause.Cause))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(cause),
+                "a recorded cause is one of the two deadline classes and nothing else");
+        }
+
+        lock (_gate)
+        {
+            var key = AttemptCauseKeyOf(cause.OutputId, cause.BlockIndex, cause.Attempt);
+            if (_attemptCauses.ContainsKey(key))
+            {
+                return Task.FromResult(AttemptCauseOutcome.AlreadyRecorded);
+            }
+
+            _attemptCauses.Add(key, cause);
+            return Task.FromResult(AttemptCauseOutcome.Recorded);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<AttemptCause?> FindLastAttemptCauseAsync(
+        string outputId,
+        int blockIndex,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        lock (_gate)
+        {
+            var last = _attemptCauses.Values
+                .Where(cause => string.Equals(cause.OutputId, outputId, StringComparison.Ordinal)
+                    && cause.BlockIndex == blockIndex)
+                .OrderByDescending(cause => cause.Attempt)
+                .FirstOrDefault();
+            return Task.FromResult(last);
+        }
+    }
+
     private bool AllowsCommit(string outputId)
     {
         if (!_outputs.TryGetValue(outputId, out var output))
@@ -421,6 +468,9 @@ public sealed partial class InMemoryJobStore
     }
 
     private static string KeyOf(string outputId, int blockIndex) => $"{outputId}/{blockIndex}";
+
+    private static string AttemptCauseKeyOf(string outputId, int blockIndex, int attempt) =>
+        $"{outputId}/{blockIndex}/{attempt}";
 
     // The read model of a stored artifact: the record's values with both instants in UTC, as
     // the database's reader answers them.

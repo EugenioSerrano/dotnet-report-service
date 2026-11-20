@@ -94,6 +94,13 @@ public sealed class HandlebarsTemplateAdapter : ITemplateEngineAdapter
         {
             compiled(writer, model, model);
         }
+        catch (Exception) when (writer.Refusal is { } refusal)
+        {
+            // The caller-side guard raised a typed refusal inside the engine's render: it is
+            // the block's own refusal, whatever the engine wrapped it in, so the renderer and
+            // the activity read the code the guard raised and never a package failure.
+            throw refusal;
+        }
         catch (Exception exception) when (Find<PresentationRefusedException>(exception) is { } refusal)
         {
             throw refusal;

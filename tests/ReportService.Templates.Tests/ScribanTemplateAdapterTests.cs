@@ -13,9 +13,9 @@ public sealed class ScribanTemplateAdapterTests
     private static readonly DateTimeOffset Now = new(2026, 11, 2, 5, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void EveryDataOutputIsEncodedWithTheProductPolicy()
+    public async Task EveryDataOutputIsEncodedWithTheProductPolicy()
     {
-        var block = Compose(
+        var block = await Compose(
             [(TemplatePart.DocumentStart, "<p>{{ header.name | html.escape }}</p>")],
             header: """{"name":"<a & \"b\" 'c' \u00e9\u00a0>"}""",
             records: []);
@@ -24,17 +24,17 @@ public sealed class ScribanTemplateAdapterTests
     }
 
     [Fact]
-    public void ANullValuePrintsAsEmpty()
+    public async Task ANullValuePrintsAsEmpty()
     {
-        var block = Compose([(TemplatePart.DocumentStart, "<p>{{ header.name | html.escape }}</p>")], header: """{"name":null}""", records: []);
+        var block = await Compose([(TemplatePart.DocumentStart, "<p>{{ header.name | html.escape }}</p>")], header: """{"name":null}""", records: []);
 
         Assert.Equal("<p></p>", block.Text.Trim());
     }
 
     [Fact]
-    public void TheNumbersOfTheContextPrintAsTheyWereGiven()
+    public async Task TheNumbersOfTheContextPrintAsTheyWereGiven()
     {
-        var block = Compose(
+        var block = await Compose(
             [(TemplatePart.Row, "<tr><td>{{ item.unitPrice }}</td><td>{{ item.quantity }}</td></tr>")],
             header: "{}",
             records: ["""{"unitPrice":1000.00,"quantity":3}"""]);
@@ -43,9 +43,9 @@ public sealed class ScribanTemplateAdapterTests
     }
 
     [Fact]
-    public void ADocumentPartSeesNoRecord()
+    public async Task ADocumentPartSeesNoRecord()
     {
-        var block = Compose(
+        var block = await Compose(
             [(TemplatePart.DocumentStart, "<p>[{{ item.sequence }}]</p>")],
             header: "{}",
             records: ["""{"sequence":5}"""]);
@@ -54,9 +54,9 @@ public sealed class ScribanTemplateAdapterTests
     }
 
     [Fact]
-    public void NothingAPartAssignsReachesTheNextPart()
+    public async Task NothingAPartAssignsReachesTheNextPart()
     {
-        var block = Compose(
+        var block = await Compose(
             [(TemplatePart.DocumentStart, "{% x = 5 %}"), (TemplatePart.Row, "<tr><td>{{ x }}</td></tr>")],
             header: "{}",
             records: ["""{"sequence":1}"""]);
@@ -73,12 +73,12 @@ public sealed class ScribanTemplateAdapterTests
     }
 
     [Fact]
-    public void APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
+    public async Task APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
     {
         // The engine may raise a function's exception as its own: what the renderer reads is
         // still the block's typed refusal, never the generic failure of a part that could not
         // render, so the consumer gets DATA_INVALID with its reason.
-        var refusal = Assert.Throws<PresentationRefusedException>(() => Compose(
+        var refusal = await Assert.ThrowsAsync<PresentationRefusedException>(() => Compose(
             [(TemplatePart.Row, "<tr><td>{{ format_number item.amount \"N2\" }}</td></tr>")],
             header: "{}",
             records: ["""{"amount":123456789012345678901234567890123}"""]));
@@ -109,7 +109,7 @@ public sealed class ScribanTemplateAdapterTests
         Assert.Equal(TimeSpan.FromSeconds(1), ScribanTemplateAdapter.RegexTimeOut);
     }
 
-    private static ComposedBlock Compose(
+    private static async Task<ComposedBlock> Compose(
         (TemplatePart Part, string Source)[] parts,
         string header,
         string[] records,
@@ -117,7 +117,7 @@ public sealed class ScribanTemplateAdapterTests
     {
         var template = Prepare(parts);
         var composer = new BlockComposer(new ManualTimeProvider(Now));
-        return composer.Compose(new CompositionRequest(
+        return await composer.ComposeAsync(new CompositionRequest(
             template,
             new CompositionBlock(0, records.Length, 1, IsFirst: true, IsLast: true),
             RenderContextFactory.Header(Encoding.UTF8.GetBytes(header)),

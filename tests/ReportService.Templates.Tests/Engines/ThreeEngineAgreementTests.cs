@@ -17,13 +17,13 @@ public sealed class ThreeEngineAgreementTests
 
     [Theory]
     [MemberData(nameof(RecordCounts))]
-    public void TheThreeEnginesComposeTheSameReportToByteIdenticalHtml(int recordCount)
+    public async Task TheThreeEnginesComposeTheSameReportToByteIdenticalHtml(int recordCount)
     {
         var records = Records(recordCount);
 
-        var scriban = EngineCases.Compose(ScribanTemplateAdapter.EngineName, Parts(ScribanTemplateAdapter.EngineName), Header, records);
-        var handlebars = EngineCases.Compose(HandlebarsTemplateAdapter.EngineName, Parts(HandlebarsTemplateAdapter.EngineName), Header, records);
-        var liquid = EngineCases.Compose(FluidTemplateAdapter.EngineName, Parts(FluidTemplateAdapter.EngineName), Header, records);
+        var scriban = await EngineCases.Compose(ScribanTemplateAdapter.EngineName, Parts(ScribanTemplateAdapter.EngineName), Header, records);
+        var handlebars = await EngineCases.Compose(HandlebarsTemplateAdapter.EngineName, Parts(HandlebarsTemplateAdapter.EngineName), Header, records);
+        var liquid = await EngineCases.Compose(FluidTemplateAdapter.EngineName, Parts(FluidTemplateAdapter.EngineName), Header, records);
 
         Assert.Equal(scriban.Text, handlebars.Text);
         Assert.Equal(scriban.Text, liquid.Text);
@@ -32,15 +32,15 @@ public sealed class ThreeEngineAgreementTests
     }
 
     [Fact]
-    public void TheSameReportIsComposedIdenticallyOnEveryRender()
+    public async Task TheSameReportIsComposedIdenticallyOnEveryRender()
     {
         var records = Records(100);
 
         foreach (var engine in new[] { ScribanTemplateAdapter.EngineName, HandlebarsTemplateAdapter.EngineName, FluidTemplateAdapter.EngineName })
         {
-            var first = EngineCases.Compose(engine, Parts(engine), Header, records);
-            var second = EngineCases.Compose(engine, Parts(engine), Header, records);
-            var third = EngineCases.Compose(engine, Parts(engine), Header, records);
+            var first = await EngineCases.Compose(engine, Parts(engine), Header, records);
+            var second = await EngineCases.Compose(engine, Parts(engine), Header, records);
+            var third = await EngineCases.Compose(engine, Parts(engine), Header, records);
 
             Assert.Equal(first.Html, second.Html);
             Assert.Equal(first.Html, third.Html);
@@ -48,15 +48,17 @@ public sealed class ThreeEngineAgreementTests
     }
 
     [Fact]
-    public void ThePresentationOfTheThreeEnginesIsTheSameTextInBothCulturesAndZones()
+    public async Task ThePresentationOfTheThreeEnginesIsTheSameTextInBothCulturesAndZones()
     {
         var records = Records(2);
 
         foreach (var settings in new[] { EngineCases.BuenosAires, EngineCases.Tokyo })
         {
-            var texts = new[] { ScribanTemplateAdapter.EngineName, HandlebarsTemplateAdapter.EngineName, FluidTemplateAdapter.EngineName }
-                .Select(engine => EngineCases.Compose(engine, Parts(engine), Header, records, settings).Text)
-                .ToList();
+            var texts = new List<string>();
+            foreach (var engine in new[] { ScribanTemplateAdapter.EngineName, HandlebarsTemplateAdapter.EngineName, FluidTemplateAdapter.EngineName })
+            {
+                texts.Add((await EngineCases.Compose(engine, Parts(engine), Header, records, settings)).Text);
+            }
 
             Assert.Equal(texts[0], texts[1]);
             Assert.Equal(texts[0], texts[2]);
@@ -64,9 +66,9 @@ public sealed class ThreeEngineAgreementTests
     }
 
     [Fact]
-    public void TheComposedTextCarriesTheRecordsAndTheAcceptanceInstant()
+    public async Task TheComposedTextCarriesTheRecordsAndTheAcceptanceInstant()
     {
-        var block = EngineCases.Compose(ScribanTemplateAdapter.EngineName, Parts(ScribanTemplateAdapter.EngineName), Header, Records(2));
+        var block = await EngineCases.Compose(ScribanTemplateAdapter.EngineName, Parts(ScribanTemplateAdapter.EngineName), Header, Records(2));
 
         // es-AR, America/Argentina/Buenos_Aires: 1.000,00 and the clock three hours west.
         Assert.Contains("1.001,00", block.Text, StringComparison.Ordinal);

@@ -537,5 +537,11 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) =>
+            throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+            throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
     }
 }

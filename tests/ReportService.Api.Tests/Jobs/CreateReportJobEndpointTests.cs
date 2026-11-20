@@ -1016,6 +1016,12 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) =>
             inner.RecordRecordsReadAsync(reportJobId, recordsRead, cancellationToken);
 
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) =>
+            inner.RecordAttemptCauseAsync(cause, cancellationToken);
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+            inner.FindLastAttemptCauseAsync(outputId, blockIndex, cancellationToken);
+
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.TransitionOutputAsync(outputId, now, cancellationToken);
 
@@ -1117,6 +1123,10 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
 

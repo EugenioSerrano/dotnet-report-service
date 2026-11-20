@@ -53,6 +53,13 @@ public sealed class RenderPdfBlockActivity(
     string? scratchRoot = null,
     GlobalisationProvenance? globalisation = null)
 {
+    /// <summary>
+    /// The worker's watchdog, installed by the composition on the resolved activity and by a
+    /// test on the activity it constructs. <see langword="null"/> in a process that runs no
+    /// watchdog, where an attempt registers nowhere.
+    /// </summary>
+    internal RenderWatchdog? Watchdog { get; set; }
+
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "RenderPdfBlock";
 
@@ -107,7 +114,16 @@ public sealed class RenderPdfBlockActivity(
         }
 
         using var beatEnds = new CancellationTokenSource();
-        var beat = BeatAsync(beatEnds.Token);
+        var attempt = ActivityExecutionContext.Current.Info;
+        var registration = Watchdog?.Register(
+            input.OutputId,
+            input.BlockIndex,
+            attempt.Attempt,
+            clock.GetUtcNow(),
+            RenderPdfBlockOptions.StartToClose,
+            beatEnds);
+        var beat = BeatAsync(registration, beatEnds.Token);
+        RenderPdfBlockResult result;
         try
         {
             // A fault the step did not map is named here, where the block and the output are
@@ -117,7 +133,7 @@ public sealed class RenderPdfBlockActivity(
             // the commit, and the sites that call RefuseAndLog), so no line is written twice.
             try
             {
-                return await PrintAsync(input, cancellationToken).ConfigureAwait(false);
+                result = await PrintAsync(input, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception unhandled) when (unhandled is not ApplicationFailureException)
             {
@@ -131,9 +147,24 @@ public sealed class RenderPdfBlockActivity(
         }
         finally
         {
+            if (registration is not null)
+            {
+                Watchdog!.Unregister(registration);
+            }
+
             await beatEnds.CancelAsync().ConfigureAwait(false);
             await beat.ConfigureAwait(false);
         }
+
+        // The watchdog stopped this attempt: the activity raises the typed failure the
+        // watchdog built, when the process has not ended yet. The recorded cause is what the
+        // child maps, so this is the engine's own retry, never the mapping's source.
+        if (registration is { Tripped: true, Failure: { } failure })
+        {
+            throw failure;
+        }
+
+        return result;
     }
 
     private async Task<RenderPdfBlockResult> PrintAsync(RenderPdfBlockInput input, CancellationToken cancellationToken)
@@ -258,6 +289,37 @@ public sealed class RenderPdfBlockActivity(
             try
             {
                 outcome = await renderer.RenderAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.RenderTimeout, StringComparison.Ordinal))
+            {
+                // The composition passed its 60 s deadline. The guard's timeout is retryable -
+                // ADR-022 counts it against the block's three attempts, so a deterministic
+                // runaway template cannot restart workers indefinitely - and the cause is
+                // recorded here, at the activity boundary, where the store is reachable: the
+                // template library keeps no store dependency.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: the composition passed its deadline",
+                    input.BlockIndex,
+                    input.OutputId);
+                await RecordAttemptCauseAsync(input, AttemptCauseVocabulary.GuardDeadline, cancellationToken).ConfigureAwait(false);
+                throw new ApplicationFailureException(
+                    guard.Message,
+                    errorType: TemplateErrorCodes.RenderTimeout,
+                    nonRetryable: false);
+            }
+            catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.QuotaExceeded, StringComparison.Ordinal))
+            {
+                // The size cap is deterministic: it is never retried, and it writes no cause
+                // row, because no retry could make the same block smaller.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: the composition passed the {Limit} limit",
+                    input.BlockIndex,
+                    input.OutputId,
+                    guard.Limit);
+                throw new ApplicationFailureException(
+                    guard.Message,
+                    errorType: TemplateErrorCodes.QuotaExceeded,
+                    nonRetryable: true);
             }
             catch (EngineRefusedException refused)
             {
@@ -550,7 +612,7 @@ public sealed class RenderPdfBlockActivity(
         }
     }
 
-    private Task BeatAsync(CancellationToken cancellationToken) => Task.Run(
+    private Task BeatAsync(AttemptRegistration? registration, CancellationToken cancellationToken) => Task.Run(
         async () =>
         {
             using var timer = new PeriodicTimer(RenderPdfBlockOptions.HeartbeatEvery);
@@ -558,6 +620,13 @@ public sealed class RenderPdfBlockActivity(
             {
                 while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
                 {
+                    // A watchdog trip means the worker is stopping and the attempt is being
+                    // retried elsewhere: the beats stop here, so the engine sees the timeout.
+                    if (registration is { Tripped: true })
+                    {
+                        return;
+                    }
+
                     ActivityExecutionContext.Current.Heartbeat();
                 }
             }
@@ -587,6 +656,32 @@ public sealed class RenderPdfBlockActivity(
 
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);
+
+    // The cause of a guard deadline, written where the store is reachable. A store that
+    // cannot answer does not replace the guard's code: the carried RENDER_TIMEOUT still
+    // maps, and only its reason falls back to "none", which the child reads as such.
+    private async Task RecordAttemptCauseAsync(RenderPdfBlockInput input, string cause, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await jobs.RecordAttemptCauseAsync(
+                new AttemptCause(
+                    input.OutputId,
+                    input.BlockIndex,
+                    ActivityExecutionContext.Current.Info.Attempt,
+                    cause,
+                    clock.GetUtcNow()),
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} could not record its attempt cause ({ExceptionType})",
+                input.BlockIndex,
+                input.OutputId,
+                exception.GetType().Name);
+        }
+    }
 
     // A refusal the step has not reported yet: the line names the block, the output and the
     // service's own constant text, and the failure it returns is the one the caller throws.

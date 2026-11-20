@@ -429,5 +429,11 @@ public sealed class ArtifactListEndpointTests : IDisposable
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) =>
             inner.RecordRecordsReadAsync(reportJobId, recordsRead, cancellationToken);
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) =>
+            inner.RecordAttemptCauseAsync(cause, cancellationToken);
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+            inner.FindLastAttemptCauseAsync(outputId, blockIndex, cancellationToken);
     }
 }

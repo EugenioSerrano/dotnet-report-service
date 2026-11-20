@@ -30,7 +30,18 @@ public sealed class PdfWorkerProgram
         builder.AddWorkflowEngine("pdf-worker", [TakeTemplateVersionActivityOptions.Queue]);
         builder.Services.AddSingleton<BrowserProbe>();
         builder.Services.AddHostedService(static services => services.GetRequiredService<BrowserProbe>());
-        builder.Services.AddHealthChecks().AddCheck<BrowserHealthCheck>("chromium");
+
+        // The render watchdog: its values are the ADR's and are validated at start; the
+        // process exit is the seam a test replaces; the health check is served by the one
+        // /health surface below.
+        builder.Services.AddSingleton(RenderWatchdogOptions.Create());
+        builder.AddSettingsCheck(provider => provider.GetRequiredService<RenderWatchdogOptions>().Validate());
+        builder.Services.AddSingleton<IProcessExit, EnvironmentProcessExit>();
+        builder.Services.AddSingleton<RenderWatchdog>();
+        builder.Services.AddHostedService(static services => services.GetRequiredService<RenderWatchdog>());
+        builder.Services.AddHealthChecks()
+            .AddCheck<BrowserHealthCheck>("chromium")
+            .AddCheck<RenderWatchdogHealthCheck>("render-watchdog");
         builder.AddObjectStorage("pdf-worker");
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();
