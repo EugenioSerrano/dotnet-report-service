@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ROW_BOUND_EXCEEDED`, no page is rendered and nothing is published, and the job
   status says which record and field to shorten — the record's number, the field's
   path, its size and the bound, never the value.
+- A PDF report whose detail data carries a text value of up to 256 KiB of UTF-8
+  prints it in full, across as many pages as the row needs: every character in
+  order, no blank page inside the row, the amount on the row's first page and no
+  "(continues)" mark. The bound counts bytes, not characters, so two- and
+  three-byte text prints fewer characters for the same 256 KiB — all of them.
 - A PDF report whose data does not fit in one block is refused before anything is
   printed: the job and its PDF output end `failed` with `QUOTA_EXCEEDED`, and the job
   status says which limit the data exceeded, in records or in bytes, naming the limit

@@ -116,6 +116,21 @@ version, never a setting.
   retry cannot print the refused data. The job ends `failed` with the output's
   code and reason.
 
+### What the bound accepts
+
+The bound cuts both ways: a text value of exactly 262 144 bytes (256 KiB) is
+**accepted**, and the report prints it in full. A row that needs many pages for
+such a value is printed whole across them — every character appears in order,
+no page inside the row is blank, and nothing is shortened on the way. On a
+report without page totals the row's amount prints on its first page and no
+"(continues)" mark is added; a page-count ceiling per row belongs to accounted
+reports, not to this path.
+
+The size is a byte count, never a character count: the same 262 144 bytes are
+262 144 characters of one-byte text, 148 924 characters when every letter takes
+two bytes, and 111 184 when every letter takes three, and each of them prints in
+full.
+
 ## The validator and its version
 
 The template's data schema is evaluated by `Corvus.Text.Json` **5.6.1**, the
