@@ -1,0 +1,15 @@
+body {
+  font-family: "Liberation Sans", sans-serif;
+  font-size: 11pt;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td,
+th {
+  border: 1px solid #000;
+  padding: 2pt 4pt;
+}

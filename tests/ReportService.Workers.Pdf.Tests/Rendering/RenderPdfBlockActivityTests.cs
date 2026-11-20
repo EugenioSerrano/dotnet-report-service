@@ -59,6 +59,21 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.Equal(3, options.RetryPolicy!.MaximumAttempts);
         Assert.Contains("PAGINATION_FAILED", RenderPdfBlockOptions.NonRetryableErrorTypes);
         Assert.Contains("UNSUPPORTED_CAPABILITY", RenderPdfBlockOptions.NonRetryableErrorTypes);
+        Assert.Contains("QUOTA_EXCEEDED", RenderPdfBlockOptions.NonRetryableErrorTypes);
+        Assert.Contains("EXECUTION_FAILED", RenderPdfBlockOptions.NonRetryableErrorTypes);
+
+        // The whole list is asserted, so a fifth entry or a removal is red: this Bolt
+        // neither adds nor removes one - the delivered list already carries every code
+        // its refusals end with.
+        string[] delivered =
+        [
+            "PAGINATION_FAILED",
+            "UNSUPPORTED_CAPABILITY",
+            "QUOTA_EXCEEDED",
+            "EXECUTION_FAILED",
+        ];
+        Assert.Equal(delivered, RenderPdfBlockOptions.NonRetryableErrorTypes);
+        Assert.Equal(delivered, options.RetryPolicy!.NonRetryableErrorTypes);
     }
 
     [Fact]

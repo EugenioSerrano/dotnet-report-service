@@ -1,0 +1,1 @@
+      <tr><td>{{ item.description | html.escape }}</td></tr>

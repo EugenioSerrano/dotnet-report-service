@@ -1,0 +1,1 @@
+      <tr><td>{{ if item.sequence != "2" }}{{ item.description | html.escape }}{{ end }}</td></tr>

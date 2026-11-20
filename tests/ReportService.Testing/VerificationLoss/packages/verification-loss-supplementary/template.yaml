@@ -1,0 +1,32 @@
+manifestVersion: "1.0"
+id: verification-loss-supplementary
+version: "1.0.0"
+owner: dev-consumer
+shared: false
+engine: scriban
+engineVersion: "7.5.1"
+dataContract:
+  version: "1.0"
+  profile: header-items-v1
+  schema: schema.json
+outputs:
+  html:
+    parts:
+      documentStart: html/document-start.html.sbn
+      row: html/row.html.sbn
+      documentEnd: html/document-end.html.sbn
+    styles: [html/styles.css]
+  pdf:
+    paper: A4
+    orientation: portrait
+    marginMm: { top: 15, right: 12, bottom: 18, left: 12 }
+    pageTotals:
+      enabled: false
+    verification:
+      anchors:
+        header: ["$.reportTitle", "$.customer.id"]
+        item: ["$.description"]
+localeDefaults:
+  culture: es-AR
+  timeZone: America/Argentina/Buenos_Aires
+title: "Verification-loss supplementary report"
