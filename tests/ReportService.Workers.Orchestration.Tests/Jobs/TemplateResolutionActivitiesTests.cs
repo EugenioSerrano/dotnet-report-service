@@ -346,7 +346,8 @@ public sealed class TemplateResolutionActivitiesTests
                 uploadId,
                 Template,
                 version is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-                version)
+                version,
+                ReportService.Testing.AcceptanceIdentity.For(uploadId))
             {
                 Culture = culture,
                 TimeZone = timeZone,

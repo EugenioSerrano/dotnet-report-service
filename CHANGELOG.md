@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A job request may carry an `Idempotency-Key` header: the key binds the job it creates
+  to the consumer that sent it, and a request repeated with the same key is answered the
+  first job - the same `202`, the same identifier, nothing written - instead of creating a
+  second report. The same key with a different upload, template, version, format or
+  options is refused with `409 IDEMPOTENCY_CONFLICT` and leaves the first job unchanged.
+  Keys belong to one consumer, a malformed key is refused as a malformed request, and a
+  retry is answered its first job even after its upload was refused or expired, or after
+  a newer template version was taken. A request without the header behaves exactly as
+  before.
+
 - A PDF report whose detail data carries a text value above 256 KiB of UTF-8 is
   refused before printing: the job and its PDF output end `failed` with
   `ROW_BOUND_EXCEEDED`, no page is rendered and nothing is published, and the job

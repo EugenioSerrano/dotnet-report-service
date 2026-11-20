@@ -1,3 +1,4 @@
+using ReportService.Testing;
 using Dapper;
 using Npgsql;
 using ReportService.Jobs;
@@ -157,7 +158,8 @@ public sealed class PostgresJobStoreInputWaitTests : IClassFixture<PostgresFixtu
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId));
 
         var accepted = await Jobs.AcceptAsync(acceptance, acceptedAt ?? Now, cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);

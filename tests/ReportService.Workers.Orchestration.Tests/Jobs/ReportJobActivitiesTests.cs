@@ -282,7 +282,8 @@ public sealed class ReportJobActivitiesTests
                 rig.UploadId,
                 "pilot-grouped",
                 TemplateReferenceForm.Exact,
-                "1.0.0");
+                "1.0.0",
+                ReportService.Testing.AcceptanceIdentity.For(rig.UploadId));
             var accepted = await rig.Jobs.AcceptAsync(acceptance, Now, cancellationToken);
             Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
             rig.ReportJobId = acceptance.ReportJobId;

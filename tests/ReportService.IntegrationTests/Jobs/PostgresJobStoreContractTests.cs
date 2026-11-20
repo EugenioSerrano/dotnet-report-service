@@ -583,7 +583,8 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await store.AcceptAsync(acceptance, Now, cancellationToken));
         return acceptance;
     }

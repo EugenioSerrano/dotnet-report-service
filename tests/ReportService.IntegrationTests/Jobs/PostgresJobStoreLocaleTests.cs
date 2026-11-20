@@ -1,3 +1,4 @@
+using ReportService.Testing;
 using Dapper;
 using Npgsql;
 using ReportService.Jobs;
@@ -172,7 +173,8 @@ public sealed class PostgresJobStoreLocaleTests : IClassFixture<PostgresFixture>
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0")
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId))
         {
             Culture = culture,
             TimeZone = timeZone,

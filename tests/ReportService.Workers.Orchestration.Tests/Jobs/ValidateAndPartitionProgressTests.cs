@@ -288,7 +288,8 @@ public sealed class ValidateAndPartitionProgressTests : IDisposable
                 cancellationToken));
 
         Assert.IsType<JobAcceptanceResult.Accepted>(await Jobs.AcceptAsync(
-            new JobAcceptance(ReportJobId, OutputId, ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0"),
+            new JobAcceptance(ReportJobId, OutputId, ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0",
+            ReportService.Testing.AcceptanceIdentity.For(UploadId)),
             Now,
             cancellationToken));
     }

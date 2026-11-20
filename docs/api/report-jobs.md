@@ -321,9 +321,35 @@ by name, though a pre-release named exactly is used if the take accepts it.
 carrying one is refused as malformed rather than having it ignored, because
 silently dropping a requested culture or time zone would change the report.
 
-The `Idempotency-Key` header is **not honoured yet**: it is accepted and ignored,
-and a request repeated with the same key creates a second job. Every body is at
-most **16 384 bytes** and must be sent as `application/json`.
+### The idempotency key
+
+`Idempotency-Key` is optional. When it is present it binds the job it creates to the
+consumer that sent it, and a retry of the same request is answered the first job instead
+of creating a second one.
+
+- **The rule:** exactly one header, 1 to 255 characters, each a visible ASCII character
+  (`!` to `~`), kept exactly as sent. Anything else is refused with
+  `400 REQUEST_INVALID` naming the header and never echoing the value.
+- **What makes two requests the same:** the upload, the profile, the template **as the
+  request wrote it** (the identifier and, only when it was written, the version) and the
+  outputs. A request naming only the template therefore keeps the version its first job
+  used: use a new key to have a newer version chosen. The consumer is part of it too, and
+  keys belong to one consumer: another consumer's identical key is a job of its own.
+- **A repeat** is answered `202 Accepted` with the same `Location` and the same body as
+  the first answer, whatever has happened to the job since; follow the job's status to
+  see where it is. Nothing is written for a repeat.
+- **The same key with a different request** is refused with `409` and the code
+  `IDEMPOTENCY_CONFLICT`; the first job is left exactly as it was. The answer never names
+  the key or the first job's identifier.
+- **Only an accepted job binds a key.** A request that was refused stored nothing, so the
+  next request with that key is a first request. A job that failed after acceptance keeps
+  its key: retrying it means a new key.
+
+The key is decided before the upload and the template version are looked at, so a retry
+is answered its first job even when its upload has been refused or has expired since, or
+when a newer template version has been taken in between.
+
+Every body is at most **16 384 bytes** and must be sent as `application/json`.
 
 ## What the answer means
 
@@ -372,9 +398,10 @@ costs at most half a minute.
 
 Every refusal is a Problem Details document with a stable `code`; the same code
 always means the same condition. The checks run in this order: the consumer, the
-body, the requested format and profile, the reference's syntax, the versions
-already taken, and finally the data reference itself inside the transaction that
-accepts the job.
+idempotency key's form, the body, the requested format and profile, the
+reference's syntax, the data reference, the key itself, and the versions already
+taken; the data reference is then decided inside the transaction that accepts the
+job.
 
 | Case | HTTP | `code` |
 |------|------|--------|
@@ -382,9 +409,10 @@ accepts the job.
 | An inactive consumer creating a job | 403 | `CONSUMER_INACTIVE` |
 | A format other than `pdf`, a profile other than `header-items-v1` | 422 | `UNSUPPORTED_CAPABILITY` |
 | A body over 16 384 bytes | 413 | `QUOTA_EXCEEDED` |
-| A malformed body, an unknown member, a value out of its rule | 400 | `REQUEST_INVALID` |
+| A malformed body, an unknown member, a value out of its rule, a malformed `Idempotency-Key` | 400 | `REQUEST_INVALID` |
 | A template identifier outside the rule, a version that is not a semantic version, or a version of another consumer's that is not `shared` | 404 | `TEMPLATE_NOT_FOUND` |
 | An upload that does not exist for you, is not confirmed, was refused, or ran out of time | 404 | `INPUT_NOT_FOUND` |
+| A key already used with a different request | 409 | `IDEMPOTENCY_CONFLICT` |
 | The service cannot reach its own database | 503 | `SERVICE_UNAVAILABLE` |
 
 A refusal never creates a job, and an unusable data reference is answered the
@@ -426,13 +454,15 @@ code and the message a consumer needs:
 ## Logs and instruments
 
 An acceptance logs the job and the upload identifier with the form of the
-template reference (`exact` or `by-name`), and a refusal logs its code and a
-reason constant. A job that ends logs its status, the code that ended it and the
-reason. Every log line and span of the job's own work carries the job identifier;
-the identifier is never a metric tag.
+template reference (`exact` or `by-name`) and whether a key was used, and a
+refusal logs its code and a reason constant. A repeat logs the first job's
+identifier and writes nothing. A job that ends logs its status, the code that
+ended it and the reason. Every log line and span of the job's own work carries
+the job identifier; the identifier is never a metric tag, and neither the key nor
+the request's identity is ever logged or measured.
 
 | Instrument | Kind | Tags |
 |------------|------|------|
-| `reportservice.job.acceptances` | counter | `result`, `code` |
+| `reportservice.job.acceptances` | counter | `result` (`accepted`, `repeated`, `refused`), `code` |
 | `reportservice.job.outcomes` | counter | `status`, `code` |
 | `reportservice.intent.dispatch.attempts` | counter | `kind`, `result` |

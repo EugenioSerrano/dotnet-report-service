@@ -20,6 +20,9 @@ public sealed class JobAcceptanceMetrics : IDisposable
     /// <summary>The result of a request that was refused and stored nothing.</summary>
     public const string RefusedResult = "refused";
 
+    /// <summary>The result of a request whose key is bound to a job it created, answered from that job.</summary>
+    public const string RepeatedResult = "repeated";
+
     private readonly Meter _meter;
     private readonly Counter<long> _acceptances;
 
@@ -38,6 +41,10 @@ public sealed class JobAcceptanceMetrics : IDisposable
     /// <summary>Records one accepted job.</summary>
     public void Accepted() =>
         _acceptances.Add(1, new KeyValuePair<string, object?>("result", AcceptedResult));
+
+    /// <summary>Records one request answered from the job its key is bound to.</summary>
+    public void Repeated() =>
+        _acceptances.Add(1, new KeyValuePair<string, object?>("result", RepeatedResult));
 
     /// <summary>Records one refused request.</summary>
     /// <param name="code">The refusal's code, a fixed value.</param>

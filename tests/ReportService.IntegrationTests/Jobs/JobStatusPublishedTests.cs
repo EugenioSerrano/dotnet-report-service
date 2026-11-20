@@ -1,3 +1,4 @@
+using ReportService.Testing;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
@@ -333,7 +334,8 @@ public sealed class JobStatusPublishedTests : IClassFixture<PostgresFixture>, IA
             uploadId,
             TemplateId,
             TemplateReferenceForm.Exact,
-            Version);
+            Version,
+            AcceptanceIdentity.For(uploadId, Version));
         Assert.IsType<JobAcceptanceResult.Accepted>(await store.AcceptAsync(acceptance, now, cancellationToken));
 
         // The first transition is the step the run takes out of queued, and it carries the stage.

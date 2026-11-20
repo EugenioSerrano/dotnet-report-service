@@ -172,7 +172,10 @@ public sealed class JobAccessFixture
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            RequestFingerprint.FromDigest(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes("job-access-fixture/v1\n" + consumerId + "\n" + uploadId))));
         var accepted = await _jobs.AcceptAsync(acceptance, _now, cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
         return new SeededJob(acceptance.ReportJobId, acceptance.OutputId, null, null);
