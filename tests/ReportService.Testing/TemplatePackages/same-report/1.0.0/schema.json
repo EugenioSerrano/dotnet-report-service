@@ -92,6 +92,7 @@
       "additionalProperties": false,
       "required": [
         "sequence",
+        "date",
         "description",
         "quantity",
         "unitPrice",
@@ -101,6 +102,10 @@
         "sequence": {
           "type": "integer",
           "minimum": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time"
         },
         "description": {
           "type": "string"

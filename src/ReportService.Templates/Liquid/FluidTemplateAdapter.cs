@@ -109,6 +109,13 @@ public sealed class FluidTemplateAdapter : ITemplateEngineAdapter
         {
             throw;
         }
+        catch (Exception exception) when (Find<PresentationRefusedException>(exception) is { } refusal)
+        {
+            // The engine may wrap what a filter raised: the block's own typed refusal is
+            // rethrown as itself, so the consumer reads DATA_INVALID or TEMPLATE_INVALID with
+            // its reason and never the generic code of a step that could not finish.
+            throw refusal;
+        }
         catch (FluidException exception) when (LimitOf(exception) is { } limit)
         {
             throw TemplateGuardException.Quota(limit, $"The {rendered} part passed the engine's {limit} limit.");
@@ -140,6 +147,22 @@ public sealed class FluidTemplateAdapter : ITemplateEngineAdapter
         }
 
         return message.Contains("recursion", StringComparison.OrdinalIgnoreCase) ? "engine-recursion" : null;
+    }
+
+    // The first exception of <typeparamref name="TException"/> in the chain an engine wrapped a
+    // refusal in, so a typed refusal is never lost to the engine's own exception type.
+    private static TException? Find<TException>(Exception exception)
+        where TException : Exception
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is TException found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 }
 

@@ -252,9 +252,13 @@ public sealed class SingleBlockLimitTests : IClassFixture<PostgresFixture>
         Assert.True(artifacts is null || artifacts.Artifacts.Count == 0, "a refused job publishes no artifact");
 
         Assert.Null(job.ArtifactId);
-        Assert.False(
-            Directory.Exists(Path.Combine(rig.StorageRoot, "outputs")),
-            "a refused job wrote an object under the output namespace");
+        // The refusals share the rig's storage root with an admitted job of the same class, so
+        // the namespace checked is the refused job's own output and never the root: a file under
+        // another job's output is that job's publication, not this one's.
+        var written = rig.OutputObjectKeys(reportJobId, job.OutputId!);
+        Assert.True(
+            written.Count == 0,
+            $"a refused job wrote an object under its own output namespace: {string.Join(", ", written)}");
     }
 
     private static async Task AssertNoPageWasRenderedAsync(

@@ -104,6 +104,8 @@ public sealed class ReportPdfOutputWorkflow
         "UNSUPPORTED_CAPABILITY",
         "QUOTA_EXCEEDED",
         "RENDER_TIMEOUT",
+        "DATA_INVALID",
+        "TEMPLATE_INVALID",
         "EXECUTION_FAILED",
     };
 
@@ -116,7 +118,7 @@ public sealed class ReportPdfOutputWorkflow
 
         await Workflow.ExecuteActivityAsync(
             (JobTransitionActivities activities) => activities.FailOutputAsync(
-                new FailOutputInput(input.OutputId, code)),
+                new FailOutputInput(input.OutputId, code, Reason: null)),
             options).ConfigureAwait(true);
     }
 }

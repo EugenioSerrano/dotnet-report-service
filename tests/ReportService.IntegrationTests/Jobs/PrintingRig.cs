@@ -220,7 +220,24 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>Creates a ready upload of <paramref name="document"/> and answers its identifier.</summary>
     /// <param name="document">The snapshot's bytes.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    public async Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken, string consumer = Consumer)
+    /// <param name="consumer">The consumer the upload belongs to.</param>
+    public Task<string> ReadyUploadAsync(byte[] document, CancellationToken cancellationToken, string consumer = Consumer) =>
+        ReadyUploadAsync(document, UploadContentEncoding.None, cancellationToken, consumer);
+
+    /// <summary>
+    /// Creates a ready upload of <paramref name="document"/>, stored with
+    /// <paramref name="encoding"/>: a gzip-stored snapshot is written compressed, and its record
+    /// carries the uncompressed document's size and SHA-256 beside the stored bytes' own.
+    /// </summary>
+    /// <param name="document">The snapshot's bytes.</param>
+    /// <param name="encoding">How the bytes are stored.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <param name="consumer">The consumer the upload belongs to.</param>
+    public async Task<string> ReadyUploadAsync(
+        byte[] document,
+        UploadContentEncoding encoding,
+        CancellationToken cancellationToken,
+        string consumer = Consumer)
     {
         var now = DateTimeOffset.UtcNow;
         var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
@@ -236,19 +253,37 @@ internal sealed class PrintingRig : IAsyncDisposable
                 now,
                 now.AddHours(1)),
             cancellationToken);
-        Assert.True(await uploads.TryStartTransferAsync(uploadId, consumer, UploadContentEncoding.None, now, cancellationToken));
+
+        var stored = document;
+        if (encoding == UploadContentEncoding.Gzip)
+        {
+            using var compressed = new MemoryStream();
+            await using (var gzip = new System.IO.Compression.GZipStream(
+                compressed,
+                System.IO.Compression.CompressionLevel.SmallestSize,
+                leaveOpen: true))
+            {
+                await gzip.WriteAsync(document, cancellationToken);
+            }
+
+            stored = compressed.ToArray();
+        }
+
+        var documentSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document));
+        var storedSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(stored));
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, consumer, encoding, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(
             uploadId,
             UploadContentOutcome.Complete,
             document.LongLength,
-            document.LongLength,
-            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(document)),
+            stored.LongLength,
+            storedSha256,
             now,
             cancellationToken));
         Assert.True(await uploads.ConfirmAsync(uploadId, consumer, null, now, now, now.AddHours(1), cancellationToken));
 
         var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
-        using var content = new MemoryStream(document, writable: false);
+        using var content = new MemoryStream(stored, writable: false);
         var written = await Objects.WriteAsync(key, content, cancellationToken);
         Assert.True(written.Succeeded);
         _snapshotOf[uploadId] = document;
@@ -259,12 +294,12 @@ internal sealed class PrintingRig : IAsyncDisposable
                     uploadId,
                     consumer,
                     key,
-                    UploadContentEncoding.None,
+                    encoding,
                     DataProfile.HeaderItemsV1,
-                    written.Value!.Sha256,
+                    documentSha256,
                     document.LongLength,
-                    written.Value.Sha256,
-                    written.Value.Size,
+                    storedSha256,
+                    stored.LongLength,
                     now),
                 now,
                 cancellationToken));
@@ -309,7 +344,12 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
     }
 
-    private async Task RecordTakenAsync(string templateId, string version, Dictionary<string, byte[]> files, CancellationToken cancellationToken)
+    private async Task RecordTakenAsync(
+        string templateId,
+        string version,
+        Dictionary<string, byte[]> files,
+        CancellationToken cancellationToken,
+        string? engineVersion = null)
     {
         var sources = files
             .Select(file => new PackageFileSource(
@@ -346,7 +386,11 @@ internal sealed class PrintingRig : IAsyncDisposable
             {
                 ManifestVersion = manifest.ManifestVersion!,
                 Engine = manifest.Engine!.Value,
-                EngineVersion = TemplateEngineCatalog.VersionOf(manifest.Engine.Value),
+
+                // The version the record fixes is the one the take would have fixed: the
+                // deployment's own, unless the case records the version a package declares and
+                // the deployment does not run, which is what the refusal cases carry.
+                EngineVersion = engineVersion ?? TemplateEngineCatalog.VersionOf(manifest.Engine.Value),
                 PackageSize = bytes.LongLength,
                 FileCount = files.Count,
                 ObjectKey = key,
@@ -478,10 +522,13 @@ internal sealed class PrintingRig : IAsyncDisposable
     public async Task<DateTimeOffset> ReportClockAsync(string reportJobId, CancellationToken cancellationToken)
     {
         await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
-        return await connection.ExecuteScalarAsync<DateTimeOffset>(new CommandDefinition(
+        // The column is a timestamp without a zone holding UTC, so it is read as the instant it
+        // is and answered in UTC: the report's clock is that instant, in whatever zone it prints.
+        var clock = await connection.ExecuteScalarAsync<DateTime>(new CommandDefinition(
             "SELECT report_clock FROM report_service.report_jobs WHERE report_job_id = @ReportJobId",
             new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken));
+        return new DateTimeOffset(DateTime.SpecifyKind(clock, DateTimeKind.Utc));
     }
 
     /// <summary>How many blocks of one output the composition committed.</summary>
@@ -524,7 +571,11 @@ internal sealed class PrintingRig : IAsyncDisposable
             .Replace("version: \"1.0.0\"", "version: \"" + version + "\"", StringComparison.Ordinal)
             .Replace("engineVersion: \"7.5.1\"", "engineVersion: \"" + engineVersion + "\"", StringComparison.Ordinal);
         files["template.yaml"] = Encoding.UTF8.GetBytes(manifest);
-        await RecordTakenAsync(SameReport, version, files, cancellationToken);
+
+        // The record fixes the version the package declares, which the deployment does not run:
+        // the refusal is the mismatch between the record and the adapters, decided before
+        // anything is composed.
+        await RecordTakenAsync(SameReport, version, files, cancellationToken, engineVersion);
     }
 
     /// <summary>Waits for the job to reach a terminal status and answers what the record says.</summary>
@@ -556,6 +607,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         return await connection.QuerySingleOrDefaultAsync<JobStateRow>(new CommandDefinition(
             """
             SELECT j.status AS "Status", j.error_code AS "ErrorCode", j.error_reason AS "ErrorReason",
+                   j.error_message AS "ErrorMessage",
                    o.output_id AS "OutputId",
                    o.status AS "OutputStatus", o.error_code AS "OutputErrorCode", o.error_reason AS "OutputErrorReason",
                    a.artifact_id AS "ArtifactId", a.object_key AS "ObjectKey",
@@ -663,6 +715,26 @@ internal sealed class PrintingRig : IAsyncDisposable
         sample["items"] = built;
         sample["header"]!["totals"]!["recordCount"] = records;
         return Encoding.UTF8.GetBytes(sample.ToJsonString());
+    }
+
+    /// <summary>
+    /// The one report's own document: the sample's records, each carrying the instant the report
+    /// prints as its date in the job's culture and time zone. The sample's contract has no date
+    /// field, so the report's own snapshot adds the one its row prints.
+    /// </summary>
+    /// <param name="records">How many records the snapshot holds.</param>
+    public static byte[] SameReportSnapshot(int records)
+    {
+        var snapshot = JsonNode.Parse(Encoding.UTF8.GetString(Snapshot(records)))!;
+
+        // One instant for every record, at 02:30 UTC: the day it prints is the day the job's
+        // own zone says it is, which is what the presentation has to show.
+        foreach (var item in snapshot["items"]!.AsArray())
+        {
+            item!["date"] = "2026-03-14T02:30:00Z";
+        }
+
+        return Encoding.UTF8.GetBytes(snapshot.ToJsonString());
     }
 
     /// <summary>The sample template's header with no record at all: the empty report.</summary>
@@ -891,6 +963,9 @@ internal sealed class JobStateRow
     public string? ErrorCode { get; set; }
 
     public string? ErrorReason { get; set; }
+
+    /// <summary>The message the failing step carried for a consumer, as the job records it.</summary>
+    public string? ErrorMessage { get; set; }
 
     public string? OutputId { get; set; }
 

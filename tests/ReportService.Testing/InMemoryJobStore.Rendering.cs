@@ -321,6 +321,7 @@ public sealed partial class InMemoryJobStore
     public Task<OutputFailureOutcome> FailOutputAsync(
         string outputId,
         string code,
+        string? reason,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -340,6 +341,7 @@ public sealed partial class InMemoryJobStore
             {
                 Status = OutputStatus.Failed,
                 ErrorCode = code,
+                ErrorReason = reason,
                 FinishedAt = now.ToUniversalTime(),
             };
             return Task.FromResult(OutputFailureOutcome.Applied);
@@ -378,7 +380,7 @@ public sealed partial class InMemoryJobStore
             {
                 Status = status,
                 ErrorCode = failed?.ErrorCode,
-                ErrorReason = failed is null ? null : "output-failed",
+                ErrorReason = failed is null ? null : failed.ErrorReason ?? "output-failed",
                 FinishedAt = now.ToUniversalTime(),
             };
             return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, status)

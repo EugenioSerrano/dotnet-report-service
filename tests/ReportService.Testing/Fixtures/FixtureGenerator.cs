@@ -76,6 +76,7 @@ public sealed class FixtureGenerator
         "X256K",
         "X256K-one-over",
         "X64K",
+        .. BoundFamily.Ids,
     ];
 
     /// <summary>The size, in UTF-8 bytes, of a record as a compact JSON item.</summary>
@@ -88,6 +89,11 @@ public sealed class FixtureGenerator
     /// <summary>Builds the fixture of <paramref name="id"/>.</summary>
     public SnapshotFixture Build(string id)
     {
+        if (BoundFamily.IsBound(id))
+        {
+            return BoundFamily.Snapshot(id);
+        }
+
         var (header, items) = id switch
         {
             "A1-esc" => (Header(string.Empty), Records(0, 3, item => Sequence(item) == 1 ? EscapedText() : null)),

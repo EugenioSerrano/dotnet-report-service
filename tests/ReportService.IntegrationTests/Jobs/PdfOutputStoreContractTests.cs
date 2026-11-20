@@ -157,7 +157,7 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await Jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+            await Jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
         var closed = await Jobs.FinalizeJobAsync(acceptance.ReportJobId, Now.AddSeconds(1), cancellationToken);
 
         Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
@@ -175,7 +175,7 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
             (await Jobs.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(5), cancellationToken)).Outcome);
         Assert.Equal(
             OutputFailureOutcome.AlreadyTerminal,
-            await Jobs.FailOutputAsync(acceptance.OutputId, "EXECUTION_FAILED", Now.AddMinutes(5), cancellationToken));
+            await Jobs.FailOutputAsync(acceptance.OutputId, "EXECUTION_FAILED", null, Now.AddMinutes(5), cancellationToken));
     }
 
     [Fact]

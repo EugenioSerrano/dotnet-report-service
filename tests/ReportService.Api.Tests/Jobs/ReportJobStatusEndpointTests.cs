@@ -5,6 +5,7 @@ using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
@@ -207,7 +208,7 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
 
         var (paginated, paginatedOutput) = await AcceptedAsync();
         await _host.Jobs.TransitionOutputAsync(paginatedOutput, Now, cancellationToken);
-        await _host.Jobs.FailOutputAsync(paginatedOutput, "PAGINATION_FAILED", Now, cancellationToken);
+        await _host.Jobs.FailOutputAsync(paginatedOutput, "PAGINATION_FAILED", null, Now, cancellationToken);
         await _host.Jobs.FinalizeJobAsync(paginated, Now.AddMinutes(1), cancellationToken);
 
         var (quota, _) = await AcceptedAsync();
@@ -479,8 +480,8 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FailJobAsync(reportJobId, code, reason, message, now, cancellationToken);
 
-        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken, TemplateLocaleDefaults? presentation) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken, presentation);
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.BeginInputWaitAsync(reportJobId, cancellationToken);
@@ -518,8 +519,8 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
             inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
 
-        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.FailOutputAsync(outputId, code, now, cancellationToken);
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailOutputAsync(outputId, code, reason, now, cancellationToken);
 
         public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FinalizeJobAsync(reportJobId, now, cancellationToken);

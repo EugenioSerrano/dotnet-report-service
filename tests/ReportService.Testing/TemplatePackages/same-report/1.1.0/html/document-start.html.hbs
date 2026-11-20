@@ -7,6 +7,7 @@
 </head>
 <body>
 <header><h1>{{ header.reportTitle }}</h1><p class="customer">{{ header.customer.name }} &middot; {{ header.currency }} &middot; {{ header.totals.recordCount }}</p></header>
+<p class="records">Records: {{ header.totals.recordCount }}</p>
 <main><table class="detail">
 <thead><tr><th class="col-seq">Seq</th><th class="col-date">Date</th><th class="col-description">Description</th><th class="col-amount">Amount</th></tr></thead>
 <tbody>

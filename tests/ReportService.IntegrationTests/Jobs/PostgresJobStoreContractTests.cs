@@ -68,6 +68,48 @@ public sealed class PostgresJobStoreContractTests : JobStoreContract, IClassFixt
     }
 
     [Fact]
+    public async Task TheSchemaRefusesAPartitionRefusalThatNamesACodeWithoutItsReason()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken);
+        var acceptance = Acceptance(uploadId);
+        Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+
+        // A code with no reason, a reason with no code, and a code this version never writes:
+        // the pair is written together or not at all, and only for the one code the pass names.
+        (string? Code, string? Reason)[] refused =
+        [
+            ("ROW_BOUND_EXCEEDED", null),
+            (null, "reason"),
+            ("ANOTHER_CODE", "reason"),
+        ];
+        foreach (var (code, reason) in refused)
+        {
+            var exception = await Assert.ThrowsAsync<PostgresException>(() => connection.ExecuteAsync(new CommandDefinition(
+                """
+                INSERT INTO report_service.partitions
+                    (report_job_id, partitioner_version, block_count, record_count, record_bytes,
+                     index_object_key, index_sha256, index_size_bytes, committed_at,
+                     pdf_refusal_code, pdf_refusal_reason)
+                VALUES
+                    (@ReportJobId, 1, 1, 1, 24, @IndexKey, @Sha256, 120, now(), @Code, @Reason)
+                """,
+                new
+                {
+                    acceptance.ReportJobId,
+                    IndexKey = $"index/{acceptance.ReportJobId}/0/attempt",
+                    Sha256 = new string('a', 64),
+                    Code = code,
+                    Reason = reason,
+                },
+                cancellationToken: cancellationToken)));
+
+            Assert.Equal(PostgresErrorCodes.CheckViolation, exception.SqlState);
+        }
+    }
+
+    [Fact]
     public async Task TheSchemaRefusesAJobWhoseIdentifierIsNotOneOfItsOwn()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

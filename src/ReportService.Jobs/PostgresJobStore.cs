@@ -132,22 +132,35 @@ public sealed partial class PostgresJobStore : IJobStore
         WHERE r.report_job_id = @ReportJobId
         """;
 
+    // The version the reference is fixed to and the presentation the job's report is written
+    // in are one write: a job fixed to a version is fixed to the presentation the taken
+    // package declares, completed only where the acceptance left the member open, so no
+    // render can read a pinned job whose culture or time zone is still missing. The pin is
+    // conditional - an earlier committed one wins and writes nothing here - and the set-once
+    // guard the schema carries still refuses a change of a value the request named.
     private const string PinTemplateSql = """
-        UPDATE report_service.template_references
-           SET resolved_version = @Version,
-               commit_sha       = @CommitSha,
-               source_descriptor_sha256 = @SourceDescriptorSha256,
-               package_sha256   = @PackageSha256,
-               source_objects   = CAST(@SourceObjectsJson AS jsonb),
-               engine           = @Engine,
-               engine_version   = @EngineVersion,
-               schema_ref       = @SchemaRef,
-               resolved_at      = @ResolvedAt
-         WHERE report_job_id = @ReportJobId
-           AND resolved_at IS NULL
-           AND EXISTS (SELECT 1 FROM report_service.report_jobs
-                        WHERE report_job_id = @ReportJobId
-                          AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED'))
+        WITH pinned AS (
+            UPDATE report_service.template_references
+               SET resolved_version = @Version,
+                   commit_sha       = @CommitSha,
+                   source_descriptor_sha256 = @SourceDescriptorSha256,
+                   package_sha256   = @PackageSha256,
+                   source_objects   = CAST(@SourceObjectsJson AS jsonb),
+                   engine           = @Engine,
+                   engine_version   = @EngineVersion,
+                   schema_ref       = @SchemaRef,
+                   resolved_at      = @ResolvedAt
+             WHERE report_job_id = @ReportJobId
+               AND resolved_at IS NULL
+               AND EXISTS (SELECT 1 FROM report_service.report_jobs
+                            WHERE report_job_id = @ReportJobId
+                              AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED'))
+            RETURNING report_job_id
+        )
+        UPDATE report_service.report_jobs
+           SET culture   = COALESCE(culture, @Culture),
+               time_zone = COALESCE(time_zone, @TimeZone)
+         WHERE report_job_id IN (SELECT report_job_id FROM pinned)
         """;
 
     private const string FailOutputsSql = """
@@ -352,13 +365,16 @@ public sealed partial class PostgresJobStore : IJobStore
     /// Writes the version a job's template is fixed to, once, in the shape the record
     /// holds: a version taken before the object-store source carries its commit, one
     /// taken from it carries the publication descriptor's hash and the verified file
-    /// list, and a pin is never a mixture of the two.
+    /// list, and a pin is never a mixture of the two. The same statement completes the
+    /// job's culture and time zone from the presentation the package declares, for the
+    /// values the acceptance left open; a value the request named is kept.
     /// </summary>
     public async Task<TemplatePinState> PinTemplateAsync(
         string reportJobId,
         TemplatePin pin,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TemplateLocaleDefaults? presentation)
     {
         ArgumentNullException.ThrowIfNull(reportJobId);
         ArgumentNullException.ThrowIfNull(pin);
@@ -377,6 +393,8 @@ public sealed partial class PostgresJobStore : IJobStore
             pin.EngineVersion,
             pin.SchemaRef,
             ResolvedAt = UtcInstant(now),
+            Culture = presentation?.Culture,
+            TimeZone = presentation?.TimeZone,
         };
 
         try

@@ -110,7 +110,24 @@ public sealed class RenderPdfBlockActivity(
         var beat = BeatAsync(beatEnds.Token);
         try
         {
-            return await PrintAsync(input, cancellationToken).ConfigureAwait(false);
+            // A fault the step did not map is named here, where the block and the output are
+            // known, and by its type - never by its message, which is not the service's to
+            // publish. A refusal is not logged here: every one of them is logged where it is
+            // decided (the presentation and engine catches, the page and verification checks,
+            // the commit, and the sites that call RefuseAndLog), so no line is written twice.
+            try
+            {
+                return await PrintAsync(input, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception unhandled) when (unhandled is not ApplicationFailureException)
+            {
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} could not be finished ({ExceptionType})",
+                    input.BlockIndex,
+                    input.OutputId,
+                    unhandled.GetType().Name);
+                throw;
+            }
         }
         finally
         {
@@ -122,32 +139,32 @@ public sealed class RenderPdfBlockActivity(
     private async Task<RenderPdfBlockResult> PrintAsync(RenderPdfBlockInput input, CancellationToken cancellationToken)
     {
         var reference = await jobs.FindTemplateReferenceAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false)
-            ?? throw Refuse(ExecutionFailed, "the job is not recorded");
-        var pin = reference.Pin ?? throw Refuse(ExecutionFailed, "the job's template version was never resolved");
+            ?? throw RefuseAndLog(input, "the job is not recorded");
+        var pin = reference.Pin ?? throw RefuseAndLog(input, "the job's template version was never resolved");
 
         var record = await versions.FindAsync(pin.TemplateId, pin.ResolvedVersion, cancellationToken).ConfigureAwait(false)
-            ?? throw Refuse(ExecutionFailed, "the job's template version was never taken");
+            ?? throw RefuseAndLog(input, "the job's template version was never taken");
         if (!string.Equals(record.PackageSha256, pin.PackageSha256, StringComparison.Ordinal))
         {
             // The pin names the package the job was fixed to; a record that no longer
             // matches it is not the version this job prints.
-            throw Refuse(ExecutionFailed, "the taken version does not match the job's pin");
+            throw RefuseAndLog(input, "the taken version does not match the job's pin");
         }
 
         var partition = await jobs.FindPartitionAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false)
-            ?? throw Refuse(ExecutionFailed, "the job has no partition");
+            ?? throw RefuseAndLog(input, "the job has no partition");
         if (input.BlockIndex < 0 || input.BlockIndex >= partition.BlockCount)
         {
-            throw Refuse(ExecutionFailed, "the block is not part of the job's partition");
+            throw RefuseAndLog(input, "the block is not part of the job's partition");
         }
 
         var state = await jobs.FindForWorkflowAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false)
-            ?? throw Refuse(ExecutionFailed, "the job is not recorded");
+            ?? throw RefuseAndLog(input, "the job is not recorded");
 
-        var index = await ReadIndexAsync(partition, cancellationToken).ConfigureAwait(false);
+        var index = await ReadIndexAsync(input, partition, cancellationToken).ConfigureAwait(false);
         var entry = index.Blocks.FirstOrDefault(block => block.BlockIndex == input.BlockIndex)
-            ?? throw Refuse(ExecutionFailed, "the index page holds no such block");
-        var (header, records) = await ReadBlockAsync(entry, cancellationToken).ConfigureAwait(false);
+            ?? throw RefuseAndLog(input, "the index page holds no such block");
+        var (header, records) = await ReadBlockAsync(input, entry, cancellationToken).ConfigureAwait(false);
 
         Directory.CreateDirectory(ScratchRoot);
         TakenTemplatePackage package;
@@ -161,11 +178,11 @@ public sealed class RenderPdfBlockActivity(
         }
         catch (TemplatePackageUnavailableException)
         {
-            throw Refuse(ExecutionFailed, "the taken copy of the template version could not be read");
+            throw RefuseAndLog(input, "the taken copy of the template version could not be read");
         }
         catch (TemplatePackageCorruptException)
         {
-            throw Refuse(ExecutionFailed, "the taken copy of the template version does not read back intact");
+            throw RefuseAndLog(input, "the taken copy of the template version does not read back intact");
         }
 
         await using (package.ConfigureAwait(false))
@@ -180,7 +197,7 @@ public sealed class RenderPdfBlockActivity(
             }
             catch (TemplatePackageException)
             {
-                throw Refuse(ExecutionFailed, "the taken copy cannot be prepared");
+                throw RefuseAndLog(input, "the taken copy cannot be prepared");
             }
 
             // The engine is decided before the package is prepared: the version's own
@@ -201,7 +218,7 @@ public sealed class RenderPdfBlockActivity(
             }
             catch (TemplatePackageException)
             {
-                throw Refuse(ExecutionFailed, "the taken copy cannot be prepared");
+                throw RefuseAndLog(input, "the taken copy cannot be prepared");
             }
 
             var composition = new CompositionRequest(
@@ -302,7 +319,7 @@ public sealed class RenderPdfBlockActivity(
             if (written.Size != outcome.SizeBytes || !string.Equals(written.Sha256, outcome.Sha256, StringComparison.Ordinal))
             {
                 // The bytes the store holds are not the bytes that passed the checks.
-                throw Refuse(ExecutionFailed, "the stored block does not match the printed file");
+                throw RefuseAndLog(input, "the stored block does not match the printed file");
             }
 
             // The one seam a test installs: the second attempt is forced after the document
@@ -318,8 +335,8 @@ public sealed class RenderPdfBlockActivity(
             // and the globalisation data of this process. Names and identifiers, never a value.
             var settings = globalisation ?? GlobalisationProvenance.Current;
             var presentation = new PresentationProvenance(
-                state.Job.Culture ?? throw Refuse(ExecutionFailed, "presentation unavailable at culture"),
-                state.Job.TimeZone ?? throw Refuse(ExecutionFailed, "presentation unavailable at time-zone"),
+                state.Job.Culture ?? throw RefuseAndLog(input, "presentation unavailable at culture"),
+                state.Job.TimeZone ?? throw RefuseAndLog(input, "presentation unavailable at time-zone"),
                 state.Job.ReportClock,
                 adapter.Engine,
                 adapter.Version,
@@ -463,14 +480,14 @@ public sealed class RenderPdfBlockActivity(
             Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    private async Task<BlockIndexPage> ReadIndexAsync(PartitionRecord partition, CancellationToken cancellationToken)
+    private async Task<BlockIndexPage> ReadIndexAsync(RenderPdfBlockInput input, PartitionRecord partition, CancellationToken cancellationToken)
     {
         var read = await objects
             .OpenReadAsync(ObjectKey.Create(partition.IndexObjectKey), partition.IndexSizeBytes, partition.IndexSha256, cancellationToken)
             .ConfigureAwait(false);
         if (!read.Succeeded)
         {
-            throw RefuseUnverifiable(read.Outcome, read.Error, "the index page");
+            throw Unverifiable(input, read.Outcome, read.Error, "the index page");
         }
 
         try
@@ -482,15 +499,16 @@ public sealed class RenderPdfBlockActivity(
         }
         catch (StorageIntegrityException)
         {
-            throw Refuse(ExecutionFailed, "the index page does not match its record");
+            throw RefuseAndLog(input, "the index page does not match its record");
         }
         catch (System.Text.Json.JsonException)
         {
-            throw Refuse(ExecutionFailed, "the index page is not an index page");
+            throw RefuseAndLog(input, "the index page is not an index page");
         }
     }
 
     private async Task<(IReadOnlyDictionary<string, object?> Header, IReadOnlyList<ComposedRecord> Records)> ReadBlockAsync(
+        RenderPdfBlockInput input,
         BlockIndexEntry entry,
         CancellationToken cancellationToken)
     {
@@ -499,7 +517,7 @@ public sealed class RenderPdfBlockActivity(
             .ConfigureAwait(false);
         if (!read.Succeeded)
         {
-            throw RefuseUnverifiable(read.Outcome, read.Error, "the block");
+            throw Unverifiable(input, read.Outcome, read.Error, "the block");
         }
 
         try
@@ -519,16 +537,16 @@ public sealed class RenderPdfBlockActivity(
             }
 
             return (
-                header ?? throw Refuse(ExecutionFailed, "the block holds no header"),
+                header ?? throw RefuseAndLog(input, "the block holds no header"),
                 records);
         }
         catch (StorageIntegrityException)
         {
-            throw Refuse(ExecutionFailed, "the block does not match its record");
+            throw RefuseAndLog(input, "the block does not match its record");
         }
         catch (DataContractViolation)
         {
-            throw Refuse(ExecutionFailed, "the block cannot be read");
+            throw RefuseAndLog(input, "the block cannot be read");
         }
     }
 
@@ -569,6 +587,30 @@ public sealed class RenderPdfBlockActivity(
 
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);
+
+    // A refusal the step has not reported yet: the line names the block, the output and the
+    // service's own constant text, and the failure it returns is the one the caller throws.
+    private ApplicationFailureException RefuseAndLog(RenderPdfBlockInput input, string reason)
+    {
+        logger.LogWarning(
+            "Block {BlockIndex} of output {OutputId} refused: {Reason}",
+            input.BlockIndex,
+            input.OutputId,
+            reason);
+        return Refuse(ExecutionFailed, reason);
+    }
+
+    // The read of an object the step verified: an integrity failure is a refusal and is logged
+    // here; a transient one stays the storage failure the engine retries.
+    private Exception Unverifiable(RenderPdfBlockInput input, StorageOutcome outcome, StorageError? error, string what)
+    {
+        if (outcome != StorageOutcome.IntegrityFailure)
+        {
+            return RefuseUnverifiable(outcome, error, what);
+        }
+
+        return RefuseAndLog(input, what + " does not match its record");
+    }
 
     private static Exception RefuseUnverifiable(StorageOutcome outcome, StorageError? error, string what) =>
         outcome == StorageOutcome.IntegrityFailure

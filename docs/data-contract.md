@@ -47,6 +47,7 @@ the document cannot be used: code=DATA_INVALID reason=<reason> ordinal=<n> offse
 the document cannot be used: code=DATA_INVALID reason=schema-violation ordinal=<n> offset=<b> path=<$.path> keyword=<k>
 the document cannot be used: code=RECORD_TOO_LARGE limit=record ordinal=<n> offset=<b>
 the document cannot be used: code=QUOTA_EXCEEDED limit=<limit> ordinal=<n> offset=<b>
+the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=<n> bound=<n> limit=row-bound ordinal=<n> offset=<b> path=<$.path>
 ```
 
 - `ordinal` is the position of the value the pass stopped at: `0` is the header,
@@ -77,6 +78,43 @@ The reasons of the profile itself:
 A snapshot that breaks nothing is not refused: a valid document, an empty
 `items` array, a single leading byte-order mark and trailing whitespace all pass
 the check, and a job over them continues to printing.
+
+## The PDF row bound
+
+One PDF detail record may carry at most **262 144 bytes** (256 KiB) of UTF-8 in
+any one string value, at any depth of the record, measured **after** the JSON
+escapes are resolved: a value written with escapes counts what it becomes once
+decoded, not the bytes it was written with. The rule is a constant of this
+version, never a setting.
+
+- It applies to a job that asks for PDF output, and to detail records only: the
+  `header` is not a row and its fields are not covered.
+- It is checked after the reader's own limits and after the template's schema,
+  before the block is printed. A record over the record size limit is reported
+  as that instead, and a schema violation or the one-block limit is reported
+  before the bound: the first rule of the pass that refuses the data is the one
+  the job ends with.
+- The **first** offending record in snapshot order is the one reported, and
+  within one record the first over-bound value in document order. The refusal
+  names the record by its number (the first record is `1`), the field's path
+  relative to the record, the value's size in bytes and the bound — never any
+  part of the value:
+
+  ```text
+  the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description
+  ```
+
+- The path is the one every data diagnostic uses: declared member names as
+  `.name` or `['name']`, array positions as `[n]`, and a member name the
+  template's schema does not declare as `*`, so producer text never appears in
+  it. `offset` is the byte of the uncompressed document at which the record
+  starts.
+- The PDF output is refused on its own: it ends `failed` with
+  `ROW_BOUND_EXCEEDED`, no page is rendered for it and nothing is published,
+  while the rest of the pass runs to the end of the snapshot. The verdict is
+  kept with the partition, so a repeated pass answers the same refusal and a
+  retry cannot print the refused data. The job ends `failed` with the output's
+  code and reason.
 
 ## The validator and its version
 
