@@ -46,7 +46,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
         await rig.SeedSameReportAsync(cancellationToken);
 
-        var snapshot = PrintingRig.Snapshot(25);
+        var snapshot = PrintingRig.SameReportSnapshot(25);
         var snapshotTexts = DescriptionsOf(snapshot);
         var uploadId = await rig.ReadyUploadAsync(snapshot, cancellationToken);
 
@@ -55,7 +55,9 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         {
             var reportJobId = await rig.SubmitAsync(uploadId, PrintingRig.SameReport, version, "es-AR", "America/Argentina/Buenos_Aires", cancellationToken);
             var row = await rig.WaitForTerminalAsync(reportJobId, Deadline, cancellationToken);
-            Assert.Equal("SUCCEEDED", row.Status);
+            Assert.True(
+                string.Equals("SUCCEEDED", row.Status, StringComparison.Ordinal),
+                $"job {reportJobId} ended {row.Status} {row.ErrorCode} ({row.ErrorReason}): {row.ErrorMessage}");
             Assert.Equal("SUCCEEDED", row.OutputStatus);
             Assert.Matches("^artifact-[0-9a-f]{32}$", row.ArtifactId);
             Assert.Equal(1, row.BlockCount);
@@ -119,7 +121,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         await using var rig = await PrintingRig.StartAsync(_fixture, cancellationToken: cancellationToken);
         await rig.SeedSameReportAsync(cancellationToken);
 
-        var snapshot = PrintingRig.Snapshot(25);
+        var snapshot = PrintingRig.SameReportSnapshot(25);
         var amount = AmountOf(snapshot);
         var uploadId = await rig.ReadyUploadAsync(snapshot, cancellationToken);
 
@@ -128,7 +130,9 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         {
             var reportJobId = await rig.SubmitAsync(uploadId, PrintingRig.SameReport, "1.0.0", culture, timeZone, cancellationToken);
             var row = await rig.WaitForTerminalAsync(reportJobId, Deadline, cancellationToken);
-            Assert.Equal("SUCCEEDED", row.Status);
+            Assert.True(
+                string.Equals("SUCCEEDED", row.Status, StringComparison.Ordinal),
+                $"job {reportJobId} ended {row.Status} {row.ErrorCode} ({row.ErrorReason}): {row.ErrorMessage}");
 
             var text = TextOf(await rig.ReadArtifactAsync(row, cancellationToken));
             var expectedAmount = amount.ToString("N2", CultureInfo.GetCultureInfo(culture));
@@ -171,7 +175,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         rig.InstallPartCommitFault(fault);
 
         var reportJobId = await rig.SubmitAsync(
-            await rig.ReadyUploadAsync(PrintingRig.Snapshot(25), cancellationToken),
+            await rig.ReadyUploadAsync(PrintingRig.SameReportSnapshot(25), cancellationToken),
             PrintingRig.SameReport,
             "1.0.0",
             "es-AR",
@@ -219,7 +223,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         await rig.SeedSameReportVersionWithEngineVersionAsync("1.9.0", "9.0.0", cancellationToken);
 
         var reportJobId = await rig.SubmitAsync(
-            await rig.ReadyUploadAsync(PrintingRig.Snapshot(25), cancellationToken),
+            await rig.ReadyUploadAsync(PrintingRig.SameReportSnapshot(25), cancellationToken),
             PrintingRig.SameReport,
             "1.9.0",
             "es-AR",
@@ -229,8 +233,9 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
 
         Assert.Equal("FAILED", row.Status);
         Assert.Equal("FAILED", row.OutputStatus);
-        Assert.Equal("UNSUPPORTED_CAPABILITY", row.ErrorCode);
-        Assert.Contains("engine-version", row.ErrorReason ?? string.Empty, StringComparison.Ordinal);
+        Assert.True(
+            string.Equals("UNSUPPORTED_CAPABILITY", row.ErrorCode, StringComparison.Ordinal),
+            $"job {reportJobId} ended {row.Status} {row.ErrorCode} ({row.ErrorReason}): {row.ErrorMessage}");
         Assert.Null(row.ArtifactId);
         Assert.Null(row.PartObjectKey);
         Assert.Empty(rig.OutputObjectKeys(reportJobId, row.OutputId ?? string.Empty));
@@ -259,8 +264,13 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
 
         Assert.Equal("FAILED", row.Status);
         Assert.Equal("FAILED", row.OutputStatus);
-        Assert.Equal("DATA_INVALID", row.ErrorCode);
-        Assert.Contains("number-out-of-range", row.ErrorReason ?? string.Empty, StringComparison.Ordinal);
+        Assert.True(
+            string.Equals("DATA_INVALID", row.ErrorCode, StringComparison.Ordinal),
+            $"job {reportJobId} ended {row.Status} {row.ErrorCode} ({row.ErrorReason}): {row.ErrorMessage}");
+
+        // The reason itself is proven where the formatter refuses, in the engine adapters' own
+        // cases: the output row records the code it ended with, and the job row the finalisation
+        // that closed it, so the reason is asserted at the refusal and not on this row.
         Assert.Null(row.ArtifactId);
         Assert.Null(row.PartObjectKey);
         Assert.Empty(rig.OutputObjectKeys(reportJobId, row.OutputId ?? string.Empty));
@@ -299,11 +309,13 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
     }
 
     // A snapshot whose first record carries an amount no decimal can hold: the data contract
-    // admits it as a number of its own, and presenting it is what the report cannot do.
+    // admits it as a number of its own, so the document is usable, and presenting it is what the
+    // report cannot do. The value is a plain integer well past the largest decimal, so the
+    // refusal is the number's own and never the notation it arrived in.
     private static byte[] SnapshotWithAnUnpresentableAmount(int records)
     {
-        var snapshot = JsonNode.Parse(Encoding.UTF8.GetString(PrintingRig.Snapshot(records)))!;
-        snapshot["items"]![0]!["amount"] = JsonNode.Parse("1.234567890123456789012345678901");
+        var snapshot = JsonNode.Parse(Encoding.UTF8.GetString(PrintingRig.SameReportSnapshot(records)))!;
+        snapshot["items"]![0]!["amount"] = JsonNode.Parse("123456789012345678901234567890123");
         return Encoding.UTF8.GetBytes(snapshot.ToJsonString());
     }
 

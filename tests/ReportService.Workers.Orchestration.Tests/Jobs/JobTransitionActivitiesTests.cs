@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Testing;
@@ -131,6 +132,30 @@ public sealed class JobTransitionActivitiesTests
 
     private static Task RunAsync(Func<Task> body) => new ActivityEnvironment().RunAsync(body);
 
+    [Fact]
+    public async Task TheReasonOfARefusalReachesTheStoreAsTheOutputsOwnDiagnostic()
+    {
+        var store = new RecordingJobStore();
+        using var metrics = new OrchestrationMetrics(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+        const string Reason =
+            "the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description";
+
+        var outcome = await RunAsync(() => activity.FailOutputAsync(
+            new FailOutputInput("output-0123456789abcdef0123456789abcdef", "ROW_BOUND_EXCEEDED", Reason)));
+
+        Assert.Equal(OutputFailureOutcome.Applied, outcome);
+        var failure = Assert.Single(store.OutputFailures);
+        Assert.Equal("output-0123456789abcdef0123456789abcdef", failure.OutputId);
+        Assert.Equal("ROW_BOUND_EXCEEDED", failure.Code);
+        Assert.Equal(Reason, failure.Reason);
+    }
+
     private static Task<T> RunAsync<T>(Func<Task<T>> body) => new ActivityEnvironment().RunAsync(body);
 
     // The store the activities call, recording what they asked for and answering what the
@@ -144,6 +169,9 @@ public sealed class JobTransitionActivitiesTests
         public Exception? Failure { get; set; }
 
         public List<(string ReportJobId, DateTimeOffset Now)> Finalizations { get; } = [];
+
+        /// <summary>The output failures the step asked for, in the order it asked.</summary>
+        public List<(string OutputId, string Code, string? Reason)> OutputFailures { get; } = [];
 
         public Task<TransitionJobResult> TransitionJobAsync(
             string reportJobId,
@@ -172,7 +200,7 @@ public sealed class JobTransitionActivitiesTests
 
         public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, string? message, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken, TemplateLocaleDefaults? presentation) => throw new NotSupportedException();
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
@@ -196,7 +224,11 @@ public sealed class JobTransitionActivitiesTests
 
         public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            OutputFailures.Add((outputId, code, reason));
+            return Task.FromResult(OutputFailureOutcome.Applied);
+        }
 
         public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

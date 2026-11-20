@@ -73,6 +73,22 @@ public sealed class ScribanTemplateAdapterTests
     }
 
     [Fact]
+    public void APresentationRefusalReachesTheCallerAsTheBlocksOwnRefusal()
+    {
+        // The engine may raise a function's exception as its own: what the renderer reads is
+        // still the block's typed refusal, never the generic failure of a part that could not
+        // render, so the consumer gets DATA_INVALID with its reason.
+        var refusal = Assert.Throws<PresentationRefusedException>(() => Compose(
+            [(TemplatePart.Row, "<tr><td>{{ format_number item.amount \"N2\" }}</td></tr>")],
+            header: "{}",
+            records: ["""{"amount":123456789012345678901234567890123}"""]));
+
+        Assert.Equal("DATA_INVALID", refusal.Failure.Code);
+        Assert.Equal("number-out-of-range", refusal.Failure.Reason);
+        Assert.Equal("format_number", refusal.Failure.Function);
+    }
+
+    [Fact]
     public void APackageOfAnotherEngineIsRefused()
     {
         var refusal = Assert.Throws<TemplatePackageException>(() => Prepare([(TemplatePart.DocumentStart, "<p></p>")], engine: "handlebars"));

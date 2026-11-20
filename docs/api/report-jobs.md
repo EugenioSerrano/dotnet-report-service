@@ -130,6 +130,40 @@ sending the same data again fails the same way: the refusal is not retried.
 [docs/limitations.md](../limitations.md) states the limit, why it exists and
 what removes it.
 
+### The message of a report refused by the row bound
+
+A PDF report whose detail data carries a text value above 262 144 bytes of UTF-8
+ends `failed` with `ROW_BOUND_EXCEEDED`, on the job and on its PDF output,
+before any page is rendered: no artifact to download. Its `errorMessage` names
+the first offending record, the field's path relative to the record, the value's
+size and the bound — never any part of the value:
+
+```json
+{
+  "status": "failed",
+  "errorCode": "ROW_BOUND_EXCEEDED",
+  "errorMessage": "Record 1500 has a text field at $.description of 262145 bytes of UTF-8; the PDF output accepts at most 262144 bytes per field. Shorten that field.",
+  "outputs": [
+    {
+      "format": "pdf",
+      "status": "failed",
+      "artifactId": null,
+      "errorCode": "ROW_BOUND_EXCEEDED",
+      "errorMessage": "Record 1500 has a text field at $.description of 262145 bytes of UTF-8; the PDF output accepts at most 262144 bytes per field. Shorten that field."
+    }
+  ]
+}
+```
+
+The sentence is rendered from the reason stored on both rows, which is the data
+step's own diagnostic (`docs/data-contract.md` states the rule and its
+diagnostic). The record is numbered from `1`; the path is the one every data
+error uses, `*` for a member name the template's schema does not declare; the
+size is the decoded value's, and the bound is this version's. The numbers are
+plain digits and no value of the report appears in the answer. Sending the same
+data again fails the same way: the refusal is not retried, and the output is
+never printed.
+
 Refusals of this read are the shared ones:
 
 | Case | HTTP | `code` |

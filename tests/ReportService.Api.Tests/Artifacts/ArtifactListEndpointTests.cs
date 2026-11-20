@@ -7,6 +7,7 @@ using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Api.Tests.Jobs;
 using ReportService.Jobs;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 
@@ -371,8 +372,8 @@ public sealed class ArtifactListEndpointTests : IDisposable
         public Task<JobFailureOutcome> FailJobAsync(string reportJobId, string code, string reason, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FailJobAsync(reportJobId, code, reason, now, cancellationToken);
 
-        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken);
+        public Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken, TemplateLocaleDefaults? presentation) =>
+            inner.PinTemplateAsync(reportJobId, pin, now, cancellationToken, presentation);
 
         public Task<BeginInputWaitOutcome> BeginInputWaitAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.BeginInputWaitAsync(reportJobId, cancellationToken);
@@ -410,8 +411,8 @@ public sealed class ArtifactListEndpointTests : IDisposable
         public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
             inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
 
-        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.FailOutputAsync(outputId, code, now, cancellationToken);
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailOutputAsync(outputId, code, reason, now, cancellationToken);
 
         public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FinalizeJobAsync(reportJobId, now, cancellationToken);

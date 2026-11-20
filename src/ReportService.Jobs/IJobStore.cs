@@ -1,3 +1,4 @@
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 
 namespace ReportService.Jobs;
@@ -73,17 +74,29 @@ public interface IJobStore
         FailJobAsync(reportJobId, code, reason, null, now, cancellationToken);
 
     /// <summary>
-    /// Writes the version a job's template is fixed to, once. The write is conditional on
-    /// the job not having ended and on no pin being recorded yet, so the first committed
-    /// pin wins: an attempt that arrives second receives the pin that is already there,
-    /// whatever it computed itself.
+    /// Writes the version a job's template is fixed to, once, and fixes the presentation the
+    /// job's report is written in with the same write: a culture or time zone the acceptance
+    /// left open is completed from the presentation the taken package declares, and a value
+    /// the request named is never replaced. The write is conditional on the job not having
+    /// ended and on no pin being recorded yet, so the first committed pin wins: an attempt
+    /// that arrives second receives the pin that is already there, whatever it computed
+    /// itself, and completes nothing.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="pin">The values the job is fixed to.</param>
     /// <param name="now">The instant the pin is written at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <param name="presentation">
+    /// The culture and time zone the taken package declares, written to a job member the
+    /// request left open; <see langword="null"/> when the package declares none.
+    /// </param>
     /// <returns>The pin the record holds, or that the job had already ended.</returns>
-    Task<TemplatePinState> PinTemplateAsync(string reportJobId, TemplatePin pin, DateTimeOffset now, CancellationToken cancellationToken);
+    Task<TemplatePinState> PinTemplateAsync(
+        string reportJobId,
+        TemplatePin pin,
+        DateTimeOffset now,
+        CancellationToken cancellationToken,
+        TemplateLocaleDefaults? presentation);
 
     /// <summary>
     /// Records that a queued job is waiting for its upload to be verified. The write is
@@ -197,14 +210,17 @@ public interface IJobStore
     /// <summary>Ends one output that has not ended yet with the code of the condition.</summary>
     /// <param name="outputId">The identifier of the output.</param>
     /// <param name="code">The code of the condition that ended it.</param>
+    /// <param name="reason">The diagnostic recorded beside the code, or <see langword="null"/> when the condition carries none.</param>
     /// <param name="now">The instant the failure is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken);
+    Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
     /// Closes a job from the states its outputs imply, in one transaction: every output
     /// succeeded makes the job succeeded, a failed output makes it failed with that output's
-    /// code. A job that already ended, or whose outputs have not all ended, is left as it is.
+    /// code and - when it carries one - its own diagnostic; an output that carries none keeps
+    /// the fixed reason of an output-scoped failure. A job that already ended, or whose outputs
+    /// have not all ended, is left as it is.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="now">The instant the close is decided at, in UTC.</param>
