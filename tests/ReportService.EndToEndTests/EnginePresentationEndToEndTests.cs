@@ -290,6 +290,12 @@ public sealed class EnginePresentationEndToEndTests : IDisposable
         {
             var item = JsonNode.Parse(items[index % items.Count]!.ToJsonString())!;
             item["sequence"] = index + 1;
+
+            // The sample's contract has no date field, but this package's 1.0.0 schema requires
+            // one on every record and the row prints it. One instant for every record, at 02:30
+            // UTC: the day it prints is the day the job's own zone says it is, mirroring the
+            // integration case's Snapshot.
+            item["date"] = "2026-03-14T02:30:00Z";
             built.Add(item);
         }
 
