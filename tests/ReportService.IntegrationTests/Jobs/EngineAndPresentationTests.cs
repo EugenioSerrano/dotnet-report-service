@@ -28,6 +28,11 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
 {
     private static readonly TimeSpan Deadline = TimeSpan.FromMinutes(4);
 
+    // The one field the three documents do not share: each footer prints its own job's
+    // acceptance minute, which is asserted per job before it is normalised out of the
+    // three-way text comparison.
+    private const string AcceptanceMinutePlaceholder = "<acceptance minute>";
+
     private readonly PostgresFixture _fixture;
 
     /// <summary>Runs against the class's database.</summary>
@@ -36,8 +41,9 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
 
     /// <summary>
     /// Three jobs, one per engine, over one snapshot: each prints with the engine its version
-    /// declares, the three documents hold the same records and values, and each committed row
-    /// records the presentation that produced it.
+    /// declares, the three documents hold the same records and values, each document's footer
+    /// carries its own job's acceptance minute, and each committed row records the presentation
+    /// that produced it.
     /// </summary>
     [Fact]
     public async Task ThreeJobsOnePerEnginePublishTheSameReportAndRecordWhatProducedIt()
@@ -50,7 +56,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
         var snapshotTexts = DescriptionsOf(snapshot);
         var uploadId = await rig.ReadyUploadAsync(snapshot, cancellationToken);
 
-        var jobs = new List<(string Version, JobStateRow Row)>();
+        var jobs = new List<(string Version, string JobId, JobStateRow Row)>();
         foreach (var version in PrintingRig.SameReportEngines)
         {
             var reportJobId = await rig.SubmitAsync(uploadId, PrintingRig.SameReport, version, "es-AR", "America/Argentina/Buenos_Aires", cancellationToken);
@@ -62,13 +68,17 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
             Assert.Matches("^artifact-[0-9a-f]{32}$", row.ArtifactId);
             Assert.Equal(1, row.BlockCount);
             Assert.Equal(25, row.RecordCount);
-            jobs.Add((version, row));
+            jobs.Add((version, reportJobId, row));
         }
 
         // One document per engine, each the report the other two print: the same records, the
-        // same values and the same text, read out of the published file itself.
+        // same values and the same text, read out of the published file itself. The footer
+        // prints the report's "now" - the job's own acceptance instant, to the minute - so that
+        // one field is asserted against the job's own clock and zone and only then normalised
+        // out of the three-way comparison: three jobs accepted either side of a minute boundary
+        // still print one report, each with its own minute.
         var texts = new List<string>();
-        foreach (var (version, row) in jobs)
+        foreach (var (version, jobId, row) in jobs)
         {
             var bytes = await rig.ReadArtifactAsync(row, cancellationToken);
             Assert.Equal(row.SizeBytes, bytes.LongLength);
@@ -80,14 +90,25 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
             }
 
             Assert.Contains("Records: 25", text, StringComparison.Ordinal);
-            Assert.Equal("es-AR", PresentationOf(row)!.Culture);
-            Assert.Equal("America/Argentina/Buenos_Aires", PresentationOf(row)!.TimeZone);
-            Assert.Equal(EngineOf(version), PresentationOf(row)!.Engine);
-            Assert.Contains(version == "1.0.0" ? "7.5.1" : version == "1.1.0" ? "2.4.3" : "2.40.0", PresentationOf(row)!.EngineVersion, StringComparison.Ordinal);
-            Assert.False(string.IsNullOrWhiteSpace(PresentationOf(row)!.IcuVersion));
-            Assert.False(string.IsNullOrWhiteSpace(PresentationOf(row)!.TzDataVersion));
-            Assert.NotEqual("unrecorded", PresentationOf(row)!.IcuVersion);
-            texts.Add(text);
+            var presentation = PresentationOf(row)!;
+            Assert.Equal("es-AR", presentation.Culture);
+            Assert.Equal("America/Argentina/Buenos_Aires", presentation.TimeZone);
+            Assert.Equal(EngineOf(version), presentation.Engine);
+            Assert.Contains(version == "1.0.0" ? "7.5.1" : version == "1.1.0" ? "2.4.3" : "2.40.0", presentation.EngineVersion, StringComparison.Ordinal);
+            Assert.False(string.IsNullOrWhiteSpace(presentation.IcuVersion));
+            Assert.False(string.IsNullOrWhiteSpace(presentation.TzDataVersion));
+            Assert.NotEqual("unrecorded", presentation.IcuVersion);
+
+            // The document's closing text is its footer's clock, computed from this job's own
+            // report_clock and printed in this job's own zone - never read from another document.
+            var expectedMinute = TimeZoneInfo
+                .ConvertTime(
+                    await rig.ReportClockAsync(jobId, cancellationToken),
+                    TimeZoneInfo.FindSystemTimeZoneById(presentation.TimeZone))
+                .ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            var footer = expectedMinute + " ";
+            Assert.EndsWith(footer, text, StringComparison.Ordinal);
+            texts.Add(text[..^footer.Length] + AcceptanceMinutePlaceholder + " ");
         }
 
         Assert.Equal(texts[0], texts[1]);
@@ -95,7 +116,7 @@ public sealed class EngineAndPresentationTests : IClassFixture<PostgresFixture>
 
         // The demo: the three documents side by side with their SHA-256, kept with the run.
         var kept = new List<string>();
-        foreach (var (version, row) in jobs)
+        foreach (var (version, _, row) in jobs)
         {
             var bytes = await rig.ReadArtifactAsync(row, cancellationToken);
             var name = "same-report-" + version + "-engines.pdf";
