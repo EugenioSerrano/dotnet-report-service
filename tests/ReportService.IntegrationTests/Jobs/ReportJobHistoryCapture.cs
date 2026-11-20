@@ -4,6 +4,7 @@ extern alias pdf;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReportService.DataContract;
@@ -32,9 +33,11 @@ using Temporalio.Worker;
 using InputWaitActivities = orchestration::ReportService.Workers.Orchestration.Jobs.InputWaitActivities;
 using JobTransitionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.JobTransitionActivities;
 using OrchestrationMetrics = orchestration::ReportService.Workers.Orchestration.Telemetry.OrchestrationMetrics;
+using PdfOutputActivities = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputActivities;
 using ReportJobActivities = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobActivities;
 using ReportJobInput = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobInput;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
+using RetentionOptions = orchestration::ReportService.Workers.Orchestration.Retention.RetentionOptions;
 using TemplateResolutionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.TemplateResolutionActivities;
 using ValidateAndPartitionActivity = orchestration::ReportService.Workers.Orchestration.Jobs.ValidateAndPartitionActivity;
 using PdfOutputActivityOptions = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputActivityOptions;
@@ -45,15 +48,20 @@ using TemplateResolutionActivityOptions = pdf::ReportService.Workers.Pdf.Templat
 namespace ReportService.IntegrationTests.Jobs;
 
 /// <summary>
-/// Records the job histories the hermetic suite replays, once, so that suite has something
-/// to check. It is opt-in: it runs only when the environment variable names the directory
-/// to write, so the integration command never runs it, and the ordinary cases of this suite
-/// are untouched by it. It needs one engine and nothing else — the jobs it runs live in the
-/// in-memory record stores and a storage root of its own — so every history it writes is the
-/// outcome of a real execution of the workflow and its steps, taken under the very settings
-/// the case that replays it replays it under. The data step runs for real: the records name
-/// a taken version whose package and schema are written behind them, and every snapshot
+/// Records the job histories the hermetic suite replays and this build can reproduce, once, so
+/// that suite has something to check. It is opt-in: it runs only when the environment variable
+/// names the directory to write, so the integration command never runs it, and the ordinary
+/// cases of this suite are untouched by it. It needs one engine and nothing else — the jobs it
+/// runs live in the in-memory record stores and a storage root of its own — so every history it
+/// writes is the outcome of a real execution of the workflow and its steps, taken under the very
+/// settings the case that replays it replays it under. The data step runs for real: the records
+/// name a taken version whose package and schema are written behind them, and every snapshot
 /// document is written before the record that carries its size and SHA-256.
+/// <para>
+/// The recordings whose runs need steps this rig does not serve are kept as captured and
+/// replayed under their own settings; each capture case below names what it records and why the
+/// rest is not re-recorded.
+/// </para>
 /// </summary>
 public sealed class ReportJobHistoryCapture
 {
@@ -98,64 +106,82 @@ public sealed class ReportJobHistoryCapture
     }
 
     /// <summary>
-    /// Records every history the hermetic suite replays: a job whose first check of its
-    /// upload already answered, a job whose own timer ends its wait, the two ways a
-    /// notification ends it, the upload that outlived its verification deadline, and the
-    /// two runs of a continuation.
+    /// Records the reachable histories of a job that ends at its input check or inside its
+    /// wait: a job whose upload had been rejected at its first check, the two ways a
+    /// notification ends the wait, and the run that continues as a new one while it waits.
+    /// <para>
+    /// The other recordings the hermetic suite replays are <b>not</b> recorded here: a fresh
+    /// execution of this build schedules steps this rig does not serve — the template step, and
+    /// the printing path whose output child and renderer no capture rig registers — so those
+    /// recordings are kept as captured and replayed under the settings they were taken with.
+    /// </para>
     /// </summary>
     [Fact]
-    public async Task EveryReplayedJobHistoryIsRecorded()
+    public async Task TheReachableJobHistoriesAreRecorded()
     {
         var target = Target();
         await using var rig = await Rig.StartAsync();
 
-        await RecordTheFirstCheckAsync(rig, JobHistoryFixtures.Ready, UploadState.Ready, target);
         await RecordTheFirstCheckAsync(rig, JobHistoryFixtures.Rejected, UploadState.Rejected, target);
-
-        await RecordTheTimerEndingTheWaitAsync(rig, JobHistoryFixtures.Verifying, target);
-        await RecordTheNotificationEndingTheWaitAsync(
-            rig, JobHistoryFixtures.WaitingThenReadyAfterANotification, UploadEnding.Ready, target);
         await RecordTheNotificationEndingTheWaitAsync(
             rig, JobHistoryFixtures.WaitingThenRejected, UploadEnding.Rejected, target);
         await RecordTheNotificationEndingTheWaitAsync(
             rig, JobHistoryFixtures.WaitingThenExpired, UploadEnding.Expired, target);
-
         await RecordTheRunThatContinuedAsync(rig, JobHistoryFixtures.ContinuedAsNew, target);
-        await RecordTheRunAfterTheContinuationAsync(rig, JobHistoryFixtures.ContinuedAfterANotification, target);
-
-        await RecordTheRefusedSnapshotAsync(rig, target);
-        await RecordTheTemplateThatCannotBeUsedAsync(rig, target);
-        await RecordTheFinalizedPathAsync(rig, target);
     }
 
     /// <summary>
-    /// Records the five histories of the job's template step: a version already taken and
-    /// bound without the source, a version taken and pinned, a by-name resolution pinned to
-    /// the release it chose, a take that refuses the version it was given, and a by-name job
-    /// whose source could not be checked and was fixed to the version recorded at acceptance.
-    /// It is opt-in like the whole capture, and it runs a rig that serves the template step's
-    /// three metadata activities on the orchestration queue and the take and the resolution on
-    /// the PDF worker's queue, over the template source served on a loopback port.
+    /// Records the one history of the job's template step that a fresh execution can reproduce:
+    /// a take that refuses the version it was given, which ends the job with the take's code and
+    /// pins nothing. It is opt-in like the whole capture, and it runs the rig that serves the
+    /// template step's metadata activities and the take on its own queue.
     /// <para>
-    /// The recordings the earlier changes captured are <b>not</b> re-captured here: they were
-    /// taken before the step existed and replay with its patch inactive, so a fresh execution
-    /// of the current workflow could not reproduce them.
+    /// The other recordings of the step are <b>not</b> recorded here: their runs continue past
+    /// the step into the printing path, whose output child and renderer no capture rig registers,
+    /// so they are kept as captured and replayed under the settings they were taken with.
     /// </para>
     /// </summary>
     [Fact]
-    public async Task TheTemplateStepHistoriesAreRecorded()
+    public async Task TheTakeRefusalHistoryIsRecorded()
     {
         var target = Target();
         await using var rig = await Rig.StartAsync(withTemplateStep: true);
 
-        await RecordTheBoundVersionAsync(rig, JobHistoryFixtures.TemplateBound, target);
-        await RecordTheTakenVersionAsync(rig, JobHistoryFixtures.TemplateTaken, target);
-        await RecordTheVersionChosenByNameAsync(rig, JobHistoryFixtures.TemplateByName, target);
         await RecordTheVersionTheTakeRefusesAsync(rig, JobHistoryFixtures.TemplateTakeRefused, target);
+    }
 
-        // The source is stopped for the last recording, so every case that reads it ran first.
-        rig.StopTheSource();
-        await RecordTheBaselineOfAnUnreachableSourceAsync(rig, JobHistoryFixtures.TemplateBaseline, target);
+    /// <summary>
+    /// Records the one history of a PDF output the row bound refused: a document whose second
+    /// record carries a description of 262 145 ASCII bytes, a data step that commits the
+    /// refusal with the partition and returns it, and a workflow that moves the job to running,
+    /// looks its output up and ends that output with the code and the reason the pass kept,
+    /// starting no child for it and rendering nothing. It is opt-in like the whole capture, and
+    /// it runs a rig that also serves the output lookup on the orchestration queue.
+    /// <para>
+    /// The recordings the earlier changes captured are <b>not</b> re-captured here: each was
+    /// taken before the steps this build carries, so a fresh execution of the current workflow
+    /// could not reproduce them.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task TheRowBoundRefusalHistoryIsRecorded()
+    {
+        var target = Target();
+        await using var rig = await Rig.StartAsync(withTemplateStep: true, withPdfOutput: true);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var reportJobId = await rig.GivenJobAsync(
+            JobHistoryFixtures.RowBoundRefused,
+            UploadState.Ready,
+            cancellationToken,
+            rig.RowBoundDocument());
+        var (handle, runId) = await rig.StartJobAsync(reportJobId, cancellationToken);
+        await rig.AwaitTheEndAsync(handle, reportJobId, cancellationToken);
+
+        await WriteAsync(
+            directory: target,
+            JobHistoryFixtures.RowBoundRefused,
+            await rig.HistoryAsync(reportJobId, runId, cancellationToken),
+            cancellationToken);
     }
 
     // A job that named a version already taken: the step binds it, the source is never read,
@@ -449,6 +475,7 @@ public sealed class ReportJobHistoryCapture
             ManualTimeProvider clock,
             byte[] sample,
             byte[] refused,
+            byte[] rowBound,
             TemplateSourceClass? source,
             SwitchableStore? sourceStore,
             TemporalWorker? templateWorker,
@@ -469,6 +496,7 @@ public sealed class ReportJobHistoryCapture
             Clock = clock;
             SampleDocumentBytes = sample;
             RefusedDocumentBytes = refused;
+            RowBoundDocumentBytes = rowBound;
             _source = source;
             _sourceStore = sourceStore;
             _templateWorker = templateWorker;
@@ -511,6 +539,9 @@ public sealed class ReportJobHistoryCapture
         /// <summary>The document whose second record is cut short: the reader refuses it.</summary>
         private byte[] RefusedDocumentBytes { get; }
 
+        /// <summary>The document whose second record is over the row bound: the pass refuses it.</summary>
+        private byte[] RowBoundDocumentBytes { get; }
+
         /// <summary>
         /// The instant the recording being taken writes its records with. It never follows
         /// the wall clock, and the one recording that moves it forward seeds the records it
@@ -526,7 +557,13 @@ public sealed class ReportJobHistoryCapture
         /// <summary>The document the reader refuses: two records, the second cut short.</summary>
         public byte[] RefusedDocument() => [.. RefusedDocumentBytes];
 
-        public static async Task<Rig> StartAsync(bool withTemplateStep = false)
+        /// <summary>
+        /// The document the row bound refuses: the sample's header and two of its records,
+        /// the second one's description written with 262 145 ASCII bytes.
+        /// </summary>
+        public byte[] RowBoundDocument() => [.. RowBoundDocumentBytes];
+
+        public static async Task<Rig> StartAsync(bool withTemplateStep = false, bool withPdfOutput = false)
         {
             var uploads = new InMemoryUploadStore();
             var jobs = new InMemoryJobStore(uploads);
@@ -550,6 +587,7 @@ public sealed class ReportJobHistoryCapture
 
             var sample = await ReadRepositoryFileAsync("samples/templates/pilot-grouped/sample.json");
             var refused = RefusedDocumentOf(sample);
+            var rowBound = RowBoundDocumentOf(sample);
             await SeedVersionAsync(objects, versions, Version, await ReadRepositoryFileAsync("samples/templates/pilot-grouped/schema.json"), Consumer);
             await SeedVersionAsync(objects, versions, RefusedVersion, RefusedSchema(), Consumer);
 
@@ -581,6 +619,19 @@ public sealed class ReportJobHistoryCapture
                     NullLoggerFactory.Instance,
                     NullLogger<JobTransitionActivities>.Instance))
                 .AddAllActivities(new InputWaitActivities(jobs, NullLoggerFactory.Instance, NullLogger<InputWaitActivities>.Instance));
+
+            // The output lookup is registered only for the recording of the refusal, so every
+            // other recording keeps the commands it was captured with: the recording of that
+            // path is the one whose run looks its output up and ends it.
+            if (withPdfOutput)
+            {
+                workerOptions.AddAllActivities(new PdfOutputActivities(
+                    jobs,
+                    clock,
+                    Options.Create(new RetentionOptions { Outputs = TimeSpan.FromDays(7) }),
+                    NullLoggerFactory.Instance,
+                    NullLogger<PdfOutputActivities>.Instance));
+            }
 
             // The template step and the two activities it calls on the PDF worker's queue: they
             // are registered only for the recordings of the step, so the earlier recordings keep
@@ -680,6 +731,7 @@ public sealed class ReportJobHistoryCapture
                 clock,
                 sample,
                 refused,
+                rowBound,
                 source,
                 sourceStore,
                 templateWorker,
@@ -924,6 +976,26 @@ public sealed class ReportJobHistoryCapture
             var first = text.IndexOf("\"sequence\"", StringComparison.Ordinal);
             var second = text.IndexOf("\"sequence\"", first + 1, StringComparison.Ordinal);
             return Encoding.UTF8.GetBytes(text[..(second + 48)]);
+        }
+
+        // The pilot's own sample cut to two records, the second one's description written with
+        // 262 145 ASCII bytes: the schema declares that field with no length limit, so the
+        // document is valid data whose last record the row bound refuses. Two records keep the
+        // block far under its own byte maximum, so the row bound is the first rule to fire.
+        private static byte[] RowBoundDocumentOf(byte[] sample)
+        {
+            var document = JsonNode.Parse(sample)!;
+            var items = document["items"]!.AsArray();
+            var kept = new JsonArray();
+            for (var index = 0; index < 2; index++)
+            {
+                kept.Add(items[index]!.DeepClone());
+            }
+
+            kept[1]!["description"] = new string('A', 262_145);
+            document["items"] = kept;
+            document["header"]!["totals"]!["recordCount"] = 2;
+            return Encoding.UTF8.GetBytes(document.ToJsonString());
         }
 
         // A schema outside the profile: an identifier of its own, which the profile refuses

@@ -208,7 +208,7 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
 
         var (paginated, paginatedOutput) = await AcceptedAsync();
         await _host.Jobs.TransitionOutputAsync(paginatedOutput, Now, cancellationToken);
-        await _host.Jobs.FailOutputAsync(paginatedOutput, "PAGINATION_FAILED", Now, cancellationToken);
+        await _host.Jobs.FailOutputAsync(paginatedOutput, "PAGINATION_FAILED", null, Now, cancellationToken);
         await _host.Jobs.FinalizeJobAsync(paginated, Now.AddMinutes(1), cancellationToken);
 
         var (quota, _) = await AcceptedAsync();
@@ -519,8 +519,8 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
             inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
 
-        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.FailOutputAsync(outputId, code, now, cancellationToken);
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailOutputAsync(outputId, code, reason, now, cancellationToken);
 
         public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FinalizeJobAsync(reportJobId, now, cancellationToken);

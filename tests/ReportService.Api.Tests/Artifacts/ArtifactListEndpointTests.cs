@@ -411,8 +411,8 @@ public sealed class ArtifactListEndpointTests : IDisposable
         public Task<ArtifactView?> FindArtifactAsync(string reportJobId, string artifactId, string consumerId, CancellationToken cancellationToken) =>
             inner.FindArtifactAsync(reportJobId, artifactId, consumerId, cancellationToken);
 
-        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, DateTimeOffset now, CancellationToken cancellationToken) =>
-            inner.FailOutputAsync(outputId, code, now, cancellationToken);
+        public Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.FailOutputAsync(outputId, code, reason, now, cancellationToken);
 
         public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.FinalizeJobAsync(reportJobId, now, cancellationToken);

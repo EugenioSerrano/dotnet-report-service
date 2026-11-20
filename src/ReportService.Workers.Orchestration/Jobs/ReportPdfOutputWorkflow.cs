@@ -118,7 +118,7 @@ public sealed class ReportPdfOutputWorkflow
 
         await Workflow.ExecuteActivityAsync(
             (JobTransitionActivities activities) => activities.FailOutputAsync(
-                new FailOutputInput(input.OutputId, code)),
+                new FailOutputInput(input.OutputId, code, Reason: null)),
             options).ConfigureAwait(true);
     }
 }

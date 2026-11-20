@@ -37,10 +37,12 @@ public sealed partial class PostgresJobStore
     private const string InsertPartitionSql = """
         INSERT INTO report_service.partitions
             (report_job_id, partitioner_version, block_count, record_count, record_bytes,
-             index_object_key, index_sha256, index_size_bytes, committed_at)
+             index_object_key, index_sha256, index_size_bytes, committed_at,
+             pdf_refusal_code, pdf_refusal_reason)
         VALUES
             (@ReportJobId, @PartitionerVersion, @BlockCount, @RecordCount, @RecordBytes,
-             @IndexObjectKey, @IndexSha256, @IndexSizeBytes, @CommittedAt)
+             @IndexObjectKey, @IndexSha256, @IndexSizeBytes, @CommittedAt,
+             @PdfRefusalCode, @PdfRefusalReason)
         ON CONFLICT (report_job_id) DO NOTHING
         """;
 
@@ -53,7 +55,9 @@ public sealed partial class PostgresJobStore
                index_object_key    AS "IndexObjectKey",
                index_sha256        AS "IndexSha256",
                index_size_bytes    AS "IndexSizeBytes",
-               committed_at        AS "CommittedAt"
+               committed_at        AS "CommittedAt",
+               pdf_refusal_code    AS "PdfRefusalCode",
+               pdf_refusal_reason  AS "PdfRefusalReason"
         FROM report_service.partitions
         WHERE report_job_id = @ReportJobId
         """;
@@ -131,12 +135,13 @@ public sealed partial class PostgresJobStore
 
     private const string FailOneOutputSql = """
         UPDATE report_service.report_outputs
-           SET status = 'FAILED', error_code = @Code, finished_at = @Now
+           SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
          WHERE output_id = @OutputId AND status IN ('PENDING', 'RUNNING')
         """;
 
     private const string SelectOutputsForFinalizationSql = """
-        SELECT output_id AS "OutputId", status AS "Status", error_code AS "ErrorCode"
+        SELECT output_id AS "OutputId", status AS "Status", error_code AS "ErrorCode",
+               error_reason AS "ErrorReason"
         FROM report_service.report_outputs
         WHERE report_job_id = @ReportJobId
         ORDER BY output_id
@@ -266,6 +271,8 @@ public sealed partial class PostgresJobStore
             partition.IndexSha256,
             partition.IndexSizeBytes,
             CommittedAt = UtcInstant(partition.CommittedAt),
+            partition.PdfRefusalCode,
+            partition.PdfRefusalReason,
         };
 
         try
@@ -544,6 +551,7 @@ public sealed partial class PostgresJobStore
     public async Task<OutputFailureOutcome> FailOutputAsync(
         string outputId,
         string code,
+        string? reason,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -555,7 +563,7 @@ public sealed partial class PostgresJobStore
             await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
             var changed = await connection.ExecuteAsync(new CommandDefinition(
                 FailOneOutputSql,
-                new { OutputId = outputId, Code = code, Now = UtcInstant(now) },
+                new { OutputId = outputId, Code = code, Reason = reason, Now = UtcInstant(now) },
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
             return changed > 0 ? OutputFailureOutcome.Applied : OutputFailureOutcome.AlreadyTerminal;
@@ -615,7 +623,7 @@ public sealed partial class PostgresJobStore
                     ReportJobId = reportJobId,
                     Status = JobWireValues.ToStoredText(status),
                     Code = failed?.ErrorCode,
-                    Reason = failed is null ? null : "output-failed",
+                    Reason = failed is null ? null : failed.ErrorReason ?? "output-failed",
                     Now = UtcInstant(now),
                 },
                 transaction,
@@ -670,6 +678,8 @@ public sealed partial class PostgresJobStore
         public string Status { get; set; } = string.Empty;
 
         public string? ErrorCode { get; set; }
+
+        public string? ErrorReason { get; set; }
     }
 
     private sealed class PartitionRow
@@ -692,6 +702,10 @@ public sealed partial class PostgresJobStore
 
         public DateTime CommittedAt { get; set; }
 
+        public string? PdfRefusalCode { get; set; }
+
+        public string? PdfRefusalReason { get; set; }
+
         public PartitionRecord ToRecord() => new(
             ReportJobId,
             PartitionerVersion,
@@ -701,7 +715,9 @@ public sealed partial class PostgresJobStore
             IndexObjectKey,
             IndexSha256,
             IndexSizeBytes,
-            Utc(CommittedAt));
+            Utc(CommittedAt),
+            PdfRefusalCode,
+            PdfRefusalReason);
     }
 
     private sealed class PartCommitRow

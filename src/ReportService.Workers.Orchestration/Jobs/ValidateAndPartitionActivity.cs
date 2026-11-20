@@ -65,6 +65,12 @@ public sealed class ValidateAndPartitionActivity(
     /// <summary>The span tag of the ordinal of the value the pass stopped at.</summary>
     private const string ViolationOrdinalTag = "data.violation.ordinal";
 
+    /// <summary>The span tag of the code a PDF output was refused with by the row bound.</summary>
+    private const string PdfRefusalCodeTag = "report.pdf.refusal_code";
+
+    /// <summary>The span tag of the record a PDF output was refused on by the row bound.</summary>
+    private const string PdfRefusalOrdinalTag = "report.pdf.refusal_ordinal";
+
     /// <summary>The directory a taken copy is extracted under, when the caller names none.</summary>
     public static readonly string DefaultScratchRoot =
         Path.Combine(Path.GetTempPath(), "report-service-data-contract");
@@ -89,6 +95,11 @@ public sealed class ValidateAndPartitionActivity(
 
         var state = await jobs.FindForWorkflowAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false)
             ?? throw Refuse("INPUT_NOT_FOUND", "the job is not recorded");
+
+        // The row bound is the PDF output's own rule: a job that asked for no PDF is not
+        // scanned at all, so the rule costs the other outputs of a later version nothing.
+        var rowBound = new RowBoundVerdict(state.Outputs.Any(output => output.Format == OutputFormat.Pdf));
+
         var upload = await uploads.LoadForVerificationAsync(state.Job.UploadId, cancellationToken).ConfigureAwait(false)
             ?? throw Refuse("INPUT_NOT_FOUND", "the upload of the job is not recorded");
         var snapshot = upload.Snapshot
@@ -145,7 +156,7 @@ public sealed class ValidateAndPartitionActivity(
         {
             summary = await SingleBlockPartitioner
                 .PartitionAsync(
-                    CheckedAsync(contract, HeaderItemsReader.ReadAsync(content, cancellationToken), input.ReportJobId, cancellationToken),
+                    CheckedAsync(contract, HeaderItemsReader.ReadAsync(content, cancellationToken), input.ReportJobId, rowBound, cancellationToken),
                     block,
                     cancellationToken,
                     count => Interlocked.Exchange(ref recordsRead, count),
@@ -219,7 +230,9 @@ public sealed class ValidateAndPartitionActivity(
             indexKey.ToString(),
             writtenIndex.Sha256,
             writtenIndex.Size,
-            clock.GetUtcNow());
+            clock.GetUtcNow(),
+            rowBound.Code,
+            rowBound.Reason);
 
         var committed = await jobs.CommitPartitionAsync(partition, cancellationToken).ConfigureAwait(false);
         if (committed.Outcome == PartitionCommitOutcome.AlreadyCommitted)
@@ -246,7 +259,8 @@ public sealed class ValidateAndPartitionActivity(
             written.Sha256,
             partition.IndexObjectKey,
             partition.IndexSizeBytes,
-            partition.IndexSha256);
+            partition.IndexSha256,
+            rowBound.Refusal);
     }
 
     private static ObjectWrite Written(ObjectWrite? write, string what) =>
@@ -406,11 +420,15 @@ public sealed class ValidateAndPartitionActivity(
     // The two roots of the contract are evaluated in the same pass that reads the document,
     // each value as soon as the reader yields it and before the partitioner appends it: the
     // header at the header root, every record at the record root. The first value the
-    // contract refuses stops the pass.
+    // contract refuses stops the pass. A record whose contract holds is then measured against
+    // the PDF row bound - only when the job asked for a PDF, only while no refusal is kept -
+    // and the first value over it is kept for the output's refusal while the pass goes on, so
+    // a contract error anywhere, the record's own limit and the block's limit still win.
     private async IAsyncEnumerable<RawRecord> CheckedAsync(
         PreparedDataContract contract,
         IAsyncEnumerable<RawRecord> values,
         string reportJobId,
+        RowBoundVerdict rowBound,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await foreach (var value in values.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -437,6 +455,31 @@ public sealed class ValidateAndPartitionActivity(
                     value.Offset,
                     check.Path,
                     check.Keyword);
+            }
+
+            if (rowBound.Scans && !rowBound.Refused && value.Ordinal != 0)
+            {
+                // The header is not a row. Of a record, the first value over the bound in
+                // document order is the one kept, and its path is the delivered renderer's.
+                var finding = RowBoundScanner.FindFirst(value.Json.Span, PdfRowBound.Bytes);
+                if (finding is { } found)
+                {
+                    var path = contract.RenderFieldPath(value.Json, found.JsonPointer);
+                    rowBound.Refuse(
+                        RowBoundDiagnostic.For(value.Ordinal, value.Offset, found.DecodedBytes, PdfRowBound.Bytes, path));
+                    System.Diagnostics.Activity.Current?.SetTag(PdfRefusalCodeTag, rowBound.Code);
+                    System.Diagnostics.Activity.Current?.SetTag(PdfRefusalOrdinalTag, value.Ordinal);
+                    logger.LogInformation(
+                        new EventId(0, "PdfOutputRefusedByRowBound"),
+                        "Job {ReportJobId} PDF output refused by the row bound: code={Code} ordinal={Ordinal} offset={Offset} size={Size} bound={Bound} path={Path}",
+                        reportJobId,
+                        rowBound.Code,
+                        value.Ordinal,
+                        value.Offset,
+                        found.DecodedBytes,
+                        PdfRowBound.Bytes,
+                        path);
+                }
             }
 
             yield return value;
@@ -563,7 +606,10 @@ public sealed class ValidateAndPartitionActivity(
             first.Sha256,
             partition.IndexObjectKey,
             partition.IndexSizeBytes,
-            partition.IndexSha256);
+            partition.IndexSha256,
+            partition.PdfRefusalCode is { } code && partition.PdfRefusalReason is { } reason
+                ? new PdfOutputRefusal(code, reason)
+                : null);
     }
 
     // A refusal of the data is the code the profile names, and it is never retried: the
@@ -584,3 +630,44 @@ public sealed class ValidateAndPartitionActivity(
 /// <summary>The beat a running data step reports: how many records it has read so far.</summary>
 /// <param name="RecordsRead">How many records the pass has admitted.</param>
 public sealed record PartitionHeartbeat(long RecordsRead);
+
+/// <summary>
+/// What one pass knows about the PDF row bound: whether the job asked for a PDF output at all,
+/// and the first refusal it kept. The refusal travels with the partition record, so a step that
+/// arrives again answers the same verdict instead of reading the snapshot for it.
+/// </summary>
+internal sealed class RowBoundVerdict
+{
+    /// <summary>Whether this job asked for a PDF and its records are measured against the bound.</summary>
+    public bool Scans { get; }
+
+    /// <summary>The code the PDF output is refused with, when a value over the bound was found.</summary>
+    public string? Code { get; private set; }
+
+    /// <summary>The stored reason of that refusal, when one was kept.</summary>
+    public string? Reason { get; private set; }
+
+    /// <summary>Whether a refusal is kept.</summary>
+    public bool Refused => Code is not null;
+
+    /// <summary>The refusal as the workflow receives it; null when every record is within the bound.</summary>
+    public PdfOutputRefusal? Refusal =>
+        Code is { } code && Reason is { } reason ? new PdfOutputRefusal(code, reason) : null;
+
+    /// <summary>Takes whether the job asked for a PDF output.</summary>
+    /// <param name="scans">Whether the job's requested outputs include one PDF.</param>
+    public RowBoundVerdict(bool scans) => Scans = scans;
+
+    /// <summary>Keeps the first refusal the pass found and ignores every later one.</summary>
+    /// <param name="reason">The stored reason, built by the profile's own diagnostic.</param>
+    public void Refuse(string reason)
+    {
+        if (Refused)
+        {
+            return;
+        }
+
+        Code = DataContractViolation.RowBoundExceeded;
+        Reason = reason;
+    }
+}

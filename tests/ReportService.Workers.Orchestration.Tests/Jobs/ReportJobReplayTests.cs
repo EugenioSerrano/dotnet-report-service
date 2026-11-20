@@ -114,6 +114,13 @@ public sealed class ReportJobHistoryBoundTests
     /// </summary>
     public const int TemplateStepHistoryCeiling = 64;
 
+    /// <summary>
+    /// The longest history the run that refused its PDF output may write: the refusal path's
+    /// own recordings are counted, and a run of it stays inside this ceiling with room for two
+    /// rescheduled workflow tasks. A recording above it is a stop, never a bound to widen.
+    /// </summary>
+    public const int RefusedPathHistoryCeiling = 72;
+
     /// <summary>The recordings of the template step, each with the count measured when it was captured.</summary>
     public static TheoryData<string> OfTheTemplateStep { get; } =
         new(JobHistoryFixtures.OfTheTemplateStep.Select(fixture => fixture.File));
@@ -401,6 +408,47 @@ public sealed class ReportJobHistoryBoundTests
             Assert.Equal(1, Scheduled(history, JobTransitionActivities.TransitionJobName));
             Assert.Equal(1, Scheduled(history, ValidateAndPartitionActivity.Name));
         }
+    }
+
+    [Fact]
+    public async Task TheRunThatRefusedItsPdfOutputEndedItWithTheReasonAndStartedNoChild()
+    {
+        var fixture = JobHistoryFixtures.RowBoundRefused;
+        var history = await JobHistoryFiles.ReadAsync(fixture.File);
+
+        // The output's failure is the refusal's own: the code and the reason the data step kept
+        // travel in the step's input, and the lookup that preceded it named the one output.
+        var failure = Assert.Single(
+            history.Events,
+            entry => entry.EventType == EventType.ActivityTaskScheduled
+                && string.Equals(
+                    entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
+                    JobTransitionActivities.FailOutputName,
+                    StringComparison.Ordinal));
+        var input = failure.ActivityTaskScheduledEventAttributes.Input.Payloads_[0].Data.ToStringUtf8();
+        Assert.Contains("ROW_BOUND_EXCEEDED", input, StringComparison.Ordinal);
+        Assert.Contains("ordinal=", input, StringComparison.Ordinal);
+        Assert.Contains("path=$.description", input, StringComparison.Ordinal);
+        Assert.Equal(1, Scheduled(history, PdfOutputActivities.FindPdfOutputName));
+
+        // The run moved the job through its stages once and closed it from the failed output.
+        Assert.Equal(2, Scheduled(history, JobTransitionActivities.TransitionJobName));
+        Assert.Equal(1, Scheduled(history, ValidateAndPartitionActivity.Name));
+        Assert.Equal(1, Scheduled(history, JobTransitionActivities.FinalizeJobName));
+
+        // No child was ever started for the refused output, so nothing rendered and nothing was
+        // published; the run completed.
+        Assert.DoesNotContain(history.Events, entry => entry.EventType == EventType.StartChildWorkflowExecutionInitiated);
+        Assert.Equal(0, Scheduled(history, PdfOutputStepContracts.RenderPdfBlock));
+        Assert.Equal(0, Scheduled(history, PdfOutputActivities.PublishOutputName));
+        Assert.Equal(EventType.WorkflowExecutionCompleted, history.Events.Last().EventType);
+
+        // The recording is its own measurement, inside a ceiling that is a stop, not a bound to
+        // widen.
+        Assert.Equal(fixture.MeasuredEvents, history.Events.Count);
+        Assert.True(
+            history.Events.Count <= RefusedPathHistoryCeiling,
+            $"{fixture.File} holds {history.Events.Count} events, and the refused path keeps at most {RefusedPathHistoryCeiling}.");
     }
 
     private static int Scheduled(WorkflowHistory history, string activityName) =>

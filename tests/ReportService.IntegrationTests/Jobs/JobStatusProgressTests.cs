@@ -428,7 +428,7 @@ public sealed class JobStatusProgressTests : IClassFixture<PostgresFixture>, IAs
         var store = new PostgresJobStore(_dataSource!);
         var outputId = await OutputIdAsync(reportJobId, cancellationToken);
         var now = DateTimeOffset.UtcNow;
-        Assert.Equal(OutputFailureOutcome.Applied, await store.FailOutputAsync(outputId, "PAGINATION_FAILED", now, cancellationToken));
+        Assert.Equal(OutputFailureOutcome.Applied, await store.FailOutputAsync(outputId, "PAGINATION_FAILED", null, now, cancellationToken));
         var closure = await store.FinalizeJobAsync(reportJobId, now.AddSeconds(1), cancellationToken);
         Assert.Equal(JobFinalizationOutcome.Applied, closure.Outcome);
         Assert.Equal(ReportJobStatus.Failed, closure.Status);
