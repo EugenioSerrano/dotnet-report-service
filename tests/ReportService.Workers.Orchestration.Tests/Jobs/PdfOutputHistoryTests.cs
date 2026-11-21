@@ -90,6 +90,78 @@ public sealed class PdfOutputHistoryTests
         }
     }
 
+    /// <summary>
+    /// The two histories the extended child class captures, replayed under this build: the
+    /// refusal arm schedules no read and carries no reason, and the exhausted arm schedules the
+    /// read exactly once and carries the recorded cause in the failure's input. A capture that
+    /// cannot show the reason there is not the wiring's proof; while the files are absent the
+    /// case says so and names the run that produces them.
+    /// </summary>
+    /// <summary>The refusal arm's capture: the file the integration class writes.</summary>
+    private const string RefusedCaptureFile = "report-pdf-output-refused.json";
+
+    /// <summary>The exhausted arm's capture: the file the integration class writes.</summary>
+    private const string ExhaustedCaptureFile = "report-pdf-output-exhausted.json";
+
+    [Fact]
+    public async Task TheTwoCapturedChildHistoriesReplayWithTheirReadCounts()
+    {
+        var refused = CapturePathOf(RefusedCaptureFile);
+        var exhausted = CapturePathOf(ExhaustedCaptureFile);
+        if (!File.Exists(refused) && !File.Exists(exhausted))
+        {
+            Assert.Skip(
+                "the child histories are captured by the opt-in case of the integration suite, which needs an engine; "
+                + "neither file is committed yet, so there is nothing to replay.");
+        }
+
+        Assert.True(File.Exists(refused), $"the refusal arm's capture is missing from {Path.GetDirectoryName(refused)}.");
+        Assert.True(File.Exists(exhausted), $"the exhausted arm's capture is missing from {Path.GetDirectoryName(exhausted)}.");
+
+        var options = new WorkflowReplayerOptions();
+        options.Workflows.Add(WorkflowDefinition.Create(typeof(ReportPdfOutputWorkflow)));
+        var replayer = new WorkflowReplayer(options);
+
+        await Replays(replayer, refused);
+        await Replays(replayer, exhausted);
+
+        var refusal = await ReadAsync(refused);
+        Assert.Equal(0, Scheduled(refusal, AttemptCauseActivities.FindLastAttemptCauseName));
+        var exhaustedArm = await ReadAsync(exhausted);
+        Assert.Equal(1, Scheduled(exhaustedArm, AttemptCauseActivities.FindLastAttemptCauseName));
+
+        var failure = Assert.Single(
+            exhaustedArm.Events,
+            entry => entry.EventType == EventType.ActivityTaskScheduled
+                && string.Equals(
+                    entry.ActivityTaskScheduledEventAttributes.ActivityType.Name,
+                    JobTransitionActivities.FailOutputName,
+                    StringComparison.Ordinal));
+        var input = failure.ActivityTaskScheduledEventAttributes.Input.Payloads_[0].Data.ToStringUtf8();
+        Assert.Contains("RENDER_TIMEOUT", input, StringComparison.Ordinal);
+        Assert.Contains("exhausted cause=guard-deadline", input, StringComparison.Ordinal);
+    }
+
+    // The capture the integration class writes, in the folder this suite reads.
+    private static string CapturePathOf(string file) =>
+        Path.Combine(AppContext.BaseDirectory, "Histories", "Outputs", file);
+
+    private static async Task Replays(WorkflowReplayer replayer, string path)
+    {
+        var history = await ReadAsync(path);
+        Assert.True(history.Events.Count <= 10_000, $"{Path.GetFileName(path)} holds {history.Events.Count} events.");
+        await replayer.ReplayWorkflowAsync(
+            WorkflowHistory.FromJson(
+                Path.GetFileNameWithoutExtension(path),
+                await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken)),
+            cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    private static async Task<WorkflowHistory> ReadAsync(string path) =>
+        WorkflowHistory.FromJson(
+            Path.GetFileNameWithoutExtension(path),
+            await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken));
+
     private static int Scheduled(WorkflowHistory history, string activityName) =>
         history.Events.Count(entry =>
             entry.EventType == EventType.ActivityTaskScheduled

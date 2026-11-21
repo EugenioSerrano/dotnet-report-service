@@ -20,6 +20,7 @@ using Temporalio.Exceptions;
 using Temporalio.Worker;
 using Temporalio.Workflows;
 using JobTransitionActivities = orchestration::ReportService.Workers.Orchestration.Jobs.JobTransitionActivities;
+using AttemptCauseActivities = orchestration::ReportService.Workers.Orchestration.Jobs.AttemptCauseActivities;
 using PdfOutputActivities = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputActivities;
 using PdfOutputStepContracts = orchestration::ReportService.Workers.Orchestration.Jobs.PdfOutputStepContracts;
 using PdfOutputStepOptions = orchestration::ReportService.Workers.Orchestration.Jobs.RenderPdfBlockStepOptions;
@@ -80,6 +81,12 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
     /// <param name="fixture">The container this class owns.</param>
     public PdfOutputRefusalTests(PostgresFixture fixture) => _fixture = fixture;
 
+    /// <summary>The captured history of the refusal arm: the file the replay suite reads.</summary>
+    internal const string RefusedFile = "report-pdf-output-refused.json";
+
+    /// <summary>The captured history of the exhausted arm: the file the replay suite reads.</summary>
+    internal const string ExhaustedFile = "report-pdf-output-exhausted.json";
+
     /// <summary>
     /// The child ends the output with the code the failure carries, publishes nothing, and the
     /// delivered finalisation closes the job failed with that same code.
@@ -107,7 +114,8 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
                 .AddWorkflow<ReportPdfOutputWorkflow>()
                 .AddWorkflow<FinalizeOnceForRefusal>()
                 .AddAllActivities(transitions)
-                .AddAllActivities(outputs));
+                .AddAllActivities(outputs)
+                .AddAllActivities(new AttemptCauseActivities(_jobs!)));
         using var rendering = new TemporalWorker(
             client,
             new TemporalWorkerOptions(PdfOutputStepOptions.Queue)
@@ -131,11 +139,12 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
             // step and no publication at all.
             await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
             var row = await connection.QuerySingleAsync<OutputRow>(new CommandDefinition(
-                "SELECT status AS \"Status\", error_code AS \"ErrorCode\" FROM report_service.report_outputs WHERE output_id = @OutputId",
+                "SELECT status AS \"Status\", error_code AS \"ErrorCode\", error_reason AS \"ErrorReason\" FROM report_service.report_outputs WHERE output_id = @OutputId",
                 new { acceptance.OutputId },
                 cancellationToken: cancellationToken));
             Assert.Equal("FAILED", row.Status);
             Assert.Equal("PAGINATION_FAILED", row.ErrorCode);
+            Assert.Null(row.ErrorReason);
 
             var history = await handle.FetchHistoryAsync(new WorkflowHistoryEventFetchOptions()).WaitAsync(cancellationToken);
             var failure = Assert.Single(Activities(history, JobTransitionActivities.FailOutputName));
@@ -143,6 +152,12 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
             Assert.Contains(acceptance.OutputId, input, StringComparison.Ordinal);
             Assert.Contains("PAGINATION_FAILED", input, StringComparison.Ordinal);
             Assert.Empty(Activities(history, PdfOutputActivities.PublishOutputName));
+
+            // The refusal is deterministic: the child never reads the cause record, and the
+            // failure it ends the output with carries no reason at all.
+            Assert.Empty(Activities(history, AttemptCauseActivities.FindLastAttemptCauseName));
+            Assert.DoesNotContain("exhausted cause=", input, StringComparison.Ordinal);
+            await WriteCaptureAsync(RefusedFile, history, cancellationToken);
 
             // The parent's delivered finalisation, on the job the child left behind: the same
             // activity the parent's last step runs, started on the same queue.
@@ -177,8 +192,114 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
         }
     }
 
+    /// <summary>
+    /// The exhaustion arm through the same engine: a guard deadline recorded for the block and a
+    /// carried <c>RENDER_TIMEOUT</c> end the output with the timeout code and the recorded cause,
+    /// and the child reads the cause exactly once - the wiring the approval asked to see, not
+    /// only the map.
+    /// </summary>
+    [Fact]
+    public async Task TheExhaustedArmReadsTheRecordedCauseOnceAndEndsWithTheTimeout()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await OpenAsync(cancellationToken);
+        var client = await TemporalClient.ConnectAsync(
+            new TemporalClientConnectOptions($"127.0.0.1:{_engine!.HostPort}") { Namespace = "default" });
+        var metrics = new OrchestrationMetrics(MeterIdentity.ForHost("integration-tests"));
+        var transitions = new JobTransitionActivities(_jobs!, TimeProvider.System, metrics, NullLoggerFactory.Instance, NullLogger<JobTransitionActivities>.Instance);
+        var outputs = new PdfOutputActivities(
+            _jobs!,
+            TimeProvider.System,
+            Options.Create(new RetentionOptions { Outputs = TimeSpan.FromHours(1) }),
+            NullLoggerFactory.Instance,
+            NullLogger<PdfOutputActivities>.Instance);
+
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var orchestration = new TemporalWorker(
+            client,
+            new TemporalWorkerOptions(ReportJobWorkflow.OrchestrationQueue)
+                .AddWorkflow<ReportPdfOutputWorkflow>()
+                .AddAllActivities(transitions)
+                .AddAllActivities(outputs)
+                .AddAllActivities(new AttemptCauseActivities(_jobs!)));
+        using var rendering = new TemporalWorker(
+            client,
+            new TemporalWorkerOptions(PdfOutputStepOptions.Queue)
+                .AddAllActivities(new TimingOutRenderStep()));
+        var runs = new[] { orchestration.ExecuteAsync(stop.Token), rendering.ExecuteAsync(stop.Token) };
+
+        try
+        {
+            var acceptance = await AcceptedAsync(cancellationToken);
+
+            // The attempt the guard stopped recorded its cause before it ended; the child reads
+            // it when the carried timeout is the last failure.
+            Assert.Equal(
+                AttemptCauseOutcome.Recorded,
+                await _jobs!.RecordAttemptCauseAsync(
+                    new AttemptCause(
+                        acceptance.OutputId,
+                        0,
+                        1,
+                        AttemptCauseVocabulary.GuardDeadline,
+                        Now),
+                    cancellationToken));
+
+            var handle = await client.StartWorkflowAsync(
+                (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                    new ReportPdfOutputInput(acceptance.ReportJobId, acceptance.OutputId)),
+                new WorkflowOptions
+                {
+                    Id = ReportPdfOutputWorkflow.WorkflowIdFor(acceptance.ReportJobId),
+                    TaskQueue = ReportJobWorkflow.OrchestrationQueue,
+                });
+            await handle.GetResultAsync().WaitAsync(Deadline, cancellationToken);
+
+            await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+            var row = await connection.QuerySingleAsync<OutputRow>(new CommandDefinition(
+                "SELECT status AS \"Status\", error_code AS \"ErrorCode\", error_reason AS \"ErrorReason\" FROM report_service.report_outputs WHERE output_id = @OutputId",
+                new { acceptance.OutputId },
+                cancellationToken: cancellationToken));
+            Assert.Equal("FAILED", row.Status);
+            Assert.Equal("RENDER_TIMEOUT", row.ErrorCode);
+            Assert.Equal("exhausted cause=guard-deadline", row.ErrorReason);
+
+            var history = await handle.FetchHistoryAsync(new WorkflowHistoryEventFetchOptions()).WaitAsync(cancellationToken);
+            Assert.Single(Activities(history, AttemptCauseActivities.FindLastAttemptCauseName));
+            var failure = Assert.Single(Activities(history, JobTransitionActivities.FailOutputName));
+            var input = failure.ActivityTaskScheduledEventAttributes.Input.Payloads_[0].Data.ToStringUtf8();
+            Assert.Contains(acceptance.OutputId, input, StringComparison.Ordinal);
+            Assert.Contains("RENDER_TIMEOUT", input, StringComparison.Ordinal);
+            Assert.Contains("exhausted cause=guard-deadline", input, StringComparison.Ordinal);
+            Assert.Empty(Activities(history, PdfOutputActivities.PublishOutputName));
+            await WriteCaptureAsync(ExhaustedFile, history, cancellationToken);
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            foreach (var run in runs)
+            {
+                try
+                {
+                    await run;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Each worker ends by the stop this cleanup asks for, and only that
+                    // cancellation is swallowed: a fault of either worker still fails the
+                    // test.
+                }
+            }
+        }
+    }
+
     private async Task OpenAsync(CancellationToken cancellationToken)
     {
+        if (_engine is not null)
+        {
+            return;
+        }
+
         Directory.CreateDirectory(_directory);
         var database = await _fixture.CreateDatabaseAsync(cancellationToken);
         var connectionString = new NpgsqlConnectionStringBuilder(_fixture.Application(database))
@@ -253,6 +374,21 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
                 name,
                 StringComparison.Ordinal))];
 
+    // The history is written only when the opt-in variable names a directory, exactly as the
+    // job capture does: the integration command never sets it, and the replay suite reads the
+    // committed outcome.
+    private static async Task WriteCaptureAsync(string file, WorkflowHistory history, CancellationToken cancellationToken)
+    {
+        var target = Environment.GetEnvironmentVariable(ReportJobHistoryCapture.OutputVariable);
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(target);
+        await File.WriteAllTextAsync(Path.Combine(target, file), history.ToJson(), cancellationToken);
+    }
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
@@ -281,6 +417,8 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
         public string Status { get; set; } = string.Empty;
 
         public string? ErrorCode { get; set; }
+
+        public string? ErrorReason { get; set; }
     }
 
     /// <summary>
@@ -296,6 +434,21 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
             throw new ApplicationFailureException(
                 "PAGINATION_FAILED reason=row-without-text record=2",
                 errorType: "PAGINATION_FAILED",
+                nonRetryable: true);
+    }
+
+    /// <summary>
+    /// The block render of an attempt the guard stopped: it fails with the typed
+    /// <c>RENDER_TIMEOUT</c> the delivered boundary raises, which the child reads as the last
+    /// failure after its budget is spent.
+    /// </summary>
+    private sealed class TimingOutRenderStep
+    {
+        [Activity(PdfOutputStepContracts.RenderPdfBlock)]
+        public Task<RenderPdfBlockStepResult> RenderPdfBlock(RenderPdfBlockStepInput input) =>
+            throw new ApplicationFailureException(
+                "RENDER_TIMEOUT reason=guard-deadline",
+                errorType: "RENDER_TIMEOUT",
                 nonRetryable: true);
     }
 }

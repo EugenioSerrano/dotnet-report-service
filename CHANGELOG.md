@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A report whose print is interrupted by a restart finishes with one document: the
+  attempt that died is delivered again, a committed part is returned instead of
+  printed again, and the output is published once - no second artifact and no
+  duplicated or missing pages. A report whose every allowed attempt fails for a
+  reason that is not its data or its template ends failed with a code the consumer
+  can act on: `RENDER_TIMEOUT` when the last attempt passed a deadline, and
+  `EXECUTION_FAILED` when the worker was lost, with nothing published and a fixed
+  sentence that carries no internal detail. A watchdog stops a render that neither
+  writes nor returns, records the attempt's cause, reports the worker unhealthy and
+  ends its process, and the platform's replacement finishes the report; the
+  attempt-cause record is kept with the job and is not a status. The render worker's
+  restart policy is declared by the composition and read back from the runtime.
+
 - A PDF template version is taken only after a record whose largest text field is
   exactly 256 KiB of UTF-8 - the row bound - is printed with every character on the
   service's own print path and checked against the data contract: a version whose

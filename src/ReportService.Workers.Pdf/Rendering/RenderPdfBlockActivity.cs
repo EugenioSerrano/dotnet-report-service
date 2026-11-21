@@ -115,6 +115,16 @@ public sealed class RenderPdfBlockActivity(
 
         using var beatEnds = new CancellationTokenSource();
         var attempt = ActivityExecutionContext.Current.Info;
+        logger.LogInformation(
+            "Block {BlockIndex} of output {OutputId} started, attempt {Attempt}",
+            input.BlockIndex,
+            input.OutputId,
+            attempt.Attempt);
+        if (attempt.Attempt > 1)
+        {
+            await CountRetryAsync(input, cancellationToken).ConfigureAwait(false);
+        }
+
         var registration = Watchdog?.Register(
             input.OutputId,
             input.BlockIndex,
@@ -657,6 +667,32 @@ public sealed class RenderPdfBlockActivity(
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);
 
+    // A retry is counted where the attempt starts: the previous attempt's recorded cause names a
+    // deadline, and its absence is the crash or the lost worker this process cannot tell apart.
+    private async Task CountRetryAsync(RenderPdfBlockInput input, CancellationToken cancellationToken)
+    {
+        var cause = PdfRenderingMetrics.CrashCause;
+        try
+        {
+            var last = await jobs.FindLastAttemptCauseAsync(input.OutputId, input.BlockIndex, cancellationToken)
+                .ConfigureAwait(false);
+            if (last is not null && AttemptCauseVocabulary.IsDeadline(last.Cause))
+            {
+                cause = PdfRenderingMetrics.DeadlineCause;
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} could not read its last attempt cause ({ExceptionType})",
+                input.BlockIndex,
+                input.OutputId,
+                exception.GetType().Name);
+        }
+
+        metrics.ActivityRetry(PdfRenderingMetrics.RenderQueue, cause);
+    }
+
     // The cause of a guard deadline, written where the store is reachable. A store that
     // cannot answer does not replace the guard's code: the carried RENDER_TIMEOUT still
     // maps, and only its reason falls back to "none", which the child reads as such.
@@ -672,6 +708,7 @@ public sealed class RenderPdfBlockActivity(
                     cause,
                     clock.GetUtcNow()),
                 cancellationToken).ConfigureAwait(false);
+            metrics.AttemptCause(cause);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

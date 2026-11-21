@@ -154,12 +154,6 @@ public sealed class ReportPdfOutputWorkflow
     private static bool IsDeterministicRefusal(string? carried) =>
         carried is { Length: > 0 } code && DeterministicRefusals.Contains(code, StringComparer.Ordinal);
 
-    /// <summary>The code a failure's carried error type keeps, or the generic code.</summary>
-    /// <param name="carried">The carried error type, when the failure has one.</param>
-    /// <returns>The code to end the output with.</returns>
-    private static string CodeOf(string? carried) =>
-        carried is { Length: > 0 } code && DomainCodes.Contains(code) ? code : ExecutionFailed;
-
     /// <summary>
     /// The code an output ends with for a failure: the failure's own code when it is one of
     /// the codes this path raises, and the generic code otherwise. A runtime exception reaches
@@ -193,6 +187,13 @@ public sealed class ReportPdfOutputWorkflow
         string? reason,
         ActivityOptions options)
     {
+        Workflow.Logger.LogWarning(
+            "Block {BlockIndex} of output {OutputId} ended after {Attempts} attempts: {Code} ({Reason})",
+            0,
+            input.OutputId,
+            RenderPdfBlockStepOptions.MaximumAttempts,
+            code,
+            reason ?? AttemptCauseVocabulary.None);
         Workflow.Logger.LogWarning(
             "Output {OutputId} ended with {ErrorCode}",
             input.OutputId,

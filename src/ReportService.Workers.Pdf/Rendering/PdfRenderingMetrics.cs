@@ -24,6 +24,30 @@ public sealed class PdfRenderingMetrics : IDisposable
     /// <summary>The counter of requests Chromium made that the route policy aborted.</summary>
     public const string AbortedRequestsInstrumentName = "reportservice.pdf.chromium.aborted_requests";
 
+    /// <summary>The counter of activity attempts the engine retried, by queue and cause.</summary>
+    public const string ActivityRetriesInstrumentName = "reportservice.activity.retries";
+
+    /// <summary>The counter of renders the watchdog stopped, by reason.</summary>
+    public const string WatchdogExitsInstrumentName = "reportservice.pdf.watchdog.exits";
+
+    /// <summary>The counter of causes attempts recorded, by cause.</summary>
+    public const string AttemptCausesInstrumentName = "reportservice.pdf.attempt.causes";
+
+    /// <summary>The queue a printed block's activity runs on, as the retry counter tags it.</summary>
+    public const string RenderQueue = "report-pdf-rendering";
+
+    /// <summary>The retry's cause tag when the previous attempt's worker was lost.</summary>
+    public const string HeartbeatLostCause = "heartbeat-lost";
+
+    /// <summary>The retry's cause tag when the previous attempt ended without a recorded cause.</summary>
+    public const string CrashCause = "crash";
+
+    /// <summary>The retry's cause tag when the previous attempt passed its own deadline.</summary>
+    public const string DeadlineCause = "deadline";
+
+    /// <summary>The reason tag of a watchdog exit: an attempt passed its deadline and grace.</summary>
+    public const string DeadlineExitReason = "deadline";
+
     /// <summary>The tag of the composition phase.</summary>
     public const string ComposePhase = "compose";
 
@@ -50,6 +74,9 @@ public sealed class PdfRenderingMetrics : IDisposable
     private readonly Counter<long> _verificationOutcomes;
     private readonly Histogram<long> _pages;
     private readonly Counter<long> _abortedRequests;
+    private readonly Counter<long> _activityRetries;
+    private readonly Counter<long> _watchdogExits;
+    private readonly Counter<long> _attemptCauses;
 
     /// <summary>Creates the host's instruments on the identity it carries.</summary>
     /// <param name="identity">The identity of the host that owns the instruments.</param>
@@ -73,6 +100,18 @@ public sealed class PdfRenderingMetrics : IDisposable
             AbortedRequestsInstrumentName,
             unit: "{request}",
             description: "Requests a printed document made that the route policy aborted.");
+        _activityRetries = _meter.CreateCounter<long>(
+            ActivityRetriesInstrumentName,
+            unit: "{retry}",
+            description: "Activity attempts the engine retried, by queue and cause.");
+        _watchdogExits = _meter.CreateCounter<long>(
+            WatchdogExitsInstrumentName,
+            unit: "{exit}",
+            description: "Renders the watchdog stopped, by reason.");
+        _attemptCauses = _meter.CreateCounter<long>(
+            AttemptCausesInstrumentName,
+            unit: "{cause}",
+            description: "Causes an attempt recorded before it ended, by cause.");
     }
 
     /// <summary>Records how long one phase of a block's render took.</summary>
@@ -105,6 +144,25 @@ public sealed class PdfRenderingMetrics : IDisposable
             _abortedRequests.Add(count);
         }
     }
+
+    /// <summary>Records one activity attempt the engine retried.</summary>
+    /// <param name="queue">The queue the activity ran on; a fixed value.</param>
+    /// <param name="cause">The cause of the retry: a lost worker, a crash or a deadline.</param>
+    public void ActivityRetry(string queue, string cause) =>
+        _activityRetries.Add(
+            1,
+            new KeyValuePair<string, object?>("queue", queue),
+            new KeyValuePair<string, object?>("cause", cause));
+
+    /// <summary>Records one render the watchdog stopped.</summary>
+    /// <param name="reason">The reason; a fixed value.</param>
+    public void WatchdogExit(string reason) =>
+        _watchdogExits.Add(1, new KeyValuePair<string, object?>("reason", reason));
+
+    /// <summary>Records one cause an attempt recorded before it ended.</summary>
+    /// <param name="cause">The deadline class the attempt ended with.</param>
+    public void AttemptCause(string cause) =>
+        _attemptCauses.Add(1, new KeyValuePair<string, object?>("cause", cause));
 
     /// <inheritdoc />
     public void Dispose() => _meter.Dispose();
