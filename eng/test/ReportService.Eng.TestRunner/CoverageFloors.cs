@@ -117,6 +117,23 @@ internal static partial class CoverageFloors
         ("ReportService.Workers.Pdf.Tests", ["ReportService.Workers.Pdf"]),
     ];
 
+    /// <summary>
+    /// Hermetic projects that own no product assembly and collect no coverage: a valid
+    /// hermetic member whose result counts toward the level's pass, but which is measured
+    /// for no assembly, so the "measured once" and <c>hermetic-run-fidelity</c> invariants
+    /// (ADR-039 §5) hold. The hermetic PDF structure verification is one: it reads the
+    /// committed golden PDFs and exercises <c>ReportService.Pdf.Verification</c>, which its
+    /// own test project already measures (one assembly is measured once).
+    /// </summary>
+    public static readonly IReadOnlyList<string> NoCoverageProjects =
+    [
+        "ReportService.PdfStructure.Tests",
+    ];
+
+    /// <summary>Whether <paramref name="project"/> is a no-coverage hermetic project.</summary>
+    public static bool IsNoCoverage(string project) =>
+        NoCoverageProjects.Contains(project, StringComparer.Ordinal);
+
     /// <summary>The assemblies <paramref name="project"/> measures, or <see langword="null"/> when it owns none.</summary>
     public static IReadOnlyList<string>? OwnedAssemblies(string project) =>
         Owners.FirstOrDefault(owner => string.Equals(owner.Project, project, StringComparison.Ordinal)).Assemblies;

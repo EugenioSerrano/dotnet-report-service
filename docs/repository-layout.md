@@ -43,6 +43,7 @@ dotnet-report-service/
 │   ├── ReportService.Templates.Tests/         Unit/component tests of the composer: the adapter, the context, escaping, the guards, the block mode and the cache (hermetic)
 │   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)
 │   ├── ReportService.Pdf.Verification.Tests/  Unit tests of the reader, the normalisation, the alignment and the checks, with synthetic extraction inputs (hermetic, integrity-critical floors)
+│   ├── Pdf/ReportService.PdfStructure.Tests/  The hermetic PDF structure verification: reads the committed golden PDFs in-process (PdfPig) and checks order, global "Page X of Y", row coverage and per-page words (hermetic, no container)
 │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   ├── ReportService.RenderingHost/      The console the rendering suite starts in its own image: composes a block, prints it and applies a known-bad control
 │   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
@@ -101,9 +102,15 @@ Every command runs from the repository root.
 | What | Command |
 |------|---------|
 | Start the local composition | `dotnet run --project src/ReportService.AppHost` (see the [README](../README.md)) |
-| Hermetic tests (unit/component, coverage floors) — no container runtime | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
+| Hermetic tests (unit/component + the PDF structure verification over committed goldens, coverage floors) — **no container runtime, no image build** | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
 | Integration tests — real dependencies in containers | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
+| Rendering regression — the live render and the oracle cross-check; a **triggered** integration/rendering cycle suite (ADR-039 §3.5.6), not part of the V-Bounce | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | End-to-end tests — the whole composition | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
+
+The hermetic level is **Docker-free by construction**: it reads committed golden
+PDFs in-process (PdfPig) to verify PDF structure, and the live Chromium/Paged.js
+render with its oracle cross-check runs only in the integration/rendering cycle,
+triggered for rendering-touching changes (ADR-039).
 
 What each test level may reach, the evidence a run leaves under
 `artifacts/test-results/` and the coverage rules are described in

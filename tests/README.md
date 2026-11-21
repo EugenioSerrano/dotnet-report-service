@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
+| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly), and `ReportService.PdfStructure.Tests` (the hermetic PDF structure verification over the committed golden PDFs) | nothing outside the test process; files only under a temporary directory unique to each test; the committed golden PDFs read in-process | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
@@ -91,6 +91,22 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   formatted value in the invariant culture fails both readings. The tier keeps the
   three engines' documents of one hundred records and the two locale documents in
   the run's `evidence/` folder with `same-report-demo.sha256`.
+- The **hermetic PDF structure verification** (`ReportService.PdfStructure.Tests`,
+  in the Pdf group `tests/Pdf/`) is what keeps the V-Bounce **Docker-free**
+  (ADR-039 §3.5.8). It reads the **committed golden PDFs** in
+  [`Pdf/ReportService.PdfStructure.Tests/Goldens/`](Pdf/ReportService.PdfStructure.Tests/Goldens/)
+  **in-process** with the product's own reader (PdfPig, `PdfWordReader`) and checks
+  block/row order, the global "Page X of Y", row coverage against the source
+  fixture and the words of each page — **no browser, no engine, no container**. The
+  goldens are produced once by the rendering path and committed with their source
+  fixture snapshot and page/frame declaration; their `Goldens/README.md` records
+  how to regenerate them.
+- The **rendering** regression is a **cycle-level, triggered** suite (ADR-039
+  §3.5.6): it runs in the integration/rendering cycle for a change that touches
+  rendering, the engine, the PDF base image or a template, **not** as part of the
+  V-Bounce. The V-Bounce verifies PDF structure hermetically over the committed
+  goldens instead; the live Chromium/Paged.js render, the poppler oracle
+  cross-check and the two-reader agreement (PdfPig vs poppler) run in the cycle.
 - The **integration** level's `EngineAndPresentationTests` drives three jobs, one per
   engine, over one snapshot, two jobs under two cultures and zones, a block forced to
   retry between streaming and its commit (through the render step's test-only fault

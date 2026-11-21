@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The hermetic PDF structure verification: it reads the committed golden PDFs
+    with the product's own in-process reader (PdfPig, via PdfWordReader) and
+    checks block/row order, the global "Page X of Y", row coverage against the
+    source fixture and the words of each page. No browser, no engine, no
+    container: the goldens are committed binaries and the reading is in-process.
+
+    It owns no product assembly (ReportService.Pdf.Verification is measured by
+    its own test project), so the runner treats it as a no-coverage hermetic
+    project: it builds and runs, its results count, and it collects no coverage.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Only the in-process reader and its checks. The committed golden companions
+      (the source fixture snapshot and the page/frame declaration) are plain JSON,
+      read here with System.Text.Json, so the project pulls in no container helper
+      and runs with the SDK alone.
+    -->
+    <ProjectReference Include="..\..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Goldens\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Goldens" />
+  </ItemGroup>
+
+</Project>

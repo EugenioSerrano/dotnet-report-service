@@ -42,6 +42,10 @@ internal static partial class Program
         "tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
         "tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
+        // The hermetic PDF structure verification: reads the committed golden PDFs
+        // in-process (PdfPig), no container. A no-coverage hermetic project
+        // (CoverageFloors.NoCoverageProjects): it owns no product assembly.
+        "tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj",
     ];
 
     /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
@@ -141,15 +145,17 @@ internal static partial class Program
         // exercises it.
         if (level == "hermetic")
         {
+            // A no-coverage hermetic project owns no product assembly by design and is
+            // a valid member; every other hermetic project must own what it measures.
             var unowned = projects
                 .Select(p => Path.GetFileNameWithoutExtension(p))
-                .Where(name => CoverageFloors.OwnedAssemblies(name) is null)
+                .Where(name => CoverageFloors.OwnedAssemblies(name) is null && !CoverageFloors.IsNoCoverage(name))
                 .ToList();
             if (unowned.Count > 0)
             {
                 foreach (var project in unowned)
                 {
-                    await Console.Error.WriteLineAsync($"The hermetic project {project} owns no product assembly. Add its row to eng/test/ReportService.Eng.TestRunner/CoverageFloors.cs.").ConfigureAwait(false);
+                    await Console.Error.WriteLineAsync($"The hermetic project {project} owns no product assembly. Add its row to eng/test/ReportService.Eng.TestRunner/CoverageFloors.cs (or list it as a no-coverage hermetic project).").ConfigureAwait(false);
                 }
 
                 return ExitConfiguration;
@@ -542,7 +548,12 @@ internal static partial class Program
         var arguments = new List<string> { "test", "--project", Path.GetFullPath(Path.Combine(root, project)) };
         arguments.AddRange(hermetic ? HermeticTestOptions : TestOptions);
         arguments.AddRange(["--results-directory", resultsDirectory]);
-        if (hermetic && execution!.CollectsCoverage)
+
+        // A no-coverage hermetic project is never instrumented: without this, coverlet would
+        // instrument every non-excluded assembly it loads (there is no owned include to scope
+        // it), moving product figures and breaking "measured once".
+        var collectsCoverage = hermetic && execution!.CollectsCoverage && !CoverageFloors.IsNoCoverage(name);
+        if (collectsCoverage)
         {
             arguments.AddRange(CoverageFloors.Options);
             arguments.AddRange(CoverageFloors.ProjectIncludes(name));
@@ -621,8 +632,10 @@ internal static partial class Program
 
         stopwatch.Stop();
 
+        // A no-coverage hermetic project writes no report, so it is never held to the
+        // one-report rule (zero reports would otherwise be read as a failure).
         string? report = null;
-        if (hermetic && execution!.CollectsCoverage && exitCode == 0 && problem is null)
+        if (collectsCoverage && exitCode == 0 && problem is null)
         {
             var reports = Directory.GetFiles(resultsDirectory, CoverageFloors.ReportPattern, SearchOption.TopDirectoryOnly);
             if (reports.Length == 1)
