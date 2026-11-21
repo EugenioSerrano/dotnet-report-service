@@ -73,6 +73,14 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   honest document are printed with the corpus packages, and each reading is
   asserted apart - the product's one reason and the judge's class set - beside the
   supplementary template-authored control that carries the blank trailing page.
+  `AtBoundSampleRenderingTests` is part of the tier too: the at-bound record the
+  take derives from the control package is printed through the take's own sample
+  verb on the PDF base, the product's verification accepts it with its anchored
+  field compared against the source, one character is removed from the composed
+  HTML after the expected units are extracted and both the product and the judge
+  refuse the result with `text-dropped`, a contract that admits the bound nowhere
+  spends no render, and the three renders the take runs are measured three
+  repetitions each against the delivered render budget and the take's deadline.
   Its **`engines` tier** (`[Trait("Tier", "engines")]`) prints one report in three
   template versions, one per engine, under three locale settings: the three
   composed documents are byte-identical **under the `es-AR` ambient culture and
@@ -93,7 +101,15 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   shapes against PostgreSQL, and `EnginePresentationEndToEndTests` prints one job that
   names a culture and a zone over the whole local composition. The **performance**
   level prints `B1000` once per engine and records each engine's render time beside the
-  same verification thresholds.
+  same verification thresholds. `AtBoundSampleTakeTests` takes the at-bound control
+  versions on the take's own queue - the control taken with its record, its object and
+  the object's SHA-256 read back, the clipping version refused `TEMPLATE_INVALID`, a
+  held at-bound render retried and never refused, the repeat answered `ALREADY_TAKEN`,
+  and the no-record version taken on its contract-synthesised record - and
+  `AtBoundSampleJointGroupTests` runs the joint group with the job step: a job naming
+  the refusing version fails with the take's code and publishes nothing, one naming the
+  control succeeds with one artifact. The joint group names what a commit is missing
+  when the job step is not on it, and takes no part in that run rather than passing.
 
 ### The hermetic level's execution
 
