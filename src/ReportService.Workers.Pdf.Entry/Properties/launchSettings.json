@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ReportService.Workers.Pdf.Entry": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:56153;http://localhost:56154"
+    }
+  }
+}
