@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.Workers.Orchestration.Telemetry;
 using Temporalio.Exceptions;
@@ -32,6 +33,20 @@ public sealed class ReportPdfOutputWorkflow
 
     /// <summary>The code an output ends with when the failure carries no code of its own.</summary>
     public const string ExecutionFailed = "EXECUTION_FAILED";
+
+    /// <summary>
+    /// The codes a failure of the data or the template carries, and the only ones an output
+    /// keeps without reading the cause record: the same data or the same template reported
+    /// again reaches the same verdict, so nothing about the cause would change the answer.
+    /// </summary>
+    private static readonly IReadOnlyList<string> DeterministicRefusals =
+    [
+        "PAGINATION_FAILED",
+        "DATA_INVALID",
+        "TEMPLATE_INVALID",
+        "UNSUPPORTED_CAPABILITY",
+        "QUOTA_EXCEEDED",
+    ];
 
     /// <summary>The identifier of the one execution that produces <paramref name="reportJobId"/>'s PDF output.</summary>
     /// <param name="reportJobId">The identifier of the job.</param>
@@ -77,10 +92,73 @@ public sealed class ReportPdfOutputWorkflow
         {
             // The render or the publication could not finish: the output ends with the code
             // the failure carries, and one that carries none ends with the generic code, so
-            // the job is never left waiting on an output that will not end.
-            await FailTheOutputAsync(input, CodeOf(failure.InnerException), metadata).ConfigureAwait(true);
+            // the job is never left waiting on an output that will not end. The failure is
+            // read as itself, never through CodeOf: a failure with no code of its own is
+            // exactly the shape a worker that stopped produces, and the map below is what
+            // tells it apart from a crash of the step.
+            var carried = (failure.InnerException as ApplicationFailureException)?.ErrorType;
+            var (code, reason) = await ExhaustionAsync(
+                carried,
+                () => Workflow.ExecuteActivityAsync(
+                    (AttemptCauseActivities activities) => activities.FindLastAttemptCauseAsync(
+                        new FindLastAttemptCauseInput(input.OutputId, 0)),
+                    AttemptCauseActivities.Options())).ConfigureAwait(true);
+
+            await FailTheOutputAsync(input, code, reason, metadata).ConfigureAwait(true);
         }
     }
+
+    /// <summary>The code a carried failure keeps when the attempt that raised it hit the block's deadline.</summary>
+    private const string RenderTimeout = "RENDER_TIMEOUT";
+
+    /// <summary>
+    /// The code and the reason an output that has no attempt left ends with, from the code its
+    /// last failure carries and the cause that failure's last attempt recorded. A refusal of
+    /// the data or the template keeps its own code and reads nothing; every other failure reads
+    /// the last recorded cause, so a deadline is reported as the timeout it was and a crash,
+    /// which records nothing, as the generic code. The one read this map makes is the step's
+    /// only call here, and the map never publishes anything.
+    /// </summary>
+    /// <param name="carried">The code the last failure carries, or <see langword="null"/> when it carries none.</param>
+    /// <param name="read">The read of the block's last recorded cause.</param>
+    /// <returns>The code and the reason the output ends with.</returns>
+    public static async Task<(string Code, string? Reason)> ExhaustionAsync(
+        string? carried,
+        Func<Task<LastAttemptCause?>> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+
+        // A refusal of the data or the template is deterministic: the same input reaches the
+        // same verdict, so it keeps its code, records no cause and reads none.
+        if (IsDeterministicRefusal(carried))
+        {
+            return (carried!, null);
+        }
+
+        var last = await read().ConfigureAwait(true);
+
+        // The carried code is read before the cause: an attempt that raised the timeout keeps
+        // it, and a failure with no code of its own is the timeout only when an attempt of the
+        // block recorded a deadline. Anything else is the generic code - a crash records
+        // nothing, so the absence of a row is the crash arm's whole signal.
+        var code = string.Equals(carried, RenderTimeout, StringComparison.Ordinal)
+            || AttemptCauseVocabulary.IsDeadline(last?.Cause)
+                ? RenderTimeout
+                : ExecutionFailed;
+        return (code, AttemptCauseVocabulary.ReasonOf(last?.Cause));
+    }
+
+    /// <summary>Whether a carried code is one of the deterministic refusals.</summary>
+    /// <param name="carried">The carried error type, when the failure has one.</param>
+    /// <returns>Whether the code keeps itself without reading a cause.</returns>
+    private static bool IsDeterministicRefusal(string? carried) =>
+        carried is { Length: > 0 } code && DeterministicRefusals.Contains(code, StringComparer.Ordinal);
+
+    /// <summary>The code a failure's carried error type keeps, or the generic code.</summary>
+    /// <param name="carried">The carried error type, when the failure has one.</param>
+    /// <returns>The code to end the output with.</returns>
+    private static string CodeOf(string? carried) =>
+        carried is { Length: > 0 } code && DomainCodes.Contains(code) ? code : ExecutionFailed;
 
     /// <summary>
     /// The code an output ends with for a failure: the failure's own code when it is one of
@@ -109,7 +187,11 @@ public sealed class ReportPdfOutputWorkflow
         "EXECUTION_FAILED",
     };
 
-    private static async Task FailTheOutputAsync(ReportPdfOutputInput input, string code, ActivityOptions options)
+    private static async Task FailTheOutputAsync(
+        ReportPdfOutputInput input,
+        string code,
+        string? reason,
+        ActivityOptions options)
     {
         Workflow.Logger.LogWarning(
             "Output {OutputId} ended with {ErrorCode}",
@@ -118,7 +200,7 @@ public sealed class ReportPdfOutputWorkflow
 
         await Workflow.ExecuteActivityAsync(
             (JobTransitionActivities activities) => activities.FailOutputAsync(
-                new FailOutputInput(input.OutputId, code, Reason: null)),
+                new FailOutputInput(input.OutputId, code, reason)),
             options).ConfigureAwait(true);
     }
 }

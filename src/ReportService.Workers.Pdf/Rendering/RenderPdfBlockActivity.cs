@@ -293,10 +293,10 @@ public sealed class RenderPdfBlockActivity(
             catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.RenderTimeout, StringComparison.Ordinal))
             {
                 // The composition passed its 60 s deadline. The guard's timeout is retryable -
-                // ADR-022 counts it against the block's three attempts, so a deterministic
-                // runaway template cannot restart workers indefinitely - and the cause is
-                // recorded here, at the activity boundary, where the store is reachable: the
-                // template library keeps no store dependency.
+                // it is counted against the block's three attempts, so a deterministic runaway
+                // template cannot restart workers indefinitely - and the cause is recorded here,
+                // at the activity boundary, where the store is reachable: the template library
+                // keeps no store dependency.
                 logger.LogWarning(
                     "Block {BlockIndex} of output {OutputId} not printed: the composition passed its deadline",
                     input.BlockIndex,
@@ -445,7 +445,7 @@ public sealed class RenderPdfBlockActivity(
         }
     }
 
-    // The four phases and the verdict of one render, as §11 names them: the durations of the
+    // The four phases and the verdict of one render, in one place: the durations of the
     // composition, the print, the verification and the store, the outcome with its class, the
     // pages the block holds, and the requests the document made that were aborted.
     private void RecordTheRender(BlockRenderOutcome outcome)
