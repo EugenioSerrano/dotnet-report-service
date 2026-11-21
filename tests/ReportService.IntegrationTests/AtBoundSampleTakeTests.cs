@@ -241,9 +241,9 @@ public sealed class AtBoundSampleTakeTests : IClassFixture<PostgresFixture>, IAs
         var cancellationToken = TestContext.Current.CancellationToken;
         var package = AtBoundFixtures.Package();
         package["html/row.html.sbn"] = Encoding.UTF8.GetBytes(
-            "<tr><td class=\"seq\">{{ item.sequence }}</td>"
+            "<tr><td class=\"seq\">{{ item.sequence | html.escape }}</td>"
             + "<td class=\"cell\"><div class=\"clip\">{{ item.description | html.escape }}</div></td>"
-            + "<td class=\"amount\">{{ item.amount }}</td></tr>");
+            + "<td class=\"amount\">{{ item.amount | html.escape }}</td></tr>");
         package["html/styles.css"] = Encoding.UTF8.GetBytes(
             Encoding.UTF8.GetString(package["html/styles.css"]) + " div.clip { height: 40mm; overflow: hidden; } ");
         await PublishAsync("1.0.1", package, cancellationToken);
@@ -461,9 +461,9 @@ public sealed class AtBoundSampleJointGroupTests : IClassFixture<PostgresFixture
 
         var clipping = AtBoundFixtures.Package();
         clipping["html/row.html.sbn"] = Encoding.UTF8.GetBytes(
-            "<tr><td class=\"seq\">{{ item.sequence }}</td>"
+            "<tr><td class=\"seq\">{{ item.sequence | html.escape }}</td>"
             + "<td class=\"cell\"><div class=\"clip\">{{ item.description | html.escape }}</div></td>"
-            + "<td class=\"amount\">{{ item.amount }}</td></tr>");
+            + "<td class=\"amount\">{{ item.amount | html.escape }}</td></tr>");
         clipping["html/styles.css"] = Encoding.UTF8.GetBytes(
             Encoding.UTF8.GetString(clipping["html/styles.css"]) + " div.clip { height: 40mm; overflow: hidden; } ");
         await rig.Source.PublishAsync(Template, "1.0.0", Relabel(AtBoundFixtures.Package(), "1.0.0"));
