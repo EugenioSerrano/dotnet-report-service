@@ -15,14 +15,14 @@ public sealed class PackageManifestsTests
 {
     private const string SimpleSample = "pilot-simple";
 
-    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
+    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Templates");
 
     private static string SamplesDirectory => Path.Combine(RepositoryPaths.Root, "samples", "templates");
 
-    private static string SameReportDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+    private static string SameReportDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "TemplatePackages", "same-report");
 
-    private static string SampleGateDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
-    private static string CorpusDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "VerificationLoss", "packages");
+    private static string SampleGateDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "TemplatePackages", "sample-gate");
+    private static string CorpusDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "VerificationLoss", "packages");
 
     private static IReadOnlyList<string> SameReportIds =>
         [.. Directory.GetDirectories(SameReportDirectory)

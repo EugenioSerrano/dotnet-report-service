@@ -8,49 +8,71 @@
     <Project Path="samples/datasets/ReportService.Samples.DatasetGenerator/ReportService.Samples.DatasetGenerator.csproj" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
-    <Project Path="src/ReportService.Data/ReportService.Data.csproj" />
-    <Project Path="src/ReportService.DataContract/ReportService.DataContract.csproj" />
-    <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
-    <Project Path="src/ReportService.Jobs/ReportService.Jobs.csproj" />
-    <Project Path="src/ReportService.Migrations/ReportService.Migrations.csproj" />
-    <Project Path="src/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
-    <Project Path="src/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
-    <Project Path="src/ReportService.ServiceDefaults.Temporal/ReportService.ServiceDefaults.Temporal.csproj" />
-    <Project Path="src/ReportService.Storage.Filesystem/ReportService.Storage.Filesystem.csproj" />
-    <Project Path="src/ReportService.Uploads/ReportService.Uploads.csproj" />
-    <Project Path="src/ReportService.Storage/ReportService.Storage.csproj" />
-    <Project Path="src/ReportService.Templates/ReportService.Templates.csproj" />
-    <Project Path="src/ReportService.Rendering/ReportService.Rendering.csproj" />
-    <Project Path="src/ReportService.TemplateChecks/ReportService.TemplateChecks.csproj" />
-    <Project Path="src/ReportService.TemplatePackages/ReportService.TemplatePackages.csproj" />
-    <Project Path="src/ReportService.TemplateSource/ReportService.TemplateSource.csproj" />
-    <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
-    <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
-    <Project Path="src/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/ReportService.Api/ReportService.Api.csproj" />
+    <Project Path="src/Hosts/ReportService.AppHost/ReportService.AppHost.csproj" />
+    <Project Path="src/Hosts/ReportService.Migrations/ReportService.Migrations.csproj" />
+    <Project Path="src/Hosts/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
+    <Project Path="src/Hosts/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
+    <Project Path="src/Hosts/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
+  </Folder>
+  <Folder Name="/src/Platform/">
+    <Project Path="src/Platform/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
+    <Project Path="src/Platform/ReportService.ServiceDefaults.Temporal/ReportService.ServiceDefaults.Temporal.csproj" />
+    <Project Path="src/Platform/ReportService.Storage/ReportService.Storage.csproj" />
+    <Project Path="src/Platform/ReportService.Storage.Filesystem/ReportService.Storage.Filesystem.csproj" />
+  </Folder>
+  <Folder Name="/src/Jobs/">
+    <Project Path="src/Jobs/ReportService.Data/ReportService.Data.csproj" />
+    <Project Path="src/Jobs/ReportService.DataContract/ReportService.DataContract.csproj" />
+    <Project Path="src/Jobs/ReportService.Jobs/ReportService.Jobs.csproj" />
+    <Project Path="src/Jobs/ReportService.Uploads/ReportService.Uploads.csproj" />
+  </Folder>
+  <Folder Name="/src/Templates/">
+    <Project Path="src/Templates/ReportService.TemplateChecks/ReportService.TemplateChecks.csproj" />
+    <Project Path="src/Templates/ReportService.TemplatePackages/ReportService.TemplatePackages.csproj" />
+    <Project Path="src/Templates/ReportService.TemplateSource/ReportService.TemplateSource.csproj" />
+    <Project Path="src/Templates/ReportService.Templates/ReportService.Templates.csproj" />
+  </Folder>
+  <Folder Name="/src/Pdf/">
+    <Project Path="src/Pdf/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
+    <Project Path="src/Pdf/ReportService.Rendering/ReportService.Rendering.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
-    <Project Path="tests/ReportService.Data.Tests/ReportService.Data.Tests.csproj" />
-    <Project Path="tests/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj" />
     <Project Path="tests/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj" />
-    <Project Path="tests/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj" />
-    <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.PdfOracle/ReportService.PdfOracle.csproj" />
     <Project Path="tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj" />
-    <Project Path="tests/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
-    <Project Path="tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj" />
-    <Project Path="tests/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
     <Project Path="tests/ReportService.RenderingHost/ReportService.RenderingHost.csproj" />
     <Project Path="tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj" />
-    <Project Path="tests/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
-    <Project Path="tests/ReportService.TemplateChecks.Tests/ReportService.TemplateChecks.Tests.csproj" />
-    <Project Path="tests/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj" />
-    <Project Path="tests/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj" />
-    <Project Path="tests/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj" />
-    <Project Path="tests/ReportService.Testing/ReportService.Testing.csproj" />
-    <Project Path="tests/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
-    <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
-    <Project Path="tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Hosts/">
+    <Project Path="tests/Hosts/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
+    <Project Path="tests/Hosts/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
+    <Project Path="tests/Hosts/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
+    <Project Path="tests/Hosts/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Platform/">
+    <Project Path="tests/Platform/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Jobs/">
+    <Project Path="tests/Jobs/ReportService.Data.Tests/ReportService.Data.Tests.csproj" />
+    <Project Path="tests/Jobs/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj" />
+    <Project Path="tests/Jobs/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj" />
+    <Project Path="tests/Jobs/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Templates/">
+    <Project Path="tests/Templates/ReportService.TemplateChecks.Tests/ReportService.TemplateChecks.Tests.csproj" />
+    <Project Path="tests/Templates/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj" />
+    <Project Path="tests/Templates/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj" />
+    <Project Path="tests/Templates/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Pdf/">
+    <Project Path="tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Support/">
+    <Project Path="tests/Support/ReportService.Testing/ReportService.Testing.csproj" />
   </Folder>
 </Solution>

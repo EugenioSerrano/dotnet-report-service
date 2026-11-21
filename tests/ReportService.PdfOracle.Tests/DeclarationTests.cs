@@ -161,8 +161,8 @@ public sealed class DeclarationTests
     private static string Number(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string PackagePath(string id) =>
-        Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates", id);
+        Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Templates", id);
 
     private static string DeclarationPath(string id) =>
-        Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "OracleExpectations", id + ".json");
+        Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "OracleExpectations", id + ".json");
 }

@@ -8,7 +8,7 @@ using Microsoft.Playwright;
 using ReportService.Data;
 using ReportService.Rendering;
 using ReportService.Pdf.Verification;
-using ReportService.ServiceDefaults.Telemetry;
+using ReportService.ServiceDefaults;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplateSource.Manifest;

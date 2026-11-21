@@ -57,16 +57,16 @@ public sealed class RenderingSuite : IAsyncLifetime
     public string PackagesDirectory => Path.Combine(root, "packages");
 
     /// <summary>The two template packages the suite prints.</summary>
-    public static string TemplatesDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "Templates");
+    public static string TemplatesDirectory => Path.Combine(RepositoryRoot, "tests", "Support", "ReportService.Testing", "Templates");
 
     /// <summary>The sample packages the repository ships, as the folders a consumer copies.</summary>
     public static string SamplesDirectory => Path.Combine(RepositoryRoot, "samples", "templates");
 
     /// <summary>The one report in five versions: three engines in the base locale and two locale variants.</summary>
-    public static string SameReportDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+    public static string SameReportDirectory => Path.Combine(RepositoryRoot, "tests", "Support", "ReportService.Testing", "TemplatePackages", "same-report");
 
     /// <summary>The takeable family the sample-render evidence prints: three versions, one engine each.</summary>
-    public static string SampleGateDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+    public static string SampleGateDirectory => Path.Combine(RepositoryRoot, "tests", "Support", "ReportService.Testing", "TemplatePackages", "sample-gate");
 
     /// <summary>The folder under the fixtures directory the verification-loss snapshots are written to.</summary>
     public const string CorpusFixtureFolder = "corpus";
@@ -85,7 +85,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     public static IReadOnlyList<string> SampleGateEnginePackages => ["sample-gate-1.0.0", "sample-gate-1.1.0", "sample-gate-1.2.0"];
 
     /// <summary>The declarations of the two packages.</summary>
-    public static string ExpectationsDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "OracleExpectations");
+    public static string ExpectationsDirectory => Path.Combine(RepositoryRoot, "tests", "Support", "ReportService.Testing", "OracleExpectations");
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()

@@ -19,9 +19,9 @@ public sealed partial class PageFramePackageTests
         ("manifests/letter-landscape.yaml", "page-frame-letter-landscape"),
     ];
 
-    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
+    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Templates");
 
-    private static string ExpectationsDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "OracleExpectations");
+    private static string ExpectationsDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "OracleExpectations");
 
     private static string PackageFolder => Path.Combine(TemplatesDirectory, "page-frame");
 

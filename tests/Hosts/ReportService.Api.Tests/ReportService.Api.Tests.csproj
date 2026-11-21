@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Unit and component tests of ReportService.Api. Hermetic: no container, no network. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Api\ReportService.Api.csproj" />
+    <!-- The engine connection shared by the workers is tested here too; the API itself never references it. -->
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

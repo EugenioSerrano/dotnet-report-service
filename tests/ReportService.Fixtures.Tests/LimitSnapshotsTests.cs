@@ -87,7 +87,7 @@ public sealed class LimitSnapshotsTests
     }
 
     private static string SumsPath() =>
-        Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Limits", LimitSnapshots.SumsFileName);
+        Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Limits", LimitSnapshots.SumsFileName);
 
     private static int RecordCount(byte[] document)
     {

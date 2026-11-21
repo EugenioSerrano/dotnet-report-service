@@ -21,7 +21,7 @@ public sealed class TestTemplatePackageTests
         "$.amount",
     ];
 
-    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "Templates");
+    private static string TemplatesDirectory => Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Templates");
 
     private static string Folder(string id) => Path.Combine(TemplatesDirectory, id);
 
@@ -155,7 +155,7 @@ public sealed class SampleGatePackageTests
     ];
 
     private static string Family => Path.Combine(
-        RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+        RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "TemplatePackages", "sample-gate");
 
     [Fact]
     public void TheFamilyHoldsTheThreeVersionsTheTakeSeeds()
@@ -222,7 +222,7 @@ public sealed class SampleGatePackageTests
     public void TheDeliveredSameReportFamilyIsUntouched()
     {
         var sameReport = Path.Combine(
-            RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
+            RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "TemplatePackages", "same-report");
 
         foreach (var version in Directory.GetDirectories(sameReport))
         {

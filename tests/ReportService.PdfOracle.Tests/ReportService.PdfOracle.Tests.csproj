@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ReportService.PdfOracle\ReportService.PdfOracle.csproj" />
-    <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+    <ProjectReference Include="..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 
 </Project>

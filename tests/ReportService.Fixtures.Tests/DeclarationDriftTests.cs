@@ -18,8 +18,8 @@ public sealed class DeclarationDriftTests
     /// <summary>Every declaration and the package it declares, by the package's id.</summary>
     public static TheoryData<string, string> Declarations { get; } = new()
     {
-        { "integrity-table", Path.Combine("tests", "ReportService.Testing", "Templates", "integrity-table") },
-        { "integrity-grid", Path.Combine("tests", "ReportService.Testing", "Templates", "integrity-grid") },
+        { "integrity-table", Path.Combine("tests", "Support", "ReportService.Testing", "Templates", "integrity-table") },
+        { "integrity-grid", Path.Combine("tests", "Support", "ReportService.Testing", "Templates", "integrity-grid") },
         { "pilot-simple", Path.Combine("samples", "templates", "pilot-simple") },
     };
 
@@ -90,7 +90,7 @@ public sealed class DeclarationDriftTests
 
     private static ExpectationDocument Load(string id) =>
         ExpectationDocument.Load(Path.Combine(
-            RepositoryPaths.Root, "tests", "ReportService.Testing", "OracleExpectations", id + ".json"));
+            RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "OracleExpectations", id + ".json"));
 
     private static string Number(double value) =>
         value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);

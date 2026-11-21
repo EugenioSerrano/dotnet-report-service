@@ -31,7 +31,7 @@
       read here with System.Text.Json, so the project pulls in no container helper
       and runs with the SDK alone.
     -->
-    <ProjectReference Include="..\..\..\src\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>
 
   <ItemGroup>

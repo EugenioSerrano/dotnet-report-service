@@ -16,7 +16,7 @@ namespace ReportService.Fixtures.Tests;
 public sealed class VerificationLossCorpusTests
 {
     private static string CorpusDirectory =>
-        Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "VerificationLoss");
+        Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "VerificationLoss");
 
     private static string SnapshotsDirectory => Path.Combine(CorpusDirectory, "snapshots");
 
