@@ -489,7 +489,12 @@ public sealed class RenderingSuite : IAsyncLifetime
             result.GetProperty("failureReason").GetString(),
             result.GetProperty("htmlSha256").GetString(),
             result.GetProperty("pages").GetInt32(),
-            result.GetProperty("htmlBytes").GetInt64());
+            result.GetProperty("htmlBytes").GetInt64(),
+            result.GetProperty("pdfBytes").GetInt64(),
+            result.GetProperty("words").GetInt32(),
+            result.GetProperty("composeMs").GetDouble(),
+            result.GetProperty("printMs").GetDouble(),
+            result.GetProperty("verifyMs").GetDouble());
     }
 
     private static void CopyFolder(string source, string target)
@@ -610,6 +615,11 @@ public sealed class RenderingSuite : IAsyncLifetime
 /// <param name="HtmlSha256">The SHA-256 of the composed HTML, when it rendered.</param>
 /// <param name="Pages">How many pages the printed sample holds.</param>
 /// <param name="HtmlBytes">The size of the composed HTML.</param>
+/// <param name="PdfBytes">The size of the printed document.</param>
+/// <param name="Words">How many words the printed document holds.</param>
+/// <param name="ComposeMs">How long composing took, both compositions included.</param>
+/// <param name="PrintMs">How long printing took.</param>
+/// <param name="VerifyMs">How long verifying took.</param>
 public sealed record SampleRenderOutcome(
     string Outcome,
     string? FailureKind,
@@ -617,7 +627,12 @@ public sealed record SampleRenderOutcome(
     string? FailureReason,
     string? HtmlSha256,
     int Pages,
-    long HtmlBytes);
+    long HtmlBytes,
+    long PdfBytes,
+    int Words,
+    double ComposeMs,
+    double PrintMs,
+    double VerifyMs);
 
 /// <summary>One printed document: what it was rendered from and where it is.</summary>
 /// <param name="Fixture">The fixture the block was read from.</param>

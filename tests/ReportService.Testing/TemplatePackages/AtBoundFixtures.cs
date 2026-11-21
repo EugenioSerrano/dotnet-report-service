@@ -3,13 +3,19 @@ using System.Text;
 namespace ReportService.Testing.TemplatePackages;
 
 /// <summary>
-/// The at-bound controls: one report written in test support whose record schema leaves
-/// one string position unbounded, whose manifest declares that field as an item anchor,
-/// whose stylesheet names the family the report is measured with and whose page totals
-/// are declared off, so the take admits it and the at-bound gate has a position to run
-/// on. Every shape case is this control with its record schema - and, where a case needs
-/// it, its sample - mutated; no shipped pilot is edited, and no file of the fixture
-/// library changes.
+/// The at-bound controls: one report written in test support whose PDF body is table
+/// markup, whose record schema leaves one string position unbounded, whose manifest
+/// declares that field as an item anchor, whose stylesheet names the family the report is
+/// measured with and whose page totals are declared off, so the take admits it and the
+/// at-bound gate has a position to run on. Every shape case is this control with its
+/// record schema - and, where a case needs it, its sample - mutated; no shipped pilot is
+/// edited, and no file of the fixture library changes.
+/// <para>
+/// The row prints the record's key and amount beside the measured text, and the document
+/// starts a table whose column captions name those three cells: the printed page is then
+/// readable by the independent judge as well as by the product's own verification, and a
+/// row at the bound fragments across the pages as a table row does.
+/// </para>
 /// </summary>
 public static class AtBoundFixtures
 {
@@ -69,9 +75,9 @@ public static class AtBoundFixtures
         """{ "contractVersion": "1.0", "header": """ + Header + ", \"items\": [" + string.Join(", ", records) + "] }";
 
     /// <summary>The manifest the control declares, with the anchored item field a case needs.</summary>
-    /// <param name="itemAnchor">The field path the manifest declares as an item anchor.</param>
+    /// <param name="itemAnchor">The field path the manifest declares as an item anchor, or null to declare none.</param>
     /// <param name="withPdf">Whether the version declares a PDF output.</param>
-    public static string Manifest(string itemAnchor = "$.description", bool withPdf = true)
+    public static string Manifest(string? itemAnchor = "$.description", bool withPdf = true)
     {
         var manifest = """
             manifestVersion: "1.0"
@@ -81,6 +87,9 @@ public static class AtBoundFixtures
             shared: false
             engine: scriban
             engineVersion: "7.5.1"
+            localeDefaults:
+              culture: es-AR
+              timeZone: America/Argentina/Buenos_Aires
             dataContract:
               version: "1.0"
               profile: header-items-v1
@@ -111,10 +120,13 @@ public static class AtBoundFixtures
                 verification:
                   anchors:
                     header: ["$.title"]
-                    item: ["__ANCHOR__"]
+                    item: [__ANCHOR__]
             """;
 
-        return manifest + "\n" + pdf.Replace("__ANCHOR__", itemAnchor, StringComparison.Ordinal) + "\n";
+        return manifest + "\n" + pdf.Replace(
+            "__ANCHOR__",
+            itemAnchor is null ? string.Empty : "\"" + itemAnchor + "\"",
+            StringComparison.Ordinal) + "\n";
     }
 
     /// <summary>The package's files, by package-relative path.</summary>
@@ -125,7 +137,7 @@ public static class AtBoundFixtures
     public static Dictionary<string, byte[]> Package(
         string? recordSchema = null,
         string[]? records = null,
-        string itemAnchor = "$.description",
+        string? itemAnchor = "$.description",
         bool withPdf = true)
     {
         var schema = recordSchema ?? ControlRecordSchema;
@@ -140,10 +152,22 @@ public static class AtBoundFixtures
             ["template.yaml"] = Encoding.UTF8.GetBytes(Manifest(itemAnchor, withPdf)),
             ["schema.json"] = Encoding.UTF8.GetBytes(Schema(schema)),
             ["sample.json"] = Encoding.UTF8.GetBytes(sample),
-            ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes("<html><body><h1>{{ header.title | html.escape }}</h1>"),
-            ["html/row.html.sbn"] = Encoding.UTF8.GetBytes("<tr><td class=\"cell\">{{ item.description | html.escape }}</td></tr>"),
-            ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</body></html>"),
-            ["html/styles.css"] = Encoding.UTF8.GetBytes("body { font-family: \"Liberation Sans\", sans-serif; } .cell { font-family: \"Liberation Sans\", sans-serif; }"),
+            ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes(
+                "<html><head><meta charset=\"utf-8\"><link rel=\"stylesheet\" href=\"html/styles.css\"></head><body>"
+                + "<h1>{{ header.title | html.escape }}</h1>"
+                + "<table class=\"detail\"><colgroup><col class=\"col-seq\"><col class=\"col-description\"><col class=\"col-amount\"></colgroup>"
+                + "<thead><tr><th class=\"seq\">Seq</th><th class=\"description\">Description</th><th class=\"amount\">Amount</th></tr></thead><tbody>"),
+            ["html/row.html.sbn"] = Encoding.UTF8.GetBytes(
+                "<tr><td class=\"seq\">{{ item.sequence }}</td><td class=\"cell\">{{ item.description | html.escape }}</td><td class=\"amount\">{{ item.amount }}</td></tr>"),
+            ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</tbody></table></body></html>"),
+            ["html/styles.css"] = Encoding.UTF8.GetBytes(
+                "body { margin: 0; color: #222; font-family: \"Liberation Sans\", sans-serif; font-size: 9pt; } "
+                + "table.detail { width: 100%; border-collapse: collapse; table-layout: fixed; } "
+                + "table.detail thead { display: table-header-group; } "
+                + "table.detail col.col-seq { width: 18mm; } "
+                + "table.detail col.col-description { width: 138mm; } "
+                + "table.detail col.col-amount { width: 30mm; } "
+                + "table.detail th, table.detail td { font-family: \"Liberation Sans\", sans-serif; padding: 2pt 4pt; text-align: left; vertical-align: top; } "),
         };
     }
 }
