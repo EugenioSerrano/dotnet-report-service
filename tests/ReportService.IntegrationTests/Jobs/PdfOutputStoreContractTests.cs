@@ -196,6 +196,67 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
         Assert.Null(state.Job.ErrorReason);
     }
 
+    [Fact]
+    public async Task AnOutputThatFailedIsNeverPublishedAndNothingIsWritten()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+        await Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            OutputFailureOutcome.Applied,
+            await Jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+
+        // The refusal of the block is durable: a publication attempted afterwards is refused by
+        // the same transaction that checks the output's state, and it writes no artifact.
+        var refused = await Jobs.PublishAsync(ArtifactOf(acceptance), cancellationToken);
+
+        Assert.Equal(PublishOutcome.GuardRefused, refused.Outcome);
+        Assert.Null(refused.ArtifactId);
+        Assert.Equal(0L, await CountAsync("artifacts", acceptance.ReportJobId, cancellationToken));
+        Assert.Null(await Jobs.FindArtifactAsync(acceptance.ReportJobId, "artifact-" + new string('0', 32), Consumer, cancellationToken));
+    }
+
+    [Fact]
+    public async Task APartCommitForAnOutputThatFailedIsRefusedAndInsertsNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+        await Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            OutputFailureOutcome.Applied,
+            await Jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+
+        var refused = await Jobs.CommitPartAsync(PartOf(acceptance), cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.GuardRefused, refused.Outcome);
+        Assert.Null(refused.Existing);
+        Assert.Equal(0L, await CountPartsAsync(acceptance.OutputId, cancellationToken));
+        Assert.Null(await Jobs.FindPartAsync(acceptance.OutputId, 0, cancellationToken));
+    }
+
+    [Fact]
+    public async Task ASecondCommitOfTheSameBlockKeepsTheFirstOneAndInsertsNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+        await Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+
+        var first = await Jobs.CommitPartAsync(PartOf(acceptance), cancellationToken);
+        var second = await Jobs.CommitPartAsync(
+            PartOf(acceptance) with
+            {
+                ObjectKey = $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/second-attempt",
+                Sha256 = new string('d', 64),
+            },
+            cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.Committed, first.Outcome);
+        Assert.Equal(PartCommitOutcome.AlreadyCommitted, second.Outcome);
+        Assert.Equal(first.Existing!.ObjectKey, second.Existing!.ObjectKey);
+        Assert.Equal(first.Existing.Sha256, second.Existing.Sha256);
+        Assert.Equal(1L, await CountPartsAsync(acceptance.OutputId, cancellationToken));
+    }
+
     private ArtifactRecord ArtifactOf(JobAcceptance acceptance, string? artifactId = null) => new(
         artifactId ?? "artifact-" + new string('0', 32),
         acceptance.ReportJobId,
@@ -208,6 +269,25 @@ public sealed class PdfOutputStoreContractTests : IClassFixture<PostgresFixture>
         3,
         Now,
         Now.AddDays(7));
+
+    private PartCommit PartOf(JobAcceptance acceptance) => new(
+        acceptance.OutputId,
+        0,
+        $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+        Hash,
+        2_048,
+        3,
+        Hash,
+        Now);
+
+    private async Task<long> CountPartsAsync(string outputId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM report_service.pdf_part_commits WHERE output_id = @OutputId",
+            new { OutputId = outputId },
+            cancellationToken: cancellationToken));
+    }
 
     private async Task<long> CountAsync(string table, string reportJobId, CancellationToken cancellationToken)
     {

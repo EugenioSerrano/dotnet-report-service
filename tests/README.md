@@ -19,7 +19,7 @@ failed.
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
 | **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly) | nothing outside the test process; files only under a temporary directory unique to each test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
-| **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
+| **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 | **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
@@ -37,7 +37,11 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   local development registry and BuildKit, see the
   [README](../README.md)). Their tests are compiled and checked with every
   change, and run in a separate integration cycle against the real
-  dependencies.
+  dependencies. The **integration** level also needs the local development
+  registry `localhost:5055` and the PDF base image: the template source's
+  startup class publishes the render worker image from the render worker's
+  entry project on that base and runs it. A level without them fails naming
+  the prerequisite.
 - The runner's `integration` command is the supported entry point for the
   integration level, because it switches off the Testcontainers resource
   reaper (the tests remove their own containers); running the project
@@ -64,7 +68,11 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   fixture library with the product composer and printer and reads every document
   with the judge. It needs the local development registry and the PDF base image;
   the runner prepares both, like the end-to-end level. It takes no
-  `--without-printing`, because every document it runs is printed.
+  `--without-printing`, because every document it runs is printed. The
+  verification-loss corpus is part of the tier: its three loss documents and its
+  honest document are printed with the corpus packages, and each reading is
+  asserted apart - the product's one reason and the judge's class set - beside the
+  supplementary template-authored control that carries the blank trailing page.
   Its **`engines` tier** (`[Trait("Tier", "engines")]`) prints one report in three
   template versions, one per engine, under three locale settings: the three
   composed documents are byte-identical **under the `es-AR` ambient culture and
@@ -149,6 +157,11 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   run and are never part of the repository;
 - `render-worker-image.log` — the console output of the end-to-end level's one
   image-preparation step, which runs before the tests start;
+- `render-worker-startup-image.log` — the console output of the integration
+  level's one publication of the render worker image for the template source's
+  startup cases, and `render-worker-refused-start.log` and
+  `render-worker-normal-start.log` — those two containers' logs, written by the
+  class that runs them;
 - `run.json` — the level, start and finish times, the product commit and
   whether the working tree was clean, the reference-environment revision, each
   project with its arguments and result (the end-to-end level lists its

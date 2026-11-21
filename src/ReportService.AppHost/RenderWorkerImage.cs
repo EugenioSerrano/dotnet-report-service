@@ -45,13 +45,13 @@ internal sealed record RenderWorkerImage(
         "application/vnd.docker.distribution.manifest.v2+json",
     ];
 
-    /// <summary>Reads the image names from the worker's project file.</summary>
+    /// <summary>Reads the image names from the render worker's entry project file.</summary>
     public static async Task<RenderWorkerImage> DescribeAsync(
         string appHostDirectory, CancellationToken cancellationToken = default)
     {
         var repositoryRoot = Path.GetFullPath(Path.Combine(appHostDirectory, "..", ".."));
         var workerProject = Path.Combine(
-            repositoryRoot, "src", "ReportService.Workers.Pdf", "ReportService.Workers.Pdf.csproj");
+            repositoryRoot, "src", "ReportService.Workers.Pdf.Entry", "ReportService.Workers.Pdf.Entry.csproj");
         var output = await RunAsync(
             repositoryRoot,
             "dotnet",
@@ -63,7 +63,7 @@ internal sealed record RenderWorkerImage(
         var properties = json.RootElement.GetProperty("Properties");
         string Read(string name) => properties.GetProperty(name).GetString() is { Length: > 0 } value
             ? value
-            : throw new InvalidOperationException($"The worker project does not define {name}.");
+            : throw new InvalidOperationException($"The render worker's entry project does not define {name}.");
         return new RenderWorkerImage(
             repositoryRoot,
             workerProject,

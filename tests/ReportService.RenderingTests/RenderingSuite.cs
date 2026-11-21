@@ -7,6 +7,7 @@ using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using ReportService.Testing;
 using ReportService.Testing.Fixtures;
+using ReportService.Testing.VerificationLoss;
 
 namespace ReportService.RenderingTests;
 
@@ -66,6 +67,13 @@ public sealed class RenderingSuite : IAsyncLifetime
 
     /// <summary>The takeable family the sample-render evidence prints: three versions, one engine each.</summary>
     public static string SampleGateDirectory => Path.Combine(RepositoryRoot, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+
+    /// <summary>The folder under the fixtures directory the verification-loss snapshots are written to.</summary>
+    public const string CorpusFixtureFolder = "corpus";
+
+    /// <summary>The fixture id the host and the judge are given for one corpus document.</summary>
+    /// <param name="document">The corpus document's identifier.</param>
+    public static string CorpusFixture(string document) => CorpusFixtureFolder + "/" + document;
 
     /// <summary>The three versions that print the one report in three engines, under the base locale.</summary>
     public static IReadOnlyList<string> SameReportEngines => ["same-report-1.0.0", "same-report-1.1.0", "same-report-1.2.0"];
@@ -302,16 +310,27 @@ public sealed class RenderingSuite : IAsyncLifetime
         static string? Text(JsonElement element, string name) =>
             element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
+        static string? Number(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+                ? "=" + value.GetRawText()
+                : null;
+
         return string.Join(
             " | ",
             new[]
             {
                 Text(failure, "rule"),
                 Text(failure, "class"),
+                Prefix("row", Number(failure, "row")),
+                Prefix("page", Number(failure, "page")),
                 Text(failure, "field"),
                 Text(failure, "detail"),
             }.Where(part => !string.IsNullOrEmpty(part)));
     }
+
+    // The failure's row and page are kept in the described form beside the rule and the
+    // class, so a case can name the record and the page a failure belongs to.
+    private static string? Prefix(string name, string? value) => value is null ? null : name + value;
 
     /// <summary>The words of a reading file, in the order the judge read them.</summary>
     public static IReadOnlyList<string> ReadingWords(string reading)
@@ -349,6 +368,10 @@ public sealed class RenderingSuite : IAsyncLifetime
 
         var generator = new FixtureGenerator(FixtureDataset.Load(dataset, Path.Combine(datasets, FixtureGenerator.SumsFileName)));
         generator.WriteFolder(FixturesDirectory);
+
+        // The verification-loss corpus keeps its own folder, with its own sums: the host reads a
+        // document by the path it is given, and the tier's other fixtures are the library's.
+        VerificationLossCorpus.WriteSnapshots(Path.Combine(FixturesDirectory, CorpusFixtureFolder));
     }
 
     // The packages the suite prints: the library's folders, one folder per page
@@ -403,6 +426,15 @@ public sealed class RenderingSuite : IAsyncLifetime
         foreach (var version in Directory.GetDirectories(SampleGateDirectory))
         {
             CopyFolder(version, Path.Combine(PackagesDirectory, "sample-gate-" + Path.GetFileName(version)));
+        }
+
+        // The verification-loss corpus packages are printed by this tier alone, and each keeps
+        // its own folder: the host composes a document from the package it is mounted under.
+        foreach (var package in new[] { VerificationLossCorpus.Template, VerificationLossCorpus.SupplementaryTemplate })
+        {
+            CopyFolder(
+                Path.Combine(VerificationLossCorpus.PackagesDirectory, package),
+                Path.Combine(PackagesDirectory, package));
         }
     }
 
