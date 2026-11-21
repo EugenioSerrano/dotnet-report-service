@@ -102,9 +102,10 @@ public sealed class ReportJobIdempotencyEndToEndTests : IDisposable
         Assert.Equal(ReportJobIdOf(otherBody), ReportJobIdOf(await otherRepeat.Content.ReadAsStringAsync(cancellationToken)));
 
         // The registration is recorded as a transcript of this run, the composition's own rows
-        // being the evidence: the first job, its one output and one reference, and two jobs.
+        // being the evidence: the first job with its own one output and one reference, and two
+        // jobs — the second is the other consumer's, and its acceptance writes an output too.
         Assert.Equal(2, await CountAsync(connectionString, "report_jobs", cancellationToken));
-        Assert.Equal(1, await CountAsync(connectionString, "report_outputs", cancellationToken));
+        Assert.Equal(1, await OutputsOfAsync(connectionString, reportJobId, cancellationToken));
     }
 
     private async Task<(DistributedApplication App, HttpClient Api)> StartAsync(CancellationToken cancellationToken)
@@ -231,6 +232,15 @@ public sealed class ReportJobIdempotencyEndToEndTests : IDisposable
         return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
             "SELECT count(*) FROM report_service.report_jobs WHERE consumer_id = @ConsumerId",
             new { ConsumerId = consumerId },
+            cancellationToken: cancellationToken));
+    }
+
+    private static async Task<long> OutputsOfAsync(string connectionString, string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM report_service.report_outputs WHERE report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken));
     }
 
