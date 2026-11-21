@@ -293,6 +293,102 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
         }
     }
 
+    /// <summary>
+    /// The lost-worker shape through the same engine: the render step fails with no code of its
+    /// own - the shape a worker that stopped produces - while a <c>watchdog-deadline</c> row
+    /// stands for the attempt the watchdog stopped. The child reads the cause and ends the output
+    /// with the timeout and the watchdog's token, publishing nothing.
+    /// </summary>
+    [Fact]
+    public async Task TheLostWorkerShapeEndsWithTheWatchdogCause()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await OpenAsync(cancellationToken);
+        var client = await TemporalClient.ConnectAsync(
+            new TemporalClientConnectOptions($"127.0.0.1:{_engine!.HostPort}") { Namespace = "default" });
+        var metrics = new OrchestrationMetrics(MeterIdentity.ForHost("integration-tests"));
+        var transitions = new JobTransitionActivities(_jobs!, TimeProvider.System, metrics, NullLoggerFactory.Instance, NullLogger<JobTransitionActivities>.Instance);
+        var outputs = new PdfOutputActivities(
+            _jobs!,
+            TimeProvider.System,
+            Options.Create(new RetentionOptions { Outputs = TimeSpan.FromHours(1) }),
+            NullLoggerFactory.Instance,
+            NullLogger<PdfOutputActivities>.Instance);
+
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var orchestration = new TemporalWorker(
+            client,
+            new TemporalWorkerOptions(ReportJobWorkflow.OrchestrationQueue)
+                .AddWorkflow<ReportPdfOutputWorkflow>()
+                .AddAllActivities(transitions)
+                .AddAllActivities(outputs)
+                .AddAllActivities(new AttemptCauseActivities(_jobs!)));
+        using var rendering = new TemporalWorker(
+            client,
+            new TemporalWorkerOptions(PdfOutputStepOptions.Queue)
+                .AddAllActivities(new LostWorkerRenderStep()));
+        var runs = new[] { orchestration.ExecuteAsync(stop.Token), rendering.ExecuteAsync(stop.Token) };
+
+        try
+        {
+            var acceptance = await AcceptedAsync(cancellationToken);
+            Assert.Equal(
+                AttemptCauseOutcome.Recorded,
+                await _jobs!.RecordAttemptCauseAsync(
+                    new AttemptCause(
+                        acceptance.OutputId,
+                        0,
+                        1,
+                        AttemptCauseVocabulary.WatchdogDeadline,
+                        Now),
+                    cancellationToken));
+
+            var handle = await client.StartWorkflowAsync(
+                (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                    new ReportPdfOutputInput(acceptance.ReportJobId, acceptance.OutputId)),
+                new WorkflowOptions
+                {
+                    Id = ReportPdfOutputWorkflow.WorkflowIdFor(acceptance.ReportJobId),
+                    TaskQueue = ReportJobWorkflow.OrchestrationQueue,
+                });
+            await handle.GetResultAsync().WaitAsync(Deadline, cancellationToken);
+
+            await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+            var row = await connection.QuerySingleAsync<OutputRow>(new CommandDefinition(
+                "SELECT status AS \"Status\", error_code AS \"ErrorCode\", error_reason AS \"ErrorReason\" FROM report_service.report_outputs WHERE output_id = @OutputId",
+                new { acceptance.OutputId },
+                cancellationToken: cancellationToken));
+            Assert.Equal("FAILED", row.Status);
+            Assert.Equal("RENDER_TIMEOUT", row.ErrorCode);
+            Assert.Equal("exhausted cause=watchdog-deadline", row.ErrorReason);
+
+            var history = await handle.FetchHistoryAsync(new WorkflowHistoryEventFetchOptions()).WaitAsync(cancellationToken);
+            Assert.Single(Activities(history, AttemptCauseActivities.FindLastAttemptCauseName));
+            var failure = Assert.Single(Activities(history, JobTransitionActivities.FailOutputName));
+            var input = failure.ActivityTaskScheduledEventAttributes.Input.Payloads_[0].Data.ToStringUtf8();
+            Assert.Contains(acceptance.OutputId, input, StringComparison.Ordinal);
+            Assert.Contains("RENDER_TIMEOUT", input, StringComparison.Ordinal);
+            Assert.Contains("exhausted cause=watchdog-deadline", input, StringComparison.Ordinal);
+            Assert.Empty(Activities(history, PdfOutputActivities.PublishOutputName));
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            foreach (var run in runs)
+            {
+                try
+                {
+                    await run;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Each worker ends by the stop this cleanup asks for, and only that
+                    // cancellation is swallowed: a fault of either worker still fails the test.
+                }
+            }
+        }
+    }
+
     private async Task OpenAsync(CancellationToken cancellationToken)
     {
         if (_engine is not null)
@@ -449,6 +545,20 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
             throw new ApplicationFailureException(
                 "RENDER_TIMEOUT reason=guard-deadline",
                 errorType: "RENDER_TIMEOUT",
+                nonRetryable: true);
+    }
+
+    /// <summary>
+    /// The block render of an attempt whose worker was lost: it fails with no code of its own -
+    /// the shape a stopped worker produces - which the child reads as the last failure after its
+    /// budget is spent.
+    /// </summary>
+    private sealed class LostWorkerRenderStep
+    {
+        [Activity(PdfOutputStepContracts.RenderPdfBlock)]
+        public Task<RenderPdfBlockStepResult> RenderPdfBlock(RenderPdfBlockStepInput input) =>
+            throw new ApplicationFailureException(
+                "the attempt's worker stopped",
                 nonRetryable: true);
     }
 }

@@ -104,9 +104,25 @@ public sealed class ReportPdfOutputWorkflow
                         new FindLastAttemptCauseInput(input.OutputId, 0)),
                     AttemptCauseActivities.Options())).ConfigureAwait(true);
 
-            await FailTheOutputAsync(input, code, reason, metadata).ConfigureAwait(true);
+            await FailTheOutputAsync(
+                input,
+                code,
+                reason,
+                AttemptsOf(carried),
+                metadata).ConfigureAwait(true);
         }
     }
+
+    /// <summary>
+    /// How many attempts the engine gave the block before the output ended: one when the failure
+    /// carries the code a non-retried step raises, and the policy's budget otherwise - a deadline
+    /// or a lost worker is retried to the last allowed attempt.
+    /// </summary>
+    /// <param name="carried">The code the last failure carries, or <see langword="null"/>.</param>
+    private static int AttemptsOf(string? carried) =>
+        string.Equals(carried, ExecutionFailed, StringComparison.Ordinal)
+            ? 1
+            : RenderPdfBlockStepOptions.MaximumAttempts;
 
     /// <summary>The code a carried failure keeps when the attempt that raised it hit the block's deadline.</summary>
     private const string RenderTimeout = "RENDER_TIMEOUT";
@@ -185,15 +201,23 @@ public sealed class ReportPdfOutputWorkflow
         ReportPdfOutputInput input,
         string code,
         string? reason,
+        int attempts,
         ActivityOptions options)
     {
-        Workflow.Logger.LogWarning(
-            "Block {BlockIndex} of output {OutputId} ended after {Attempts} attempts: {Code} ({Reason})",
-            0,
-            input.OutputId,
-            RenderPdfBlockStepOptions.MaximumAttempts,
-            code,
-            reason ?? AttemptCauseVocabulary.None);
+        // The exhaustion arm's line: an output that kept a reason exhausted its budget, while a
+        // deterministic refusal keeps its own code, records no reason and is one attempt - the
+        // line says nothing about it. The output has one block, and the child schedules block 0.
+        if (reason is not null)
+        {
+            Workflow.Logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} ended after {Attempts} attempts: {Code} ({Reason})",
+                0,
+                input.OutputId,
+                attempts,
+                code,
+                reason);
+        }
+
         Workflow.Logger.LogWarning(
             "Output {OutputId} ended with {ErrorCode}",
             input.OutputId,

@@ -63,6 +63,7 @@ public sealed class PdfRestartTests : IClassFixture<PostgresFixture>
         await rig.StartPdfAsync(cancellationToken);
         await rig.SeedTakenVersionAsync(PrintingRig.First, cancellationToken);
 
+        using var metrics = new MetricCapture();
         var jobId = await SubmitAsync(rig, PrintingRig.First, cancellationToken);
         var row = await rig.WaitForTerminalAsync(jobId, Terminal, cancellationToken);
 
@@ -85,6 +86,25 @@ public sealed class PdfRestartTests : IClassFixture<PostgresFixture>
         Assert.NotNull(cause);
         Assert.Equal(AttemptCauseVocabulary.GuardDeadline, cause!.Cause);
         await PdfRestartFacts.AssertInsideTheBound(child, cancellationToken);
+
+        // The observability the plan names, asserted here where the workers run in this process:
+        // the cause counter (one per attempt the guard ended), the retry counter (the two retries
+        // of the three attempts), the job's outcome, and the exhaustion arm's line.
+        Assert.True(
+            metrics.Count("reportservice.pdf.attempt.causes", ("cause", AttemptCauseVocabulary.GuardDeadline)) >= 3,
+            "the cause counter had to record one guard-deadline per attempt");
+        Assert.True(
+            metrics.Count("reportservice.activity.retries", ("queue", "report-pdf-rendering"), ("cause", "deadline")) >= 2,
+            "the retry counter had to record the two retries of the three attempts");
+        Assert.True(
+            metrics.Count("reportservice.job.outcomes", ("status", "FAILED"), ("code", "RENDER_TIMEOUT")) >= 1,
+            "the job's outcome had to be counted with its code");
+        Assert.Contains(
+            rig.Logs.Lines,
+            line => line.Contains("ended after 3 attempts: RENDER_TIMEOUT (exhausted cause=guard-deadline)", StringComparison.Ordinal));
+        Assert.Contains(
+            rig.Logs.Lines,
+            line => line.Contains("Output " + outputId + " ended with RENDER_TIMEOUT", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -114,6 +134,9 @@ public sealed class PdfRestartTests : IClassFixture<PostgresFixture>
         Assert.Equal(0, Scheduled(child, PdfRestartFacts.PublishOutput));
         Assert.Null(await rig.Jobs.FindLastAttemptCauseAsync(outputId, 0, cancellationToken));
         await PdfRestartFacts.AssertInsideTheBound(child, cancellationToken);
+        Assert.Contains(
+            rig.Logs.Lines,
+            line => line.Contains("Output " + outputId + " ended with PAGINATION_FAILED", StringComparison.Ordinal));
     }
 
     /// <summary>
