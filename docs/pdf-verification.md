@@ -106,6 +106,51 @@ refusals of a template the service cannot print, which end it with
 `UNSUPPORTED_CAPABILITY`, and a state the step cannot use, which ends it with
 `EXECUTION_FAILED`. None of them is retried.
 
+## When a document is refused
+
+A refused print never reaches a consumer. What the consumer is left with is a PDF
+output that ended `failed` with `PAGINATION_FAILED`, nothing to download, and a
+job that ended `failed` with the same code. No artifact and no part record exist,
+and nothing is written under the output's own prefix — a print that fails its
+checks writes nothing at all, whether it was stopped before it printed or after.
+A report that is refused is not retried with the same data: printing the same
+values again produces the same document and the same verdict.
+
+The service refuses a document when a record's row is missing or prints no text,
+when part of a value is lost, altered or repeated in print, when text appears
+that the data does not hold, and when a page is blank or missing. Three things it
+does not catch, and a producer should know them:
+
+- a value the template prints through a formatting function is compared as the
+  declared presentation produced it, never against the raw member string;
+- text a template prints only under a condition is not one of the declared
+  fields, so a row printed conditionally is not proven by the anchor check;
+- a character the browser does not paint inside a declared value fails the
+  document rather than disappearing silently: the refusal is deliberate, and a
+  visible character is what the template should print.
+
+One more refusal is not a defect of printing at all: when the bytes the object
+store holds are not the bytes that passed the checks, the block is refused too.
+That write happens before the comparison, so its object is left in storage as an
+unreferenced orphan and removed by the storage sweep, never by the refusal.
+
+## Reproducing a refusal locally
+
+The verification-loss corpus is a set of deterministic documents that a job can
+print and that the checks must refuse, together with one honest document that
+must pass. The rendering regression suite prints them with the product's own
+composer and printer, reads each one again with the independent judge, and
+asserts the two readings agree; the integration and end-to-end classes drive the
+same documents through a job and read the outcome from the database.
+
+```text
+dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering
+```
+
+The corpus lives at `tests/ReportService.Testing/VerificationLoss`; its snapshots
+are frozen by `SHA256SUMS` and its two packages are ordinary template packages,
+so a local template source can publish and take them like any other.
+
 ## The second box configuration is a diagnostic
 
 The reader was measured in two word configurations. The second one — a
@@ -123,7 +168,9 @@ The rendering regression suite prints the core set of documents with the
 product's own composer, printer and verification — and judges each of them again
 with an independent reader built from PDF text tools — and asserts that both
 readers agree on every document: every positive document passes both, every
-known-bad control fails both with its class.
+known-bad control fails both with its class. The verification-loss corpus is part
+of that set: its three loss documents must be refused by both readers and its
+honest document must pass both.
 
 ```text
 dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering

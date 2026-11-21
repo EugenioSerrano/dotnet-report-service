@@ -23,6 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contract can carry 256 KiB nowhere is taken, and so is one whose sample carries
   no detail record (its record is built from the contract). The check writes one
   `at-bound-sample` log line per take and never carries a value of the data.
+
+- A PDF report whose print is missing a record or part of its text is refused
+  before anything is published, and the refusal is proved through a job: the PDF
+  output and the job end `failed` with `PAGINATION_FAILED`, nothing is
+  downloadable, no part is recorded and no object is written under the output's
+  prefix. A block whose stored bytes are not the bytes that passed the checks is
+  refused the same way (`EXECUTION_FAILED`), leaving its object as an unreferenced
+  orphan for the storage sweep. The known-bad documents stay in the rendering
+  regression suite, where both readers must refuse them, and one honest document
+  proves the checks are not a refusal of correct reports.
+
 - A job request may carry an `Idempotency-Key` header: the key binds the job it creates
   to the consumer that sent it, and a request repeated with the same key is answered the
   first job - the same `202`, the same identifier, nothing written - instead of creating a

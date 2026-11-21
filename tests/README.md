@@ -68,7 +68,11 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   fixture library with the product composer and printer and reads every document
   with the judge. It needs the local development registry and the PDF base image;
   the runner prepares both, like the end-to-end level. It takes no
-  `--without-printing`, because every document it runs is printed.
+  `--without-printing`, because every document it runs is printed. The
+  verification-loss corpus is part of the tier: its three loss documents and its
+  honest document are printed with the corpus packages, and each reading is
+  asserted apart - the product's one reason and the judge's class set - beside the
+  supplementary template-authored control that carries the blank trailing page.
   Its **`engines` tier** (`[Trait("Tier", "engines")]`) prints one report in three
   template versions, one per engine, under three locale settings: the three
   composed documents are byte-identical **under the `es-AR` ambient culture and

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verification-loss dataset (header-items-v1)",
+  "description": "The data contract of the verification-loss corpus: the header-items-v1 envelope, the report title and customer id the document parts print, and the description each row prints.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "header",
+    "items"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "1.0"
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportTitle",
+        "customer"
+      ],
+      "properties": {
+        "reportTitle": {
+          "type": "string"
+        },
+        "customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "description"
+        ],
+        "properties": {
+          "sequence": {
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The record's own number as its token: an integer, or the empty token for a record that holds nothing printable."
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
