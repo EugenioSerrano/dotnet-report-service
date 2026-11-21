@@ -24,12 +24,12 @@ namespace ReportService.IntegrationTests.Uploads;
 /// and a server that stops answering is reported as a retryable condition, after
 /// which the same process creates the next session normally.
 /// </summary>
-public sealed class UploadApiDatabaseTests : IClassFixture<PostgresFixture>, IDisposable
+public sealed class UploadApiDatabaseTests : IClassFixture<DedicatedPostgresFixture>, IDisposable
 {
     private const string Consumer = "dev-consumer";
     private const string ValidBody = """{"profile":"header-items-v1","mode":"API_STREAM"}""";
 
-    private readonly PostgresFixture _fixture;
+    private readonly DedicatedPostgresFixture _fixture;
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-upload-it",
@@ -38,7 +38,7 @@ public sealed class UploadApiDatabaseTests : IClassFixture<PostgresFixture>, IDi
 
     /// <summary>Runs against the class's server.</summary>
     /// <param name="fixture">The container this class owns.</param>
-    public UploadApiDatabaseTests(PostgresFixture fixture)
+    public UploadApiDatabaseTests(DedicatedPostgresFixture fixture)
     {
         _fixture = fixture;
         Directory.CreateDirectory(_directory);

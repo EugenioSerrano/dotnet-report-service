@@ -22,10 +22,10 @@ namespace ReportService.IntegrationTests;
 /// back, refuses a changed or unknown entry, serialises two runners, and the
 /// readiness check follows the real journal through an outage and its recovery.
 /// </summary>
-public sealed class MetadataDatabaseTests(PostgresFixture server) : IClassFixture<PostgresFixture>
+public sealed class MetadataDatabaseTests(DedicatedPostgresFixture server) : IClassFixture<DedicatedPostgresFixture>
 {
     private const string Baseline = "0001_baseline.sql";
-    private const string Role = PostgresFixture.ApplicationRole;
+    private const string Role = DedicatedPostgresFixture.ApplicationRole;
 
     // The scripts the build ships, in name order: the journal of a fresh database carries exactly these.
     private static readonly IReadOnlyList<string> CatalogNames = [.. MigrationCatalog.Scripts.Select(script => script.Name)];

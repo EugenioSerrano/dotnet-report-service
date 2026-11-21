@@ -1,128 +1,76 @@
-using System.Globalization;
-using System.Security.Cryptography;
-using Dapper;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Npgsql;
-using ReportService.Testing;
+using ReportService.IntegrationTests.Shared;
 
 namespace ReportService.IntegrationTests;
 
 /// <summary>
-/// One PostgreSQL container for a test class, initialised with the repository's
-/// own application-role script, so the tests run as the same non-superuser role
-/// the composition uses. The fixture owns the container and removes it; every
-/// case asks for a database of its own.
+/// A per-class handle onto the run-level shared PostgreSQL server
+/// (<see cref="SharedPostgres"/>): the class keeps its per-test isolation — every case
+/// still asks for a database of its own, owned by the application role — but the server
+/// itself is started once per run and reused, not started per class. The databases this
+/// class created are dropped from the shared server at the class's teardown, so the
+/// server does not accumulate databases across the run.
+/// <para>
+/// This handle exposes only the per-test-safe surface (<see cref="CreateDatabaseAsync"/>,
+/// <see cref="Application"/>, <see cref="OpenAsync"/>). A class that must pause/unpause the
+/// server or read server-level catalogue state uses <see cref="DedicatedPostgresFixture"/>
+/// instead, which owns a container of its own.
+/// </para>
 /// </summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private const int ContainerPort = 5432;
-
-    private readonly PinnedImage _image = CompositionPins.Load().Database;
-    private readonly string _bootstrapPassword = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
-    private readonly string _rolePassword = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
-    private IContainer? _container;
-    private int _databases;
+    private readonly List<string> _databases = [];
+    private readonly Lock _gate = new();
+    private SharedPostgres _server = null!;
 
     /// <summary>The application role the init script creates.</summary>
-    public const string ApplicationRole = "reportservice";
+    public const string ApplicationRole = SharedPostgres.ApplicationRole;
 
-    /// <summary>The password of the application role, generated for this container.</summary>
-    public string RolePassword => _rolePassword;
+    private SharedPostgres Server =>
+        _server ?? throw new InvalidOperationException(
+            "The shared PostgreSQL server is not available. The assembly fixture "
+            + nameof(SharedPostgres) + " must be registered and initialised before any test class runs.");
 
-    /// <summary>The password of the server's bootstrap superuser, generated for this container.</summary>
-    public string BootstrapPassword => _bootstrapPassword;
-
-    /// <summary>The repository's init script.</summary>
-    public static string InitScriptPath =>
-        Path.Combine(RepositoryPaths.Root, "src", "ReportService.AppHost", "postgres-init", "10-application-role.sh");
-
-    /// <summary>The connection string of the server's bootstrap user, for creating a database and reading the catalog.</summary>
-    public string Bootstrap(string database = "postgres") =>
-        new NpgsqlConnectionStringBuilder
-        {
-            Host = _container!.Hostname,
-            Port = _container.GetMappedPublicPort(ContainerPort),
-            Username = "postgres",
-            Password = _bootstrapPassword,
-            Database = database,
-        }.ConnectionString;
-
-    /// <summary>The connection string of the application role on <paramref name="database"/>.</summary>
-    public string Application(string database) =>
-        new NpgsqlConnectionStringBuilder
-        {
-            Host = _container!.Hostname,
-            Port = _container.GetMappedPublicPort(ContainerPort),
-            Username = ApplicationRole,
-            Password = _rolePassword,
-            Database = database,
-        }.ConnectionString;
-
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        _container = ContainerSmoke.Builder(_image, "postgres-metadata")
-            .WithEnvironment("POSTGRES_PASSWORD", _bootstrapPassword)
-            .WithEnvironment("REPORTSERVICE_DB_PASSWORD", _rolePassword)
-            .WithResourceMapping(new FileInfo(InitScriptPath), "/docker-entrypoint-initdb.d/")
-            .WithPortBinding(ContainerPort, assignRandomHostPort: true)
-            .Build();
-        try
-        {
-            await ContainerSmoke.StartAsync(
-                _container,
-                _image,
-                token => ReportService.Testing.Wait.UntilAsync(
-                    $"PostgreSQL ({_image.Reference}) with the application role",
-                    async probeToken =>
-                    {
-                        await using var connection = new NpgsqlConnection(Bootstrap());
-                        await connection.OpenAsync(probeToken);
-                        return await connection.ExecuteScalarAsync<long>(
-                            new CommandDefinition("SELECT COUNT(*) FROM pg_roles WHERE rolname = @role", new { role = ApplicationRole }, cancellationToken: probeToken)) == 1;
-                    },
-                    TimeSpan.FromMinutes(2),
-                    TimeSpan.FromSeconds(1),
-                    token),
-                cancellationToken);
-        }
-        catch
-        {
-            _container = null;
-            throw;
-        }
+        _server = SharedPostgres.Current
+            ?? throw new InvalidOperationException(
+                "The shared PostgreSQL server has not been initialised. The assembly fixture "
+                + nameof(SharedPostgres) + " must run before the test classes.");
+        return ValueTask.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_container is not null)
+        string[] databases;
+        lock (_gate)
         {
-            await _container.DisposeAsync();
+            databases = [.. _databases];
+            _databases.Clear();
+        }
+
+        foreach (var database in databases)
+        {
+            await Server.DropDatabaseAsync(database, CancellationToken.None);
         }
     }
 
-    /// <summary>Creates a database of its own, owned by the application role, and returns its name.</summary>
+    /// <summary>The connection string of the application role on <paramref name="database"/>.</summary>
+    public string Application(string database) => Server.Application(database);
+
+    /// <summary>Creates a database of its own on the shared server, owned by the application role, and returns its name.</summary>
     public async Task<string> CreateDatabaseAsync(CancellationToken cancellationToken)
     {
-        var name = "metadata_it_" + Interlocked.Increment(ref _databases).ToString(CultureInfo.InvariantCulture);
-        await using var connection = new NpgsqlConnection(Bootstrap());
-        await connection.OpenAsync(cancellationToken);
-        await connection.ExecuteAsync(new CommandDefinition($"CREATE DATABASE \"{name}\" OWNER {ApplicationRole}", cancellationToken: cancellationToken));
+        var name = await Server.CreateDatabaseAsync(cancellationToken);
+        lock (_gate)
+        {
+            _databases.Add(name);
+        }
+
         return name;
     }
 
     /// <summary>Opens a connection as the application role on <paramref name="database"/>.</summary>
-    public async Task<NpgsqlConnection> OpenAsync(string database, CancellationToken cancellationToken)
-    {
-        var connection = new NpgsqlConnection(Application(database));
-        await connection.OpenAsync(cancellationToken);
-        return connection;
-    }
-
-    /// <summary>Stops answering without losing the container, so a client sees an unreachable server.</summary>
-    public Task PauseAsync(CancellationToken cancellationToken) => _container!.PauseAsync(cancellationToken);
-
-    /// <summary>Answers again, with the same container and its data.</summary>
-    public Task UnpauseAsync(CancellationToken cancellationToken) => _container!.UnpauseAsync(cancellationToken);
+    public Task<NpgsqlConnection> OpenAsync(string database, CancellationToken cancellationToken) =>
+        Server.OpenAsync(database, cancellationToken);
 }

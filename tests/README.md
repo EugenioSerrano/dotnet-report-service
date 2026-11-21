@@ -261,9 +261,42 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
 - **No automatic retries.** A test that passes only when re-run is a defect
   to fix, never something to re-run until green. Integration tests may poll a
   dependency until it is ready, within a deadline — never repeat an assertion.
-- **Every integration test class owns its containers** and removes them
-  through its own handles; nothing is pruned. Container names start with
-  `report-service-it-`.
+- **The integration suite shares one PostgreSQL server per run, with per-test
+  isolation preserved.** The PostgreSQL server is started once per run by an
+  assembly fixture (`Shared/SharedPostgres.cs`) and reused across the suite
+  through the per-class handle `PostgresFixture`; every case still asks for a
+  database of its own (`CreateDatabaseAsync`, owned by the `reportservice`
+  application role the repository's init script creates), and the databases a
+  class created are dropped from the shared server at the class's teardown, so
+  the server does not accumulate databases across the run. The server is removed
+  at the end of the run by the assembly fixture's own handle. Its
+  `max_connections` is raised on the shared container to cover the parallel peak
+  (the runner's `maxParallelThreads` classes each with its own database and
+  pool).
+  - **The classes that need a dedicated PostgreSQL container keep one**
+    (`DedicatedPostgresFixture`): the classes that pause/unpause the server or
+    read server-level catalogue state (`MetadataDatabaseTests`,
+    `Uploads/UploadApiDatabaseTests`) — a pause or a server-level read is visible
+    to every test on the same container, so they are never served by the shared
+    server. The shared handle deliberately does not expose pause/unpause.
+  - **Temporal is NOT shared** — each class that needs an engine starts its own
+    (`EngineStart`), as before. The worker task-queue names are constants reused
+    across the whole suite in the `default` namespace, so a shared engine's
+    workers would drain one another's tasks; per-test isolation could not be
+    proven without rewriting every worker host's namespace, so Temporal keeps its
+    per-class engine (the safe outcome; isolation is never traded for speed).
+  - **Valkey** (one reachability-smoke class) and the **filesystem storage**
+    (a per-test temp root, not a container) are unchanged.
+  - **Order-randomized covering run (contamination is often order-dependent).**
+    The built-in xUnit v3 run seed randomizes test-case order within a collection
+    but does not reorder whole classes/collections; `Shared/SeedTestCollectionOrderer.cs`
+    is the seed-driven whole-class orderer. Set the environment variable
+    `REPORTSERVICE_IT_SEED` to an integer to run the classes in a reproducible
+    shuffled order (with no variable set, the order is the deterministic base
+    order); the covering run records the exact seed it used so the order can be
+    reproduced.
+  - Every container the suite starts still removes itself through its own handle;
+    nothing is pruned. Container names start with `report-service-it-`.
 - **A test host carries its own meter identity and opens a unit of work on its
   own logger factory**, so two hosts may be open in one process and each capture
   holds only the telemetry of the unit of work its case opened: the spans of that
