@@ -1,0 +1,13 @@
+<html>
+<head>
+  <title>{{ header.reportTitle | html.escape }}</title>
+  <link rel="stylesheet" href="html/styles.css">
+</head>
+<body>
+  <h1>{{ header.reportTitle | html.escape }}</h1>
+  <p class="customer">{{ header.customer.id | html.escape }}</p>
+  <table>
+    <thead>
+      <tr><th>Seq</th><th>Description</th></tr>
+    </thead>
+    <tbody>

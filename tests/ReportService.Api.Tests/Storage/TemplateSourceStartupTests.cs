@@ -195,13 +195,177 @@ public sealed class TemplateSourceStartupTests : IDisposable
         Assert.StartsWith("Warning:", warning, StringComparison.Ordinal);
     }
 
+    // The check's two halves held on the test's own gates, and the clock moved by the case: the
+    // listing consumes four of its bound's seconds and the read answers at its own two, so six
+    // seconds of work complete where one shared budget would have cancelled the read at five.
+    // Everything else is the real Filesystem provider's behaviour, and the record it answers
+    // with is the one the check reads.
+    [Fact]
+    public async Task TheListingsBudgetDoesNotCutTheReadShort()
+    {
+        Directory.CreateDirectory(StorageRoot);
+        var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
+        var scripted = Scripted();
+        var logs = new LogCapture();
+        using var host = Build(SourceRoot, development: true, logs, store: scripted, clock: clock);
+        var start = host.StartAsync(TestContext.Current.CancellationToken);
+
+        await scripted.ListingEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(4));
+        scripted.ReleaseListing();
+        await scripted.ReadEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(2));
+
+        var failure = start.IsCompleted ? await Record.ExceptionAsync(() => start) : null;
+        Assert.True(failure is null, $"the start was cancelled after six seconds of work: {failure}");
+
+        scripted.ReleaseRead();
+        await start;
+        Assert.Contains(logs.Lines, line => line.Contains("Template source ", StringComparison.Ordinal));
+    }
+
+    // The read's own bound: two seconds into the read nothing has fired, and the three more that
+    // reach its five refuse the start with the constant the code already names. The listings
+    // consumed four seconds first, so a shared budget would have fired one second in.
+    [Fact]
+    public async Task TheReadsOwnBoundRefusesWithTheNamedSetting()
+    {
+        Directory.CreateDirectory(StorageRoot);
+        var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
+        var scripted = Scripted();
+        using var host = Build(SourceRoot, development: true, logs: null, store: scripted, clock: clock);
+        var start = host.StartAsync(TestContext.Current.CancellationToken);
+
+        await scripted.ListingEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(4));
+        scripted.ReleaseListing();
+        await scripted.ReadEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(2));
+
+        var early = start.IsCompleted ? await Record.ExceptionAsync(() => start) : null;
+        Assert.True(early is null, $"the start was cancelled two seconds into the read: {early}");
+
+        clock.Advance(TimeSpan.FromSeconds(3));
+
+        var exception = await Record.ExceptionAsync(() => start);
+        Assert.True(
+            Flatten(exception) is ConfigurationError,
+            $"the start ended with {Describe(exception)} instead of the refusal naming the setting");
+        var error = (ConfigurationError)Flatten(exception)!;
+        Assert.Equal("TemplateSource:Store:Filesystem:Root", error.Setting);
+        Assert.Equal(TemplateSourceStartup.CannotBeRead, error.Reason);
+        Assert.DoesNotContain(_directory.Path, error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AHostStopDuringTheReadIsAnOrdinaryStop()
+    {
+        Directory.CreateDirectory(StorageRoot);
+        var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
+        var scripted = Scripted();
+        var logs = new LogCapture();
+        using var host = Build(SourceRoot, development: true, logs, store: scripted, clock: clock);
+        using var stop = new CancellationTokenSource();
+        var start = host.StartAsync(stop.Token);
+
+        await scripted.ListingEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        scripted.ReleaseListing();
+        await scripted.ReadEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        await stop.CancelAsync();
+
+        var failure = await Record.ExceptionAsync(() => start);
+        Assert.True(failure is null, $"the start did not stop cleanly: {failure}");
+        Assert.Single(logs.Lines, line => line.Contains("stopped before it completed", StringComparison.Ordinal));
+        await host.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AHostStopDuringTheListingIsAnOrdinaryStop()
+    {
+        Directory.CreateDirectory(StorageRoot);
+        var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
+        var scripted = Scripted();
+        var logs = new LogCapture();
+        using var host = Build(SourceRoot, development: true, logs, store: scripted, clock: clock);
+        using var stop = new CancellationTokenSource();
+        var start = host.StartAsync(stop.Token);
+
+        await scripted.ListingEntered.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+        await stop.CancelAsync();
+
+        var failure = await Record.ExceptionAsync(() => start);
+        Assert.True(failure is null, $"the start did not stop cleanly: {failure}");
+        Assert.Single(logs.Lines, line => line.Contains("stopped before it completed", StringComparison.Ordinal));
+        await host.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    // The delivered classification of a genuinely unreadable record: the bytes do not match the
+    // hash the record's name carries, and the start refuses with the setting and the reason the
+    // code already names. It is the process case's own trigger, proved here at the check's level.
+    [Fact]
+    public async Task ARecordThatCannotBeReadStopsTheStartWithTheNamedSetting()
+    {
+        Directory.CreateDirectory(StorageRoot);
+        Directory.CreateDirectory(SourceRoot);
+        var source = await TemplateSourceClass.CreateAsync(SourceRoot);
+        var record = Encoding.UTF8.GetBytes(
+            """{"descriptorVersion":"1.0","templateId":"invoice-energy","version":"1.1.0","files":[],"fileCount":0,"totalSize":0}""");
+        var key = await source.WriteRecordAsync("invoice-energy", "1.1.0", record);
+        source.Corrupt(
+            key,
+            Encoding.UTF8.GetBytes(
+                """{"descriptorVersion":"1.0","templateId":"invoice-energy","version":"1.1.0","files":[],"fileCount":0,"totalSize":17}"""));
+
+        using var host = Build(SourceRoot, development: true, logs: null);
+
+        var error = Refusal(host);
+        Assert.Equal("TemplateSource:Store:Filesystem:Root", error.Setting);
+        Assert.Equal(TemplateSourceStartup.CannotBeRead, error.Reason);
+        Assert.DoesNotContain(_directory.Path, error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // The record the check reads: one publication record whose bytes match the hash its name
+    // carries, answered only when the case releases the read.
+    private ScriptedSourceStore Scripted()
+    {
+        var content = Encoding.UTF8.GetBytes("""{"descriptorVersion":"1.0"}""");
+        var sha256 = Convert.ToHexStringLower(SHA256.HashData(content));
+        var entry = new ObjectInfo(
+            ObjectKey.FromSegments("template-source", "invoice-energy", "published", "1.1.0", sha256 + ".json"),
+            content.LongLength,
+            DateTimeOffset.UnixEpoch);
+        var inner = FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = StorageRoot, CreateIfMissing = true },
+            StorageRoot,
+            TimeProvider.System,
+            NullLogger<FilesystemObjectStore>.Instance);
+        return new ScriptedSourceStore(inner, entry, content);
+    }
+
+    private static Exception? Flatten(Exception? exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is ConfigurationError)
+            {
+                return current;
+            }
+        }
+
+        return null;
+    }
+
+    private static string Describe(Exception? exception) =>
+        exception is null ? "no exception" : $"{exception.GetType().FullName}: {exception.Message}";
+
     private IHost Build(
         string sourceRoot,
         bool development,
         LogCapture? logs,
         IObjectStore? store = null,
         bool createIfMissing = false,
-        string? storageRoot = null)
+        string? storageRoot = null,
+        TimeProvider? clock = null)
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
@@ -219,6 +383,12 @@ public sealed class TemplateSourceStartupTests : IDisposable
         builder.Configuration.AddInMemoryCollection(configuration);
         builder.AddObjectStorage("pdf-worker");
         builder.AddTemplateSourceStorage(Layout, ["1.0"]);
+        if (clock is not null)
+        {
+            builder.Services.RemoveAll<TimeProvider>();
+            builder.Services.AddSingleton(clock);
+        }
+
         if (store is not null)
         {
             builder.Services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
@@ -279,6 +449,57 @@ public sealed class TemplateSourceStartupTests : IDisposable
     // The first entry a class listing answers with, supplied deterministically because a
     // directory's enumeration order is not a contract; every other operation, and the rest of
     // the class listing, is the real store's, so a scan still sees the class it would see.
+    // The check's class listing and its verified read, held on the test's own gates: each half
+    // answers when the case releases it, so the case decides when the check's time passes. It is
+    // a fault injector for the check, never a provider contract; only those two calls are the
+    // test's, and every other operation is the real store's.
+    private sealed class ScriptedSourceStore(IObjectStore inner, ObjectInfo entry, byte[] content) : IObjectStore
+    {
+        private readonly TaskCompletionSource _listingEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _listingRelease = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _readEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _readRelease = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task ListingEntered => _listingEntered.Task;
+
+        public Task ReadEntered => _readEntered.Task;
+
+        public void ReleaseListing() => _listingRelease.TrySetResult();
+
+        public void ReleaseRead() => _readRelease.TrySetResult();
+
+        public StorageCapabilities Capabilities => inner.Capabilities;
+
+        public Task<StorageResult<ObjectWrite>> WriteAsync(ObjectKey key, Stream content, CancellationToken cancellationToken) =>
+            inner.WriteAsync(key, content, cancellationToken);
+
+        public Task<StorageResult<ObjectInfo>> GetInfoAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            inner.GetInfoAsync(key, cancellationToken);
+
+        public Task<StorageResult<bool>> DeleteAsync(ObjectKey key, CancellationToken cancellationToken) =>
+            inner.DeleteAsync(key, cancellationToken);
+
+        public async IAsyncEnumerable<ObjectInfo> ListAsync(
+            string classPrefix,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _listingEntered.TrySetResult();
+            await _listingRelease.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            yield return entry;
+        }
+
+        public async Task<StorageResult<VerifiedRead>> OpenReadAsync(
+            ObjectKey key,
+            long expectedSize,
+            string expectedSha256,
+            CancellationToken cancellationToken)
+        {
+            _readEntered.TrySetResult();
+            await _readRelease.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            return StorageResult.Success(new VerifiedRead(new MemoryStream(content, writable: false), expectedSize, expectedSha256));
+        }
+    }
+
     private sealed class FirstEntryStore(IObjectStore inner, ObjectInfo first) : IObjectStore
     {
         public StorageCapabilities Capabilities => inner.Capabilities;

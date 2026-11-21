@@ -26,7 +26,8 @@ dotnet-report-service/
 │   ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
 │   ├── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
-│   └── ReportService.Workers.Pdf/                 The PDF worker (container image)
+│   ├── ReportService.Workers.Pdf/                 The PDF worker (container image)
+│   └── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
 ├── tests/                     Automated tests, mirroring src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
 │   ├── ReportService.Data.Tests/         Unit tests of the data-contract reader: the hostile-input matrix, plain and gzip (hermetic)

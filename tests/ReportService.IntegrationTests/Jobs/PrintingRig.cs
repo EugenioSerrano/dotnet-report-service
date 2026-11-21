@@ -30,9 +30,11 @@ using ReportService.TemplateSource;
 using ReportService.TemplateSource.Manifest;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
+using ReportService.Testing.VerificationLoss;
 using ReportService.Uploads;
 using OrchestrationWorker = orchestration::ReportService.Workers.Orchestration.OrchestrationWorkerProgram;
 using ReportJobWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportJobWorkflow;
+using ReportPdfOutputWorkflow = orchestration::ReportService.Workers.Orchestration.Jobs.ReportPdfOutputWorkflow;
 using PdfRendering = pdf::ReportService.Workers.Pdf.Rendering;
 using PdfWorker = pdf::ReportService.Workers.Pdf.PdfWorkerProgram;
 using Temporalio.Client;
@@ -132,11 +134,22 @@ internal sealed class PrintingRig : IAsyncDisposable
 
     private WebApplicationFactory<PdfWorker>? _pdf;
 
+    private RenderWorkerContainer? _pdfImage;
+
 
     private PrintingRig(PostgresFixture fixture) => _fixture = fixture;
 
     /// <summary>Whether the render worker starts with the composition.</summary>
     private bool StartPdf { get; init; }
+
+    /// <summary>Whether the render worker runs as the published image instead of in this process.</summary>
+    private bool StartPdfImage { get; init; }
+
+    /// <summary>The consumers the composition's registry carries besides its own two.</summary>
+    private IReadOnlyList<string> ExtraConsumers { get; init; } = [];
+
+    /// <summary>The decoration the render worker's own store is wrapped in, when the case states one.</summary>
+    private Func<IObjectStore, IObjectStore>? DecoratePdfStore { get; init; }
 
     /// <summary>The record count the orchestration worker applies, when the case states one.</summary>
     private int? SingleBlockRecordLimit { get; init; }
@@ -177,6 +190,16 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// The record count the orchestration worker applies; the deployment's default when the case states none.
     /// The setting is read when the worker starts, so a case that asserts a limit starts its own composition.
     /// </param>
+    /// <param name="startPdfAsImage">
+    /// Whether the render worker runs as the published image rather than in this process: the recipe
+    /// a job-level case uses when it must prove what the deployed worker does. <paramref name="startPdf"/>
+    /// stays true for it; the in-process host is not started.
+    /// </param>
+    /// <param name="extraConsumers">Consumers the registry carries as active besides the rig's own two.</param>
+    /// <param name="decoratePdfStore">
+    /// The wrapper the render worker's own store is served through, when the case must make the
+    /// provider answer something a real one would not.
+    /// </param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
     public static async Task<PrintingRig> StartAsync(
         PostgresFixture fixture,
@@ -184,11 +207,17 @@ internal sealed class PrintingRig : IAsyncDisposable
         bool startPdf = true,
         ManualTimeProvider? clock = null,
         int? singleBlockRecordLimit = null,
+        bool startPdfAsImage = false,
+        IReadOnlyList<string>? extraConsumers = null,
+        Func<IObjectStore, IObjectStore>? decoratePdfStore = null,
         CancellationToken cancellationToken = default)
     {
         var rig = new PrintingRig(fixture)
         {
             StartPdf = startPdf,
+            StartPdfImage = startPdfAsImage,
+            ExtraConsumers = extraConsumers ?? [],
+            DecoratePdfStore = decoratePdfStore,
             Clock = clock,
             SingleBlockRecordLimit = singleBlockRecordLimit,
         };
@@ -217,6 +246,12 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <param name="cancellationToken">The test's cancellation token.</param>
     public async Task StartPdfAsync(CancellationToken cancellationToken)
     {
+        if (_pdfImage is not null)
+        {
+            await _pdfImage.WaitForHealthyAsync(cancellationToken);
+            return;
+        }
+
         _pdf ??= Pdf();
         await WaitForHealthyAsync(_pdf.CreateClient(), ReadyDeadline, cancellationToken);
     }
@@ -403,6 +438,23 @@ internal sealed class PrintingRig : IAsyncDisposable
         }
 
         return files;
+    }
+
+    /// <summary>
+    /// Publishes the verification-loss corpus into the deployment's template source and records
+    /// both packages as versions already taken, so a job of this composition pins one of them and
+    /// prints it without the source being read again: the corpus is the data a refused print is
+    /// evidenced with, and the render worker only ever reads its taken copy.
+    /// </summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task SeedCorpusAsync(CancellationToken cancellationToken)
+    {
+        foreach (var template in new[] { VerificationLossCorpus.Template, VerificationLossCorpus.SupplementaryTemplate })
+        {
+            var files = VerificationLossCorpus.PackageFiles(template).ToDictionary(file => file.Key, file => file.Value, StringComparer.Ordinal);
+            await Source.PublishAsync(template, VerificationLossCorpus.Version, files);
+            await RecordTakenAsync(template, VerificationLossCorpus.Version, files, cancellationToken);
+        }
     }
 
     private async Task RecordTakenAsync(
@@ -676,7 +728,8 @@ internal sealed class PrintingRig : IAsyncDisposable
                    a.created_at AS "ArtifactCreatedAt",
                    p.block_count AS "BlockCount", p.record_count AS "RecordCount",
                    c.template_package_sha256 AS "TemplatePackageSha256", c.page_count AS "PartPages",
-                   c.object_key AS "PartObjectKey", c.presentation::text AS "Presentation"
+                   c.object_key AS "PartObjectKey", c.presentation::text AS "Presentation",
+                   c.sha256 AS "PartSha256", c.size_bytes AS "PartSizeBytes"
               FROM report_service.report_jobs j
               LEFT JOIN report_service.report_outputs o ON o.report_job_id = j.report_job_id
               LEFT JOIN report_service.artifacts a ON a.output_id = o.output_id
@@ -698,6 +751,23 @@ internal sealed class PrintingRig : IAsyncDisposable
             .WaitAsync(cancellationToken);
         return await client
             .GetWorkflowHandle(ReportJobWorkflow.WorkflowIdFor(reportJobId))
+            .FetchHistoryAsync(new WorkflowHistoryEventFetchOptions())
+            .WaitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The history of the one execution that produces the job's PDF output: where the block
+    /// render's own verdict is recorded, because a failed output carries no stored reason.
+    /// </summary>
+    /// <param name="reportJobId">The job whose output execution is read.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<WorkflowHistory> OutputHistoryAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        var client = await TemporalClient
+            .ConnectAsync(new TemporalClientConnectOptions($"127.0.0.1:{_hostPort}") { Namespace = "default" })
+            .WaitAsync(cancellationToken);
+        return await client
+            .GetWorkflowHandle(ReportPdfOutputWorkflow.WorkflowIdFor(reportJobId))
             .FetchHistoryAsync(new WorkflowHistoryEventFetchOptions())
             .WaitAsync(cancellationToken);
     }
@@ -735,6 +805,11 @@ internal sealed class PrintingRig : IAsyncDisposable
         if (_dataSource is not null)
         {
             await _dataSource.DisposeAsync();
+        }
+
+        if (_pdfImage is not null)
+        {
+            await _pdfImage.DisposeAsync();
         }
 
         if (_engine is not null)
@@ -838,8 +913,18 @@ internal sealed class PrintingRig : IAsyncDisposable
         await SeedSourceAsync(Source);
 
         _api = Api();
-        _pdf = StartPdf ? Pdf() : null;
+        _pdf = StartPdf && !StartPdfImage ? Pdf() : null;
         _orchestration = startOrchestration ? Orchestration() : null;
+        if (StartPdfImage)
+        {
+            _pdfImage = await RenderWorkerContainer.StartAsync(
+                _connectionString,
+                _hostPort,
+                StoragePath(),
+                SourcePath(),
+                cancellationToken);
+        }
+
         await WaitForHealthyAsync(_api.CreateClient(), ReadyDeadline, cancellationToken);
         if (_pdf is not null)
         {
@@ -934,11 +1019,14 @@ internal sealed class PrintingRig : IAsyncDisposable
     private WebApplicationFactory<Program> Api()
     {
         var registry = Path.Combine(_directory, "consumers.json");
+        var extras = string.Concat(ExtraConsumers.Select(consumer =>
+            ",{\"consumerId\":\"" + consumer + "\",\"active\":true}"));
         File.WriteAllText(
             registry,
             "{\"consumers\":[{\"consumerId\":\"" + Consumer + "\",\"active\":true},"
             + "{\"consumerId\":\"" + SampleGateOwner + "\",\"active\":true},"
-            + "{\"consumerId\":\"" + InactiveConsumer + "\",\"active\":false}]}");
+            + "{\"consumerId\":\"" + InactiveConsumer + "\",\"active\":false}"
+            + extras + "]}");
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting(ConsumerRegistryHosting.FileSetting, registry);
@@ -992,6 +1080,14 @@ internal sealed class PrintingRig : IAsyncDisposable
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MigrationCatalog.ExpectedVersion);
             builder.ConfigureTestServices(services =>
             {
+                // A case that must make the provider answer a size or a hash the real one would
+                // not serves the worker through its wrapper; every other process keeps the store.
+                if (DecoratePdfStore is { } decorate)
+                {
+                    services.RemoveAll<IObjectStore>();
+                    services.AddSingleton(decorate(Objects));
+                }
+
                 // The source reads through its own instance, so the class's spy is registered
                 // under the source's key: the writable store stays the deployment's own.
                 services.RemoveAllKeyed<IObjectStore>(TemplateSourceStorage.StoreServiceKey);
@@ -1061,6 +1157,12 @@ internal sealed class JobStateRow
 
     /// <summary>The key the committed part names: the object the published artifact is built from.</summary>
     public string? PartObjectKey { get; set; }
+
+    /// <summary>The SHA-256 the committed part records for the block's object.</summary>
+    public string? PartSha256 { get; set; }
+
+    /// <summary>The size the committed part records for the block's object.</summary>
+    public long? PartSizeBytes { get; set; }
 
     /// <summary>The presentation provenance the committed part records, as the column stores it.</summary>
     public string? Presentation { get; set; }
