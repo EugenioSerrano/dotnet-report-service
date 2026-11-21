@@ -27,6 +27,7 @@
     <Project Path="src/ReportService.TemplateSource/ReportService.TemplateSource.csproj" />
     <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
     <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
+    <Project Path="src/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />

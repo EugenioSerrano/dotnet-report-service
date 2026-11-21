@@ -18,9 +18,28 @@ namespace ReportService.Workers.Pdf;
 /// </summary>
 public sealed class PdfWorkerProgram
 {
+    /// <summary>The exit code of a process whose start was refused by its configuration.</summary>
+    public const int RefusedStartExitCode = 1;
+
     /// <summary>Starts the process and serves until it is stopped.</summary>
     /// <param name="args">The command line.</param>
     public static async Task Main(string[] args)
+    {
+        // The entry the in-process test host runs: a start the configuration refuses surfaces
+        // from here, which is what the host's callers read.
+        var app = BuildHost(args);
+        await app.RunAsync();
+    }
+
+    /// <summary>
+    /// Builds the process's host: the service defaults and their validation, the queue and its
+    /// registrations, the browser probe, the render watchdog, the storage, the metadata database,
+    /// the take's sample render and the three diagnostic surfaces. One host, built once, so the
+    /// container's entry and the in-process host run the same process.
+    /// </summary>
+    /// <param name="args">The command line.</param>
+    /// <returns>The built host, not started.</returns>
+    public static WebApplication BuildHost(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.AddServiceDefaults(ServiceNames.RenderWorker, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
@@ -58,6 +77,6 @@ public sealed class PdfWorkerProgram
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
         app.MapStorageDiagnostics();
         app.MapTelemetryDiagnostics();
-        await app.RunAsync();
+        return app;
     }
 }

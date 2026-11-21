@@ -59,6 +59,15 @@ setting 'Temporal:Address': must be host:port
 The message names the setting and the reason, and **never** the value, so a
 secret cannot leak through a configuration error.
 
+The PDF worker's container entry point is
+`src/ReportService.Workers.Pdf.Entry` (`PdfWorkerEntryPoint.Main`): it builds
+the worker's host and owns the process's end. A start the configuration refuses
+— the template source's own check among them — logs one error line naming the
+setting and the reason and ends the process with exit code `1`, with the host's
+own `Hosting failed to start` preceding it. A stop requested while the process
+starts is an ordinary shutdown and ends it with `0`. The render worker image is
+published from that entry project.
+
 | Setting | Process | Required | Meaning |
 |---------|---------|----------|---------|
 | `Temporal:Address` | both workers | yes | The engine's gRPC endpoint, `host:port` (no scheme, no credential) |

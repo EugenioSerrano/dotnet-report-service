@@ -14,20 +14,29 @@ namespace ReportService.ServiceDefaults;
 /// record is read verified when there is one, and one line states the provider,
 /// the root, the class and the descriptor contract versions. The check's work does
 /// not grow with the class's size: at most two one-entry listings and one verified
-/// read, never a scan. It writes nothing, deletes nothing and sweeps nothing — a
-/// read-only root is what it exists to accept. A root that is missing, is not a
-/// directory, or holds a class that cannot be listed or read stops the start with a
+/// read, never a scan. Each half carries its own bound: one over the two listings
+/// and one over the verified read, armed when the read begins, so a slow listing
+/// can never leave the read the remainder of a shared budget. It writes nothing,
+/// deletes nothing and sweeps nothing — a read-only root is what it exists to
+/// accept. A root that is missing, is not a directory, or holds a class that
+/// cannot be listed or read stops the start with a
 /// <see cref="ConfigurationError"/> naming the setting and never a value or a path.
-/// When the source's root is the process's writable root, one warning says the
-/// read-only grant cannot be expressed on that deployment.
+/// When the host stops during the check, the check returns without a refusal and
+/// says once that it stopped before completing. When the source's root is the
+/// process's writable root, one warning says the read-only grant cannot be
+/// expressed on that deployment.
 /// </summary>
 public sealed partial class TemplateSourceStartup(
     IServiceProvider services,
     TemplateSourceContract contract,
+    TimeProvider clock,
     ILogger<TemplateSourceStartup> logger) : IHostedLifecycleService
 {
-    /// <summary>The longest the two bounded listings and the one record read may take.</summary>
+    /// <summary>The longest the two bounded listings may take.</summary>
     public static readonly TimeSpan TimeBound = TimeSpan.FromSeconds(5);
+
+    /// <summary>The longest the one verified read may take, armed when the read begins.</summary>
+    public static readonly TimeSpan ReadTimeBound = TimeSpan.FromSeconds(5);
 
     /// <summary>What a class that cannot be listed is refused with.</summary>
     public const string CannotBeListed = "the template source class cannot be listed";
@@ -48,26 +57,44 @@ public sealed partial class TemplateSourceStartup(
             throw new ConfigurationError(exception.Setting, exception.Reason);
         }
 
-        using var bound = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        bound.CancelAfter(TimeBound);
-
         (ObjectKey Key, long Size, string Sha256)? record;
-        try
+        using (var listings = new CancellationTokenSource(TimeBound, clock))
+        using (cancellationToken.Register(static state => ((CancellationTokenSource)state!).Cancel(), listings))
         {
-            record = await FindOnePublicationAsync(store, bound.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeListed);
-        }
-        catch (StorageException)
-        {
-            throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeListed);
+            try
+            {
+                record = await FindOnePublicationAsync(store, listings.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                LogAbandoned();
+                return;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeListed);
+            }
+            catch (StorageException)
+            {
+                throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeListed);
+            }
         }
 
         if (record is { } publication)
         {
-            await ReadOnceAsync(store, publication.Key, publication.Size, publication.Sha256, bound.Token).ConfigureAwait(false);
+            // The read's budget is its own and starts here: the listings' consumption cannot
+            // shorten it, and a bound-only expiry is the refusal the code already names.
+            using var read = new CancellationTokenSource(ReadTimeBound, clock);
+            using var linked = cancellationToken.Register(static state => ((CancellationTokenSource)state!).Cancel(), read);
+            await ReadOnceAsync(store, publication.Key, publication.Size, publication.Sha256, read.Token, cancellationToken).ConfigureAwait(false);
+        }
+
+        // A host that stopped during the read leaves the check abandoned, never completed: the
+        // statement below is written only by checks that reach the end.
+        if (cancellationToken.IsCancellationRequested)
+        {
+            LogAbandoned();
+            return;
         }
 
         var root = store is FilesystemObjectStore filesystem ? filesystem.Root : string.Empty;
@@ -147,25 +174,37 @@ public sealed partial class TemplateSourceStartup(
     // One verified record, drained and dropped: the read needs neither the template's text nor the
     // version's, only that the class delivers the bytes its own name declares. The hash is the
     // record's own name without its descriptor suffix (segments[4] minus DescriptorSuffix), which
-    // IsPublicationRecord has already read out.
-    private static async Task ReadOnceAsync(IObjectStore store, ObjectKey key, long size, string sha256, CancellationToken cancellationToken)
+    // IsPublicationRecord has already read out. The read sees both tokens: the read's own bound,
+    // which is what an expiry carries, and the host's, which decides whether the check completed
+    // or was abandoned.
+    private static async Task ReadOnceAsync(
+        IObjectStore store,
+        ObjectKey key,
+        long size,
+        string sha256,
+        CancellationToken readToken,
+        CancellationToken hostToken)
     {
         try
         {
-            var read = await store.OpenReadAsync(key, size, sha256, cancellationToken).ConfigureAwait(false);
+            var read = await store.OpenReadAsync(key, size, sha256, readToken).ConfigureAwait(false);
             if (!read.Succeeded)
             {
                 throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeRead);
             }
 
             await using var verified = read.Value!;
-            await verified.Content.CopyToAsync(Stream.Null, cancellationToken).ConfigureAwait(false);
+            await verified.Content.CopyToAsync(Stream.Null, readToken).ConfigureAwait(false);
         }
         catch (StorageException)
         {
             throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeRead);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (hostToken.IsCancellationRequested)
+        {
+            // The host is stopping: the read is abandoned, and StartingAsync says so once.
+        }
+        catch (OperationCanceledException) when (!hostToken.IsCancellationRequested)
         {
             throw new ConfigurationError(TemplateSourceStorage.RootSetting, CannotBeRead);
         }
@@ -192,6 +231,9 @@ public sealed partial class TemplateSourceStartup(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Template source {Provider} at {Root}; class {Class}; descriptor contract versions {Versions}")]
     private partial void LogOpened(string provider, string root, string @class, string versions);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "The template source check stopped before it completed: the host is stopping")]
+    private partial void LogAbandoned();
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The template source root and the writable storage root are the same directory ({Root}); this deployment cannot express the source's read-only grant")]
     private partial void LogCoincident(string root);
