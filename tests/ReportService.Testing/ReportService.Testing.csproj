@@ -2,10 +2,9 @@
 
   <!--
     Shared support for the test projects: repository paths, the composition's
-    pinned images, a bounded wait, an in-memory log capture, a fixed clock, the
-    store contract both upload stores are held to and the container helper of the
-    integration suite. Referenced by test projects only; it holds no product
-    behaviour.
+    pinned images, a bounded wait, an in-memory log capture, a fixed clock and the
+    store contract both upload stores are held to. Referenced by test projects
+    only; it holds no product behaviour.
   -->
   <PropertyGroup>
     <IsPackable>false</IsPackable>
@@ -26,7 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 
