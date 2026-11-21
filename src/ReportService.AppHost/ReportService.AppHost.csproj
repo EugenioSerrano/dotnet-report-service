@@ -42,4 +42,9 @@
     <Content Include="postgres-init\10-application-role.sh" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The end-to-end suite reads the composition's storage root by the name this host declares. -->
+    <InternalsVisibleTo Include="ReportService.EndToEndTests" />
+  </ItemGroup>
+
 </Project>

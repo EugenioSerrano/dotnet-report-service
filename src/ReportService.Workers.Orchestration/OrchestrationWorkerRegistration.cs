@@ -98,6 +98,7 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
         builder.Services.AddSingleton<PdfOutputActivities>();
+        builder.Services.AddSingleton<AttemptCauseActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<InputWaitSignalActivities>();
         builder.Services.AddSingleton<TemplateResolutionActivities>();
@@ -126,6 +127,7 @@ public static class OrchestrationWorkerRegistration
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
                 options.AddAllActivities(provider.GetRequiredService<PdfOutputActivities>());
+                options.AddAllActivities(provider.GetRequiredService<AttemptCauseActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
                 options.AddAllActivities(provider.GetRequiredService<TemplateResolutionActivities>());

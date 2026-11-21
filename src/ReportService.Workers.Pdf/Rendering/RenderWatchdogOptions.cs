@@ -4,10 +4,10 @@ namespace ReportService.Workers.Pdf.Rendering;
 
 /// <summary>
 /// The render watchdog's two values: how long a render may pass its own deadline before
-/// the watchdog acts, and how often the watchdog looks. Both are ADR-012's: a 30 s grace
-/// over the activity's start-to-close, looked at every 5 s. The values are built by the
-/// factory and validated at start; they are never logged with the value a deployment
-/// configured, because there is nothing to configure.
+/// the watchdog acts, and how often the watchdog looks. The grace is a fixed 30 s over the
+/// attempt's own deadline, looked at every 5 s. The values are built by the factory and
+/// validated at start; they are never logged with a value a deployment configured, because
+/// there is nothing to configure.
 /// </summary>
 /// <param name="GraceSeconds">The grace after an attempt's own deadline, in seconds.</param>
 /// <param name="TickSeconds">How often the watchdog looks, in seconds.</param>
@@ -25,7 +25,7 @@ public sealed record RenderWatchdogOptions(int GraceSeconds = 30, int TickSecond
     /// <summary>How often the watchdog looks.</summary>
     public TimeSpan Tick => TimeSpan.FromSeconds(TickSeconds);
 
-    /// <summary>Builds the values the ADR fixes.</summary>
+    /// <summary>Builds the service's fixed values.</summary>
     public static RenderWatchdogOptions Create() => new();
 
     /// <summary>The problems of a value set, each naming its setting and never the value.</summary>

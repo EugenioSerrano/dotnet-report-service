@@ -27,6 +27,7 @@ internal sealed class RenderWatchdog : BackgroundService
     private readonly RenderWatchdogOptions _options;
     private readonly TimeProvider _clock;
     private readonly ILogger<RenderWatchdog> _logger;
+    private readonly PdfRenderingMetrics? _metrics;
     private int _trips;
 
     /// <summary>Creates the worker's watchdog.</summary>
@@ -35,18 +36,21 @@ internal sealed class RenderWatchdog : BackgroundService
     /// <param name="options">The grace and the tick.</param>
     /// <param name="clock">The clock the attempts' instants are read from.</param>
     /// <param name="logger">Where a trip is reported.</param>
+    /// <param name="metrics">The worker's instruments, when the process carries them.</param>
     public RenderWatchdog(
         IJobStore jobs,
         IProcessExit exit,
         RenderWatchdogOptions options,
         TimeProvider clock,
-        ILogger<RenderWatchdog> logger)
+        ILogger<RenderWatchdog> logger,
+        PdfRenderingMetrics? metrics = null)
     {
         _jobs = jobs;
         _exit = exit;
         _options = options;
         _clock = clock;
         _logger = logger;
+        _metrics = metrics;
     }
 
     /// <summary>Whether this worker tripped on a render and is stopping.</summary>
@@ -107,6 +111,7 @@ internal sealed class RenderWatchdog : BackgroundService
 
             stopped = true;
             Interlocked.Increment(ref _trips);
+            _metrics?.WatchdogExit(PdfRenderingMetrics.DeadlineExitReason);
             _logger.LogWarning(
                 "Render watchdog: block {BlockIndex} of output {OutputId} past its deadline; stopping",
                 attempt.BlockIndex,
@@ -127,6 +132,7 @@ internal sealed class RenderWatchdog : BackgroundService
                         AttemptCauseVocabulary.WatchdogDeadline,
                         now),
                     cancellationToken).ConfigureAwait(false);
+                _metrics?.AttemptCause(AttemptCauseVocabulary.WatchdogDeadline);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

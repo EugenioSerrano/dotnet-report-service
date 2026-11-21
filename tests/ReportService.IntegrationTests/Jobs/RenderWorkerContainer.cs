@@ -37,7 +37,9 @@ internal sealed class RenderWorkerContainer : IAsyncDisposable
     /// <summary>How long the worker may take to answer its own health, Chromium included.</summary>
     private static readonly TimeSpan ReadyDeadline = TimeSpan.FromMinutes(5);
 
-    private readonly IContainer _container;
+    private readonly string _id;
+
+    private readonly IContainer? _owned;
 
     private readonly int _port;
 
@@ -45,7 +47,8 @@ internal sealed class RenderWorkerContainer : IAsyncDisposable
 
     private RenderWorkerContainer(IContainer container, int port)
     {
-        _container = container;
+        _owned = container;
+        _id = container.Id;
         _port = port;
     }
 
@@ -139,10 +142,78 @@ internal sealed class RenderWorkerContainer : IAsyncDisposable
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
 
+    /// <summary>The runtime's identifier of this worker's container.</summary>
+    public string Id => _id;
+
+    /// <summary>The container's own log, as the runtime keeps it.</summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public Task<string> LogsAsync(CancellationToken cancellationToken) =>
+        DockerAsync(["logs", Id], cancellationToken);
+
+    /// <summary>
+    /// Stops the worker the way a lost process stops: <c>docker kill</c> sends SIGKILL, so an
+    /// attempt in flight ends with the process and no graceful completion runs.
+    /// </summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task StopAsync(CancellationToken cancellationToken) =>
+        await DockerAsync(["kill", Id], cancellationToken);
+
+    /// <summary>
+    /// Starts the container again and waits until the worker answers its health. With the
+    /// composition's <c>--restart=always</c> the runtime may have started it first; a start of
+    /// a running container is a no-op and the health wait is what the case observes.
+    /// </summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await DockerAsync(["start", Id], cancellationToken);
+        await WaitForHealthyAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Reads the container's restart policy from the runtime, as <c>docker inspect</c> reports
+    /// it: the runtime's own reading of the argument the composition declared.
+    /// </summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>The policy's name, for example <c>always</c>.</returns>
+    public async Task<string> RestartPolicyAsync(CancellationToken cancellationToken) =>
+        (await DockerAsync(
+            ["inspect", "--format", "{{.HostConfig.RestartPolicy.Name}}", Id],
+            cancellationToken)).Trim();
+
+    private static async Task<string> DockerAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
+    {
+        var startInfo = new System.Diagnostics.ProcessStartInfo("docker")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = System.Diagnostics.Process.Start(startInfo)!;
+        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"docker {string.Join(' ', arguments)} failed with exit code {process.ExitCode.ToString(CultureInfo.InvariantCulture)}: {error}");
+        }
+
+        return output;
+    }
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         _health.Dispose();
-        await _container.DisposeAsync();
+        if (_owned is not null)
+        {
+            await _owned.DisposeAsync();
+        }
     }
 }

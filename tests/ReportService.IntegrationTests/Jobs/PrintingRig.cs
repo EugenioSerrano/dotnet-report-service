@@ -28,6 +28,7 @@ using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Manifest;
+using ReportService.Templates;
 using ReportService.Testing;
 using ReportService.Testing.TemplateSource;
 using ReportService.Testing.VerificationLoss;
@@ -151,6 +152,9 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>The decoration the render worker's own store is wrapped in, when the case states one.</summary>
     private Func<IObjectStore, IObjectStore>? DecoratePdfStore { get; init; }
 
+    /// <summary>Registrations a case replaces in the render worker's own host.</summary>
+    private Action<IServiceCollection>? ConfigurePdfServices { get; init; }
+
     /// <summary>The record count the orchestration worker applies, when the case states one.</summary>
     private int? SingleBlockRecordLimit { get; init; }
 
@@ -210,6 +214,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         bool startPdfAsImage = false,
         IReadOnlyList<string>? extraConsumers = null,
         Func<IObjectStore, IObjectStore>? decoratePdfStore = null,
+        Action<IServiceCollection>? configurePdfServices = null,
         CancellationToken cancellationToken = default)
     {
         var rig = new PrintingRig(fixture)
@@ -218,6 +223,7 @@ internal sealed class PrintingRig : IAsyncDisposable
             StartPdfImage = startPdfAsImage,
             ExtraConsumers = extraConsumers ?? [],
             DecoratePdfStore = decoratePdfStore,
+            ConfigurePdfServices = configurePdfServices,
             Clock = clock,
             SingleBlockRecordLimit = singleBlockRecordLimit,
         };
@@ -254,6 +260,53 @@ internal sealed class PrintingRig : IAsyncDisposable
 
         _pdf ??= Pdf();
         await WaitForHealthyAsync(_pdf.CreateClient(), ReadyDeadline, cancellationToken);
+    }
+
+    /// <summary>
+    /// Stops the render worker's host, as a process that is stopped between attempts is
+    /// stopped: the host is disposed and a later start creates a fresh one on the same
+    /// engine, database and storage root.
+    /// </summary>
+    public async Task StopPdfAsync()
+    {
+        if (_pdf is { } pdf)
+        {
+            _pdf = null;
+            await pdf.DisposeAsync();
+        }
+    }
+
+    /// <summary>Stops the orchestration worker's host, and a later start creates it again.</summary>
+    public async Task StopOrchestrationAsync()
+    {
+        if (_orchestration is { } orchestration)
+        {
+            _orchestration = null;
+            await orchestration.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Installs the test-only stall on the render worker's composer, before any render runs:
+    /// the composition phase is seated after the guard's clock has started, the print phase
+    /// inside the print step and before the printer is asked for a document. The worker is
+    /// created if it has not been started yet.
+    /// </summary>
+    /// <param name="stall">The stall the case owns and arms.</param>
+    public void InstallStall(IRenderStall stall)
+    {
+        _pdf ??= Pdf();
+        _pdf.Services.GetRequiredService<BlockComposer>().Stall = stall;
+    }
+
+    /// <summary>Reads the render worker's own health answer.</summary>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<HttpStatusCode> PdfHealthAsync(CancellationToken cancellationToken)
+    {
+        _pdf ??= Pdf();
+        using var client = _pdf.CreateClient();
+        using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
+        return response.StatusCode;
     }
 
     /// <summary>Stops answering the template source, as an outage of the deployment's store does.</summary>
@@ -653,6 +706,18 @@ internal sealed class PrintingRig : IAsyncDisposable
         return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
             "SELECT count(*) FROM report_service.pdf_part_commits WHERE output_id = @OutputId",
             new { OutputId = outputId },
+            cancellationToken: cancellationToken));
+    }
+
+    /// <summary>Counts the artifact rows one job's outputs hold.</summary>
+    /// <param name="reportJobId">The job to count for.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<long> CountArtifactsAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await _dataSource!.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM report_service.artifacts a JOIN report_service.report_outputs o ON o.output_id = a.output_id WHERE o.report_job_id = @ReportJobId",
+            new { ReportJobId = reportJobId },
             cancellationToken: cancellationToken));
     }
 
@@ -1087,6 +1152,10 @@ internal sealed class PrintingRig : IAsyncDisposable
                     services.RemoveAll<IObjectStore>();
                     services.AddSingleton(decorate(Objects));
                 }
+
+                // The process exit and any other registration a deadline case replaces: the
+                // worker's own host, and no other process of the composition.
+                ConfigurePdfServices?.Invoke(services);
 
                 // The source reads through its own instance, so the class's spy is registered
                 // under the source's key: the writable store stays the deployment's own.

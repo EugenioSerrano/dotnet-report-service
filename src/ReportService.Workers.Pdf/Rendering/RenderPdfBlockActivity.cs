@@ -115,6 +115,16 @@ public sealed class RenderPdfBlockActivity(
 
         using var beatEnds = new CancellationTokenSource();
         var attempt = ActivityExecutionContext.Current.Info;
+        logger.LogInformation(
+            "Block {BlockIndex} of output {OutputId} started, attempt {Attempt}",
+            input.BlockIndex,
+            input.OutputId,
+            attempt.Attempt);
+        if (attempt.Attempt > 1)
+        {
+            await CountRetryAsync(input, cancellationToken).ConfigureAwait(false);
+        }
+
         var registration = Watchdog?.Register(
             input.OutputId,
             input.BlockIndex,
@@ -293,10 +303,10 @@ public sealed class RenderPdfBlockActivity(
             catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.RenderTimeout, StringComparison.Ordinal))
             {
                 // The composition passed its 60 s deadline. The guard's timeout is retryable -
-                // ADR-022 counts it against the block's three attempts, so a deterministic
-                // runaway template cannot restart workers indefinitely - and the cause is
-                // recorded here, at the activity boundary, where the store is reachable: the
-                // template library keeps no store dependency.
+                // it is counted against the block's three attempts, so a deterministic runaway
+                // template cannot restart workers indefinitely - and the cause is recorded here,
+                // at the activity boundary, where the store is reachable: the template library
+                // keeps no store dependency.
                 logger.LogWarning(
                     "Block {BlockIndex} of output {OutputId} not printed: the composition passed its deadline",
                     input.BlockIndex,
@@ -445,7 +455,7 @@ public sealed class RenderPdfBlockActivity(
         }
     }
 
-    // The four phases and the verdict of one render, as §11 names them: the durations of the
+    // The four phases and the verdict of one render, in one place: the durations of the
     // composition, the print, the verification and the store, the outcome with its class, the
     // pages the block holds, and the requests the document made that were aborted.
     private void RecordTheRender(BlockRenderOutcome outcome)
@@ -657,6 +667,32 @@ public sealed class RenderPdfBlockActivity(
     private static ApplicationFailureException Refuse(string code, string reason) =>
         new($"{code}: {reason}", errorType: code, nonRetryable: true);
 
+    // A retry is counted where the attempt starts: the previous attempt's recorded cause names a
+    // deadline, and its absence is the crash or the lost worker this process cannot tell apart.
+    private async Task CountRetryAsync(RenderPdfBlockInput input, CancellationToken cancellationToken)
+    {
+        var cause = PdfRenderingMetrics.CrashCause;
+        try
+        {
+            var last = await jobs.FindLastAttemptCauseAsync(input.OutputId, input.BlockIndex, cancellationToken)
+                .ConfigureAwait(false);
+            if (last is not null && AttemptCauseVocabulary.IsDeadline(last.Cause))
+            {
+                cause = PdfRenderingMetrics.DeadlineCause;
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                "Block {BlockIndex} of output {OutputId} could not read its last attempt cause ({ExceptionType})",
+                input.BlockIndex,
+                input.OutputId,
+                exception.GetType().Name);
+        }
+
+        metrics.ActivityRetry(PdfRenderingMetrics.RenderQueue, cause);
+    }
+
     // The cause of a guard deadline, written where the store is reachable. A store that
     // cannot answer does not replace the guard's code: the carried RENDER_TIMEOUT still
     // maps, and only its reason falls back to "none", which the child reads as such.
@@ -672,6 +708,7 @@ public sealed class RenderPdfBlockActivity(
                     cause,
                     clock.GetUtcNow()),
                 cancellationToken).ConfigureAwait(false);
+            metrics.AttemptCause(cause);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

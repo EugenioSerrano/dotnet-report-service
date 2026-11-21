@@ -151,6 +151,40 @@ public sealed class OrchestrationWorkerCompositionTests
         }
     }
 
+    [Fact]
+    public void TheCauseReadIsPlannedOnTheQueueTheJobWorkflowRunsOn()
+    {
+        var root = Directory.CreateTempSubdirectory("worker-composition-");
+        try
+        {
+            var builder = Host.CreateApplicationBuilder();
+            builder.Configuration.AddInMemoryCollection(Settings(root.FullName));
+            builder.ConfigureContainer(new DefaultServiceProviderFactory(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
+            OrchestrationWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+            var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
+            var plan = WorkerPlan.Plan(
+                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                registrations);
+
+            // The read of a block's last recorded cause belongs to the job's own worker, beside
+            // the steps that end an output, and is served by no other queue.
+            var orchestration = Assert.Single(plan, worker => worker.Queue == ReportJobWorkflow.OrchestrationQueue);
+            var activities = orchestration.Options.Activities.Select(activity => activity.Name).ToList();
+            Assert.Contains(AttemptCauseActivities.FindLastAttemptCauseName, activities);
+            Assert.DoesNotContain(
+                plan.Where(worker => worker.Queue != ReportJobWorkflow.OrchestrationQueue),
+                worker => worker.Options.Activities.Any(
+                    activity => activity.Name == AttemptCauseActivities.FindLastAttemptCauseName));
+        }
+        finally
+        {
+            root.Delete(true);
+        }
+    }
+
     /// <summary>The settings the process needs, at the values the worker's own defaults carry.</summary>
     private static Dictionary<string, string?> Settings(string storageRoot) => new(StringComparer.Ordinal)
     {

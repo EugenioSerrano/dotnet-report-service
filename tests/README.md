@@ -434,6 +434,31 @@ itself, and `SingleBlockLimitRefusalMeasurementTests` records what a refusal of 
 thousand records costs, as an observation on the reference environment with no
 threshold.
 
+## The restarted print and the exhausted budget
+
+`PdfRestartTests` (integration level) drives the same job twice through the
+product's registrations, in-process on a real engine, a real database and one
+storage root: a composition whose guard is passed on every attempt ends the output
+with the timeout code and the cause its last attempt recorded, and a package whose
+anchors are undeclared is refused after one attempt without ever reading a cause.
+Its watchdog case passes the print deadline once, waits for the watchdog's trip,
+stops and starts the worker, and asserts the report finishes on the fresh one. The
+hosted watchdog and its health answer are the running worker's, never a double.
+
+`RestartAndExhaustionEndToEndTests` (end-to-end level) kills the composition's real
+render-worker container with `docker kill` and starts it again: before any part
+commit, after the part commit, on every allowed attempt, and after the last one.
+It reads the job from the composition's database and storage root, verifies the
+published object by size and SHA-256, and reads the runtime's restart policy back
+from the container. Its two transcripts are the demo's evidence.
+
+`PdfOutputRefusalTests` registers the output child against a real engine and reads
+the child's own history: the refusal arm schedules no cause read and carries no
+reason, and the exhausted arm schedules the read exactly once and carries the
+reason the failure records. Both histories are written by the same opt-in capture
+and replayed hermetically by `PdfOutputHistoryTests`, which skips while the
+captures are not committed.
+
 ## The independent judge of a printed document
 
 `ReportService.PdfOracle` reads a printed PDF with the text tools of its own image
