@@ -161,7 +161,19 @@ public sealed class PdfOutputRefusalTests : IClassFixture<PostgresFixture>, IAsy
         finally
         {
             await stop.CancelAsync();
-            await Task.WhenAll(runs);
+            foreach (var run in runs)
+            {
+                try
+                {
+                    await run;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Each worker ends by the stop this cleanup asks for, and only that
+                    // cancellation is swallowed: a fault of either worker still fails the
+                    // test, and an exception of the body is not replaced by the cleanup.
+                }
+            }
         }
     }
 

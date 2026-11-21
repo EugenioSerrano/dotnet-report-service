@@ -213,6 +213,7 @@ public sealed class TemplateSampleRenderTests : IClassFixture<PostgresFixture>, 
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var package = SampleGate("1.0.0");
+        RelabelVersion(package, "1.0.0", "1.3.0");
         package["html/row.html.sbn"] = "<tr><td></td></tr>"u8.ToArray();
         await PublishAsync("1.3.0", package, cancellationToken);
 
@@ -231,10 +232,12 @@ public sealed class TemplateSampleRenderTests : IClassFixture<PostgresFixture>, 
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var package = SampleGate("1.0.0");
-        package["html/document-start.html.sbn"] = ""u8.ToArray();
-        package["html/document-end.html.sbn"] = ""u8.ToArray();
-        package["sample.json"] = """
-            { "contractVersion": "1.0", "header": { "datasetId": "pilot-simple", "reportTitle": "Monthly statement", "generatedAt": "2026-11-01T12:00:00Z", "seed": 7, "currency": "ARS", "customer": { "id": "acme", "name": "Acme" }, "totals": { "recordCount": 0, "amount": 0 } }, "items": [] }
+        RelabelVersion(package, "1.0.0", "1.4.0");
+        package["html/document-start.html.sbn"] = """
+            <html><head><meta charset="utf-8"><title>{{ header.reportTitle | html.escape }}</title><link rel="stylesheet" href="html/styles.css"></head><body>{{ if block.recordCount != "0" }}<header><h1>{{ header.reportTitle | html.escape }}</h1><p class="customer">{{ header.customer.name | html.escape }} &middot; {{ header.currency | html.escape }} &middot; {{ header.totals.recordCount | html.escape }}</p></header><p class="records">Records: {{ header.totals.recordCount | html.escape }}</p><main><table class="detail"><thead><tr><th class="col-seq">Seq</th><th class="col-date">Date</th><th class="col-description">Description</th><th class="col-qty">Qty</th><th class="col-unit">Unit</th><th class="col-amount">Amount</th></tr></thead><tbody>{{ end }}
+            """u8.ToArray();
+        package["html/document-end.html.sbn"] = """
+            {{ if block.recordCount != "0" }}</tbody></table></main><footer><p class="clock">{{ format_date render.clock "dd/MM/yyyy HH:mm" }}</p></footer>{{ end }}</body></html>
             """u8.ToArray();
         await PublishAsync("1.4.0", package, cancellationToken);
 
@@ -253,6 +256,7 @@ public sealed class TemplateSampleRenderTests : IClassFixture<PostgresFixture>, 
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var package = SampleGate("1.0.0");
+        RelabelVersion(package, "1.0.0", "1.5.0");
         var declaration = Encoding.UTF8.GetString(package["template.yaml"]).Replace(
             "header: [\"$.reportTitle\", \"$.customer.name\", \"$.currency\", \"$.totals.recordCount\"]",
             "header: [\"$.reportTitle\", \"$.customer.name\", \"$.currency\", \"$.totals.recordCount\", \"$.customer.id\"]",
@@ -284,6 +288,14 @@ public sealed class TemplateSampleRenderTests : IClassFixture<PostgresFixture>, 
 
         return files;
     }
+
+    // The variants below start from the 1.0.0 folder and are published under a version of their
+    // own; the manifest must declare the version the rig publishes, or the take refuses the
+    // publication before the case's own rule is reached.
+    private static void RelabelVersion(Dictionary<string, byte[]> package, string from, string to) =>
+        package["template.yaml"] = Encoding.UTF8.GetBytes(
+            Encoding.UTF8.GetString(package["template.yaml"])
+                .Replace("version: \"" + from + "\"", "version: \"" + to + "\"", StringComparison.Ordinal));
 
     private Task PublishAsync(string version, Dictionary<string, byte[]> files, CancellationToken cancellationToken) =>
         _source!.PublishAsync(Template, version, files);
