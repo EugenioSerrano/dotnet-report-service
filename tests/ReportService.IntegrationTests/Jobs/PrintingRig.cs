@@ -65,6 +65,13 @@ internal sealed class PrintingRig : IAsyncDisposable
     /// <summary>The consumer the registry carries as inactive.</summary>
     public const string InactiveConsumer = "consumer-c";
 
+    /// <summary>
+    /// The owner of the takeable family. The joint group submits for this consumer because the
+    /// family's packages are <c>shared: false</c>: a version is visible only to the consumer that
+    /// owns it, and the API admits only a registered consumer whose upload it owns.
+    /// </summary>
+    public const string SampleGateOwner = "billing-system";
+
     /// <summary>The sample template every case prints.</summary>
     public const string Template = "pilot-simple";
 
@@ -1017,6 +1024,7 @@ internal sealed class PrintingRig : IAsyncDisposable
         File.WriteAllText(
             registry,
             "{\"consumers\":[{\"consumerId\":\"" + Consumer + "\",\"active\":true},"
+            + "{\"consumerId\":\"" + SampleGateOwner + "\",\"active\":true},"
             + "{\"consumerId\":\"" + InactiveConsumer + "\",\"active\":false}"
             + extras + "]}");
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

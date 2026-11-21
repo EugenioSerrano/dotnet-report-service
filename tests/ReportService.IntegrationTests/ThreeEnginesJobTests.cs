@@ -39,7 +39,7 @@ public sealed class ThreeEnginesJobTests : IClassFixture<PostgresFixture>
 
         var snapshot = PrintingRig.SameReportSnapshot(25);
         var descriptions = DescriptionsOf(snapshot);
-        var uploadId = await rig.ReadyUploadAsync(snapshot, cancellationToken);
+        var uploadId = await rig.ReadyUploadAsync(snapshot, cancellationToken, PrintingRig.SampleGateOwner);
 
         var texts = new List<string>();
         foreach (var version in PrintingRig.SampleGateEngines)
@@ -50,7 +50,8 @@ public sealed class ThreeEnginesJobTests : IClassFixture<PostgresFixture>
                 version,
                 "es-AR",
                 "America/Argentina/Buenos_Aires",
-                cancellationToken);
+                cancellationToken,
+                consumer: PrintingRig.SampleGateOwner);
             var row = await rig.WaitForTerminalAsync(jobId, Deadline, cancellationToken);
             Assert.True(
                 string.Equals("SUCCEEDED", row.Status, StringComparison.Ordinal),
@@ -84,19 +85,21 @@ public sealed class ThreeEnginesJobTests : IClassFixture<PostgresFixture>
             files => files["html/row.html.sbn"] = "<tr><td></td></tr>"u8.ToArray(),
             cancellationToken);
 
-        var uploadId = await rig.ReadyUploadAsync(PrintingRig.SameReportSnapshot(3), cancellationToken);
+        var uploadId = await rig.ReadyUploadAsync(
+            PrintingRig.SameReportSnapshot(3), cancellationToken, PrintingRig.SampleGateOwner);
         var jobId = await rig.SubmitAsync(
             uploadId,
             PrintingRig.SampleGate,
             "1.9.0",
             "es-AR",
             "America/Argentina/Buenos_Aires",
-            cancellationToken);
+            cancellationToken,
+            consumer: PrintingRig.SampleGateOwner);
 
         var row = await rig.WaitForTerminalAsync(jobId, Deadline, cancellationToken);
         Assert.Equal("FAILED", row.Status);
         Assert.Equal("TEMPLATE_INVALID", row.ErrorCode);
-        Assert.Contains("row-without-text", row.ErrorMessage ?? row.ErrorReason ?? string.Empty, StringComparison.Ordinal);
+        Assert.Contains("prints no text", row.ErrorMessage ?? row.ErrorReason ?? string.Empty, StringComparison.Ordinal);
         Assert.Null(row.ArtifactId);
     }
 

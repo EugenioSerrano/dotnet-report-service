@@ -30,7 +30,7 @@ public static class TemplatePackageFixtures
             ["template.yaml"] = Encoding.UTF8.GetBytes(Manifest(templateId, version, owner, shared, engine, title)),
             ["schema.json"] = Encoding.UTF8.GetBytes(Schema),
             ["sample.json"] = Encoding.UTF8.GetBytes(Sample),
-            ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes("<html><head><link rel=\"stylesheet\" href=\"html/styles.css\"></head><body>"),
+            ["html/document-start.html.sbn"] = Encoding.UTF8.GetBytes("<html><head><link rel=\"stylesheet\" href=\"html/styles.css\"></head><body><header><h1>{{ header.title | html.escape }}</h1></header>"),
             ["html/row.html.sbn"] = Encoding.UTF8.GetBytes("<tr><td>{{ item.quantity | html.escape }}</td></tr>"),
             ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</body></html>"),
             ["html/styles.css"] = Encoding.UTF8.GetBytes("body { font-family: \"Liberation Sans\", sans-serif; }"),
