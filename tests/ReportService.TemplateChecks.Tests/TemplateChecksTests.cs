@@ -3,20 +3,27 @@ using Microsoft.Extensions.DependencyInjection;
 using ReportService.Rendering;
 using ReportService.TemplateChecks;
 using ReportService.TemplateChecks.Checks;
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateChecks.Scanning;
 using ReportService.TemplateSource.Checks;
+using ReportService.Testing.TemplateChecks;
 
 namespace ReportService.TemplateChecks.Tests;
 
-/// <summary>The eight checks, their order, and the refusals an author reads.</summary>
+/// <summary>The thirteen checks, their order, and the refusals an author reads.</summary>
 public sealed class TemplateChecksTests
 {
     [Fact]
     public void TheRegisteredChecksAreTheFixedOrder()
     {
-        var services = new ServiceCollection().AddTemplateVersionChecks().BuildServiceProvider();
+        var services = new ServiceCollection()
+            .AddSingleton<ISampleRenderer>(new InMemorySampleRenderer().AlwaysRendered())
+            .AddTemplateVersionChecks()
+            .BuildServiceProvider();
         var names = services.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToArray();
         Assert.Equal(TemplateChecksRegistration.Order, names);
+        Assert.Equal(AtBoundSampleCheck.CheckName, names[^1]);
+        Assert.Equal(SampleRenderCheck.CheckName, names[^2]);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ namespace ReportService.TemplateSource.Resolution;
 /// </summary>
 /// <param name="TemplateId">The template's identifier.</param>
 /// <param name="SourceDescriptorSha256">The publication record's hash the chosen version was read from, or <see langword="null"/> when the source could not be checked.</param>
-/// <param name="SourceVersions">How many names the source listed at the commit.</param>
+/// <param name="SourceVersions">How many names the source enumerated.</param>
 /// <param name="TakenVersions">How many records the store holds for the template.</param>
 /// <param name="Considered">The considered candidates, newest first.</param>
 /// <param name="Skipped">Every candidate the resolution excluded or skipped, with its reason.</param>

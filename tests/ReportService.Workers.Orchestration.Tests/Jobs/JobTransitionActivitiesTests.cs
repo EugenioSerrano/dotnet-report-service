@@ -194,7 +194,12 @@ public sealed class JobTransitionActivitiesTests
 
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
@@ -233,6 +238,10 @@ public sealed class JobTransitionActivitiesTests
         public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     // What the product's meter published while the case ran: only its own identity is

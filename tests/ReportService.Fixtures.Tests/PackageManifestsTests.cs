@@ -21,9 +21,17 @@ public sealed class PackageManifestsTests
 
     private static string SameReportDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "same-report");
 
+    private static string SampleGateDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "TemplatePackages", "sample-gate");
+    private static string CorpusDirectory => Path.Combine(RepositoryPaths.Root, "tests", "ReportService.Testing", "VerificationLoss", "packages");
+
     private static IReadOnlyList<string> SameReportIds =>
         [.. Directory.GetDirectories(SameReportDirectory)
             .Select(folder => PackageManifests.SameReportPrefix + Path.GetFileName(folder))
+            .Order(StringComparer.Ordinal)];
+
+    private static IReadOnlyList<string> SampleGateIds =>
+        [.. Directory.GetDirectories(SampleGateDirectory)
+            .Select(folder => PackageManifests.SampleGatePrefix + Path.GetFileName(folder))
             .Order(StringComparer.Ordinal)];
 
     /// <summary>
@@ -43,6 +51,8 @@ public sealed class PackageManifestsTests
             .Append(SimpleSample)
             .Concat(new[] { "page-frame-a4-landscape", "page-frame-letter-portrait", "page-frame-letter-landscape" })
             .Concat(SameReportIds)
+            .Concat(SampleGateIds)
+            .Concat(PackageManifests.CorpusPackages)
             .Order(StringComparer.Ordinal)
             .ToList();
 
@@ -68,10 +78,25 @@ public sealed class PackageManifestsTests
             }
         }
 
+        if (id.StartsWith(PackageManifests.SampleGatePrefix, StringComparison.Ordinal))
+        {
+            var version = Path.Combine(SampleGateDirectory, id[PackageManifests.SampleGatePrefix.Length..]);
+            if (Directory.Exists(version))
+            {
+                return version;
+            }
+        }
+
+        var corpus = Path.Combine(CorpusDirectory, PackageManifests.FolderOf(id) ?? id);
+        if (Directory.Exists(corpus))
+        {
+            return corpus;
+        }
+
         var shipped = Path.Combine(SamplesDirectory, id);
         return Directory.Exists(shipped)
             ? shipped
-            : throw new InvalidOperationException($"The package '{id}' is under neither {TemplatesDirectory}, {SameReportDirectory} nor {SamplesDirectory}.");
+            : throw new InvalidOperationException($"The package '{id}' is under neither {TemplatesDirectory}, {SameReportDirectory}, {CorpusDirectory} nor {SamplesDirectory}.");
     }
 
     /// <summary>The declaration of <paramref name="id"/>: its own file, or the geometry file of a page-frame variant.</summary>
@@ -98,7 +123,12 @@ public sealed class PackageManifestsTests
     [InlineData("same-report-1.2.0")]
     [InlineData("same-report-1.3.0")]
     [InlineData("same-report-1.4.0")]
+    [InlineData("sample-gate-1.0.0")]
+    [InlineData("sample-gate-1.1.0")]
+    [InlineData("sample-gate-1.2.0")]
     [InlineData(SimpleSample)]
+    [InlineData("verification-loss")]
+    [InlineData("verification-loss-supplementary")]
     public void EveryDeclaredFileIsInThePackage(string id)
     {
         var manifest = PackageManifests.Of(id);
@@ -137,7 +167,12 @@ public sealed class PackageManifestsTests
     [InlineData("same-report-1.2.0")]
     [InlineData("same-report-1.3.0")]
     [InlineData("same-report-1.4.0")]
+    [InlineData("sample-gate-1.0.0")]
+    [InlineData("sample-gate-1.1.0")]
+    [InlineData("sample-gate-1.2.0")]
     [InlineData(SimpleSample)]
+    [InlineData("verification-loss")]
+    [InlineData("verification-loss-supplementary")]
     public void TheDeclarationMatchesThePackageManifest(string id)
     {
         var manifest = PackageManifests.Of(id);
@@ -166,6 +201,14 @@ public sealed class PackageManifestsTests
     {
         foreach (var id in PackageManifests.Ids.Where(id => !id.StartsWith("page-frame", StringComparison.Ordinal)))
         {
+            // The verification-loss corpus keeps its page in its manifest alone: the rendering
+            // host applies the page rule to every document, and a package-level page block would
+            // compete with it on the pinned browser.
+            if (PackageManifests.CorpusPackages.Contains(id, StringComparer.Ordinal))
+            {
+                continue;
+            }
+
             var manifest = PackageManifests.Of(id);
             var stylesheet = File.ReadAllText(Path.Combine(PackageFolder(id), "html", "styles.css"));
             var margins = manifest.Pdf.MarginMm;

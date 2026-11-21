@@ -31,6 +31,13 @@ default engine of the service — a package always names its engine. Handlebars
 and Liquid variants of the same templates are added by the template-engine
 measurements.
 
+
+**The takeable fixture family is test data, not a shipped sample.** The test
+library holds `sample-gate` (three versions of one report, one engine each,
+each with its `owner` and its own `sample.json`) because a version is taken only
+after its sample renders; the packages here are the samples a consumer copies,
+they stay Scriban and they stay as they are.
+
 ## Writing a manifest
 
 The manifest is YAML, but only a part of it is read. A manifest is **one
@@ -72,7 +79,9 @@ A newer version that its own author has to fix is **logged and skipped**, and th
 job uses the newest valid version below it, so one broken version never breaks
 the jobs that name the template only. A pre-release is used only when a job names
 it exactly. A folder whose name is not a version (`v1.3.0`, `1.0`) is not a
-version.
+version. A version published more than once is never picked: the service logs the
+conflict and skips the version, a by-name job uses the newest release below it,
+and a correction is published under a new version.
 
 ## What a package says about itself
 

@@ -64,7 +64,11 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   fixture library with the product composer and printer and reads every document
   with the judge. It needs the local development registry and the PDF base image;
   the runner prepares both, like the end-to-end level. It takes no
-  `--without-printing`, because every document it runs is printed.
+  `--without-printing`, because every document it runs is printed. The
+  verification-loss corpus is part of the tier: its three loss documents and its
+  honest document are printed with the corpus packages, and each reading is
+  asserted apart - the product's one reason and the judge's class set - beside the
+  supplementary template-authored control that carries the blank trailing page.
   Its **`engines` tier** (`[Trait("Tier", "engines")]`) prints one report in three
   template versions, one per engine, under three locale settings: the three
   composed documents are byte-identical **under the `es-AR` ambient culture and
@@ -356,6 +360,17 @@ keyword after the plain row's named rule), the three grid mutations (a grid row
 whose cell is bottom-aligned by its own rule for two engines and by the
 container's for the third, the same defect in a package whose sample cannot show
 it, and the one package that breaks all three PDF constraints at once).
+
+The take's own evidence is a family of its own:
+`TemplatePackages/sample-gate/` holds three versions of one report - Scriban,
+Handlebars and Liquid - each with its `owner` and its own `sample.json`, which
+is what makes a package takeable. The family is never composed as evidence of
+another family: `SampleGatePackagesTests` holds the three engines to byte-
+identical composed HTML under both ambient cultures, `SampleControlTierTests`
+runs the take's `sample` verb on it and on its two known-bad mutations (a row
+that prints no text, an anchor the parts do not print) in the rendering image,
+and the two integration classes take it through the real source and job. The
+delivered `same-report` family stays untouched as the composition reference.
 
 ## The report job suite
 

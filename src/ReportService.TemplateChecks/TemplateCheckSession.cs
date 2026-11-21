@@ -4,10 +4,12 @@ using ReportService.TemplateSource.Checks;
 namespace ReportService.TemplateChecks;
 
 /// <summary>
-/// The checks' share of the take's deadline: 30 s in total, measured as elapsed
-/// wall-clock time from the first check's start. It is a backstop far above the
-/// measured cost of an admissible package, never the expected outcome, and it is
-/// checked between checks and inside long loops.
+/// The static checks' share of the take's deadline: 30 s in total, measured as
+/// elapsed wall-clock time from the first check's start. It is a backstop far above
+/// the measured cost of an admissible package, never the expected outcome, and it is
+/// checked between checks and inside long loops. It is the eleven static checks'
+/// boundary and is not widened: the sample render that runs after them is bounded by
+/// the take's own deadline, and its trip is a retry, never a refusal.
 /// </summary>
 /// <param name="clock">The clock the elapsed time is read from.</param>
 public sealed class TemplateCheckBudget(TimeProvider clock)

@@ -526,6 +526,50 @@ public sealed class TemplateVersionResolverTests : IDisposable
     }
 
     [Fact]
+    public async Task ATwicePublishedUntakenVersionIsSkippedAndTheTakenOlderOneAnswers()
+    {
+        // The version is published twice and no copy of it is taken: the listing
+        // reports both records, the take refuses the version as published more than
+        // once, and the walk skips it like any other invalid one.
+        SeedSource(Template, "1.0.0", "1.1.0");
+        _source.SeedDuplicatePublication(Template, "1.1.0");
+        _store.Seed(TemplateVersionRecords.StorageSample(Template, "1.0.0"));
+        _take.SeedRefused(
+            Template,
+            "1.1.0",
+            TemplateCheckCodes.TemplateInvalid,
+            "The version was published more than once; publish it under a new version.",
+            retryable: false);
+
+        var (outcome, trace) = await Resolve();
+
+        // The older taken release answers, from its record and not from the source.
+        var resolved = AssertResolved(outcome, "1.0.0", fromTakenCopy: false);
+        Assert.Equal(TemplateVersionRecords.DescriptorSha256, resolved.Record.SourceDescriptorSha256);
+
+        // The duplicate is the walk's skip: its code and the text to fix are kept,
+        // and nothing is written for it.
+        var skip = Assert.Single(trace.Skipped);
+        Assert.Equal("1.1.0", skip.Version);
+        Assert.Equal(CandidateSkipReasons.Refused, skip.Reason);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, skip.Code);
+        Assert.Equal(
+            "The version was published more than once; publish it under a new version.",
+            skip.RefusalReason);
+        Assert.True(LoggedWarning(
+            "template.by_name.skipped",
+            "version 1.1.0",
+            "reason refused",
+            "published more than once"));
+        Assert.Equal(0, _store.InsertCalls);
+
+        // The take ran for the duplicate only: the taken release cost no take and no
+        // source read of its own.
+        Assert.Equal("1.1.0", Assert.Single(_take.Calls).Version);
+        Assert.DoesNotContain(_source.RequestLog, request => request.Version == "1.0.0");
+    }
+
+    [Fact]
     public async Task AnUnreachableSourceNeverReachesTheObservation()
     {
         SeedSource(Template, "1.1.0");

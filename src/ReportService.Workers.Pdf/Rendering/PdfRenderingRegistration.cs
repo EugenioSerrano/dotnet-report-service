@@ -51,7 +51,15 @@ public static class PdfRenderingRegistration
         // refuse to start rather than print a document.
         services.TryAddSingleton<IBlockRenderer>(services => services.GetRequiredService<BlockRenderer>());
         services.TryAddSingleton(GlobalisationProvenance.Current);
-        services.AddSingleton<RenderPdfBlockActivity>();
+        // The activity is resolved with the process's own dependencies and then given the
+        // watchdog: the watchdog is worker-internal, so it is not a public constructor
+        // parameter of the step, and no other process can install one.
+        services.AddSingleton(provider =>
+        {
+            var activity = ActivatorUtilities.CreateInstance<RenderPdfBlockActivity>(provider);
+            activity.Watchdog = provider.GetRequiredService<RenderWatchdog>();
+            return activity;
+        });
 
         // The third registration on the queue: the same engine worker serves it, under
         // the one concurrency the PDF queue, the take and the resolution already carry.

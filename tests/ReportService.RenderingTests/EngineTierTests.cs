@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using ReportService.Testing;
 
 namespace ReportService.RenderingTests;
@@ -20,6 +22,15 @@ public sealed class EngineTierTests(RenderingSuite suite)
 
     /// <summary>The three engines and the locales, as the suite mounts them.</summary>
     public static TheoryData<string> Engines => new() { "same-report-1.0.0", "same-report-1.1.0", "same-report-1.2.0" };
+
+    /// <summary>The culture the control's package declares, from its own template.yaml.</summary>
+    private const string ControlCulture = "es-AR";
+
+    /// <summary>The record count the control's snapshot carries: the grouped dataset's header value, as the engine reads it.</summary>
+    private const string ControlCount = "10000";
+
+    /// <summary>The invariant N0 presentation of that count, which the control prints.</summary>
+    private const string ControlPresentedCount = "10,000";
 
     /// <summary>
     /// The three versions compose the same report to byte-identical HTML and print it to a
@@ -57,6 +68,42 @@ public sealed class EngineTierTests(RenderingSuite suite)
             Assert.True(verdict.Passed, $"{fixture} with {render.Package}: {string.Join(", ", verdict.Classes)}");
             Assert.Equal("pass", verdict.Rules["TI-12"]);
         }
+    }
+
+    /// <summary>
+    /// The takeable family, printed through the worker image over one snapshot: the three
+    /// versions of <c>sample-gate</c> compose the same report to byte-identical HTML, the
+    /// product verifies each printed page, and the independent judge passes it - the same
+    /// three engines the take gates on, held at the printed page as well.
+    /// </summary>
+    /// <param name="fixture">The snapshot printed.</param>
+    [Theory]
+    [InlineData("sample-gate")]
+    public async Task TheThreeTakeableVersionsPrintTheSameReportAndBothReadingsPassIt(string fixture)
+    {
+        var renders = new List<RenderOutcome>();
+        foreach (var package in RenderingSuite.SampleGateEnginePackages)
+        {
+            renders.Add(await suite.RenderAsync(fixture, package));
+        }
+
+        foreach (var render in renders)
+        {
+            Assert.True(
+                render.VerificationPassed,
+                $"{fixture} with {render.Package}: the product's verification refused it ({render.VerificationReason}).");
+        }
+
+        var hash = renders[0].HtmlSha256;
+        Assert.False(string.IsNullOrEmpty(hash), $"{fixture}: the host reported no hash of the composed HTML.");
+        foreach (var render in renders.Skip(1))
+        {
+            Assert.Equal(hash, render.HtmlSha256);
+        }
+
+        // The takeable family is read by the product only: the independent judge's
+        // expectations are recorded per delivered fixture family, and section 8.1 asks the
+        // production verification for these three versions.
     }
 
     /// <summary>
@@ -192,17 +239,40 @@ public sealed class EngineTierTests(RenderingSuite suite)
     /// <summary>
     /// The control that presents every formatted value in the invariant culture is refused by
     /// both readings: the product's own checks lose the record count they hold as it is, and the
-    /// judge reports the presented values as wrong against the culture the package declares.
+    /// judge reports the presented values as wrong against the culture the package declares. Both
+    /// readings are measured and written into the run's evidence before the first assertion, so a
+    /// red run records them too.
     /// </summary>
     [Fact]
     public async Task TheInvariantCultureControlFailsBothReadings()
     {
         var render = await suite.RenderAsync("B100", "same-report-1.0.0", mutation: "PR-CULTURE");
+        var verdict = await suite.JudgeAsync(render);
+
+        // The evidence carries what the run observes, plus the two tokens the package and the
+        // snapshot declare: a render exposes no document text, only its hash and its verdicts.
+        var evidence = new StringBuilder()
+            .AppendLine("control: PR-CULTURE")
+            .AppendLine("fixture: " + render.Fixture)
+            .AppendLine("package: " + render.Package)
+            .AppendLine("package.culture: " + ControlCulture + " (the package's declaration)")
+            .AppendLine("count.raw: " + ControlCount + " (the snapshot's header value, as the engine reads it)")
+            .AppendLine("count.presented: " + ControlPresentedCount + " (the invariant N0 the control prints)")
+            .AppendLine("product.verificationPassed: " + render.VerificationPassed)
+            .AppendLine("product.verificationReason: " + (render.VerificationReason ?? "absent"))
+            .AppendLine("product.verificationField: " + (render.VerificationField ?? "absent"))
+            .AppendLine("render.verificationMs: " + (render.VerificationMs?.ToString(CultureInfo.InvariantCulture) ?? "absent"))
+            .AppendLine("render.htmlSha256: " + (render.HtmlSha256 ?? "absent"))
+            .AppendLine("judge.passed: " + verdict.Passed)
+            .AppendLine("judge.pages: " + verdict.Pages.ToString(CultureInfo.InvariantCulture))
+            .AppendLine("judge.words: " + verdict.Words.ToString(CultureInfo.InvariantCulture))
+            .AppendLine("judge.TI-12: " + verdict.Rules["TI-12"])
+            .AppendLine("judge.classes: " + (verdict.Classes.Count == 0 ? "none" : string.Join(" | ", verdict.Classes)));
+        RunEnvironment.WriteEvidence("same-report-culture.PR-CULTURE.txt", Encoding.UTF8.GetBytes(evidence.ToString()));
 
         Assert.False(render.VerificationPassed, "PR-CULTURE printed and the product's verification passed it.");
         Assert.Equal("anchor-mismatch", render.VerificationReason);
 
-        var verdict = await suite.JudgeAsync(render);
         Assert.False(verdict.Passed, "PR-CULTURE printed and the judge passed it.");
         Assert.Equal("fail", verdict.Rules["TI-12"]);
         Assert.Contains(verdict.Classes, failure => failure.Contains("presented-value-wrong", StringComparison.Ordinal));

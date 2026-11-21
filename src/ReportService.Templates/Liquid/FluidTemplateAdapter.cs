@@ -105,6 +105,13 @@ public sealed class FluidTemplateAdapter : ITemplateEngineAdapter
         {
             fluid.RenderAsync(writer, FluidPolicyTextEncoder.Instance, templateContext).AsTask().GetAwaiter().GetResult();
         }
+        catch (Exception) when (writer.Refusal is { } refusal)
+        {
+            // The caller-side guard raised a typed refusal inside the engine's render: it is
+            // the block's own refusal, whatever the engine wrapped it in, so the renderer and
+            // the activity read the code the guard raised and never a package failure.
+            throw refusal;
+        }
         catch (PresentationRefusedException)
         {
             throw;

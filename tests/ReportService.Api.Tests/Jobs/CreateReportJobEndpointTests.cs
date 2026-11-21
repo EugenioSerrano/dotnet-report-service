@@ -25,6 +25,13 @@ public sealed class CreateReportJobEndpointTests : IDisposable
 
     public void Dispose() => _host.Dispose();
 
+    // The header the client names its request by, sent as the wire spells it.
+    private static HttpRequestMessage WithKey(HttpRequestMessage message, string key)
+    {
+        message.Headers.TryAddWithoutValidation("Idempotency-Key", key);
+        return message;
+    }
+
     [Fact]
     public async Task AReadyUploadCreatesAJobAndAnswersAcceptedWithItsIdentifierAndStatusUrl()
     {
@@ -414,19 +421,310 @@ public sealed class CreateReportJobEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task AnIdempotencyKeyHeaderIsIgnoredAndTheJobIsCreated()
+    public async Task ARepeatedRequestWithTheSameKeyAnswersTheFirstJobAndWritesNothing()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
-        using var request = JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId));
-        request.Headers.TryAddWithoutValidation("Idempotency-Key", "3f8a21-plated");
+        var body = JobApiHost.Body(uploadId);
 
-        using var response = await _host.Client.SendAsync(request, cancellationToken);
+        using var first = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), "K1"), cancellationToken);
+        var firstAnswer = await JobApiHost.AnswerAsync(first);
+        var firstBody = await first.Content.ReadAsStringAsync(cancellationToken);
+        var versionReads = _host.Versions.FindCalls + _host.Versions.ListCalls;
+        var writes = _host.Jobs.WriteCalls;
 
-        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        using var second = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), "K1"), cancellationToken);
+        var secondAnswer = await JobApiHost.AnswerAsync(second);
+
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, second.StatusCode);
+        Assert.Equal(firstAnswer.GetProperty("reportJobId").GetString(), secondAnswer.GetProperty("reportJobId").GetString());
+        Assert.Equal(firstAnswer.GetProperty("statusUrl").GetString(), secondAnswer.GetProperty("statusUrl").GetString());
+        Assert.Equal(first.Headers.Location?.OriginalString, second.Headers.Location?.OriginalString);
+        Assert.Equal(firstBody, await second.Content.ReadAsStringAsync(cancellationToken));
+
         Assert.Single(_host.Jobs.Jobs);
         Assert.Single(_host.Jobs.Intents);
+        Assert.Equal(versionReads, _host.Versions.FindCalls + _host.Versions.ListCalls);
+        Assert.Equal(writes, _host.Jobs.WriteCalls);
+        var fingerprint = _host.Jobs.FingerprintOf(firstAnswer.GetProperty("reportJobId").GetString()!)
+            ?? throw new Xunit.Sdk.XunitException("the accepted job records no request identity");
+        Assert.True(RequestFingerprint.IsWellFormed(fingerprint.Value));
     }
+
+    [Fact]
+    public async Task AUsedKeyWithADifferentRequestIsRefusedWithAConflictAndLeavesTheFirstJobUnchanged()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var first = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var other = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var accepted = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(first)), "K1"), cancellationToken);
+        var jobId = (await JobApiHost.AnswerAsync(accepted)).GetProperty("reportJobId").GetString();
+        var reference = _host.Jobs.ReferenceOf(jobId!);
+        var writes = _host.Jobs.WriteCalls;
+
+        using var conflict = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(other)), "K1"), cancellationToken);
+        var problem = await JobApiHost.AnswerAsync(conflict);
+
+        // The same key naming an upload this consumer does not have is still the key's answer:
+        // the conflict, never a missing upload.
+        using var absent = await _host.Client.SendAsync(
+            WithKey(
+                JobApiHost.CreateRequest(
+                    JobApiHost.Consumer,
+                    JobApiHost.Body("upload-ffffffffffffffffffffffffffffffff")),
+                "K1"),
+            cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, accepted.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, absent.StatusCode);
+        Assert.Equal("IDEMPOTENCY_CONFLICT", problem.GetProperty("code").GetString());
+        Assert.Equal("Idempotency key conflict", problem.GetProperty("title").GetString());
+        Assert.Equal("The idempotency key was already used with a different request.", problem.GetProperty("detail").GetString());
+        Assert.DoesNotContain("K1", await conflict.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
+
+        Assert.Single(_host.Jobs.Jobs);
+        Assert.Single(_host.Jobs.Intents);
+        Assert.Equal(writes, _host.Jobs.WriteCalls);
+        Assert.Equal(reference, _host.Jobs.ReferenceOf(jobId!));
+    }
+
+    [Fact]
+    public async Task RequestsWithoutAKeyCreateOneJobEach()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var body = JobApiHost.Body(uploadId);
+
+        using var first = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
+        using var second = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, body), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, second.StatusCode);
+        Assert.Equal(2, _host.Jobs.Jobs.Count);
+        Assert.All(
+            _host.Jobs.Jobs,
+            job => Assert.True(RequestFingerprint.IsWellFormed(
+                (_host.Jobs.FingerprintOf(job.ReportJobId)
+                    ?? throw new Xunit.Sdk.XunitException("an accepted job records no request identity")).Value)));
+    }
+
+    [Fact]
+    public async Task AKeyBelongsToTheConsumerThatUsedIt()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var host = new JobApiHost(registry: new ReplaceableConfiguration(RegistryMap(
+            ("consumer-a", true),
+            ("consumer-b", true))));
+        var uploadA = await host.UploadAsync(JobApiHost.UploadState.Ready, "consumer-a");
+        var uploadB = await host.UploadAsync(JobApiHost.UploadState.Ready, "consumer-b");
+
+        using var acceptedByA = await host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest("consumer-a", JobApiHost.Body(uploadA)), "K1"), cancellationToken);
+        var jobA = (await JobApiHost.AnswerAsync(acceptedByA)).GetProperty("reportJobId").GetString();
+
+        using var acceptedByB = await host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest("consumer-b", JobApiHost.Body(uploadB)), "K1"), cancellationToken);
+        var jobB = (await JobApiHost.AnswerAsync(acceptedByB)).GetProperty("reportJobId").GetString();
+
+        Assert.Equal(HttpStatusCode.Accepted, acceptedByA.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, acceptedByB.StatusCode);
+        Assert.NotEqual(jobA, jobB);
+        Assert.Equal(2, host.Jobs.Jobs.Count);
+
+        using var repeatA = await host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest("consumer-a", JobApiHost.Body(uploadA)), "K1"), cancellationToken);
+        using var repeatB = await host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest("consumer-b", JobApiHost.Body(uploadB)), "K1"), cancellationToken);
+
+        Assert.Equal(jobA, (await JobApiHost.AnswerAsync(repeatA)).GetProperty("reportJobId").GetString());
+        Assert.Equal(jobB, (await JobApiHost.AnswerAsync(repeatB)).GetProperty("reportJobId").GetString());
+        Assert.Equal(2, host.Jobs.Jobs.Count);
+    }
+
+    [Fact]
+    public async Task AByNameRepeatKeepsTheFirstJobsVersionAfterANewerOneIsTaken()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var body = JobApiHost.Body(uploadId, version: null);
+        _host.Versions.Seed(TemplateVersionRecords.Sample(
+            templateId: "pilot-grouped", version: "1.0.0", owner: JobApiHost.Consumer, shared: true));
+
+        using var first = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), "K1"), cancellationToken);
+        var jobId = (await JobApiHost.AnswerAsync(first)).GetProperty("reportJobId").GetString();
+        var reference = _host.Jobs.ReferenceOf(jobId!);
+        Assert.Equal("1.0.0", reference!.BaselineVersion);
+        var versionReads = _host.Versions.ListCalls;
+
+        _host.Versions.Seed(TemplateVersionRecords.Sample(
+            templateId: "pilot-grouped", version: "1.1.0", owner: "another-consumer", shared: false));
+        _host.Versions.Seed(TemplateVersionRecords.Sample(
+            templateId: "pilot-grouped", version: "1.1.0", owner: JobApiHost.Consumer, shared: true));
+
+        using var repeat = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), "K1"), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, repeat.StatusCode);
+        Assert.Equal(jobId, (await JobApiHost.AnswerAsync(repeat)).GetProperty("reportJobId").GetString());
+        Assert.Equal(versionReads, _host.Versions.ListCalls);
+        Assert.Equal(reference, _host.Jobs.ReferenceOf(jobId!));
+        Assert.Single(_host.Jobs.Jobs);
+
+        using var newer = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), "K2"), cancellationToken);
+        var newerId = (await JobApiHost.AnswerAsync(newer)).GetProperty("reportJobId").GetString();
+        Assert.NotEqual(jobId, newerId);
+        Assert.Equal(2, _host.Jobs.Jobs.Count);
+        Assert.Equal("1.1.0", _host.Jobs.ReferenceOf(newerId!)!.BaselineVersion);
+    }
+
+    [Fact]
+    public async Task ARequestRefusedForItsOwnReasonIsAnsweredSoUnderABoundKey()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        using var accepted = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), "K1"), cancellationToken);
+        var jobId = (await JobApiHost.AnswerAsync(accepted)).GetProperty("reportJobId").GetString();
+
+        using var unsupported = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"html\"")), "K1"),
+            cancellationToken);
+        using var unknownConsumer = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest("not-registered", JobApiHost.Body(uploadId)), "K1"), cancellationToken);
+        using var malformed = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, "{"), "K1"), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, unsupported.StatusCode);
+        Assert.Equal(ErrorCodes.UnsupportedCapability, (await JobApiHost.AnswerAsync(unsupported)).GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, unknownConsumer.StatusCode);
+        Assert.Equal(ErrorCodes.ConsumerUnknown, (await JobApiHost.AnswerAsync(unknownConsumer)).GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.BadRequest, malformed.StatusCode);
+        Assert.Equal(ErrorCodes.RequestInvalid, (await JobApiHost.AnswerAsync(malformed)).GetProperty("code").GetString());
+        Assert.Single(_host.Jobs.Jobs);
+        Assert.Equal(jobId, _host.Jobs.Jobs[0].ReportJobId);
+    }
+
+    [Fact]
+    public async Task ARepeatIsAnsweredAfterTheFirstJobsUploadWasRejected()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Verifying);
+        using var accepted = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), "K1"), cancellationToken);
+        var jobId = (await JobApiHost.AnswerAsync(accepted)).GetProperty("reportJobId").GetString();
+
+        await _host.Uploads.RejectTransferAsync(
+            uploadId,
+            UploadRejectionCode.DataInvalid,
+            UploadRejectionReason.Truncated,
+            12,
+            JobApiHost.Now.AddMinutes(1),
+            cancellationToken);
+
+        using var repeat = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), "K1"), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Accepted, repeat.StatusCode);
+        Assert.Equal(jobId, (await JobApiHost.AnswerAsync(repeat)).GetProperty("reportJobId").GetString());
+        Assert.Single(_host.Jobs.Jobs);
+    }
+
+    [Fact]
+    public async Task AMalformedKeyIsRefusedBeforeAnyRecordIsTouched()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var body = JobApiHost.Body(uploadId);
+
+        foreach (var key in new[] { "has space", "café", new string('K', 256) })
+        {
+            using var response = await _host.Client.SendAsync(
+                WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, body), key), cancellationToken);
+            var problem = await JobApiHost.AnswerAsync(response);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal("REQUEST_INVALID", problem.GetProperty("code").GetString());
+            Assert.Equal("Idempotency-Key", problem.GetProperty("field").GetString());
+            Assert.Equal(
+                "The header 'Idempotency-Key' must be 1 to 255 visible ASCII characters, sent once.",
+                problem.GetProperty("detail").GetString());
+            Assert.DoesNotContain(key, await response.Content.ReadAsStringAsync(cancellationToken), StringComparison.Ordinal);
+        }
+
+        Assert.Empty(_host.Jobs.Jobs);
+        Assert.Equal(0, _host.Jobs.AcceptCalls);
+    }
+
+    [Fact]
+    public async Task AnUnreadableKeyStoreAnswersServiceUnavailableAndStoresNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var host = new JobApiHost(store: _ => new UnavailableJobStore());
+        var uploadId = await host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), "K1"), cancellationToken);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(
+            ErrorCodes.ServiceUnavailable,
+            (await JobApiHost.AnswerAsync(response)).GetProperty("code").GetString());
+        Assert.Empty(host.Jobs.Jobs);
+        Assert.Empty(host.Jobs.Intents);
+    }
+
+    [Fact]
+    public async Task NeitherTheKeyNorTheIdentityAppearsInALogOrAnAnswer()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+        var plantedKey = Planted;
+
+        using var accepted = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), plantedKey), cancellationToken);
+        var jobId = (await JobApiHost.AnswerAsync(accepted)).GetProperty("reportJobId").GetString();
+        var fingerprint = _host.Jobs.FingerprintOf(jobId!);
+
+        using var repeat = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId)), plantedKey), cancellationToken);
+        using var conflict = await _host.Client.SendAsync(
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(
+                await _host.UploadAsync(JobApiHost.UploadState.Ready))), plantedKey), cancellationToken);
+
+        foreach (var answer in new[] { accepted, repeat, conflict })
+        {
+            var body = await answer.Content.ReadAsStringAsync(cancellationToken);
+            Assert.DoesNotContain(plantedKey, body, StringComparison.Ordinal);
+            Assert.DoesNotContain(fingerprint!.Value.Value, body, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain(_host.Logs.Lines, line => line.Contains(plantedKey, StringComparison.Ordinal));
+        Assert.DoesNotContain(_host.Logs.Lines, line => line.Contains(fingerprint!.Value.Value, StringComparison.Ordinal));
+    }
+
+    private static Dictionary<string, string?> RegistryMap(params (string ConsumerId, bool Active)[] consumers)
+    {
+        var settings = new Dictionary<string, string?>(StringComparer.Ordinal);
+        for (var index = 0; index < consumers.Length; index++)
+        {
+            settings[$"consumers:{index}:consumerId"] = consumers[index].ConsumerId;
+            settings[$"consumers:{index}:active"] = consumers[index].Active ? "true" : "false";
+        }
+
+        return settings;
+    }
+
     [Fact]
     public async Task AClientThatLeavesAfterItsBodyDoesNotCancelTheJob()
     {
@@ -674,6 +972,13 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             return result;
         }
 
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+            string consumerId,
+            string idempotencyKey,
+            RequestFingerprint fingerprint,
+            CancellationToken cancellationToken) =>
+            inner.FindByIdempotencyKeyAsync(consumerId, idempotencyKey, fingerprint, cancellationToken);
+
         public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
             inner.FindForWorkflowAsync(reportJobId, cancellationToken);
 
@@ -710,6 +1015,12 @@ public sealed class CreateReportJobEndpointTests : IDisposable
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) =>
             inner.RecordRecordsReadAsync(reportJobId, recordsRead, cancellationToken);
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) =>
+            inner.RecordAttemptCauseAsync(cause, cancellationToken);
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+            inner.FindLastAttemptCauseAsync(outputId, blockIndex, cancellationToken);
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) =>
             inner.TransitionOutputAsync(outputId, now, cancellationToken);
@@ -766,10 +1077,16 @@ public sealed class CreateReportJobEndpointTests : IDisposable
 
     // Stands in for records that cannot be reached at all.
     private sealed class UnavailableJobStore : IJobStore
-    {
-        public Task<JobAcceptanceResult> AcceptAsync(
+    {        public Task<JobAcceptanceResult> AcceptAsync(
             JobAcceptance acceptance,
             DateTimeOffset now,
+            CancellationToken cancellationToken) =>
+            throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
+
+        public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+            string consumerId,
+            string idempotencyKey,
+            RequestFingerprint fingerprint,
             CancellationToken cancellationToken) =>
             throw new JobStoreUnavailableException("08006", new TimeoutException("the server did not answer"));
 
@@ -806,6 +1123,10 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken) => throw Unreachable();
+
+        public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) => throw Unreachable();
 
         public Task<TransitionOutcome> TransitionOutputAsync(string outputId, DateTimeOffset now, CancellationToken cancellationToken) => throw Unreachable();
 

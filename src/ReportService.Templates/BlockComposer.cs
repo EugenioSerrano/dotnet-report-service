@@ -95,12 +95,19 @@ public sealed record CompositionRequest(
 /// </summary>
 public sealed class BlockComposer(TimeProvider clock)
 {
+    /// <summary>
+    /// The test-only stall the composition phase is seated in, or <see langword="null"/> on
+    /// the production path. It is installed by a test host on the resolved composer only; no
+    /// process registers one, and the type that carries it is internal to this assembly.
+    /// </summary>
+    internal IRenderStall? Stall { get; set; }
+
     /// <summary>Composes <paramref name="request"/> with the block's own engine and presentation.</summary>
     /// <param name="request">The package, the block, the header and the records.</param>
     /// <param name="adapter">The adapter of the engine the block's version declares.</param>
     /// <param name="settings">The culture, time zone and clock one resolution resolved for the block.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
-    public ComposedBlock Compose(
+    public async Task<ComposedBlock> ComposeAsync(
         CompositionRequest request,
         ITemplateEngineAdapter adapter,
         PresentationSettings settings,
@@ -119,6 +126,15 @@ public sealed class BlockComposer(TimeProvider clock)
         using var stream = new MemoryStream(64 * 1024);
         using var text = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1 << 16, leaveOpen: true);
         var writer = new GuardedWriter(text, clock);
+
+        // The composition hook: a test's stall is awaited here, after the guard's clock has
+        // started and before the first part is composed, so the first write after it raises
+        // the guard's own RENDER_TIMEOUT. The production path leaves the slot null and this
+        // is a completed task.
+        if (Stall is { } stall)
+        {
+            await stall.StallAsync(RenderPhase.Composition, cancellationToken).ConfigureAwait(false);
+        }
 
         Compose(request, adapter, settings, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
 
@@ -229,4 +245,14 @@ public sealed class BlockComposer(TimeProvider clock)
     }
 
     private static bool SameKey(string? left, string? right) => string.Equals(left, right, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Waits at <paramref name="phase"/> when a test installed a stall on this composer, and
+    /// completes immediately on the production path. The renderer forwards the print phase
+    /// through this method, so one installation covers both call sites.
+    /// </summary>
+    /// <param name="phase">The phase the render reached.</param>
+    /// <param name="cancellationToken">The step's cancellation token, passed unchanged.</param>
+    internal Task StallAsync(RenderPhase phase, CancellationToken cancellationToken) =>
+        Stall is { } stall ? stall.StallAsync(phase, cancellationToken) : Task.CompletedTask;
 }

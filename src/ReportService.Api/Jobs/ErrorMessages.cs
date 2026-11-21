@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Logging;
+using ReportService.Jobs;
 
 namespace ReportService.Api.Jobs;
 
@@ -20,6 +21,12 @@ public static class ErrorMessages
     /// <summary>The code of a refusal because one text field of a detail record is larger than the PDF output admits.</summary>
     public const string RowBoundExceeded = "ROW_BOUND_EXCEEDED";
 
+    /// <summary>The code an output ends with when a retryable cause exhausted the attempts it was allowed.</summary>
+    public const string ExecutionFailed = "EXECUTION_FAILED";
+
+    /// <summary>The code an output ends with when the last attempt's recorded cause is a deadline.</summary>
+    public const string RenderTimeout = "RENDER_TIMEOUT";
+
     /// <summary>The sentence of a refusal the record count stopped: the record and the limit applied.</summary>
     private const string RecordsSentence =
         "The PDF report was not printed: record {0} exceeds this version's limit of {1} records per report (one block). Send a smaller report.";
@@ -31,6 +38,14 @@ public static class ErrorMessages
     /// <summary>The sentence of a refusal the row bound stopped: the record, the field, its size and the bound.</summary>
     private const string RowBoundSentence =
         "Record {0} has a text field at {1} of {2} bytes of UTF-8; the PDF output accepts at most {3} bytes per field. Shorten that field.";
+
+    /// <summary>The sentence of an output whose retryable attempts were exhausted with no deadline cause.</summary>
+    private const string ExecutionFailedSentence =
+        "The service could not complete this report. Your data and template are not the cause; the request can be submitted again later.";
+
+    /// <summary>The sentence of an output whose last recorded cause was a deadline.</summary>
+    private const string RenderTimeoutSentence =
+        "This report took too long to print. Your data and template are not the cause; the request can be submitted again later.";
 
     // The stored reason is the data step's whole sentence: the code, then the reason it names
     // (the dimension that was crossed and the value applied), then the limit's own token and
@@ -117,6 +132,23 @@ public static class ErrorMessages
             }
 
             return string.Format(CultureInfo.InvariantCulture, RowBoundSentence, ordinal, path, size, bound);
+        }
+
+        // An exhausted retry budget names one of the three tokens this service writes, and its
+        // sentence is the fixed text of its code: never built from the exception, never naming a
+        // path, a key, a host or an attempt's values.
+        if (string.Equals(code, ExecutionFailed, StringComparison.Ordinal)
+            || string.Equals(code, RenderTimeout, StringComparison.Ordinal))
+        {
+            if (!AttemptCauseVocabulary.IsExhaustionReason(reason))
+            {
+                WarnUnreadable(code!, logger);
+                return null;
+            }
+
+            return string.Equals(code, ExecutionFailed, StringComparison.Ordinal)
+                ? ExecutionFailedSentence
+                : RenderTimeoutSentence;
         }
 
         return null;

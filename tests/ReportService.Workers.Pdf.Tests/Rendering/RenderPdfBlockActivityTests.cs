@@ -790,6 +790,10 @@ internal sealed class FakeJobStore : IJobStore
 
     public PartCommit? Committed { get; private set; }
 
+    public List<AttemptCause> Causes { get; } = [];
+
+    public Action? OnRecordCause { get; set; }
+
     public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
         Task.FromResult(Part);
 
@@ -799,6 +803,11 @@ internal sealed class FakeJobStore : IJobStore
     public Task<PartitionRecord?> FindPartitionAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult(Partition);
 
+    public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult<JobStateRecord?>(new JobStateRecord(
             new ReportJobRecord(reportJobId, "consumer", "upload", ReportJobStatus.Running, new DateTimeOffset(2026, 3, 1, 12, 30, 0, TimeSpan.Zero), DateTimeOffset.UnixEpoch)
@@ -850,6 +859,19 @@ internal sealed class FakeJobStore : IJobStore
     public Task<ReportJobStatusView?> FindStatusAsync(string reportJobId, string consumerId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task<ProgressWriteOutcome> RecordRecordsReadAsync(string reportJobId, long recordsRead, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task<AttemptCauseOutcome> RecordAttemptCauseAsync(AttemptCause cause, CancellationToken cancellationToken)
+    {
+        OnRecordCause?.Invoke();
+        Causes.Add(cause);
+        return Task.FromResult(AttemptCauseOutcome.Recorded);
+    }
+
+    public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
+        Task.FromResult(Causes
+            .Where(cause => string.Equals(cause.OutputId, outputId, StringComparison.Ordinal) && cause.BlockIndex == blockIndex)
+            .OrderByDescending(cause => cause.Attempt)
+            .FirstOrDefault());
 }
 
 /// <summary>The version store as the step reads it.</summary>

@@ -7,11 +7,13 @@ using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Workers.Pdf.Templates;
 using ReportService.Testing;
+using ReportService.Testing.TemplateChecks;
 using ReportService.Testing.TemplateSource;
 using Temporalio.Exceptions;
 
@@ -123,6 +125,7 @@ public sealed class TemplateTakeRegistrationTests
             ["TemplateSource:Store:Filesystem:CreateIfMissing"] = "false",
         });
         builder.Services.AddSingleton(processStore ?? new NoObjects());
+        builder.Services.AddSingleton<ISampleRenderer>(new InMemorySampleRenderer().AlwaysRendered());
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();

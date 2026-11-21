@@ -1,1 +1,1 @@
-{"contractVersion":"1.0","header":{"reportTitle":"PLANTED-HDR-VLROW","customer":{"id":"C-VLROW"}},"items":[{"sequence":1,"description":"Annual inspection"},{"sequence":2,"description":""},{"sequence":3,"description":"Monthly audit"}]}
+{"contractVersion":"1.0","header":{"reportTitle":"PLANTED-HDR-VLROW","customer":{"id":"C-VLROW"}},"items":[{"sequence":1,"description":"Annual inspection"},{"sequence":"","description":""},{"sequence":3,"description":"Monthly audit"}]}

@@ -21,4 +21,17 @@ public abstract record JobAcceptanceResult
     /// consumer, not confirmed, refused, expired or overdue — and nothing was stored.
     /// </summary>
     public sealed record UploadUnusable : JobAcceptanceResult;
+
+    /// <summary>
+    /// The acceptance's key is already bound to <paramref name="ReportJobId"/> by the same
+    /// request, so nothing was stored and the first job is the answer.
+    /// </summary>
+    /// <param name="ReportJobId">The first job's identifier.</param>
+    public sealed record SameRequest(string ReportJobId) : JobAcceptanceResult;
+
+    /// <summary>
+    /// The acceptance's key is already bound to a job of this consumer by a different
+    /// request, so nothing was stored and the first job stays exactly as it is.
+    /// </summary>
+    public sealed record DifferentRequest : JobAcceptanceResult;
 }

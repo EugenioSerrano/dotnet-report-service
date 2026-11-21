@@ -20,7 +20,10 @@ namespace ReportService.Testing.VerificationLoss;
 /// the values below, so generating twice gives byte-identical files and the same
 /// identifier gives the same bytes on every machine; the sums file records the
 /// bytes the cases were measured on, and the packages are the product-format
-/// folders the rendering tier prints and the job cases take.
+/// folders the rendering tier prints and the job cases take. Each row prints the
+/// record's own number in a key column beside its description, so the delivered
+/// judge can key every row; a record that must print nothing holds the empty token
+/// as its number and as its description.
 /// </summary>
 public static class VerificationLossCorpus
 {
@@ -83,34 +86,54 @@ public static class VerificationLossCorpus
     /// <param name="id">One of <see cref="SnapshotIds"/>.</param>
     public static SnapshotFixture Snapshot(string id)
     {
-        var (title, customer, descriptions) = id switch
+        var (title, customer, records) = id switch
         {
             TextLoss => (
                 "Verification-loss text report",
                 "C-VLTEXT",
-                new[] { "Annual inspection", PlantedTextLoss, "Monthly audit" }),
+                new[]
+                {
+                    ("1", "Annual inspection"),
+                    ("2", PlantedTextLoss),
+                    ("3", "Monthly audit"),
+                }),
             RowLoss => (
                 PlantedHeader,
                 "C-VLROW",
-                new[] { "Annual inspection", string.Empty, "Monthly audit" }),
+                new[]
+                {
+                    ("1", "Annual inspection"),
+                    (string.Empty, string.Empty),
+                    ("3", "Monthly audit"),
+                }),
             ManyLoss => (
                 "Verification-loss many report",
                 "C-VLMANY",
-                new[] { PlantedTextLoss, "Quarterly review", string.Empty }),
+                new[]
+                {
+                    ("1", PlantedTextLoss),
+                    ("2", "Quarterly review"),
+                    (string.Empty, string.Empty),
+                }),
             Honest => (
                 "Verification-loss honest report",
                 "C-VLOOK",
-                new[] { "Annual inspection", "Quarterly review", "Monthly audit" }),
+                new[]
+                {
+                    ("1", "Annual inspection"),
+                    ("2", "Quarterly review"),
+                    ("3", "Monthly audit"),
+                }),
             _ => throw new ArgumentException($"Unknown snapshot id '{id}'.", nameof(id)),
         };
 
         var items = new JsonArray();
-        for (var index = 0; index < descriptions.Length; index++)
+        foreach (var (sequence, description) in records)
         {
             items.Add(new JsonObject
             {
-                ["sequence"] = index + 1,
-                ["description"] = descriptions[index],
+                ["sequence"] = SequenceToken(sequence),
+                ["description"] = description,
             });
         }
 
@@ -126,8 +149,17 @@ public static class VerificationLossCorpus
         };
 
         var bytes = Utf8WithoutBom.GetBytes(document.ToJsonString(Writing));
-        return new SnapshotFixture(id, bytes, Convert.ToHexStringLower(SHA256.HashData(bytes)), descriptions.Length);
+        return new SnapshotFixture(id, bytes, Convert.ToHexStringLower(SHA256.HashData(bytes)), records.Length);
     }
+
+    /// <summary>
+    /// One record's number as the snapshot holds it: the number's own token, emitted as
+    /// the integer it is, and the empty token for the record that holds nothing printable.
+    /// The token is a value the record holds, never a member it lacks: the judge reads a
+    /// record through its declared columns, and a missing member is not a record.
+    /// </summary>
+    private static JsonNode SequenceToken(string sequence) =>
+        sequence.Length == 0 ? JsonValue.Create(string.Empty)! : JsonNode.Parse(sequence)!;
 
     /// <summary>Every snapshot of the corpus, in the declared order.</summary>
     public static IReadOnlyList<SnapshotFixture> Snapshots() => [.. SnapshotIds.Select(Snapshot)];

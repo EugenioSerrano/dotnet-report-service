@@ -254,6 +254,8 @@ again; the fix is a new version.
 | 9 | the printed page totals | a version that turns `outputs.pdf.pageTotals.enabled` on: this build prints no totals, and a report with silently missing numbers is worse than a refusal. The message names the declaration, never its value; the fix is to print the totals in the template or turn them off |
 | 10 | the font family of the detail text | detail text whose text-bearing cells name no font family, or that no declaration reaches at all. The message names the part and the stylesheet and line of the declaration that sets only a generic keyword; the fix is to name the family the report is measured with, `"Liberation Sans", sans-serif`, on a rule that applies to the detail text |
 | 11 | the grid cell that may split | a row laid out as a grid whose direct child is aligned to the bottom by `align-self: end`, `align-items: end`, `place-self` or `place-items`, while nothing forbids that cell to break across pages. The message names the part, the cell and the rule that aligns it; the fix is to align the cell to the top |
+| 12 | the sample render | a sample that cannot render, print or verify with the engine the version declares, or a report with zero records that prints nothing. What it refuses, and the sentence an author reads, are in the section below |
+| 13 | the record at the row bound | a version whose record at 256 KiB does not print every character on the page. The message names the file, the field's path and the cause; the fix is to print the field as it is. What it refuses is in the section below |
 
 **The three PDF rules in product words.**
 
@@ -290,3 +292,97 @@ A refused version logs the reason and a stable rule name, and the job that
 referenced it ends `failed` with the code (`TEMPLATE_INVALID` or
 `UNSUPPORTED_CAPABILITY`). The authoring guide is the contract: if a package
 passes the take, the render can parse it.
+
+## The sample the service renders before it takes the version
+
+The twelfth check does not read the package: it **renders** it. The
+version's own `sample.json` is composed to HTML, laid out and printed to PDF with
+the engine the version declares, verified with the product's own verification,
+and then rendered once more with the same header and **zero records**. Before
+this check passes, nothing of the version is kept.
+
+- **`sample.json` is the data the version is tried on.** It follows the same
+  `header-items-v1` envelope a job sends, and the third check has already
+  validated it against the package's `schema.json`. It is the version's own
+  sample - not a fixture of the service, and never a job's data.
+- **One block.** A sample is one block: at most 2 000 records and at most 1 MiB
+  of record content. A larger sample is refused before anything is composed -
+  `sample.json: the sample holds N records and M bytes of record data, where one
+  block holds at most 2 000 records and 1 MiB. Reduce the sample to a single
+  block's worth of records.`
+- **A sample the reader rejects is a refusal, not a crash.** A `sample.json` that
+  does not follow the data format (for instance, no header) is refused in the
+  same form: `sample.json: the sample does not follow the data format
+  (<reason>). Correct the sample.`
+- **The two renders.** The ordinary sample must print and verify - the page must
+  carry the values the parts composed, the anchors the manifest declares, and the
+  rows in the sample's order - and the empty sample must still print the
+  report's header. A template that prints nothing at all for zero records is
+  refused `sample-empty` here, at take, not at a consumer's job.
+- **What a refusal names.** The package-relative file, what is wrong and what to
+  fix; the engine's own message is never shown, because it carries template
+  text. The families are `sample-engine-error`, `sample-engine-limit`,
+  `sample-output-limit`, `sample-over-bound`, `sample-format`,
+  `sample-not-printed` and `sample-empty`.
+- **It is bounded.** Each of the two renders has a 20-second deadline
+  (`Templates:Sample:RenderBudgetSeconds`, validated to at most 22 s), well below
+  the take's own 240-second deadline. A render that does not finish, or a browser
+  that goes away, is **not** a refusal of the version: the take is retried, and
+  the job ends with `RENDER_TIMEOUT` only when its attempts are exhausted.
+- **It is observable.** Each take writes one line under
+  `ReportService.TemplateChecks.Sample` - `check=sample-render`, the rule, the
+  file, the engine and the figures - and a `template.sample` span on the
+  process's own `ReportService` source. Neither carries a value of the sample.
+
+Anchors are part of this contract: an `outputs.pdf.verification.anchors` path is
+a field the template must print **as it is and unconditionally**. A header field
+the document parts do not print is refused at take:
+`template.yaml: $.customer.id is declared as an anchor but the template does not
+print it as it is. Print the field as it is, or remove it from the anchor list.`
+
+## The record at the row bound
+
+The thirteenth and last check prints the version once more, with a record whose
+largest text field is exactly **256 KiB of UTF-8** - the most the service accepts
+in one value of a detail record - through the same parts, stylesheet, printer and
+page checks a job uses. A row that size does not fit a page: it is split across as
+many pages as it needs, and every character of it must reach them, in order, with
+no blank page inside the row. A version is taken only if that print carries what
+the parts composed and, when the template declares the field as an anchor, exactly
+the value it was given.
+
+- **Where the value goes.** The check reads the version's own `schema.json` and
+  tries **every place the data contract can carry text**: a field of the record
+  itself, a field inside an object or an array, a field an open record admits (its
+  additional, patterned and unevaluated members included), the text side of a
+  field that also allows null, and a field the contract reaches only through a
+  combined, conditional, dependent or fixed-position shape. A field the template
+  declares as an item anchor is tried first. The first place that can hold 256 KiB
+  carries the value; the rest of the record is the sample's own first record or,
+  when the sample carries none, a record built from the contract with every
+  declared field at a valid value.
+- **What a refusal means.** The version is not taken: `TEMPLATE_INVALID` with the
+  rule `at-bound-sample`, naming the package file, the field's path and the cause
+  (`text-dropped` when the page lost characters the parts composed,
+  `anchor-mismatch` when the anchored field is not printed as it is, `blank-page`
+  when a page inside the row carries nothing), and nothing of the version is kept.
+  Fix the part - a fixed-height or clipped cell, an overflow that hides the text, a
+  filter that shortens the value, a rule that pushes the row off the page - so
+  that the field prints as it is.
+- **When a field is not a place.** A field whose own limit is shorter than 256 KiB
+  is skipped, and so is one whose own shape cannot hold it: a date, a time, a
+  timestamp, a uuid, an address (ipv4/ipv6), an e-mail address or a URI cannot
+  hold 256 KiB and is never the field the value is measured in, while a duration
+  can be, and is then built to that shape. When **no** place of the record can
+  carry 256 KiB, the version is taken: nothing can be lost at a size the contract
+  does not admit.
+- **A sample with no records.** A version whose sample carries no detail record is
+  still checked: the record is built from the data contract, the print runs, and
+  the version is taken when it passes - never refused for the sample it is allowed
+  to have.
+- **It is observable.** Each take writes one line under
+  `ReportService.TemplateChecks.Sample` - `check=at-bound-sample`, the field's
+  path and shape, where the record came from, its size, the fields skipped and
+  why, whether the value is anchor-bound, its hash, the page count and the timings
+  - and the rule is `at-bound-sample`. Neither the line nor the message carries a
+  value of the data.

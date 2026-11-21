@@ -49,7 +49,11 @@
         ],
         "properties": {
           "sequence": {
-            "type": "integer"
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The record's own number as its token: an integer, or the empty token for a record that holds nothing printable."
           },
           "description": {
             "type": "string"

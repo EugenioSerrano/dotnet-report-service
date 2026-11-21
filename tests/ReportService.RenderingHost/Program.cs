@@ -8,18 +8,25 @@ using Microsoft.Playwright;
 using ReportService.Data;
 using ReportService.Rendering;
 using ReportService.Pdf.Verification;
+using ReportService.ServiceDefaults.Telemetry;
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplatePackages.Manifest;
+using ReportService.TemplateSource.Manifest;
 using ReportService.Templates;
+using ReportService.Workers.Pdf.Templates;
 
 namespace ReportService.RenderingHost;
 
 /// <summary>
-/// One rendering host command: <c>render --fixture &lt;snapshot&gt; --template
-/// &lt;package folder&gt; --out &lt;directory&gt; [--mutation &lt;name&gt;]</c>. It reads a
+/// The rendering host's two commands. <c>render --fixture &lt;snapshot&gt; --template
+/// &lt;package folder&gt; --out &lt;directory&gt; [--mutation &lt;name&gt;]</c> reads a
 /// snapshot, composes its one block with the product composer, prints it with the
-/// product printer into the output folder and writes a JSON result beside the PDF.
-/// A named known-bad control changes the composition on the way, so the suite can
-/// hold the printed document to what the judge says about it.
+/// product printer into the output folder and writes a JSON result beside the PDF; a
+/// named known-bad control changes the composition on the way. <c>sample --template
+/// &lt;package folder&gt; --out &lt;directory&gt;</c> has no fixture: it renders the
+/// package's own <c>sample.json</c> through the take's sample renderer - the same
+/// composer, printer and verification - keeps the verified PDF and writes the same
+/// kind of result, so the demo prints what the take gates on.
 /// </summary>
 internal static partial class Program
 {
@@ -32,6 +39,11 @@ internal static partial class Program
 
     public static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && string.Equals(args[0], "sample", StringComparison.Ordinal))
+        {
+            return await SampleAsync(args).ConfigureAwait(false);
+        }
+
         if (args.Length == 0 || !string.Equals(args[0], "render", StringComparison.Ordinal))
         {
             return await FailAsync(ExitUsage, Usage).ConfigureAwait(false);
@@ -98,17 +110,21 @@ internal static partial class Program
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or TemplatePackageException
             or TemplateGuardException or TemplateInputException or PrintTemporarilyFailedException
-            or PlaywrightException)
+            or PlaywrightException or PresentationRefusedException or PresentationUnavailable)
         {
             return await FailAsync(ExitFailed, exception.Message).ConfigureAwait(false);
         }
     }
 
     private const string Usage =
-        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>] [--name <stem>] [--ambient-culture <invariant|es-AR>] [--page-settings-unset]";
+        "Usage: ReportService.RenderingHost render --fixture <snapshot> --template <package folder> --out <directory> [--mutation <name>] [--name <stem>] [--ambient-culture <invariant|es-AR>] [--page-settings-unset]\n"
+        + "       ReportService.RenderingHost sample --template <package folder> --out <directory> [--name <stem>]";
 
     /// <summary>The options one render accepts; anything else is a usage error, never silently ignored.</summary>
     private static readonly IReadOnlyList<string> KnownOptions = ["fixture", "template", "out", "mutation", "name", "ambient-culture"];
+
+    /// <summary>The options the sample verb accepts: no fixture, because the package's own sample is the data.</summary>
+    private static readonly IReadOnlyList<string> SampleOptions = ["template", "out", "name"];
 
     /// <summary>
     /// The culture the composing process itself runs under, when a case names one: the
@@ -130,12 +146,12 @@ internal static partial class Program
     {
         Directory.CreateDirectory(outFolder);
         var packageId = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(templateFolder)));
-        var manifest = PackageManifests.Of(packageId);
+        var manifest = ManifestOf(templateFolder);
         if (pageSettingsUnset)
         {
             // The manifest copy the renderer receives loses outputs.pdf.paper, as a take
             // defect would leave it: the renderer's own guard is what is being held.
-            manifest = manifest with { PdfOutput = PackageManifests.Pdf("{}") };
+            manifest = manifest with { PdfOutput = JsonDocument.Parse("{}").RootElement.Clone() };
         }
 
         var fixtureId = Path.GetFileNameWithoutExtension(snapshotPath);
@@ -209,7 +225,7 @@ internal static partial class Program
             manifest.GroupKey);
 
         var composer = new BlockComposer(TimeProvider.System);
-        var composed = composer.Compose(
+        var composed = await composer.ComposeAsync(
             composition,
             adapter,
             PresentationSettingsResolver.Resolve(new PresentationValues(
@@ -332,6 +348,173 @@ internal static partial class Program
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)).ConfigureAwait(false);
     }
 
+    private static async Task<int> SampleAsync(string[] args)
+    {
+        var options = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (var index = 1; index < args.Length; index++)
+        {
+            if (index + 1 >= args.Length || !args[index].StartsWith("--", StringComparison.Ordinal))
+            {
+                return await FailAsync(ExitUsage, $"The option '{args[index]}' holds no value.").ConfigureAwait(false);
+            }
+
+            if (!SampleOptions.Contains(args[index][2..], StringComparer.Ordinal))
+            {
+                return await FailAsync(ExitUsage, $"The option '{args[index]}' is not one the sample verb knows ({string.Join(", ", SampleOptions)}).").ConfigureAwait(false);
+            }
+
+            options[args[index][2..]] = args[index + 1];
+            index++;
+        }
+
+        foreach (var required in new[] { "template", "out" })
+        {
+            if (!options.ContainsKey(required))
+            {
+                return await FailAsync(ExitUsage, $"The option '--{required}' is required.").ConfigureAwait(false);
+            }
+        }
+
+        try
+        {
+            return await RenderSampleAsync(
+                options["template"],
+                options["out"],
+                options.TryGetValue("name", out var stem) ? stem : null).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or TemplatePackageException
+            or TemplateInputException or PrintTemporarilyFailedException or PlaywrightException)
+        {
+            return await FailAsync(ExitFailed, exception.Message).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// The manifest the renderer reads, from the package's own <c>template.yaml</c>: the host
+    /// states no manifest of its own, so a package that changes cannot be rendered as a
+    /// declaration it does not make. The page settings travel as the file stores them, and
+    /// the engine version is the adapter's own - the same mapping the take's renderer uses.
+    /// </summary>
+    /// <param name="templateFolder">The package folder the host mounted.</param>
+    private static RenderManifest ManifestOf(string templateFolder)
+    {
+        TemplateManifest parsed;
+        using (var stream = File.OpenRead(Path.Combine(templateFolder, "template.yaml")))
+        {
+            var read = new TemplateManifestReader().Read(stream);
+            if (!read.Succeeded || read.Manifest is null)
+            {
+                throw new InvalidDataException(read.Reason ?? $"{templateFolder} holds no readable template.yaml.");
+            }
+
+            parsed = read.Manifest;
+        }
+
+        var engine = parsed.Engine
+            ?? throw new InvalidDataException($"{templateFolder}'s template.yaml declares no engine.");
+        var declared = TemplateEngineNames.ToManifestName(engine);
+        var adapter = TemplateEngineAdapters.All()
+            .SingleOrDefault(candidate => string.Equals(candidate.Engine, declared, StringComparison.Ordinal))
+            ?? throw new InvalidDataException($"{templateFolder}'s template.yaml declares the engine '{declared}', which this host does not run.");
+        try
+        {
+            return RenderManifestMapping.From(parsed, engine, adapter.Version);
+        }
+        catch (TemplatePackageException)
+        {
+            // The delivered fixture library predates the typed outputs.parts shape: its
+            // manifests declare the parts directly under outputs.html, which this build's
+            // reader does not type. Those packages are printed from the host's own table,
+            // held to their files by PackageManifestsTests; every package the product can
+            // read is read from the package itself.
+            var packageId = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(templateFolder)));
+            return PackageManifests.Of(packageId);
+        }
+    }
+
+    /// <summary>
+    /// The sample verb: the version's own <c>sample.json</c> composed, printed and verified
+    /// through the take's port, with no fixture. The verified PDF is kept in the output folder
+    /// for the demo; the result JSON carries the same figures the take's check reads.
+    /// </summary>
+    private static async Task<int> RenderSampleAsync(string templateFolder, string outFolder, string? stem)
+    {
+        Directory.CreateDirectory(outFolder);
+        var folderName = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(templateFolder)));
+        TemplateManifest manifest;
+        using (var stream = File.OpenRead(Path.Combine(templateFolder, "template.yaml")))
+        {
+            var read = new TemplateManifestReader().Read(stream);
+            if (!read.Succeeded || read.Manifest is null)
+            {
+                throw new InvalidDataException(read.Reason ?? $"{templateFolder} holds no readable template.yaml.");
+            }
+
+            manifest = read.Manifest;
+        }
+
+        var templateId = string.IsNullOrEmpty(manifest.Id) ? folderName : manifest.Id;
+        var version = string.IsNullOrEmpty(manifest.Version) ? "0.0.0" : manifest.Version;
+        var name = stem ?? folderName;
+        var sample = await File.ReadAllBytesAsync(Path.Combine(templateFolder, "sample.json")).ConfigureAwait(false);
+
+        await using var session = new BrowserSession();
+        var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
+        using var metrics = new SampleRenderMetrics(MeterIdentity.ForHost("reportservice-rendering-host"));
+        var renderer = new PdfSampleRenderer(
+            new BlockComposer(TimeProvider.System),
+            printer,
+            new BlockVerifier(),
+            TemplateEngineAdapters.Registry(),
+            new PreparedTemplateCache(),
+            metrics,
+            TimeProvider.System,
+            Microsoft.Extensions.Options.Options.Create(new SampleRenderOptions()),
+            scratchRoot: Path.Combine(Path.GetTempPath(), "report-service-host-samples"));
+
+        var attempt = await renderer
+            .RenderAsync(
+                new SampleRequest(
+                    templateId,
+                    version,
+                    manifest,
+                    new FolderTemplatePackageFiles(templateFolder),
+                    sample,
+                    OutputDirectory: outFolder),
+                CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var pdf = templateId + "-" + version + ".pdf";
+        var engine = manifest.Engine is { } declared ? TemplateEngineNames.ToManifestName(declared) : "undeclared";
+        var result = attempt switch
+        {
+            SampleAttempt.Rendered rendered => new SampleResult(
+                templateId, version, engine, SampleOutcomes.Rendered, pdf, rendered.Facts.HtmlSha256,
+                rendered.Facts.Pages, rendered.Facts.HtmlBytes, rendered.Facts.PdfBytes, rendered.Facts.Words,
+                rendered.Facts.ComposeMs, rendered.Facts.PrintMs, rendered.Facts.VerifyMs,
+                null, null, null),
+            SampleAttempt.Failed failed => new SampleResult(
+                templateId, version, engine, SampleOutcomes.Refused, null, null,
+                0, 0, 0, 0, 0, 0, 0,
+                failed.Failure.Kind.ToString(), failed.Failure.Part, failed.Failure.Reason),
+            SampleAttempt.Unavailable unavailable => new SampleResult(
+                templateId, version, engine, SampleOutcomes.Unavailable, null, null,
+                0, 0, 0, 0, 0, 0, 0,
+                unavailable.Cause.ToString(), unavailable.Part, null),
+            _ => throw new InvalidDataException("the sample renderer answered a state this host does not know"),
+        };
+
+        await WriteSampleResultAsync(Path.Combine(outFolder, name + ".json"), result).ConfigureAwait(false);
+        Console.WriteLine($"{result.Outcome} {name}" + (result.Pdf is null ? string.Empty : $": {result.Pdf}"));
+        return attempt is SampleAttempt.Unavailable ? ExitFailed : ExitOk;
+    }
+
+    private static async Task WriteSampleResultAsync(string path, SampleResult result) =>
+        await File.WriteAllTextAsync(
+            path,
+            JsonSerializer.Serialize(result, SampleResultContext.Default.SampleResult) + "\n",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)).ConfigureAwait(false);
+
     private static async Task<(IReadOnlyDictionary<string, object?> Header, IReadOnlyList<ComposedRecord> Records)> ReadSnapshotAsync(string snapshotPath)
     {
         await using var stream = File.OpenRead(snapshotPath);
@@ -403,6 +586,63 @@ internal sealed record RenderResult(
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(RenderResult))]
 internal sealed partial class RenderResultContext : JsonSerializerContext;
+
+/// <summary>
+/// What one sample render produced: the version, the PDF the demo keeps, and the figures
+/// the take's check reads - or the failure that refused the version, with the file and the
+/// reason an author acts on.
+/// </summary>
+/// <param name="Template">The template's identifier.</param>
+/// <param name="Version">The version the package declares.</param>
+/// <param name="Engine">The engine the version declares, as a manifest names it.</param>
+/// <param name="Outcome">One of <see cref="SampleOutcomes"/>.</param>
+/// <param name="Pdf">The PDF the demo keeps, or null when nothing was printed.</param>
+/// <param name="HtmlSha256">The SHA-256 of the composed HTML the sample's page was laid out from, lower-case hexadecimal; the demo's identity of the three engines' report.</param>
+/// <param name="Pages">How many pages the sample holds.</param>
+/// <param name="HtmlBytes">The size of the composed HTML.</param>
+/// <param name="PdfBytes">The size of the printed document.</param>
+/// <param name="Words">How many words the printed document holds.</param>
+/// <param name="ComposeMs">How long composing took.</param>
+/// <param name="PrintMs">How long printing took.</param>
+/// <param name="VerifyMs">How long verifying took.</param>
+/// <param name="FailureKind">The class of a refusal, or null.</param>
+/// <param name="FailurePart">The package-relative file a refusal names, or null.</param>
+/// <param name="FailureReason">The verification reason a refusal names, or null.</param>
+internal sealed record SampleResult(
+    string Template,
+    string Version,
+    string Engine,
+    string Outcome,
+    string? Pdf,
+    string? HtmlSha256,
+    int Pages,
+    long HtmlBytes,
+    long PdfBytes,
+    int Words,
+    double ComposeMs,
+    double PrintMs,
+    double VerifyMs,
+    string? FailureKind,
+    string? FailurePart,
+    string? FailureReason);
+
+/// <summary>The three outcomes the sample verb writes.</summary>
+internal static class SampleOutcomes
+{
+    /// <summary>The sample rendered and passed every check.</summary>
+    public const string Rendered = "rendered";
+
+    /// <summary>The version is refused for a deterministic property of its sample.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>The render could not run or did not finish; nothing is said about the version.</summary>
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>The serializer context of the sample verb's result file, generated at build time.</summary>
+[JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(SampleResult))]
+internal sealed partial class SampleResultContext : JsonSerializerContext;
 
 /// <summary>
 /// The known-bad controls of the rendering suite: one change, applied to the

@@ -8,6 +8,6 @@
   <p class="customer">{{ header.customer.id | html.escape }}</p>
   <table>
     <thead>
-      <tr><th>Description</th></tr>
+      <tr><th>Seq</th><th>Description</th></tr>
     </thead>
     <tbody>

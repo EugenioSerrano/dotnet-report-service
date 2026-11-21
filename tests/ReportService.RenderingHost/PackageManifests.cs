@@ -21,8 +21,21 @@ internal static class PackageManifests
     /// <summary>The prefix a version of the same report is printed under, so the flat package folder names its engine.</summary>
     public const string SameReportPrefix = "same-report-";
 
+    /// <summary>The prefix a takeable sample-gate version is printed under, beside the delivered family.</summary>
+    public const string SampleGatePrefix = "sample-gate-";
+
+    /// <summary>The verification-loss corpus packages, printed only by this tier.</summary>
+    public static IReadOnlyList<string> CorpusPackages { get; } = ["verification-loss", "verification-loss-supplementary"];
+
     /// <summary>The five versions of the same report: three engines in the base locale and two other locales.</summary>
     public static IReadOnlyList<string> SameReportVersions { get; } = ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"];
+
+    /// <summary>The three takeable versions of the sample-gate family, one engine each.</summary>
+    public static IReadOnlyList<string> SampleGateVersions { get; } = ["1.0.0", "1.1.0", "1.2.0"];
+
+    /// <summary>The three takeable versions, under the flat names the suite mounts them as.</summary>
+    public static IReadOnlyList<string> SampleGatePackages { get; } =
+        [.. SampleGateVersions.Select(version => SampleGatePrefix + version)];
 
     /// <summary>The three versions that print the report in three engines, under the base locale.</summary>
     public static IReadOnlyList<string> SameReportEngines { get; } = [SameReportPrefix + "1.0.0", SameReportPrefix + "1.1.0", SameReportPrefix + "1.2.0"];
@@ -40,7 +53,9 @@ internal static class PackageManifests
         PageFrame + "-letter-landscape",
         PageFrame + "-letter-portrait",
         "pilot-simple",
+        .. CorpusPackages,
         .. SameReportVersions.Select(version => SameReportPrefix + version),
+        .. SampleGatePackages,
     ];
 
     /// <summary>The four geometries the page-frame package is printed on.</summary>
@@ -69,6 +84,9 @@ internal static class PackageManifests
             PageFrame + "-letter-portrait" => PageFrameManifest(LetterPortrait),
             PageFrame + "-letter-landscape" => PageFrameManifest(LetterLandscape),
             _ when id.StartsWith(SameReportPrefix, StringComparison.Ordinal) => SameReport(id[SameReportPrefix.Length..]),
+            _ when id.StartsWith(SampleGatePrefix, StringComparison.Ordinal) => SameReport(id[SampleGatePrefix.Length..]),
+
+            _ when CorpusPackages.Contains(id, StringComparer.Ordinal) => VerificationLossPackage(),
             _ => TestPackage(),
         };
     }
@@ -80,6 +98,32 @@ internal static class PackageManifests
     /// <summary>The <c>outputs.pdf</c> element a variant declares.</summary>
     /// <param name="id">The package id.</param>
     public static JsonElement PdfOutputOf(string id) => Of(id).PdfOutput;
+
+    // The verification-loss corpus packages: the smallest honest report that can lose a row or a
+    // character. Both declare the same page and the same two anchor lists; the supplementary one
+    // keeps each row's fragment while omitting a record's text under a condition and leaves a
+    // blank trailing page, which is why a take would refuse it and why only this tier prints it.
+    private static RenderManifest VerificationLossPackage() => new(
+        "scriban",
+        "7.5.1",
+        new Dictionary<TemplatePart, string>
+        {
+            [TemplatePart.DocumentStart] = "html/document-start.html.sbn",
+            [TemplatePart.Row] = "html/row.html.sbn",
+            [TemplatePart.DocumentEnd] = "html/document-end.html.sbn",
+        },
+        ["html/styles.css"],
+        new PdfSettings(
+            Paper: "A4",
+            Orientation: "portrait",
+            new PageMarginsMm(Top: 15, Right: 12, Bottom: 18, Left: 12),
+            PageTotalsEnabled: false,
+            new VerificationAnchors(
+                ["$.reportTitle", "$.customer.id"],
+                ["$.sequence", "$.description"])),
+        new LocaleDefaults("es-AR", "America/Argentina/Buenos_Aires"),
+        GroupKey: null,
+        PdfOutput: Pdf(A4Portrait));
 
     // The two test packages of the fixture library declare the same manifest.
     private static RenderManifest TestPackage() => new(

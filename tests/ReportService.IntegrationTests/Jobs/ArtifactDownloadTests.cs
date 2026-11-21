@@ -261,7 +261,8 @@ public sealed class ArtifactDownloadTests : IClassFixture<PostgresFixture>
             uploadId,
             PrintingRig.Template,
             TemplateReferenceForm.Exact,
-            PrintingRig.First);
+            PrintingRig.First,
+            AcceptanceIdentity.For(uploadId, PrintingRig.First));
         Assert.IsType<JobAcceptanceResult.Accepted>(
             await rig.Jobs.AcceptAsync(acceptance, DateTimeOffset.UtcNow, cancellationToken));
         Assert.Equal(

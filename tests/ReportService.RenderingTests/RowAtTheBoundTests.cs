@@ -74,15 +74,21 @@ public sealed class RowAtTheBoundTests(RenderingSuite suite)
     public async Task TheVerificationRefusesOneDroppedCharacterAtTheBound()
     {
         var render = await suite.RenderAsync(BoundFamily.Ascii, "pilot-simple", "BoundCharDropped");
+
+        // The judge reads the same document first: its class is the independent
+        // reading of this print, measured and written beside the run before anything
+        // is asserted about the product's own reason, so a disagreement records both
+        // sides instead of hiding the oracle's verdict behind the first failure.
+        var verdict = await suite.JudgeAsync(render);
+        WriteControlResult(render, verdict);
+
+        // The control prints a document: the evidence above exists because the print
+        // produced one, and the case says so before it reads the verdict on it.
+        Assert.NotNull(render.Pdf);
         Assert.False(render.VerificationPassed);
         Assert.Equal(VerificationReasons.TextDropped, render.VerificationReason);
-        Assert.NotNull(render.Pdf);
-
-        var verdict = await suite.JudgeAsync(render);
-        Assert.False(verdict.Passed);
+        Assert.False(verdict.Passed, "the judge accepted a document that lost a character at the bound.");
         Assert.Contains(verdict.Classes, failure => failure.Contains("text-dropped", StringComparison.Ordinal));
-
-        WriteControlResult(render, verdict);
     }
 
     private static void WriteResult(string fixture, RenderOutcome render, Verdict verdict, FieldMatch match)

@@ -28,8 +28,15 @@
 
   <ItemGroup>
     <!-- The parsing configuration and the presentation table stay internal; their own
-         test project holds the cases that compare the take's parse with the render's. -->
+         test project holds the cases that compare the take's parse with the render's.
+         The rendering assembly is the one production grant: it holds the print call site
+         and forwards the stall to this assembly's composer; the worker is not granted, so
+         the process that runs the container cannot name, register or implement the seam. -->
+    <InternalsVisibleTo Include="ReportService.Rendering" />
     <InternalsVisibleTo Include="ReportService.Templates.Tests" />
+    <InternalsVisibleTo Include="ReportService.Rendering.Tests" />
+    <InternalsVisibleTo Include="ReportService.Workers.Pdf.Tests" />
+    <InternalsVisibleTo Include="ReportService.IntegrationTests" />
   </ItemGroup>
 
 </Project>

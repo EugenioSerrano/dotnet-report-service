@@ -210,6 +210,7 @@ internal static class Packages
             new PageAccountingCheck(),
             new NamedFontFamilyCheck(session),
             new BottomAlignedGridCellCheck(session),
+            new ReportService.TemplateChecks.Sample.SampleRenderCheck(new ReportService.Testing.TemplateChecks.InMemorySampleRenderer().AlwaysRendered()),
         ];
     }
 

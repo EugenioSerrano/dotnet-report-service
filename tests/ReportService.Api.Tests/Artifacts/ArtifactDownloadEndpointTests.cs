@@ -30,9 +30,19 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
 
     private static readonly TimeSpan Retention = TimeSpan.FromDays(7);
 
-    private readonly DownloadInstruments _instruments = new();
+    /// <summary>The meter this case's hosts publish on, so its listener hears no neighbour's download.</summary>
+    private readonly string _meterName = "reportservice-artifact-download-" + Guid.NewGuid().ToString("N");
 
-    private JobApiHost _host = new();
+    private readonly DownloadInstruments _instruments;
+
+    private JobApiHost _host;
+
+    /// <summary>Starts the listener and the host on a meter of this case's own.</summary>
+    public ArtifactDownloadEndpointTests()
+    {
+        _instruments = new DownloadInstruments(_meterName);
+        _host = new JobApiHost(meterName: _meterName);
+    }
 
     public void Dispose()
     {
@@ -421,7 +431,8 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, Now, cancellationToken));
         return (acceptance.ReportJobId, acceptance.OutputId);
     }
@@ -464,7 +475,7 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
     {
         ObservedStore? observed = null;
         _host.Dispose();
-        _host = new JobApiHost(objects: inner => observed = new ObservedStore(inner, refusal));
+        _host = new JobApiHost(objects: inner => observed = new ObservedStore(inner, refusal), meterName: _meterName);
         return observed!;
     }
 

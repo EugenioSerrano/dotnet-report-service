@@ -1,3 +1,4 @@
+using ReportService.TemplateChecks.Sample;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource.Take;
@@ -95,6 +96,20 @@ public sealed class TakeTemplateVersionActivity(TemplateTake take)
             outcome = await take
                 .TakeAsync(input.TemplateId, input.Version, input.RequestingConsumerId, input.ReportJobId, cancellationToken)
                 .ConfigureAwait(false);
+        }
+        catch (SampleRenderUnavailableException unavailable)
+        {
+            // A render that could not run, or did not finish inside its deadline, is never
+            // a refusal of the version: the activity answers the cause's own code, retryably,
+            // so the engine tries again inside the queue's three attempts. A deadline trip is
+            // RENDER_TIMEOUT; a crash or a disconnect carries no timeout code and is
+            // EXECUTION_FAILED.
+            throw new ApplicationFailureException(
+                unavailable.Message,
+                errorType: unavailable.Cause == SampleUnavailableCause.RenderTimeout
+                    ? TemplateTakeCodes.RenderTimeout
+                    : TemplateTakeCodes.ExecutionFailed,
+                nonRetryable: false);
         }
         finally
         {

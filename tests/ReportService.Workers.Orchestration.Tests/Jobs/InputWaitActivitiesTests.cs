@@ -143,7 +143,8 @@ public sealed class InputWaitActivitiesTests
                 uploadId,
                 "pilot-grouped",
                 TemplateReferenceForm.Exact,
-                "1.0.0");
+                "1.0.0",
+                ReportService.Testing.AcceptanceIdentity.For(uploadId));
             Assert.IsType<JobAcceptanceResult.Accepted>(await jobs.AcceptAsync(acceptance, Now, cancellationToken));
 
             return new Rig(uploads, jobs, acceptance.ReportJobId);

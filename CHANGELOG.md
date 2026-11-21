@@ -9,11 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A PDF template version is taken only after a record whose largest text field is
+  exactly 256 KiB of UTF-8 - the row bound - is printed with every character on the
+  service's own print path and checked against the data contract: a version whose
+  page drops, alters or hides part of that record is refused
+  `TEMPLATE_INVALID` with the rule `at-bound-sample`, naming the file and the
+  field's path, and nothing of the version is kept. The field is the first place
+  the version's own data contract can carry that much text - the record's own
+  field, a field inside an object or an array, a member an open record admits, the
+  text side of a nullable field, or a field reached only through a combined,
+  conditional, dependent or fixed-position shape - item anchors first; a field
+  whose own limit or shape cannot hold 256 KiB is skipped; a version whose
+  contract can carry 256 KiB nowhere is taken, and so is one whose sample carries
+  no detail record (its record is built from the contract). The check writes one
+  `at-bound-sample` log line per take and never carries a value of the data.
+
+- A PDF report whose print is missing a record or part of its text is refused
+  before anything is published, and the refusal is proved through a job: the PDF
+  output and the job end `failed` with `PAGINATION_FAILED`, nothing is
+  downloadable, no part is recorded and no object is written under the output's
+  prefix. A block whose stored bytes are not the bytes that passed the checks is
+  refused the same way (`EXECUTION_FAILED`), leaving its object as an unreferenced
+  orphan for the storage sweep. The known-bad documents stay in the rendering
+  regression suite, where both readers must refuse them, and one honest document
+  proves the checks are not a refusal of correct reports.
+
+- A job request may carry an `Idempotency-Key` header: the key binds the job it creates
+  to the consumer that sent it, and a request repeated with the same key is answered the
+  first job - the same `202`, the same identifier, nothing written - instead of creating a
+  second report. The same key with a different upload, template, version, format or
+  options is refused with `409 IDEMPOTENCY_CONFLICT` and leaves the first job unchanged.
+  Keys belong to one consumer, a malformed key is refused as a malformed request, and a
+  retry is answered its first job even after its upload was refused or expired, or after
+  a newer template version was taken. A request without the header behaves exactly as
+  before.
+- A template version is taken only after its sample renders to HTML and PDF
+  with the engine the version declares, and then once more with zero records: a
+  version whose sample cannot render, print or verify is refused
+  `TEMPLATE_INVALID` naming the package-relative file and the fix, nothing is
+  kept, and the empty report must still print its header. Each take writes one
+  `sample-render` log line and a `template.sample` span, and the two renders run
+  under a 20-second budget (`Templates:Sample:RenderBudgetSeconds`, at most 22
+  seconds). The three engines are peers: a version names the one it is written
+  for.
 - A PDF report whose detail data carries a text value above 256 KiB of UTF-8 is
   refused before printing: the job and its PDF output end `failed` with
   `ROW_BOUND_EXCEEDED`, no page is rendered and nothing is published, and the job
   status says which record and field to shorten — the record's number, the field's
   path, its size and the bound, never the value.
+- A PDF report whose detail data carries a text value of up to 256 KiB of UTF-8
+  prints it in full, across as many pages as the row needs: every character in
+  order, no blank page inside the row, the amount on the row's first page and no
+  "(continues)" mark. The bound counts bytes, not characters, so two- and
+  three-byte text prints fewer characters for the same 256 KiB — all of them.
 - A PDF report whose data does not fit in one block is refused before anything is
   printed: the job and its PDF output end `failed` with `QUOTA_EXCEEDED`, and the job
   status says which limit the data exceeded, in records or in bytes, naming the limit
@@ -67,6 +115,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The shipped sample templates now name their font family (`"Liberation Sans",
   sans-serif`) and declare no printed page totals, so every sample the product ships
   passes its own take.
+- A template version published more than once is never chosen by a reference that
+  names the template only: the service logs `TEMPLATE_VERSION_CONFLICT` naming the
+  version and the duplicate publication, skips it like any invalid version, and the
+  job uses the newest valid release below it. A correction is published under a new
+  version; the template guide says so.
 
 ### Changed
 

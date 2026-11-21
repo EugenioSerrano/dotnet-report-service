@@ -22,9 +22,15 @@ public sealed class ArtifactStreamingTests
 {
     private const string ArtifactId = "artifact-0123456789abcdef0123456789abcdef";
 
-    private readonly DownloadInstruments _instruments = new();
+    /// <summary>The meter this class's own instruments live on, so no case hears its counts.</summary>
+    private readonly string _meterName = "reportservice-artifact-streaming-" + Guid.NewGuid().ToString("N");
+
+    private readonly DownloadInstruments _instruments;
 
     private readonly LogCapture _logs = new();
+
+    /// <summary>Starts the listener on this class's own meter, before any transfer is counted.</summary>
+    public ArtifactStreamingTests() => _instruments = new DownloadInstruments(_meterName);
 
     [Fact]
     public async Task AnObjectOfOneChunkIsDeliveredWhole()
@@ -136,7 +142,7 @@ public sealed class ArtifactStreamingTests
         using var inner = new MemoryStream(stored, writable: false);
         using var reader = new VerifyingReadStream(inner, expected.LongLength, HashOf(expected));
         using var factory = new LoggerFactory([_logs]);
-        using var metrics = new ArtifactDownloadMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName));
+        using var metrics = new ArtifactDownloadMetrics(MeterIdentity.ForHost(_meterName));
         var streaming = new ArtifactStreaming(metrics, factory.CreateLogger<ArtifactStreaming>());
 
         return await streaming.CopyVerifiedAsync(

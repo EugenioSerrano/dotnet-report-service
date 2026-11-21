@@ -78,6 +78,11 @@ public sealed class VerificationLossCorpusTests
             Assert.False(string.IsNullOrEmpty(root["header"]!["customer"]!["id"]!.GetValue<string>()));
             Assert.Equal(3, items.Count);
             Assert.All(items, item => Assert.NotNull(item!["description"]));
+
+            // The record's number is a member every record holds, the empty token included:
+            // the judge reads a record through its declared columns and a missing member is
+            // not a record.
+            Assert.All(items, item => Assert.NotNull(item!["sequence"]));
         }
     }
 
@@ -90,16 +95,19 @@ public sealed class VerificationLossCorpusTests
         Assert.Equal(1, text.Count(character => character == '\u00AD'));
 
         Assert.Equal(string.Empty, Description(VerificationLossCorpus.RowLoss, 2));
+        Assert.Equal(string.Empty, Number(VerificationLossCorpus.RowLoss, 2));
         Assert.Equal(VerificationLossCorpus.PlantedHeader, TitleOf(VerificationLossCorpus.RowLoss));
 
         Assert.Equal(VerificationLossCorpus.PlantedTextLoss, Description(VerificationLossCorpus.ManyLoss, 1));
         Assert.Equal(string.Empty, Description(VerificationLossCorpus.ManyLoss, 3));
+        Assert.Equal(string.Empty, Number(VerificationLossCorpus.ManyLoss, 3));
 
-        foreach (var sequence in new[] { 1, 2, 3 })
+        foreach (var position in new[] { 1, 2, 3 })
         {
-            var honest = Description(VerificationLossCorpus.Honest, sequence);
+            var honest = Description(VerificationLossCorpus.Honest, position);
             Assert.False(string.IsNullOrWhiteSpace(honest));
             Assert.DoesNotContain('\u00AD', honest);
+            Assert.Equal(position.ToString(System.Globalization.CultureInfo.InvariantCulture), Number(VerificationLossCorpus.Honest, position));
         }
     }
 
@@ -119,7 +127,7 @@ public sealed class VerificationLossCorpusTests
             Assert.Equal(template, manifest.Id);
             Assert.Equal(VerificationLossCorpus.Version, manifest.Version);
             Assert.Equal(["$.reportTitle", "$.customer.id"], manifest.Outputs!.Pdf!.Verification!.Anchors!.Header);
-            Assert.Equal(["$.description"], manifest.Outputs.Pdf.Verification.Anchors.Item);
+            Assert.Equal(["$.sequence", "$.description"], manifest.Outputs.Pdf.Verification.Anchors.Item);
 
             foreach (var part in new[]
                      {
@@ -138,9 +146,16 @@ public sealed class VerificationLossCorpusTests
     private static string TitleOf(string id) =>
         JsonNode.Parse(VerificationLossCorpus.Snapshot(id).Bytes)!["header"]!["reportTitle"]!.GetValue<string>();
 
-    private static string Description(string id, int sequence) =>
-        JsonNode.Parse(VerificationLossCorpus.Snapshot(id).Bytes)!["items"]!.AsArray()
-            .Single(item => item!["sequence"]!.GetValue<int>() == sequence)!["description"]!.GetValue<string>();
+    // A record is read by its position: the corpus's defect record holds the empty
+    // number, so the number is not an identity the test can look a record up by.
+    private static string Description(string id, int position) =>
+        JsonNode.Parse(VerificationLossCorpus.Snapshot(id).Bytes)!["items"]!.AsArray()[position - 1]!
+            ["description"]!.GetValue<string>();
+
+    // The record's number as its token: an integer's own text, or the empty token.
+    private static string Number(string id, int position) =>
+        JsonNode.Parse(VerificationLossCorpus.Snapshot(id).Bytes)!["items"]!.AsArray()[position - 1]!
+            ["sequence"]!.ToJsonString().Trim('"');
 
     private static async Task<string> ArchiveAsync(IReadOnlyDictionary<string, byte[]> files)
     {

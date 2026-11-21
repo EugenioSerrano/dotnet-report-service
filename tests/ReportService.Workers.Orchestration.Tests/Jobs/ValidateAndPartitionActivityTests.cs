@@ -672,7 +672,8 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
                 UploadId,
                 "pilot-simple",
                 TemplateReferenceForm.Exact,
-                "1.0.0"),
+                "1.0.0",
+                ReportService.Testing.AcceptanceIdentity.For(UploadId)),
             Now,
             cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
@@ -806,7 +807,8 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
                 uploadId,
                 "pilot-simple",
                 requestedVersion is null ? TemplateReferenceForm.ByName : TemplateReferenceForm.Exact,
-                requestedVersion),
+                requestedVersion,
+                ReportService.Testing.AcceptanceIdentity.For(uploadId)),
             Now,
             cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);

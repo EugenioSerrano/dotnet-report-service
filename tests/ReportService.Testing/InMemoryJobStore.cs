@@ -25,6 +25,8 @@ public sealed partial class InMemoryJobStore : IJobStore
     private readonly Dictionary<string, ReportJobRecord> _jobs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ReportOutputRecord> _outputs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, TemplateReferenceRecord> _references = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string ConsumerId, string Key), BoundRequest> _idempotency = [];
+    private readonly Dictionary<string, RequestFingerprint> _fingerprints = new(StringComparer.Ordinal);
     private readonly List<RecordedJobIntent> _intents = [];
     private int _acceptCalls;
     private int _findCalls;
@@ -48,6 +50,14 @@ public sealed partial class InMemoryJobStore : IJobStore
     /// <param name="ReportJobId">The job the request names.</param>
     /// <param name="RecordedAt">When the request was recorded, in UTC.</param>
     public sealed record RecordedJobIntent(string Kind, string ReportJobId, DateTimeOffset RecordedAt);
+
+    /// <summary>
+    /// The job a key of one consumer is bound to, with the identity of the request that bound
+    /// it: the pair a real store keeps in the job's row and its unique index.
+    /// </summary>
+    /// <param name="ReportJobId">The first job's identifier.</param>
+    /// <param name="Fingerprint">The identity of the request that bound the key.</param>
+    public sealed record BoundRequest(string ReportJobId, RequestFingerprint Fingerprint);
 
     /// <summary>How many times <see cref="AcceptAsync"/> was called.</summary>
     public int AcceptCalls => Volatile.Read(ref _acceptCalls);
@@ -114,6 +124,27 @@ public sealed partial class InMemoryJobStore : IJobStore
         }
     }
 
+    /// <summary>The identity of the request that created a job, exactly as the store recorded it.</summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    public RequestFingerprint? FingerprintOf(string reportJobId)
+    {
+        lock (_gate)
+        {
+            return _fingerprints.TryGetValue(reportJobId, out var fingerprint) ? fingerprint : null;
+        }
+    }
+
+    /// <summary>The job a key of one consumer is bound to, or null when the key is unused.</summary>
+    /// <param name="consumerId">The consumer the key belongs to.</param>
+    /// <param name="key">The key exactly as it was sent.</param>
+    public BoundRequest? BoundRequestOf(string consumerId, string key)
+    {
+        lock (_gate)
+        {
+            return _idempotency.GetValueOrDefault((consumerId, key));
+        }
+    }
+
     /// <summary>
     /// Records the baseline of an accepted reference, exactly as an acceptance that chose one
     /// would have written it. It exists for the cases of a by-name job whose source is
@@ -147,6 +178,28 @@ public sealed partial class InMemoryJobStore : IJobStore
     }
 
     /// <inheritdoc />
+    public Task<IdempotencyLookup> FindByIdempotencyKeyAsync(
+        string consumerId,
+        string idempotencyKey,
+        RequestFingerprint fingerprint,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(consumerId);
+        ArgumentException.ThrowIfNullOrEmpty(idempotencyKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fingerprint.Value);
+
+        lock (_gate)
+        {
+            return Task.FromResult<IdempotencyLookup>(
+                _idempotency.TryGetValue((consumerId, idempotencyKey), out var bound)
+                    ? bound.Fingerprint == fingerprint
+                        ? new IdempotencyLookup.SameRequest(bound.ReportJobId)
+                        : new IdempotencyLookup.DifferentRequest()
+                    : new IdempotencyLookup.None());
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<JobAcceptanceResult> AcceptAsync(
         JobAcceptance acceptance,
         DateTimeOffset now,
@@ -163,6 +216,18 @@ public sealed partial class InMemoryJobStore : IJobStore
 
         lock (_gate)
         {
+            // The key is answered first, even when the request names an upload this consumer does
+            // not have: the real store writes the row as the key's gate and answers a bound key
+            // from the row it bound, so a repeat never learns about the upload. Only a request
+            // without a bound key is refused on the upload's reference or its state.
+            if (acceptance.IdempotencyKey is { } key
+                && _idempotency.TryGetValue((acceptance.ConsumerId, key), out var bound))
+            {
+                return bound.Fingerprint == acceptance.Fingerprint
+                    ? new JobAcceptanceResult.SameRequest(bound.ReportJobId)
+                    : new JobAcceptanceResult.DifferentRequest();
+            }
+
             if (upload is null
                 || upload.Status is not (UploadStatus.Ready or UploadStatus.Verifying)
                 || UploadExpiry.IsOverdue(upload, now))
@@ -189,6 +254,11 @@ public sealed partial class InMemoryJobStore : IJobStore
             };
             _jobs.Add(job.ReportJobId, job);
             _progress.Add(job.ReportJobId, JobProgress.Empty);
+            _fingerprints.Add(job.ReportJobId, acceptance.Fingerprint);
+            if (acceptance.IdempotencyKey is { } boundKey)
+            {
+                _idempotency.Add((acceptance.ConsumerId, boundKey), new BoundRequest(job.ReportJobId, acceptance.Fingerprint));
+            }
             _outputs.Add(acceptance.OutputId, new ReportOutputRecord(
                 acceptance.OutputId, job.ReportJobId, OutputFormat.Pdf, OutputStatus.Pending));
             _references.Add(job.ReportJobId, new TemplateReferenceRecord(

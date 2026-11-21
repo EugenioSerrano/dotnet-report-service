@@ -93,16 +93,23 @@ public sealed class PageAccountingCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("EngineVersionCheck", order[^4]);
-        Assert.Equal("PageAccountingCheck", order[^3]);
-        Assert.Equal("NamedFontFamilyCheck", order[^2]);
-        Assert.Equal("BottomAlignedGridCellCheck", order[^1]);
+        Assert.Equal("EngineVersionCheck", order[^6]);
+        Assert.Equal("PageAccountingCheck", order[^5]);
+        Assert.Equal("NamedFontFamilyCheck", order[^4]);
+        Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
+        Assert.Equal("sample-render", order[^2]);
+        Assert.Equal("at-bound-sample", order[^1]);
 
-        using var provider = new ServiceCollection().AddTemplateVersionChecks().BuildServiceProvider();
+        using var provider = new ServiceCollection()
+            .AddSingleton<ReportService.TemplateChecks.Sample.ISampleRenderer>(new ReportService.Testing.TemplateChecks.InMemorySampleRenderer().AlwaysRendered())
+            .AddTemplateVersionChecks()
+            .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();
-        Assert.Equal("PageAccountingCheck", names[^3]);
-        Assert.Equal("NamedFontFamilyCheck", names[^2]);
-        Assert.Equal("BottomAlignedGridCellCheck", names[^1]);
+        Assert.Equal("PageAccountingCheck", names[^5]);
+        Assert.Equal("NamedFontFamilyCheck", names[^4]);
+        Assert.Equal("BottomAlignedGridCellCheck", names[^3]);
+        Assert.Equal("sample-render", names[^2]);
+        Assert.Equal("at-bound-sample", names[^1]);
     }
 
     [Fact]
@@ -123,6 +130,8 @@ public sealed class PageAccountingCheckTests
                 "PageAccountingCheck",
                 "NamedFontFamilyCheck",
                 "BottomAlignedGridCellCheck",
+                "sample-render",
+                "at-bound-sample",
             ],
             order);
     }

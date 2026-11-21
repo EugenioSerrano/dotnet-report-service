@@ -48,6 +48,14 @@ public sealed class GuardedWriter : TextWriter
     /// <summary>How many characters the current render call has produced so far.</summary>
     public int CallCharacters => callCharacters;
 
+    /// <summary>
+    /// The typed refusal this block's guard raised, or <see langword="null"/> while it raised
+    /// none. A template engine may wrap what a write raised in its own exception type; the
+    /// adapter rethrows this refusal instead, so the renderer and the activity read the code
+    /// the guard raised rather than the engine's wrapper.
+    /// </summary>
+    public TemplateGuardException? Refusal { get; private set; }
+
     /// <summary>Starts a new render call of the same block; the block's totals are kept.</summary>
     public void BeginCall() => callCharacters = 0;
 
@@ -76,17 +84,19 @@ public sealed class GuardedWriter : TextWriter
         callCharacters = checked(callCharacters + value.Length);
         if (callCharacters > MaximumCharactersPerCall)
         {
-            throw TemplateGuardException.Quota(
+            Refusal = TemplateGuardException.Quota(
                 "render-output",
                 $"The composed text of one part passed {MaximumCharactersPerCall} characters.");
+            throw Refusal;
         }
 
         var written = Encoding.UTF8.GetByteCount(value);
         if (bytes + written > MaximumBlockBytes)
         {
-            throw TemplateGuardException.Quota(
+            Refusal = TemplateGuardException.Quota(
                 "render-output",
                 $"The composed text of the block passed {MaximumBlockBytes} bytes.");
+            throw Refusal;
         }
 
         bytes += written;
@@ -107,8 +117,9 @@ public sealed class GuardedWriter : TextWriter
         var elapsed = clock.GetElapsedTime(startedAt);
         if (elapsed > MaximumBlockTime)
         {
-            throw TemplateGuardException.Timeout(
+            Refusal = TemplateGuardException.Timeout(
                 $"The composed text of the block was not produced within {MaximumBlockTime.TotalSeconds:0} s.");
+            throw Refusal;
         }
     }
 }

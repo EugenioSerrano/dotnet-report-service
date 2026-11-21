@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Telemetry;
 using ReportService.ServiceDefaults.Temporal;
+using ReportService.TemplateChecks.Sample;
 using ReportService.Workers.Pdf;
 using ReportService.Workers.Pdf.Rendering;
 using ReportService.Workers.Pdf.Templates;
@@ -30,12 +31,28 @@ public sealed class PdfWorkerProgram
         builder.AddWorkflowEngine("pdf-worker", [TakeTemplateVersionActivityOptions.Queue]);
         builder.Services.AddSingleton<BrowserProbe>();
         builder.Services.AddHostedService(static services => services.GetRequiredService<BrowserProbe>());
-        builder.Services.AddHealthChecks().AddCheck<BrowserHealthCheck>("chromium");
+
+        // The render watchdog: its values are the ADR's and are validated at start; the
+        // process exit is the seam a test replaces; the health check is served by the one
+        // /health surface below.
+        builder.Services.AddSingleton(RenderWatchdogOptions.Create());
+        builder.AddSettingsCheck(provider => provider.GetRequiredService<RenderWatchdogOptions>().Validate());
+        builder.Services.AddSingleton<IProcessExit, EnvironmentProcessExit>();
+        builder.Services.AddSingleton<RenderWatchdog>();
+        builder.Services.AddHostedService(static services => services.GetRequiredService<RenderWatchdog>());
+        builder.Services.AddHealthChecks()
+            .AddCheck<BrowserHealthCheck>("chromium")
+            .AddCheck<RenderWatchdogHealthCheck>("render-watchdog");
         builder.AddObjectStorage("pdf-worker");
         builder.AddMetadataDatabase();
         builder.AddTemplateTakeWork();
         builder.AddTemplateResolutionWork();
         builder.AddPdfRenderingWork();
+
+        // The take's sample render: the one renderer over the capability registered above,
+        // and its instruments. The take resolves the check; the check resolves this port.
+        builder.Services.AddSingleton<SampleRenderMetrics>();
+        builder.Services.AddSingleton<ISampleRenderer, PdfSampleRenderer>();
 
         var app = builder.Build();
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });

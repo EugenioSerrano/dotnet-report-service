@@ -154,7 +154,9 @@ public sealed partial class TemplateTake
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            outcome = TemplateTakeOutcome.Refused(TemplateTakeCodes.ExecutionFailed, TakeDeadlineReason, retryable: true);
+            // The take passed its own deadline, which the sample render shares: the code
+            // is the one a render's deadline trip carries, and the version is not refused.
+            outcome = TemplateTakeOutcome.Refused(TemplateTakeCodes.RenderTimeout, TakeDeadlineReason, retryable: true);
         }
 
         var elapsed = Stopwatch.GetElapsedTime(started);

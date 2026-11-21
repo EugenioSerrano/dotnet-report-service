@@ -37,7 +37,7 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
 
         var refused = await _jobs.PublishAsync(ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, "artifact-1"), cancellationToken);
 
@@ -56,7 +56,7 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
 
         var refused = await _jobs.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
 
@@ -88,10 +88,10 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
         Assert.Equal(
             OutputFailureOutcome.AlreadyTerminal,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "EXECUTION_FAILED", Now.AddMinutes(1), cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.OutputId, "EXECUTION_FAILED", reason: null, Now.AddMinutes(1), cancellationToken));
 
         var state = await _jobs.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.Equal("PAGINATION_FAILED", Assert.Single(state!.Outputs).ErrorCode);
@@ -127,7 +127,8 @@ public sealed class PublishAfterFailureTests
             uploadId,
             "pilot-grouped",
             TemplateReferenceForm.Exact,
-            "1.0.0");
+            "1.0.0",
+            AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _jobs.AcceptAsync(acceptance, Now, cancellationToken));
         Assert.Equal(TransitionOutcome.Applied, await _jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
         return acceptance;

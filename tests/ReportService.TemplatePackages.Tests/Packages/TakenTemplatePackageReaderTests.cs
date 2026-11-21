@@ -144,7 +144,7 @@ public sealed class TakenTemplatePackageReaderTests
             Shared: false,
             "1.0",
             TemplateEngine.Scriban,
-            TemplateEngineCatalog.ScribanVersion,
+            "7.5.1",
             "schema.json",
             commitSha ?? new string('1', 40),
             new string('2', 40),

@@ -6,12 +6,18 @@ body {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 td,
 th {
   border: 1px solid #000;
   padding: 2pt 4pt;
+}
+
+th:first-child,
+td:first-child {
+  width: 14mm;
 }
 
 .trailing-page {

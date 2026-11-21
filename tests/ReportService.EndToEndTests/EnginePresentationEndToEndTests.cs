@@ -290,6 +290,12 @@ public sealed class EnginePresentationEndToEndTests : IDisposable
         {
             var item = JsonNode.Parse(items[index % items.Count]!.ToJsonString())!;
             item["sequence"] = index + 1;
+
+            // The sample's contract has no date field, but this package's 1.0.0 schema requires
+            // one on every record and the row prints it. One instant for every record, at 02:30
+            // UTC: the day it prints is the day the job's own zone says it is, mirroring the
+            // integration case's Snapshot.
+            item["date"] = "2026-03-14T02:30:00Z";
             built.Add(item);
         }
 
@@ -333,7 +339,11 @@ public sealed class EnginePresentationEndToEndTests : IDisposable
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT report_clock FROM report_service.report_jobs WHERE report_job_id = @id";
         command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
-        return (DateTimeOffset)(await command.ExecuteScalarAsync(cancellationToken))!;
+
+        // Npgsql reads a timestamptz as a UTC DateTime, as the job store does for this column;
+        // the instant is lifted to DateTimeOffset by stating the zone the database already returns.
+        var value = (DateTime)(await command.ExecuteScalarAsync(cancellationToken))!;
+        return new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);
     }
 
     private static async Task<PublishedJob> WaitForSucceededAsync(

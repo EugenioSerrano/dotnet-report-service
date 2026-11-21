@@ -24,6 +24,9 @@ public static class TemplateTakeCodes
     /// <summary>The service could not finish the take for a cause on its own side.</summary>
     public const string ExecutionFailed = "EXECUTION_FAILED";
 
+    /// <summary>A render the take ran passed its own deadline; the version may be retried later.</summary>
+    public const string RenderTimeout = "RENDER_TIMEOUT";
+
     /// <summary>A taken version read differently from its copy; the copy is kept.</summary>
     public const string TemplateVersionConflict = "TEMPLATE_VERSION_CONFLICT";
 }

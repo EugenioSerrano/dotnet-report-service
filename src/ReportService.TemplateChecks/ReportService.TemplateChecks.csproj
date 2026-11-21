@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The static checks a template version passes before it is taken: the eight
-    checks in their fixed order, the refusal message an author reads, the source
-    scans a template's parts are read with, and the registration the PDF worker
-    calls. Every engine parser is reached through ReportService.Templates and
-    every schema evaluation through ReportService.DataContract; no engine or
-    validator package is referenced here directly.
+    The static checks a template version passes before it is taken: the eleven checks
+    in their fixed order, the refusal message an author reads, the source scans a
+    template's parts are read with, and the registration the PDF worker calls. The
+    twelfth check, the sample render, and the thirteenth, the record at the row bound,
+    live here too and reach the renderer through the ISampleRenderer the process
+    registers. Every engine parser is reached through ReportService.Templates and every
+    schema evaluation through ReportService.DataContract; no engine or validator package
+    is referenced here directly.
   -->
   <PropertyGroup>
     <RootNamespace>ReportService.TemplateChecks</RootNamespace>
