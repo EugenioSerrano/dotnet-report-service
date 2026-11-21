@@ -305,7 +305,7 @@ public sealed class AtBoundSampleRenderingTests(RenderingSuite suite) : IDisposa
             .AppendLine($"pagesAtBound={string.Join(",", bounds.Select(result => result.Pages.ToString(CultureInfo.InvariantCulture)))}")
             .AppendLine($"arithmeticBound={SourceAndManifestPlanSeconds}+{StaticChecksSeconds}+6*{budget}+3*{VerificationPlanSeconds}+{MarginSeconds}={boundTotal} <= {deadline.TotalSeconds} < {startToClose.TotalSeconds}")
             .AppendLine($"arithmeticMeasured={SourceAndManifestPlanSeconds}+{StaticChecksSeconds}+{measuredRendersSeconds.ToString("0.0", CultureInfo.InvariantCulture)}+3*{VerificationPlanSeconds}+{MarginSeconds}={measuredTotal.ToString("0.0", CultureInfo.InvariantCulture)} <= {deadline.TotalSeconds}")
-            .AppendLine($"sourceAndManifestPlanSeconds={SourceAndManifestPlanSeconds} (measured at the take level and recorded in the V-Bounce's record)")
+            .AppendLine($"sourceAndManifestPlanSeconds={SourceAndManifestPlanSeconds} (measured at the take level)")
             .AppendLine("processTreePeak=not measured (the delivered host reports none)")
             .ToString());
     }
