@@ -158,7 +158,7 @@ public static class AtBoundFixtures
                 + "<table class=\"detail\"><colgroup><col class=\"col-seq\"><col class=\"col-description\"><col class=\"col-amount\"></colgroup>"
                 + "<thead><tr><th class=\"seq\">Seq</th><th class=\"description\">Description</th><th class=\"amount\">Amount</th></tr></thead><tbody>"),
             ["html/row.html.sbn"] = Encoding.UTF8.GetBytes(
-                "<tr><td class=\"seq\">{{ item.sequence }}</td><td class=\"cell\">{{ item.description | html.escape }}</td><td class=\"amount\">{{ item.amount }}</td></tr>"),
+                "<tr><td class=\"seq\">{{ item.sequence | html.escape }}</td><td class=\"cell\">{{ item.description | html.escape }}</td><td class=\"amount\">{{ item.amount | html.escape }}</td></tr>"),
             ["html/document-end.html.sbn"] = Encoding.UTF8.GetBytes("</tbody></table></body></html>"),
             ["html/styles.css"] = Encoding.UTF8.GetBytes(
                 "body { margin: 0; color: #222; font-family: \"Liberation Sans\", sans-serif; font-size: 9pt; } "
