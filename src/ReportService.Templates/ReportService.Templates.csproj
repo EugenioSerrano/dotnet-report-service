@@ -36,7 +36,6 @@
     <InternalsVisibleTo Include="ReportService.Templates.Tests" />
     <InternalsVisibleTo Include="ReportService.Rendering.Tests" />
     <InternalsVisibleTo Include="ReportService.Workers.Pdf.Tests" />
-    <InternalsVisibleTo Include="ReportService.IntegrationTests" />
   </ItemGroup>
 
 </Project>

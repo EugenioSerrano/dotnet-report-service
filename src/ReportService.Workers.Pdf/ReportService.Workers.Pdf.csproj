@@ -20,7 +20,6 @@
     keeps the seam internal; no other assembly can reach it.
   -->
   <ItemGroup>
-    <InternalsVisibleTo Include="ReportService.IntegrationTests" />
     <InternalsVisibleTo Include="ReportService.Workers.Pdf.Tests" />
   </ItemGroup>
 

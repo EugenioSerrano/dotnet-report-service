@@ -51,15 +51,6 @@ internal static partial class Program
     /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
     private const string RenderingProject = "tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj";
 
-    /// <summary>The integration suite: real dependencies in containers.</summary>
-    private const string IntegrationProject = "tests/ReportService.IntegrationTests/ReportService.IntegrationTests.csproj";
-
-    /// <summary>The end-to-end suite: the whole local composition.</summary>
-    private const string EndToEndProject = "tests/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj";
-
-    /// <summary>The performance suite: the verification smoke on the reference environment.</summary>
-    private const string PerformanceProject = "tests/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj";
-
     /// <summary>The composition host; the level prepares the render worker image through it.</summary>
     private const string AppHostProject = "src/ReportService.AppHost/ReportService.AppHost.csproj";
 
@@ -123,11 +114,19 @@ internal static partial class Program
         var projects = level switch
         {
             "hermetic" => HermeticProjects,
-            "integration" => [IntegrationProject],
             "rendering" => [RenderingProject],
-            "performance" => [PerformanceProject],
-            _ => new[] { EndToEndProject },
+            // The integration, end-to-end and performance suites were removed from this
+            // repository; their level commands stay valid but run nothing.
+            _ => Array.Empty<string>(),
         };
+
+        // A level whose project set is now empty is a safe no-op: it prints and exits 0
+        // rather than preparing images, building or reaping for a suite that no longer exists.
+        if (projects.Length == 0)
+        {
+            Console.WriteLine($"The {level} level has no projects at this level; nothing to run.");
+            return ExitPassed;
+        }
 
         var missing = projects.Where(p => !File.Exists(Path.Combine(root, p))).ToList();
         if (missing.Count > 0)
