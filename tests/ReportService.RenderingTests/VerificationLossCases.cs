@@ -35,7 +35,7 @@ public sealed class VerificationLossCases(RenderingSuite suite)
     /// <summary>Each loss document, the one reason the product's verification reports and the judge's classes.</summary>
     public static TheoryData<string, string, string[]> Losses => new()
     {
-        // A value holding a character the browser does not paint: the printed text loses it.
+        // A description wider than the fixed-width, non-wrapping column: the printed cell loses the rest.
         { VerificationLossCorpus.TextLoss, "text-dropped", ["text-dropped"] },
         // A row that composes no text at all: the source check stops the block before printing.
         { VerificationLossCorpus.RowLoss, "row-without-text", ["row-lost"] },
@@ -169,13 +169,20 @@ public sealed class VerificationLossCases(RenderingSuite suite)
     }
 
     // The measured verdict of one document, kept with the run: the production reason and the
-    // judge's classes, as the two readings produced them.
+    // judge's classes as the two readings produced them, beside the printed document itself and
+    // the reader's raw words - the record that shows how much of the value the cell printed.
     private static void Keep(string document, RenderOutcome render, Verdict verdict)
     {
         if (RunEnvironment.RunDirectory is null)
         {
             return;
         }
+
+        var reading = Encoding.UTF8.GetBytes(verdict.Reading);
+        var readingName = "verification-loss." + document + ".reading.json";
+        RunEnvironment.WriteEvidence(readingName, reading);
+        var pdfName = "verification-loss." + document + ".pdf";
+        var pdfSha256 = RenderingSuite.CopyToEvidence(render, pdfName);
 
         var text = new StringBuilder()
             .AppendLine($"document={document}")
@@ -185,6 +192,10 @@ public sealed class VerificationLossCases(RenderingSuite suite)
             .AppendLine($"judgePassed={verdict.Passed}")
             .AppendLine($"judgePages={verdict.Pages.ToString(CultureInfo.InvariantCulture)}")
             .AppendLine($"judgeClasses={string.Join(",", verdict.Classes)}")
+            .AppendLine($"pdf={pdfName}")
+            .AppendLine($"pdfSha256={pdfSha256}")
+            .AppendLine($"reading={readingName}")
+            .AppendLine($"readingSha256={RunEnvironment.Sha256Of(reading)}")
             .ToString();
         RunEnvironment.WriteEvidence("verification-loss." + document + ".txt", Encoding.UTF8.GetBytes(text));
     }

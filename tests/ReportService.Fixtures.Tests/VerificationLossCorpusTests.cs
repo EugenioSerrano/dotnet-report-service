@@ -89,10 +89,20 @@ public sealed class VerificationLossCorpusTests
     [Fact]
     public void TheSnapshotsCarryTheDataTheDefectsNeed()
     {
+        // The description column is fixed-width and does not wrap: a value wider than
+        // the printed cell is clipped, and the rest of the value never reaches the page.
+        // The measured print shows 63 characters of the planted 604-character value.
+        const int PrintedCharacters = 63;
+
         var text = Description(VerificationLossCorpus.TextLoss, 2);
         Assert.Equal(VerificationLossCorpus.PlantedTextLoss, text);
-        Assert.Contains('\u00AD', text);
-        Assert.Equal(1, text.Count(character => character == '\u00AD'));
+        Assert.Equal(604, text.Length);
+        Assert.StartsWith("AB", text, StringComparison.Ordinal);
+        Assert.EndsWith("CD", text, StringComparison.Ordinal);
+        Assert.True(
+            text.Length > PrintedCharacters,
+            $"the planted description is {text.Length} characters; it must be wider than the {PrintedCharacters} the cell prints.");
+        Assert.Equal(600, text.Count(character => character == 'Z'));
 
         Assert.Equal(string.Empty, Description(VerificationLossCorpus.RowLoss, 2));
         Assert.Equal(string.Empty, Number(VerificationLossCorpus.RowLoss, 2));
@@ -106,7 +116,9 @@ public sealed class VerificationLossCorpusTests
         {
             var honest = Description(VerificationLossCorpus.Honest, position);
             Assert.False(string.IsNullOrWhiteSpace(honest));
-            Assert.DoesNotContain('\u00AD', honest);
+            Assert.True(
+                honest.Length <= PrintedCharacters,
+                $"the honest document's description {position} is {honest.Length} characters and would be clipped by the {PrintedCharacters}-character cell.");
             Assert.Equal(position.ToString(System.Globalization.CultureInfo.InvariantCulture), Number(VerificationLossCorpus.Honest, position));
         }
     }

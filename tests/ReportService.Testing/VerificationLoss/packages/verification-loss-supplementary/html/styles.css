@@ -20,6 +20,12 @@ td:first-child {
   width: 14mm;
 }
 
+th:nth-child(2),
+td:nth-child(2) {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .trailing-page {
   break-before: page;
   height: 0;

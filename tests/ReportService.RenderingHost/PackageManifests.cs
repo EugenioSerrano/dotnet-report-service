@@ -99,10 +99,11 @@ internal static class PackageManifests
     /// <param name="id">The package id.</param>
     public static JsonElement PdfOutputOf(string id) => Of(id).PdfOutput;
 
-    // The verification-loss corpus packages: the smallest honest report that can lose a row or a
-    // character. Both declare the same page and the same two anchor lists; the supplementary one
-    // keeps each row's fragment while omitting a record's text under a condition and leaves a
-    // blank trailing page, which is why a take would refuse it and why only this tier prints it.
+    // The verification-loss corpus packages: the smallest honest report that can lose a row or
+    // part of a description. Both declare the same page and the same two anchor lists; the
+    // supplementary one keeps each row's fragment while omitting a record's text under a
+    // condition and leaves a blank trailing page, which is why a take would refuse it and why
+    // only this tier prints it.
     private static RenderManifest VerificationLossPackage() => new(
         "scriban",
         "7.5.1",

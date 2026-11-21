@@ -42,7 +42,7 @@ public static class VerificationLossCorpus
     /// <summary>The file the SHA-256 of every snapshot is recorded in.</summary>
     public const string SumsFileName = "SHA256SUMS";
 
-    /// <summary>The identifier of the document whose text loses one character in print.</summary>
+    /// <summary>The identifier of the document whose description is wider than the column that prints it.</summary>
     public const string TextLoss = "VL-TEXT";
 
     /// <summary>The identifier of the document whose row prints no text at all.</summary>
@@ -55,11 +55,11 @@ public static class VerificationLossCorpus
     public const string Honest = "VL-OK";
 
     /// <summary>
-    /// The value the text-loss document anchors: the soft hyphen is a character
-    /// the browser does not paint, so the composed text holds it and the printed
-    /// text does not.
+    /// The value the text-loss document anchors: wider than the fixed-width,
+    /// non-wrapping description column, so the page prints its first characters and
+    /// loses the rest. The measured print shows 63 of its 604 characters.
     /// </summary>
-    public const string PlantedTextLoss = "AB\u00ADCD";
+    public static readonly string PlantedTextLoss = "AB" + new string('Z', 600) + "CD";
 
     /// <summary>The header value the row-loss document carries, planted so a diagnostic that quotes it is caught.</summary>
     public const string PlantedHeader = "PLANTED-HDR-VLROW";

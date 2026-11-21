@@ -19,3 +19,9 @@ th:first-child,
 td:first-child {
   width: 14mm;
 }
+
+th:nth-child(2),
+td:nth-child(2) {
+  white-space: nowrap;
+  overflow: hidden;
+}
