@@ -404,7 +404,7 @@ public sealed class SampleRenderCheckTests
         var candidate = package.Candidate(Packages.ManifestJson());
         var failure = new SampleFailure(SampleFailureKind.Verification, "html/row.html.sbn", Reason: "text-dropped");
         var spans = new List<Activity>();
-        using var listener = Listen(spans);
+        using var capture = Listen(spans);
         var check = new SampleRenderCheck(new InMemorySampleRenderer().AlwaysFailed(failure));
 
         var result = await check.CheckAsync(candidate, TestContext.Current.CancellationToken);
@@ -424,7 +424,7 @@ public sealed class SampleRenderCheckTests
         using var package = Packages.Package();
         var candidate = package.Candidate(Packages.ManifestJson());
         var spans = new List<Activity>();
-        using var listener = Listen(spans);
+        using var capture = Listen(spans);
         var check = new SampleRenderCheck(new InMemorySampleRenderer().AlwaysRendered());
 
         var result = await check.CheckAsync(candidate, TestContext.Current.CancellationToken);
@@ -448,44 +448,155 @@ public sealed class SampleRenderCheckTests
         var failure = new SampleFailure(SampleFailureKind.EngineError, "html/row.html.sbn");
         using var logs = new CapturedLoggerProvider();
         using var factory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Trace).AddProvider(logs));
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Two other instances of the same check, in this process and inside the window this
+        // case captures: each over a package of its own, each held at its first render until
+        // this case releases it, and each started with no ambient activity, so it opens a
+        // trace of its own. Both are running inside their check before the capture is armed.
+        using var otherPackage = Packages.Package();
+        var otherCandidate = otherPackage.Candidate(Packages.ManifestJson());
+        using var secondPackage = Packages.Package();
+        var secondCandidate = secondPackage.Candidate(Packages.ManifestJson());
+        var otherRenderer = new GatedSampleRenderer();
+        var secondRenderer = new GatedSampleRenderer();
+        var otherCheck = Task.Run(() =>
+        {
+            Activity.Current = null;
+            return new SampleRenderCheck(otherRenderer).CheckAsync(otherCandidate, cancellationToken);
+        });
+        var secondCheck = Task.Run(() =>
+        {
+            Activity.Current = null;
+            return new SampleRenderCheck(secondRenderer).CheckAsync(secondCandidate, cancellationToken);
+        });
+
         var spans = new List<Activity>();
-        using var listener = Listen(spans);
-        var check = new SampleRenderCheck(
-            new InMemorySampleRenderer().AlwaysFailed(failure),
-            factory.CreateLogger<SampleRenderCheck>());
-
-        var result = await check.CheckAsync(candidate, TestContext.Current.CancellationToken);
-
-        Assert.False(result.Passed);
-        var entry = Assert.Single(logs.Entries);
-        foreach (var (_, value) in entry.State)
+        try
         {
-            Assert.DoesNotContain(planted, value?.ToString() ?? string.Empty, StringComparison.Ordinal);
+            await AwaitFirstRender(otherRenderer, otherCheck);
+            await AwaitFirstRender(secondRenderer, secondCheck);
+
+            // Armed only now: a listener is consulted when an activity starts, so a check
+            // released any earlier would open no span at all.
+            using var capture = Listen(spans);
+            var check = new SampleRenderCheck(
+                new InMemorySampleRenderer().AlwaysFailed(failure),
+                factory.CreateLogger<SampleRenderCheck>());
+
+            var result = await check.CheckAsync(candidate, cancellationToken);
+
+            Assert.False(result.Passed);
+            var entry = Assert.Single(logs.Entries);
+            foreach (var (_, value) in entry.State)
+            {
+                Assert.DoesNotContain(planted, value?.ToString() ?? string.Empty, StringComparison.Ordinal);
+            }
+
+            otherRenderer.Release();
+            await otherCheck;
+            secondRenderer.Release();
+            await secondCheck;
+
+            var span = Assert.Single(spans);
+            foreach (var tag in span.TagObjects)
+            {
+                Assert.DoesNotContain(planted, tag.Value?.ToString() ?? string.Empty, StringComparison.Ordinal);
+            }
         }
-
-        var span = Assert.Single(spans);
-        foreach (var tag in span.TagObjects)
+        finally
         {
-            Assert.DoesNotContain(planted, tag.Value?.ToString() ?? string.Empty, StringComparison.Ordinal);
+            otherRenderer.Release();
+            secondRenderer.Release();
         }
     }
 
-    private static ActivityListener Listen(List<Activity> spans)
+    /// <summary>The source the case's own unit of work is started on: never the delivered one.</summary>
+    private const string CaptureSourceName = "ReportService.Tests.SampleRenderCase";
+
+    /// <summary>The name of the case's own unit of work.</summary>
+    private const string CaptureWorkName = "sample-render-case";
+
+    private static SampleSpanCapture Listen(List<Activity> spans)
     {
+        var source = new ActivitySource(CaptureSourceName);
+        Activity? work = null;
         var listener = new ActivityListener
         {
-            ShouldListenTo = source => string.Equals(source.Name, "ReportService", StringComparison.Ordinal),
+            ShouldListenTo = candidate =>
+                string.Equals(candidate.Name, "ReportService", StringComparison.Ordinal)
+                || string.Equals(candidate.Name, CaptureSourceName, StringComparison.Ordinal),
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStopped = activity =>
             {
-                if (string.Equals(activity.DisplayName, SampleRenderCheck.SpanName, StringComparison.Ordinal))
+                if (string.Equals(activity.DisplayName, SampleRenderCheck.SpanName, StringComparison.Ordinal)
+                    && work is not null
+                    && activity.TraceId == work.TraceId)
                 {
                     spans.Add(activity);
                 }
             },
         };
         ActivitySource.AddActivityListener(listener);
-        return listener;
+        work = source.StartActivity(CaptureWorkName)
+            ?? throw new InvalidOperationException("The case's own unit of work was not created, so no span could be captured.");
+        return new SampleSpanCapture(source, listener, work);
+    }
+
+    /// <summary>
+    /// The capture of one case: the unit of work the case starts on a source of its own, the
+    /// listener that keeps only the check's span of that trace - the span of the call the case
+    /// makes - and their release in order, the unit first and the source last.
+    /// </summary>
+    private sealed class SampleSpanCapture(ActivitySource source, ActivityListener listener, Activity work) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            work.Stop();
+            listener.Dispose();
+            source.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Awaits the other check's first render, or fails with the reason it cannot arrive: a
+    /// check that finished before it rendered did not force the condition this case needs.
+    /// </summary>
+    private static async Task AwaitFirstRender(GatedSampleRenderer renderer, Task<TemplateCheckResult> check)
+    {
+        var first = await Task.WhenAny(renderer.Started, check);
+        if (ReferenceEquals(first, check))
+        {
+            await check;
+            Assert.Fail("The other instance of the check finished before it rendered, so the condition was not forced.");
+        }
+    }
+
+    /// <summary>
+    /// The renderer another instance of the check answers with: it holds that check at its
+    /// first render until the case releases it, and then answers every render as rendered, so
+    /// the check is accepted and opens its span after the case's capture is armed.
+    /// </summary>
+    private sealed class GatedSampleRenderer : ISampleRenderer
+    {
+        private readonly TaskCompletionSource<bool> _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>Completes when the check asks for its first render.</summary>
+        public Task Started => _started.Task;
+
+        /// <summary>Lets the check's renders answer.</summary>
+        public void Release() => _released.TrySetResult(true);
+
+        /// <inheritdoc />
+        public async Task<SampleAttempt> RenderAsync(SampleRequest request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            _started.TrySetResult(true);
+            await _released.Task.WaitAsync(cancellationToken);
+            return new SampleAttempt.Rendered(InMemorySampleRenderer.Facts);
+        }
     }
 }
 
