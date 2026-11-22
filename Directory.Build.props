@@ -18,6 +18,26 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 
+  <!--
+    REV-001 F-03: a hermetic behaviour run (the TDD inner loop) does not need
+    analyzer and code-style gating on the test projects, and that gating is a
+    large share of each inner-loop build (×18 test projects). When the hermetic
+    test runner issues its one build it sets HermeticBuild=true; only then, and
+    only for the test projects (names ending in ".Tests"), the analyzer /
+    code-style / warnings-as-errors gating is turned off. Every other build —
+    any plain `dotnet build`, CI, a publish, and every production project — leaves
+    HermeticBuild unset and keeps the full gating above. The dedicated lint step
+    (see tests/README.md) is exactly such a full-gating build, so nothing that was
+    enforced before stops being enforced; it is simply no longer paid on every
+    inner-loop build of the test projects.
+  -->
+  <PropertyGroup Condition="'$(HermeticBuild)' == 'true' AND $(MSBuildProjectName.EndsWith('.Tests'))">
+    <RunAnalyzers>false</RunAnalyzers>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!--
       Product version (Semantic Versioning). One version for the whole
@@ -50,7 +70,15 @@
     directly and falls back to "unknown" — a build never fails for it and a
     commit is never invented.
   -->
-  <Target Name="AddSourceRevisionId" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo">
+  <!--
+    REV-001 F-04: when SourceRevisionId is already set (the hermetic test runner
+    passes it once as an MSBuild property, having captured the commit itself), this
+    target is skipped entirely, so the per-project `git rev-parse HEAD` Exec does
+    not run ~45 times per build. When it is not set (any build the runner did not
+    pass it to), the target runs exactly as before and falls back to "unknown" —
+    a build never fails for it and a commit is never invented.
+  -->
+  <Target Name="AddSourceRevisionId" BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo" Condition="'$(SourceRevisionId)' == ''">
     <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" ContinueOnError="true"
           StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="_GitCommit" />

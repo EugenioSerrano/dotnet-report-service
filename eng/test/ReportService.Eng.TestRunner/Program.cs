@@ -310,7 +310,7 @@ internal static partial class Program
             Persist();
             try
             {
-                build = await HermeticExecution.BuildAsync(root, runDirectory, projects, deadlineSource.Token, () =>
+                build = await HermeticExecution.BuildAsync(root, runDirectory, projects, productCommit, deadlineSource.Token, () =>
                 {
                     recordProblem ??= $"the level exceeded its deadline of {deadlineText} at {RunEvidence.Timestamp(DateTimeOffset.Now)}, during the build";
                     recordState = "finished";

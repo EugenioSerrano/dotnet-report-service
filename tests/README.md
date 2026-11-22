@@ -178,6 +178,28 @@ checks the floors.
   of a level run compete for the processor, so a figure measured beside them is
   not comparable with one measured alone.
 
+### The lint step (analyzers and warnings-as-errors)
+
+The hermetic level's one build is tuned for a fast TDD inner loop: it builds the
+projects in parallel (`-maxcpucount`), passes the commit once instead of letting
+every project shell out to `git`, and — for the **test** projects only — turns off
+the analyzer, code-style and warnings-as-errors gating (it sets `HermeticBuild=true`,
+which `Directory.Build.props` reads). That gating is **not** dropped; it is moved to
+a dedicated step so it is not paid on every inner-loop build of the test projects.
+
+Run the lint step as an ordinary full-gating build — any build that does **not** set
+`HermeticBuild` keeps analyzers, `EnforceCodeStyleInBuild` and
+`TreatWarningsAsErrors` on for every project, test projects included:
+
+```
+dotnet build dotnet-report-service.slnx -c Release
+```
+
+It fails (non-zero) on any analyzer finding or warning-class violation, exactly as
+the hermetic build did before. Run it before merging (and it is the gating CI runs);
+the hermetic inner loop stays fast. Production projects are unaffected either way —
+their gating is never turned off.
+
 ### Run evidence
 
 Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
