@@ -293,7 +293,7 @@ internal static partial class HermeticExecution
     /// The output goes to the run's build log and to the console; a failing build
     /// names the project its error lines point at.
     /// </summary>
-    public static async Task<BuildRecord> BuildAsync(string root, string runDirectory, IReadOnlyList<string> projects, CancellationToken cancellationToken = default, Action? beforeReap = null)
+    public static async Task<BuildRecord> BuildAsync(string root, string runDirectory, IReadOnlyList<string> projects, string productCommit, CancellationToken cancellationToken = default, Action? beforeReap = null)
     {
         var projectFile = Path.Combine(runDirectory, TraversalFileName);
         var log = Path.Combine(runDirectory, BuildLogFileName);
@@ -307,11 +307,32 @@ internal static partial class HermeticExecution
             // The same implicit restore `dotnet build` performs: the Restore target of
             // the traversal runs in its own pass, before anything is evaluated for the
             // build, so a tree without restore output builds from this one command.
+            // REV-001 F-05 (reuse the restore when inputs are unchanged) was evaluated
+            // and deliberately NOT taken: a stale cross-RID obj can make a no-restore
+            // build compile against the wrong restore output, and the one build must
+            // stay correct — "when in doubt, restore", so -restore is kept on every run.
             "-restore",
             "-property:Configuration=Release",
+            // REV-001 F-02: build the traversal's projects in parallel (BuildInParallel
+            // on the Restore/Build MSBuild tasks) across every core — still one build,
+            // one invocation of one generated traversal.
+            "-maxcpucount",
+            // REV-001 F-03: the test projects do not run analyzer/code-style/warnings-as-
+            // errors gating on this build (Directory.Build.props gates it off for
+            // HermeticBuild); the dedicated lint step keeps that gating on (tests/README.md).
+            "-property:HermeticBuild=true",
             "-nologo",
             "-verbosity:minimal",
         };
+
+        // REV-001 F-04: the runner already captured the commit, so it passes it once
+        // here and the per-project `git rev-parse HEAD` target (Directory.Build.props)
+        // is skipped. A tree whose commit is unknown passes nothing and leaves that
+        // target's own "unknown" fallback to fill it — a commit is never invented.
+        if (!string.IsNullOrEmpty(productCommit) && !string.Equals(productCommit, "unknown", StringComparison.Ordinal))
+        {
+            arguments.Add($"-property:SourceRevisionId={productCommit}");
+        }
         var command = new List<string> { "dotnet" };
         command.AddRange(arguments);
 
@@ -525,7 +546,7 @@ internal static partial class HermeticExecution
                         "MSBuild",
                         new XAttribute("Projects", "@(ProjectToBuild)"),
                         new XAttribute("Targets", "Restore"),
-                        new XAttribute("BuildInParallel", "false"))),
+                        new XAttribute("BuildInParallel", "true"))),
                 new XElement(
                     "Target",
                     new XAttribute("Name", "Build"),
@@ -533,7 +554,7 @@ internal static partial class HermeticExecution
                         "MSBuild",
                         new XAttribute("Projects", "@(ProjectToBuild)"),
                         new XAttribute("Targets", "Build"),
-                        new XAttribute("BuildInParallel", "false")))));
+                        new XAttribute("BuildInParallel", "true")))));
 
         return document.ToString() + "\n";
     }
