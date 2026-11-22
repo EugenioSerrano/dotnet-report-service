@@ -73,6 +73,7 @@
     <Project Path="tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Suites/">
+    <Project Path="tests/Suites/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />
     <Project Path="tests/Suites/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj" />
   </Folder>
   <Folder Name="/tests/Support/">

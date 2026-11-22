@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    End-to-end tests over the whole local composition, started from a test
+    through the Aspire testing host. Needs the container runtime and the local
+    development registry the composition itself needs.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hosts\ReportService.AppHost\ReportService.AppHost.csproj" />
+    <!-- Removes a run's objects from the shared storage root through the storage port. -->
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <!-- The records and the take the demo's job is accepted and printed from. -->
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <!-- The product's own reader, so the demo document is read by the assembly the service verifies with. -->
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

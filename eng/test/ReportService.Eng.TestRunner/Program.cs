@@ -62,6 +62,16 @@ internal static partial class Program
         "tests/Suites/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj",
     ];
 
+    /// <summary>
+    /// The end-to-end suite over the whole local composition: started through the Aspire
+    /// testing host, it needs the container runtime and what the composition needs. It runs
+    /// only on the e2e level (the integration/e2e cycle), never in the hermetic one.
+    /// </summary>
+    private static readonly string[] EndToEndProjects =
+    [
+        "tests/Suites/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj",
+    ];
+
     /// <summary>The composition host; the level prepares the render worker image through it.</summary>
     private const string AppHostProject = "src/Hosts/ReportService.AppHost/ReportService.AppHost.csproj";
 
@@ -127,8 +137,9 @@ internal static partial class Program
             "hermetic" => HermeticProjects,
             "rendering" => [RenderingProject],
             "performance" => PerformanceProjects,
-            // The integration and end-to-end suites were removed from this repository;
-            // their level commands stay valid but run nothing.
+            "e2e" => EndToEndProjects,
+            // The integration suite was removed from this repository; its level command
+            // stays valid but runs nothing.
             _ => Array.Empty<string>(),
         };
 
