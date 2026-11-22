@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the test runner's temp-root resolver (US-000.BOLT-096 / BUG-052):
+    the environment/default/fallback rules and the TMP/TEMP injection the spawn sites
+    use. Hermetic: no container, no network, no database. Standalone — not yet part of
+    the hermetic level's project list (see tests/README.md).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Eng.TestRunner\ReportService.Eng.TestRunner.csproj" />
+  </ItemGroup>
+
+</Project>

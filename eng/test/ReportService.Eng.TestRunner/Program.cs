@@ -505,7 +505,8 @@ internal static partial class Program
             await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
-                exitCode = await RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken, () => onExpired?.Invoke(problem())).ConfigureAwait(false);
+                // Route the prepare step's child temp off the AV-scanned location (BUG-052 / US-000.BOLT-096).
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, TestTempRoot.SpawnEnvironment(), writer, cancellationToken, () => onExpired?.Invoke(problem())).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -576,6 +577,10 @@ internal static partial class Program
         // The run's own folder is named to every process, so a class that must leave an
         // artefact for a person to inspect writes it beside the run's record.
         environment[RunDirectoryVariable] = runDirectory;
+
+        // Route each test process's temp off the AV-scanned location (BUG-052 / US-000.BOLT-096).
+        // Merge: the existing entries above (RUN_DIRECTORY, RYUK/image flags) are kept.
+        TestTempRoot.ApplyTo(environment);
 
         var line = $"> dotnet {string.Join(' ', arguments.Select(Quote))}";
         Console.WriteLine(line);
