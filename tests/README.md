@@ -22,7 +22,7 @@ failed.
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
-| **Performance** — the verification's smoke | `ReportService.PerformanceTests` | the rendering host image on the PDF base, and the deterministic volume and core datasets; the reference environment only | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
+| **Performance / NFR** — the on-demand heavy cases | `ReportService.PerformanceTests` (`tests/Suites/`) | bounded-memory and large-buffer cases that prove a resource bound in-process (the download, upload-verification and object-store memory cases over a large source; the guarded writer's large-buffer refusal); the reference environment for a comparable figure | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
 
 
 Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level runs under; the deadline is one for the whole attempt, covering the prepare step, the build and every project. `performance` requires it until a run of that level is recorded, because no recorded span justifies a deadline for it.
@@ -55,10 +55,15 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   when the printing steps are not part of the build.
 - The end-to-end level prepares the render worker image once, before the tests
   start, so the classes never publish it at the same time.
-- The **performance** level is the C4 smoke of the verification: it prints two documents
-  once through the rendering host image and measures the product verification twenty times
-  each, writing `performance.json` beside the run's record. It runs on the reference
-  environment only, never in the hermetic or integration levels.
+- The **performance** level is the **on-demand NFR/performance tier**: the heavy
+  memory and large-buffer cases that prove a resource bound rather than logic or
+  structure, kept out of the hermetic V-Bounce so the inner loop stays fast for TDD.
+  It holds the download, upload-verification and object-store large-source memory
+  cases and the guarded writer's large-buffer refusal cases. It runs only on its
+  triggers — at a release, when a change touches the memory/streaming path, and
+  nightly once a scheduler exists (until then, run it by the command above) — never
+  in the hermetic or integration levels. Its memory figures are comparable only on
+  the reference environment; the resource-bound assertions hold on any machine.
 - Every test process is given the run's own folder in `REPORTSERVICE_RUN_DIRECTORY`, so a
   class that must leave an artefact for a person writes it into
   `artifacts/test-results/<stamp>/evidence/` through `ReportService.Testing.RunEnvironment`.
@@ -377,8 +382,9 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   - `ReportService.EndToEndTests` — starts the whole local composition.
   - `ReportService.RenderingTests` (planned) — renders templates and compares
     the resulting documents (HTML, PDF, XLSX, Markdown).
-  - `ReportService.PerformanceTests` — memory and throughput measurements over
-    the generated pilot datasets; run on the reference environment.
+  - `ReportService.PerformanceTests` (`tests/Suites/`) — the on-demand
+    NFR/performance tier: the heavy bounded-memory and large-buffer cases, kept
+    out of the hermetic V-Bounce and run only on the performance level.
 - **`ReportService.Testing`** — a support library shared by the test
   projects (repository paths, the composition's pinned images, a bounded wait,
   in-memory log capture, the container helper, a directory made unwritable for
@@ -396,11 +402,14 @@ capabilities and a way to change stored bytes behind the store's back; a
 provider whose emulator needs a container runs that project in the
 integration level. A provider that fails any case is not shipped.
 
-The suite's large-source case writes a generated 1 GiB source that cannot be
-rewound and compares the process's peak working-set growth with a 64 MiB
-write; it measures the whole process, so its class runs alone, after the
-other tests. Its figures are attached to the run's results as
-`memory-figure.txt`.
+The suite keeps a **hermetic bounded-memory twin** that writes a generated
+non-seekable source and compares the process's peak working-set growth with a
+smaller write (16 MiB against 64 MiB), so the streaming-write path is covered in
+every V-Bounce; it measures the whole process, so its class runs alone, after the
+other tests, and its figure is attached as `memory-figure.txt`. The **heavy
+one-gibibyte** equivalent runs in the on-demand NFR/performance tier
+(`ReportService.PerformanceTests`), which reuses this suite's memory probe and
+fixtures through a project reference.
 - Test fixtures and data owned by a single test project, inside that project.
 
 ## What does not go here
@@ -432,13 +441,14 @@ the cases that prove the content is read once and measured before anything is
 committed. `Crc32Tests` holds the checksum against a bit-serial reference and
 `GzipMemberAttestationTests` the trailer decision.
 
-Three further classes of the same project:
+The heavy **`UploadVerificationMemoryTests`** — which verifies a large generated
+body, plain and compressed while it is written, within a bounded working-set
+growth — has moved to the on-demand NFR/performance tier
+(`ReportService.PerformanceTests`), so it no longer runs in the hermetic inner
+loop; its one-gibibyte equivalent runs there.
 
-- **`UploadVerificationMemoryTests`** verifies a generated body of one gibibyte,
-  plain and compressed while it is written, and requires its working-set growth to
-  stay within the growth of a sixty-four mebibyte body plus thirty-two mebibytes.
-  Each case writes and removes its own storage root and reports its elapsed time
-  and the most temporary storage it held.
+Two further classes of the same project:
+
 - **`VerifyUploadActivityTests`** drives one attempt inside the workflow engine's
   own host for an activity: two attempts of one verification write under two
   different keys and one attempt always under the same one, a verification that

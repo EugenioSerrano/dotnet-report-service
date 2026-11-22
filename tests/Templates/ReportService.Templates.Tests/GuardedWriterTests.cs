@@ -44,31 +44,11 @@ public sealed class GuardedWriterTests
     }
 
     [Fact]
-    public void ABlockAboveThirtyTwoMebibytesIsRefusedEvenAcrossCalls()
+    public void BeginningANewCallResetsTheCallCharacterCount()
     {
         var clock = new ManualTimeProvider(Now);
         var writer = new GuardedWriter(new DiscardingWriter(), clock);
-        var chunk = new string('a', 9 * 1024 * 1024);
-
-        var refusal = Assert.Throws<TemplateGuardException>(() =>
-        {
-            for (var call = 0; call < 4; call++)
-            {
-                writer.BeginCall();
-                writer.Write(chunk);
-            }
-        });
-
-        Assert.Equal(TemplateErrorCodes.QuotaExceeded, refusal.Code);
-        Assert.True(writer.BytesWritten <= GuardedWriter.MaximumBlockBytes);
-    }
-
-    [Fact]
-    public void ANewRenderCallDoesNotInheritTheCharactersOfThePreviousOne()
-    {
-        var clock = new ManualTimeProvider(Now);
-        var writer = new GuardedWriter(new DiscardingWriter(), clock);
-        var chunk = new string('a', 9 * 1024 * 1024);
+        var chunk = new string('a', 1024);
 
         writer.Write(chunk);
         writer.BeginCall();

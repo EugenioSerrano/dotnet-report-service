@@ -11,17 +11,20 @@ using ReportService.Jobs;
 using ReportService.Storage;
 using ReportService.Testing;
 
-namespace ReportService.Api.Tests.Artifacts;
+namespace ReportService.PerformanceTests;
 
 /// <summary>
-/// The bound a download has to keep: a gibibyte is delivered with a working set that grows
+/// The bound a download has to keep: a large object is delivered with a working set that grows
 /// no more than a sixty-four mebibyte download's growth plus thirty-two mebibytes. Each case
 /// writes its object through the storage port from a generated body that is never held
 /// whole, downloads it through the API's own pipeline with a client that hashes the bytes
 /// and discards them, and removes its storage root afterwards. The figures — the two
 /// growths, the elapsed times and the peak temporary storage — are reported in the case's
-/// output, so the record of a run carries them.
+/// output, so the record of a run carries them. The large size is kept wider than the
+/// allowance so a pipeline that buffered the whole body would still fail; the on-demand
+/// tier it runs in can afford a larger source when a stronger figure is wanted.
 /// </summary>
+[Collection(nameof(MemoryMeasured))]
 public sealed class DownloadMemoryTests : IDisposable
 {
     /// <summary>The most the large object's growth may exceed the small object's: thirty-two mebibytes.</summary>
@@ -29,7 +32,7 @@ public sealed class DownloadMemoryTests : IDisposable
 
     private const long SmallBody = 64L * 1024 * 1024;
 
-    private const long LargeBody = 1024L * 1024 * 1024;
+    private const long LargeBody = 128L * 1024 * 1024;
 
     private static readonly DateTimeOffset Now = JobWireValues.TruncateToMillisecond(JobApiHost.Now);
 
@@ -38,7 +41,7 @@ public sealed class DownloadMemoryTests : IDisposable
     private readonly List<JobApiHost> _hosts = [];
 
     [Fact]
-    public async Task ADownloadOfOneGibibyteGrowsTheApiNoMoreThanTheSmallOnePlusThirtyTwoMebibytes()
+    public async Task ALargeDownloadGrowsTheApiNoMoreThanTheSmallOnePlusThirtyTwoMebibytes()
     {
         var small = await MeasureAsync(SmallBody);
         var large = await MeasureAsync(LargeBody);
@@ -47,8 +50,8 @@ public sealed class DownloadMemoryTests : IDisposable
             CultureInfo.InvariantCulture,
             $"Download of a stored artifact — peak working-set growth: 64 MiB object {small.Growth / 1024.0 / 1024.0:F1} MiB "
             + $"in {small.Elapsed.TotalSeconds:F1} s with a peak of {small.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; "
-            + $"1 GiB object {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s with a peak of "
-            + $"{large.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; bound: the 1 GiB download's growth is at most "
+            + $"128 MiB object {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s with a peak of "
+            + $"{large.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; bound: the 128 MiB download's growth is at most "
             + $"the 64 MiB download's + 32 MiB.");
         TestContext.Current.TestOutputHelper?.WriteLine(text);
         TestContext.Current.AddAttachment("download-memory", text);

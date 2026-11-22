@@ -17,6 +17,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- The on-demand NFR/performance tier reuses the API test host for the relocated download memory case. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.PerformanceTests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Hosts\ReportService.Api\ReportService.Api.csproj" />
     <!-- The engine connection shared by the workers is tested here too; the API itself never references it. -->

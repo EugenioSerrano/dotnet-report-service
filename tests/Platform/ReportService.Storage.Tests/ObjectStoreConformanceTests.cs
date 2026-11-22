@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 
@@ -14,11 +13,15 @@ namespace ReportService.Storage.Tests;
 /// </summary>
 public abstract class ObjectStoreConformanceTests : IDisposable
 {
-    /// <summary>The bound of the large-source case: growth for 1 GiB may exceed growth for 64 MiB by at most this.</summary>
+    /// <summary>The bound of the bounded-memory case: a larger source's growth may exceed a smaller source's by at most this.</summary>
     public const long MemoryAllowance = 32L * 1024 * 1024;
 
-    private const long SmallSource = 64L * 1024 * 1024;
-    private const long LargeSource = 1024L * 1024 * 1024;
+    // The hermetic twin proves the streaming-write memory path cheaply: the gap
+    // between the two sizes (48 MiB) is wider than the allowance (32 MiB), so a
+    // writer that held a source whole would fail while a streaming writer passes.
+    // The heavy equivalent over a one-gibibyte source runs in the on-demand tier.
+    private const long SmallSource = 16L * 1024 * 1024;
+    private const long TwinSource = 64L * 1024 * 1024;
     private const string PlantedSegment = "planted-secret-7c1e40";
 
     private IObjectStore? _store;
@@ -262,16 +265,16 @@ public abstract class ObjectStoreConformanceTests : IDisposable
         });
 
     [Fact]
-    public async Task LargeNonSeekableSourceIsWrittenWithBoundedMemory()
+    public async Task ANonSeekableSourceIsWrittenWithBoundedMemory()
     {
-        var small = await MeasureWriteAsync("conformance/memory/small", SmallSource);
-        var large = await MeasureWriteAsync("conformance/memory/large", LargeSource);
+        var small = await ObjectStoreMemoryProbe.MeasureWriteAsync(Store, "conformance/memory/small", SmallSource, Cancellation);
+        var large = await ObjectStoreMemoryProbe.MeasureWriteAsync(Store, "conformance/memory/large", TwinSource, Cancellation);
 
         var figure = string.Create(
             CultureInfo.InvariantCulture,
-            $"Peak working-set growth: 64 MiB source {small.Growth / 1024.0 / 1024.0:F1} MiB in {small.Elapsed.TotalSeconds:F1} s; " +
-            $"1 GiB source {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s; " +
-            $"bound: 1 GiB growth <= 64 MiB growth + 32 MiB.");
+            $"Peak working-set growth: 16 MiB source {small.Growth / 1024.0 / 1024.0:F1} MiB in {small.Elapsed.TotalSeconds:F1} s; " +
+            $"64 MiB source {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s; " +
+            $"bound: 64 MiB growth <= 16 MiB growth + 32 MiB.");
         TestContext.Current.TestOutputHelper?.WriteLine(figure);
         TestContext.Current.AddAttachment("memory-figure", figure);
         Assert.True(large.Growth <= small.Growth + MemoryAllowance, figure);
@@ -422,37 +425,4 @@ public abstract class ObjectStoreConformanceTests : IDisposable
         return await Assert.ThrowsAsync<StorageIntegrityException>(() => verified.Content.CopyToAsync(Stream.Null, Cancellation));
     }
 
-    private async Task<(long Growth, TimeSpan Elapsed)> MeasureWriteAsync(string key, long length)
-    {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        var baseline = Environment.WorkingSet;
-        var peak = baseline;
-        using var stop = new CancellationTokenSource();
-        var sampler = Task.Factory.StartNew(
-            () =>
-            {
-                while (!stop.IsCancellationRequested)
-                {
-                    peak = Math.Max(peak, Environment.WorkingSet);
-                    Thread.Sleep(2);
-                }
-            },
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-
-        var elapsed = Stopwatch.StartNew();
-        var result = await Store.WriteAsync(ObjectKey.Create(key), new GeneratedContent(length, seed: 18), Cancellation);
-        elapsed.Stop();
-        await stop.CancelAsync();
-        await sampler;
-        peak = Math.Max(peak, Environment.WorkingSet);
-
-        Assert.Equal(StorageOutcome.Success, result.Outcome);
-        Assert.Equal(length, result.Value!.Size);
-        await Store.DeleteAsync(ObjectKey.Create(key), Cancellation);
-        return (peak - baseline, elapsed.Elapsed);
-    }
 }

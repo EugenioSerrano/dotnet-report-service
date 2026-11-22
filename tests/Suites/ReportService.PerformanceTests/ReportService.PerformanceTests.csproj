@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    On-demand NFR/performance tier: the heavy memory and large-buffer cases that
+    prove a resource bound rather than logic or structure, kept out of the
+    hermetic V-Bounce so the inner loop stays fast for TDD. It runs only on its
+    triggers (release, a memory/streaming-path change, nightly) through the test
+    runner's `performance` level, never in the hermetic set. It introduces no new
+    framework, package or image: it reuses the pinned test stack and reaches the
+    provider fixtures by referencing the owning test projects, the documented way
+    a second project reuses the storage conformance suite.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The download memory case reaches the API test host (JobApiHost) here. -->
+    <ProjectReference Include="..\..\Hosts\ReportService.Api.Tests\ReportService.Api.Tests.csproj" />
+    <!-- The large-source memory case reaches the storage conformance fixtures and the memory probe here. -->
+    <ProjectReference Include="..\..\Platform\ReportService.Storage.Tests\ReportService.Storage.Tests.csproj" />
+    <!-- Products the upload verification and guarded-writer cases exercise directly. -->
+    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+</Project>

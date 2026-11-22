@@ -51,6 +51,17 @@ internal static partial class Program
     /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
     private const string RenderingProject = "tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj";
 
+    /// <summary>
+    /// The on-demand NFR/performance tier: the heavy memory and large-buffer cases that
+    /// prove a resource bound, kept out of the hermetic set so the inner loop stays fast
+    /// for TDD. It runs only on this level (release, a memory/streaming-path change,
+    /// nightly), never in the hermetic one.
+    /// </summary>
+    private static readonly string[] PerformanceProjects =
+    [
+        "tests/Suites/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj",
+    ];
+
     /// <summary>The composition host; the level prepares the render worker image through it.</summary>
     private const string AppHostProject = "src/Hosts/ReportService.AppHost/ReportService.AppHost.csproj";
 
@@ -115,8 +126,9 @@ internal static partial class Program
         {
             "hermetic" => HermeticProjects,
             "rendering" => [RenderingProject],
-            // The integration, end-to-end and performance suites were removed from this
-            // repository; their level commands stay valid but run nothing.
+            "performance" => PerformanceProjects,
+            // The integration and end-to-end suites were removed from this repository;
+            // their level commands stay valid but run nothing.
             _ => Array.Empty<string>(),
         };
 

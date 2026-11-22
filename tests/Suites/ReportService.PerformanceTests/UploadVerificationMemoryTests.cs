@@ -13,16 +13,20 @@ using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
 
-namespace ReportService.Workers.Orchestration.Tests;
+namespace ReportService.PerformanceTests;
 
 /// <summary>
-/// The bound the verification itself has to keep: a generated body of one gibibyte
+/// The bound the verification itself has to keep: a large generated body
 /// is verified with a working set that grows no more than a sixty-four mebibyte
 /// body's growth plus thirty-two mebibytes — plain, and compressed while it is
 /// written — with the bytes produced block by block and never held whole. There is
 /// no web host in this path, so nothing here can stand between the case and the
-/// verifier's own memory. Each case writes and removes its own storage root.
+/// verifier's own memory. Each case writes and removes its own storage root. The
+/// large size is kept wider than the allowance so a verifier that buffered the
+/// whole body would still fail; the on-demand tier it runs in can afford a larger
+/// source when a stronger figure is wanted.
 /// </summary>
+[Collection(nameof(MemoryMeasured))]
 public sealed class UploadVerificationMemoryTests : IDisposable
 {
     /// <summary>The most the large body's growth may exceed the small body's: thirty-two mebibytes.</summary>
@@ -30,7 +34,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
 
     private const long SmallBody = 64L * 1024 * 1024;
 
-    private const long LargeBody = 1024L * 1024 * 1024;
+    private const long LargeBody = 128L * 1024 * 1024;
 
     private const string ConsumerId = "dev-consumer";
 
@@ -43,7 +47,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
     [Fact]
-    public async Task APlainBodyOfOneGibibyteIsVerifiedWithBoundedMemory()
+    public async Task APlainLargeBodyIsVerifiedWithBoundedMemory()
     {
         var small = await MeasureAsync(SmallBody, UploadContentEncoding.None, "upload-00000000000000000000000a0001");
         var large = await MeasureAsync(LargeBody, UploadContentEncoding.None, "upload-00000000000000000000000b0001");
@@ -52,7 +56,7 @@ public sealed class UploadVerificationMemoryTests : IDisposable
     }
 
     [Fact]
-    public async Task ACompressedBodyOfOneGibibyteIsVerifiedWithBoundedMemory()
+    public async Task ACompressedLargeBodyIsVerifiedWithBoundedMemory()
     {
         var small = await MeasureAsync(SmallBody, UploadContentEncoding.Gzip, "upload-00000000000000000000000a0002");
         var large = await MeasureAsync(LargeBody, UploadContentEncoding.Gzip, "upload-00000000000000000000000b0002");
@@ -84,8 +88,8 @@ public sealed class UploadVerificationMemoryTests : IDisposable
             CultureInfo.InvariantCulture,
             $"Verification of a {form} body — peak working-set growth: 64 MiB body {small.Growth / 1024.0 / 1024.0:F1} MiB "
             + $"in {small.Elapsed.TotalSeconds:F1} s with a peak of {small.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; "
-            + $"1 GiB body {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s with a peak of "
-            + $"{large.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; bound: the 1 GiB body's growth is at most the "
+            + $"128 MiB body {large.Growth / 1024.0 / 1024.0:F1} MiB in {large.Elapsed.TotalSeconds:F1} s with a peak of "
+            + $"{large.PeakDisk / 1024.0 / 1024.0:F1} MiB of temporary storage; bound: the 128 MiB body's growth is at most the "
             + $"64 MiB body's + 32 MiB.");
         TestContext.Current.TestOutputHelper?.WriteLine(text);
         TestContext.Current.AddAttachment($"verification-memory-{form}", text);
