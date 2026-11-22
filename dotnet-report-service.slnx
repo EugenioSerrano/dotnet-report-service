@@ -47,6 +47,7 @@
     <Project Path="tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj" />
   </Folder>
   <Folder Name="/tests/Hosts/">
+    <Project Path="tests/Hosts/ReportService.AppHost.Tests/ReportService.AppHost.Tests.csproj" />
     <Project Path="tests/Hosts/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
     <Project Path="tests/Hosts/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/Hosts/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />

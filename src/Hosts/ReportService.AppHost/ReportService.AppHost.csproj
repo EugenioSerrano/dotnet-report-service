@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.AppHost.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ReportService.Api\ReportService.Api.csproj" />
     <ProjectReference Include="..\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
     <!--

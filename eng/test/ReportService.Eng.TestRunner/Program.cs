@@ -25,6 +25,7 @@ internal static partial class Program
     /// <summary>Unit/component projects: no container runtime, measured for coverage.</summary>
     private static readonly string[] HermeticProjects =
     [
+        "tests/Hosts/ReportService.AppHost.Tests/ReportService.AppHost.Tests.csproj",
         "tests/Hosts/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
         "tests/Jobs/ReportService.Data.Tests/ReportService.Data.Tests.csproj",
         "tests/Jobs/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj",

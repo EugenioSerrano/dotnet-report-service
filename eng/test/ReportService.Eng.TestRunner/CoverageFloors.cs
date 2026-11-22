@@ -128,6 +128,9 @@ internal static partial class CoverageFloors
     public static readonly IReadOnlyList<string> NoCoverageProjects =
     [
         "ReportService.PdfStructure.Tests",
+        // The AppHost assembly is excluded from coverage (a composition root), so its
+        // test project owns no measured assembly; it is a no-coverage hermetic project.
+        "ReportService.AppHost.Tests",
     ];
 
     /// <summary>Whether <paramref name="project"/> is a no-coverage hermetic project.</summary>

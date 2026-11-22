@@ -45,13 +45,41 @@ internal sealed record RenderWorkerImage(
         "application/vnd.docker.distribution.manifest.v2+json",
     ];
 
+    /// <summary>The file that marks the repository root.</summary>
+    private const string RepositoryRootMarker = "global.json";
+
+    /// <summary>
+    /// The repository root for a given AppHost directory: the nearest ancestor that
+    /// holds <see cref="RepositoryRootMarker"/>. Walking up to the marker keeps this
+    /// correct however deep the AppHost sits in the tree, instead of assuming a fixed
+    /// number of parent directories.
+    /// </summary>
+    /// <exception cref="DirectoryNotFoundException">No ancestor holds the marker.</exception>
+    internal static string ResolveRepositoryRoot(string appHostDirectory)
+    {
+        var start = Path.GetFullPath(appHostDirectory);
+        for (var directory = new DirectoryInfo(start); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, RepositoryRootMarker)))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new DirectoryNotFoundException(
+            $"No {RepositoryRootMarker} was found in {start} or in any of its parent directories, so the repository root could not be resolved.");
+    }
+
+    /// <summary>The render worker's entry project file under a repository root.</summary>
+    internal static string WorkerProjectPath(string repositoryRoot) => Path.Combine(
+        repositoryRoot, "src", "Hosts", "ReportService.Workers.Pdf.Entry", "ReportService.Workers.Pdf.Entry.csproj");
+
     /// <summary>Reads the image names from the render worker's entry project file.</summary>
     public static async Task<RenderWorkerImage> DescribeAsync(
         string appHostDirectory, CancellationToken cancellationToken = default)
     {
-        var repositoryRoot = Path.GetFullPath(Path.Combine(appHostDirectory, "..", ".."));
-        var workerProject = Path.Combine(
-            repositoryRoot, "src", "Hosts", "ReportService.Workers.Pdf.Entry", "ReportService.Workers.Pdf.Entry.csproj");
+        var repositoryRoot = ResolveRepositoryRoot(appHostDirectory);
+        var workerProject = WorkerProjectPath(repositoryRoot);
         var output = await RunAsync(
             repositoryRoot,
             "dotnet",
