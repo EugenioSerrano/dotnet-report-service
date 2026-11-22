@@ -178,6 +178,34 @@ checks the floors.
   of a level run compete for the processor, so a figure measured beside them is
   not comparable with one measured alone.
 
+### Where test processes write their temporary files
+
+The runner directs every test process's temporary files (`TMP`/`TEMP`, hence each
+test's `Path.GetTempPath()` and `Directory.CreateTempSubdirectory`) to a
+configurable root. This keeps the machine's real-time antivirus from
+synchronously scanning freshly-written test files on open — on a machine whose
+antivirus does that, writing test fixtures to the scanned system drive makes file
+opens block (the cause diagnosed in `BUG-052`), which slows and flakes the suite.
+
+- **`REPORTSERVICE_TEST_TEMP`** — set it to a fast, AV-excluded directory to use
+  that as the test-temp root. When unset, the runner uses the default **`D:\Temp`**
+  (a Dev-Drive location).
+- **Safe fallback.** If the variable is unset *and* the default is absent, or if
+  the chosen path is missing or unwritable (verified by a create-and-delete
+  write-probe), the runner falls back to the normal system temp and the suite runs
+  exactly as before. It **never fails** because the variable is unset or the path
+  is unavailable — so CI and machines without a `D:` drive are unaffected.
+- **Path budget.** Keep the root short: it must leave room for a test's temp
+  subtree to stay under the product `FilesystemObjectStore` `MaxPathLength = 248`.
+  The runner rejects a root longer than 128 characters (falling back); `D:\Temp`
+  (7 chars) is well within budget.
+- The runner logs which root it chose and why (`configured` / `default` /
+  `systemfallback`) once per run. The resolver and its rules are
+  [`TestTempRoot`](../eng/test/ReportService.Eng.TestRunner/TestTempRoot.cs),
+  unit-tested in
+  [`ReportService.Eng.TestRunner.Tests`](../eng/test/ReportService.Eng.TestRunner.Tests/)
+  (run directly with `dotnet test`; not part of the hermetic level's project list).
+
 ### The lint step (analyzers and warnings-as-errors)
 
 The hermetic level's one build is tuned for a fast TDD inner loop: it builds the

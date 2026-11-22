@@ -343,7 +343,8 @@ internal static partial class HermeticExecution
         await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
         {
             await writer.WriteLineAsync(line).ConfigureAwait(false);
-            exitCode = await Program.RunStreamingAsync(root, "dotnet", arguments, new Dictionary<string, string>(), writer, cancellationToken, beforeReap).ConfigureAwait(false);
+            // Route the build's child temp off the AV-scanned location too (BUG-052 / US-000.BOLT-096).
+            exitCode = await Program.RunStreamingAsync(root, "dotnet", arguments, TestTempRoot.SpawnEnvironment(), writer, cancellationToken, beforeReap).ConfigureAwait(false);
         }
 
         stopwatch.Stop();
