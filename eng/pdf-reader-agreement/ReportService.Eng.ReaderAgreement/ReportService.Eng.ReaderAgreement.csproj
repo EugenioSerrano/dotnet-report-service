@@ -13,8 +13,4 @@
     <RootNamespace>ReportService.Eng.ReaderAgreement</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
-  </ItemGroup>
-
 </Project>
