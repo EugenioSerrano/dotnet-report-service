@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-23
+
+This release takes the product from the groundwork skeleton of `0.1.0` — which
+answered health checks only and rendered no report — to a working end-to-end
+report service. A consumer can now open and stream an upload, have it verified
+into an immutable snapshot, create a report job against a pinned template
+version, and receive a printed PDF that is validated before it is published and
+then listed and downloaded with integrity checks and an expiry. Along the way
+the service gained template-version take and pinning, data-contract validation
+of the snapshot, three peer template engines, idempotent job creation, job
+progress and status reads, published-artifact retention, and a growing set of
+measured rendering spikes.
+
+The repository was also reorganized into a single, flatter layout: the service
+hosts and the tests now sit together in one clear structure that is easier to
+navigate and build, and the rendering regression suite derives its container
+image tags from the product version instead of carrying fixed tags, so a
+version change flows through automatically.
+
+**Version numbering:** this release is **0.9.0**. The project moved directly
+from the `0.2.0` development line to `0.9.0` to signal the pre-1.0 final
+stretch, so there are no `v0.2.0`…`v0.8.0` tags — the previous tag is `v0.1.0`.
+
 ### Added
 
 - A report whose print is interrupted by a restart finishes with one document: the
@@ -512,6 +535,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of stored object needs — the longest key of each one, the room a storage root
   leaves free for it, and the 38 characters a write's temporary file adds.
 
+#### Measured spikes
+
+Throwaway evaluation programs under `spikes/`, kept for their measurements.
+They are not part of the product: they are not in the solution and are never
+packaged or shipped. Each README states the hypothesis, how to run the spike,
+the measured results and the conclusions. Added since `0.1.0` (`06`–`15`), all
+measuring the PDF pagination, layout, assembly and verification path:
+
+- PDF assembly on Chromium-printed parts
+  ([`spikes/06-pdf-assembly-chromium-parts/`](spikes/06-pdf-assembly-chromium-parts/README.md)):
+  assembling the final PDF from Chromium-printed partial documents, with
+  independent checks on the merged output.
+- Native pagination of tall rows
+  ([`spikes/07-native-tall-rows/`](spikes/07-native-tall-rows/README.md)):
+  how Chromium's native layout paginates very tall rows and long free text.
+- Pre-split layout
+  ([`spikes/08-pagedjs-pre-split/`](spikes/08-pagedjs-pre-split/README.md)):
+  splitting tall rows before the pagination library lays the page out.
+- Two-pass page subtotals
+  ([`spikes/09-two-pass-page-subtotals/`](spikes/09-two-pass-page-subtotals/README.md)):
+  computing per-page subtotals over the native layout in a second pass.
+- Table-and-grid strict accounting
+  ([`spikes/10-pagedjs-table-strict-accounting/`](spikes/10-pagedjs-table-strict-accounting/README.md)):
+  laying the fixture series out with rows pre-split, checked page by page.
+- Row-end link of a split row
+  ([`spikes/11-row-end-link-threshold/`](spikes/11-row-end-link-threshold/README.md)):
+  where a split row continues across a page under native layout.
+- Group continuity across pages
+  ([`spikes/12-group-continuity/`](spikes/12-group-continuity/README.md)):
+  groups that cross page boundaries, with rows pre-split in grid markup.
+- Group continuity across blocks
+  ([`spikes/13-group-continuity-across-blocks/`](spikes/13-group-continuity-across-blocks/README.md)):
+  what prints at a block boundary when a grouped report is assembled from parts.
+- Group-rule feasibility
+  ([`spikes/14-group-rules-feasibility/`](spikes/14-group-rules-feasibility/README.md)):
+  which group behaviours are feasible with the pagination library and pre-split
+  rows in grid markup.
+- PDF reader agreement
+  ([`spikes/15-pdf-reader-agreement/`](spikes/15-pdf-reader-agreement/README.md)):
+  whether a PDF text-and-position reader with a shippable licence agrees with
+  the accounting path well enough for the product to ship it.
+
 ## [0.1.0] - 2026-10-22
 
 First release. It completes the groundwork milestone of the roadmap
@@ -584,5 +649,6 @@ the spike, the measured results and the conclusions.
   measures table continuity across fragments, memory, and what each route
   loses against the HTML output.
 
-[Unreleased]: https://github.com/EugenioSerrano/dotnet-report-service/compare/v0.1.0...develop
+[Unreleased]: https://github.com/EugenioSerrano/dotnet-report-service/compare/v0.9.0...develop
+[0.9.0]: https://github.com/EugenioSerrano/dotnet-report-service/compare/v0.1.0...v0.9.0
 [0.1.0]: https://github.com/EugenioSerrano/dotnet-report-service/releases/tag/v0.1.0
