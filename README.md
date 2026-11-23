@@ -8,20 +8,19 @@ that stays bounded no matter how large the report is.
 > **Version: 0.9.0 — released** (builds report `0.9.0`). Latest release:
 > **0.9.0** (2026-11-23). See [CHANGELOG.md](CHANGELOG.md).
 >
-> **Project status: groundwork released, product implementation not started.**
-> Release 0.1.0 completes the first milestone of the [roadmap](#roadmap)
-> (Stage 0): the solution skeleton with a local development composition
-> started by one command, the PDF base image, seeded pilot datasets with
-> sample templates, and five measured spikes under [`spikes/`](spikes/) —
-> streaming data and template engines, PDF layout, PDF assembly, XLSX
-> writing and Markdown conversion. The spikes record measurements, not
-> decisions: the remaining library choices are made from them next. No
-> report is rendered yet — the API answers health checks and holds the
-> consumer registry, the two workers connect to the workflow engine with no
-> work registered, and the render worker checks that Chromium starts; the
-> rest of this README
-> describes what is being built and why. The design and analysis documents
-> live in the companion repository
+> **Project status: 0.9.0 released — PDF reports render end-to-end.** A
+> consumer can upload data that is verified into an immutable snapshot, create
+> a report job against a pinned template version, and download a printed,
+> integrity-checked PDF that is validated before it is published and then
+> listed and downloaded with an expiry. This release adds template-version
+> take and pinning, data-contract validation of the snapshot, three peer
+> template engines, idempotent job creation, job progress and status reads,
+> published-artifact retention, restart-resilient rendering, and a growing
+> rendering-regression suite — see [CHANGELOG.md](CHANGELOG.md). PDF rendering
+> currently covers single-block reports (see the [roadmap](#roadmap)); the
+> HTML, XLSX and Markdown outputs described below are planned for later
+> milestones. The design and analysis documents live in the companion
+> repository
 > [dotnet-report-service-sdlc](https://github.com/EugenioSerrano/dotnet-report-service-sdlc).
 
 ---
@@ -655,12 +654,14 @@ Naming rules, the shared configuration and the conventions this layout
 follows are described in [`docs/repository-layout.md`](docs/repository-layout.md);
 each folder has its own `README.md`.
 
-Planned product projects under `src/`: `AppHost`, `ServiceDefaults`, `Api`,
-`Contracts`, `Application`, `Domain`, `Infrastructure` (storage providers,
-Dapper, cache), `Templates.Abstractions`, `Templates.Scriban`,
-`Templates.Handlebars`, `Templates.Liquid`, `Workflows` (Temporal), and the
-workers `Workers.Data`, `Workers.Html`, `Workers.Pdf`, `Workers.Merge`,
-`Workers.Excel` — each prefixed `ReportService.`.
+Product projects under `src/` (each prefixed `ReportService.`): the hosts
+`Api`, `AppHost` and `Migrations` at the root; the job pipeline under `Jobs/`
+(`Uploads`, `DataContract`, `Data`, `Jobs`); PDF rendering and verification
+under `Pdf/` (`Rendering`, `Pdf.Verification`); the platform building blocks
+under `Platform/` (`ServiceDefaults`, `ServiceDefaults.Temporal`, `Storage`,
+`Storage.Filesystem`); the template stack under `Templates/` (`Templates`,
+`TemplateSource`, `TemplatePackages`, `TemplateChecks`); and the workers
+`Workers.Orchestration`, `Workers.Pdf` and `Workers.Pdf.Entry`.
 
 ## Contributing and licence
 

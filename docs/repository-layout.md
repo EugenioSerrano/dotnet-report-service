@@ -8,7 +8,7 @@ has its own `README.md`.
 
 ```text
 dotnet-report-service/
-├── src/                       Product source — the deployable hosts at the root, the libraries grouped by capability (ADR-042)
+├── src/                       Product source — the deployable hosts at the root, the libraries grouped by capability
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
@@ -33,7 +33,7 @@ dotnet-report-service/
 │   └── Pdf/                   Printing and verifying
 │       ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
 │       └── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
-├── tests/                     Automated tests — the host tests at the root, the unit/component tests grouped as src/ (ADR-042)
+├── tests/                     Automated tests — the host tests at the root, the unit/component tests grouped as src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
 │   ├── ReportService.AppHost.Tests/      Unit/component tests of the composition (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
@@ -93,7 +93,7 @@ dotnet-report-service/
 
 | What | Rule | Example |
 |------|------|---------|
-| Host project (entry point) | `src/ReportService.<Area>/ReportService.<Area>.csproj` — at the `src/` root (ADR-042 §3.3) | `src/ReportService.Api/`, `src/ReportService.AppHost/` |
+| Host project (entry point) | `src/ReportService.<Area>/ReportService.<Area>.csproj` — at the `src/` root | `src/ReportService.Api/`, `src/ReportService.AppHost/` |
 | Grouped product library | `src/<Group>/ReportService.<Area>/` — `Platform/`, `Jobs/`, `Templates/`, `Pdf/` | `src/Pdf/ReportService.Rendering/`, `src/Platform/ReportService.Storage/` |
 | Root namespace | Same as the project name (never includes the group folder) | `ReportService.Workers.Pdf` |
 | Host test project | `tests/ReportService.<Area>.Tests/` — at the `tests/` root, mirroring the hosts | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Api.Tests/` |
@@ -124,13 +124,13 @@ Every command runs from the repository root.
 | Start the local composition | `dotnet run --project src/ReportService.AppHost` (see the [README](../README.md)) |
 | Hermetic tests (unit/component + the PDF structure verification over committed goldens, coverage floors) — **no container runtime, no image build** | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic` |
 | Integration tests — real dependencies in containers | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
-| Rendering regression — the live render and the oracle cross-check; a **triggered** integration/rendering cycle suite (ADR-039 §3.5.6), not part of the V-Bounce | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
+| Rendering regression — the live render and the oracle cross-check; a **triggered** integration/rendering cycle suite | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | End-to-end tests — the whole composition | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
 
 The hermetic level is **Docker-free by construction**: it reads committed golden
 PDFs in-process (PdfPig) to verify PDF structure, and the live Chromium/Paged.js
 render with its oracle cross-check runs only in the integration/rendering cycle,
-triggered for rendering-touching changes (ADR-039).
+triggered for rendering-touching changes.
 
 What each test level may reach, the evidence a run leaves under
 `artifacts/test-results/` and the coverage rules are described in
