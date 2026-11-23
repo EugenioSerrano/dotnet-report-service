@@ -41,16 +41,19 @@
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\..\..\src\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
   </ItemGroup>
 
   <!-- The base image must be pinned by digest, on the tag the browser package version names. -->
   <Target Name="CheckPdfBaseImage" BeforeTargets="ComputeContainerBaseImage">
     <PropertyGroup>
-      <_PdfBasePlaywrightVersion>@(PackageVersion-&gt;WithMetadataValue('Identity', 'Microsoft.Playwright')-&gt;'%(Version)')</_PdfBasePlaywrightVersion>
+      <_PdfBasePlaywrightVersion>@(PackageVersion->WithMetadataValue('Identity', 'Microsoft.Playwright')->'%(Version)')</_PdfBasePlaywrightVersion>
     </PropertyGroup>
-    <Error Condition="'$(PdfBaseImageDigest)' == ''" Text="The PDF base image digest is not set. Run the rendering level, or pass -p:PdfBaseImageDigest=sha256:... with the digest of $(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)." />
-    <Error Condition="!$(PdfBaseImageTag.StartsWith('$(_PdfBasePlaywrightVersion)-'))" Text="The PDF base image tag $(PdfBaseImageTag) does not match Microsoft.Playwright $(_PdfBasePlaywrightVersion); rebuild the base for this version and update PdfBaseImageTag." />
+    <Error Condition="'$(PdfBaseImageDigest)' == ''"
+           Text="The PDF base image digest is not set. Run the rendering level, or pass -p:PdfBaseImageDigest=sha256:... with the digest of $(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)." />
+    <Error Condition="!$(PdfBaseImageTag.StartsWith('$(_PdfBasePlaywrightVersion)-'))"
+           Text="The PDF base image tag $(PdfBaseImageTag) does not match Microsoft.Playwright $(_PdfBasePlaywrightVersion); rebuild the base for this version and update PdfBaseImageTag." />
   </Target>
 
 </Project>

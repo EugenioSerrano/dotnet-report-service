@@ -25,6 +25,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Only the in-process reader and its checks. The committed golden companions
+      (the source fixture snapshot and the page/frame declaration) are plain JSON,
+      read here with System.Text.Json, so the project pulls in no container helper
+      and runs with the SDK alone.
+    -->
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Goldens\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Goldens" />
   </ItemGroup>
 

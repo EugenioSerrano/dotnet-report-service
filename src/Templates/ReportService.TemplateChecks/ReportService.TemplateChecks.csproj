@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\Jobs\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\..\Jobs\ReportService.DataContract\ReportService.DataContract.csproj" />
     <ProjectReference Include="..\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
   </ItemGroup>
 

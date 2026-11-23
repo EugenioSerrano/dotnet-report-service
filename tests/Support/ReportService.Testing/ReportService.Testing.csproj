@@ -38,6 +38,7 @@
     <!-- The intent-store contract is written against the worker's own interface. -->
     <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
     <!-- The independent reading uses the product's own reader and normalisation. -->
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>
 
 </Project>

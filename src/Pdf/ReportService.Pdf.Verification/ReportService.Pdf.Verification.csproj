@@ -12,4 +12,8 @@
     <PackageReference Include="PdfPig" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
 </Project>

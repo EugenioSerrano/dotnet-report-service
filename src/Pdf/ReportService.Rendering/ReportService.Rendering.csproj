@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="ReportService.RenderingHost" />
     <InternalsVisibleTo Include="ReportService.Rendering.Tests" />
     <InternalsVisibleTo Include="ReportService.RenderingTests" />

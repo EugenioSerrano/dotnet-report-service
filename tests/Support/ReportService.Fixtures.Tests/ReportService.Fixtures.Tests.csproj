@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\..\Rendering\ReportService.PdfOracle\ReportService.PdfOracle.csproj" />
     <ProjectReference Include="..\..\Rendering\ReportService.RenderingHost\ReportService.RenderingHost.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />

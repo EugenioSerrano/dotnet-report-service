@@ -19,7 +19,7 @@ Every signal of a process carries the same resource attributes:
 | Attribute | Value |
 |-----------|-------|
 | `service.name` | the name in the table above |
-| `service.version` | the build's informational version — `0.10.0-dev+<commit>` between releases |
+| `service.version` | the build's informational version — `0.2.0-dev+<commit>` between releases |
 | `service.instance.id` | a random identifier created when the process starts |
 | `deployment.environment` | the process's environment name (`Development` in the local composition) |
 
@@ -30,7 +30,7 @@ placeholder stays a field and a scope's fields travel with every entry written
 inside it. Each process writes one start-up line:
 
 ```text
-service=report-service-api version=0.10.0-dev+<commit> runtime=10.0.14 commit=<commit> started
+service=report-service-api version=0.2.0-dev+<commit> runtime=10.0.14 commit=<commit> started
 ```
 
 The PDF worker writes its browser line beside it:
