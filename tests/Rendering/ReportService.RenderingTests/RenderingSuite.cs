@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
@@ -19,11 +20,25 @@ namespace ReportService.RenderingTests;
 /// </summary>
 public sealed class RenderingSuite : IAsyncLifetime
 {
+    /// <summary>
+    /// The build version tag, resolved from the <c>RenderingImageTag</c> assembly
+    /// metadata the project emits from VersionPrefix/VersionSuffix — the same
+    /// source the rendering-host image is published under. Fails loudly if the
+    /// metadata is absent rather than falling back to a stale literal.
+    /// </summary>
+    private static readonly string VersionTag =
+        typeof(RenderingSuite).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "RenderingImageTag")
+            .Value
+        ?? throw new InvalidOperationException(
+            "The RenderingImageTag assembly metadata is missing or empty; the rendering image tag cannot be resolved.");
+
     /// <summary>The rendering host image the level publishes.</summary>
-    public const string HostImage = "report-service-rendering-host:0.2.0-dev";
+    public static readonly string HostImage = $"report-service-rendering-host:{VersionTag}";
 
     /// <summary>The judge's image the level builds.</summary>
-    public const string OracleImage = "report-service-pdf-oracle:0.2.0-dev";
+    public static readonly string OracleImage = $"report-service-pdf-oracle:{VersionTag}";
 
     private const string BaseRegistry = "localhost:5055";
     private const string BaseRepository = "report-service-pdf-base";

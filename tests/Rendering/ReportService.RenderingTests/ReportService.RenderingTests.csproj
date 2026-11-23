@@ -12,6 +12,22 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!--
+    The container image tag the rendering suite references, derived from the
+    solution-wide VersionPrefix/VersionSuffix (Directory.Build.props) — the same
+    single source of truth and the same expression ReportService.RenderingHost.csproj
+    uses for its ContainerImageTag. Surfaced as assembly metadata so the suite
+    resolves the tag at runtime without a hard-coded literal.
+  -->
+  <PropertyGroup>
+    <RenderingImageTag>$(VersionPrefix)</RenderingImageTag>
+    <RenderingImageTag Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</RenderingImageTag>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="RenderingImageTag" Value="$(RenderingImageTag)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="xunit.v3" />
