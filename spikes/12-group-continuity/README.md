@@ -1,5 +1,12 @@
 # Group-continuity experiment — groups crossing pages, rows split before Paged.js, grid markup
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 Throwaway measurement harness. It lays out blocks whose **groups cross page
 boundaries** with Paged.js 0.4.3 in **grid markup**, after the in-page
 pre-split of rows taller than a page, inside the PDF base image. It checks

@@ -494,7 +494,7 @@ progress.
 
 | Area | Decision |
 |------|----------|
-| Platform | .NET 10 (LTS, supported until November 2028; SDK pinned in `global.json`) on Linux containers; Aspire 17 for local development; Kubernetes or Azure Container Apps for production |
+| Platform | .NET 11 (STS; SDK pinned in `global.json`) on Linux containers; Aspire 17 for local development; Kubernetes or Azure Container Apps for production |
 | Orchestration | Temporal (self-hosted) with PostgreSQL 18; local development uses the official Temporal CLI dev-server image |
 | Metadata | PostgreSQL, accessed with Dapper and explicit SQL |
 | PDF | Playwright 1.63 + headless Chromium 153 baked into the worker image; Paged.js 0.4.3 for pagination (native Chromium `@page` margin boxes evaluated in Stage 0) |
@@ -511,7 +511,7 @@ downloaded from the internet during a job.
 
 ### Prerequisites
 
-- The **.NET 10 SDK**, 10.0.402 or a later 10.0.4xx patch (see `global.json`).
+- The **.NET 11 SDK**, 11.0.100 or a later 11.0.1xx patch (see `global.json`).
 - **Docker with Linux containers and BuildKit (the buildx plugin)**, reachable
   by the `docker` command (Docker Desktop, Rancher Desktop or Docker Engine
   with buildx) — only needed to run the local composition, whose first run
@@ -643,8 +643,8 @@ dotnet-report-service/
 ├── eng/                       Build and engineering assets
 ├── spikes/                    Stage 0 experiments — not part of the product
 ├── dotnet-report-service.slnx Product solution
-├── global.json                .NET SDK pin (10.0.4xx band)
-├── Directory.Build.props      Shared build settings (net10.0, warnings as errors, code style) and product version
+├── global.json                .NET SDK pin (11.0.1xx band)
+├── Directory.Build.props      Shared build settings (net11.0, warnings as errors, code style) and product version
 ├── Directory.Packages.props   Central package versions
 ├── NuGet.config               nuget.org only, with package source mapping
 └── CHANGELOG.md               Release history

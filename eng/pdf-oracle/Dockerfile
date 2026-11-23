@@ -6,7 +6,7 @@
 #   docker build -f eng/pdf-oracle/Dockerfile -t report-service-pdf-oracle:<tag> .
 
 # Build stage: the oracle's own console, published from the repository.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-resolute AS build
 WORKDIR /repo
 COPY global.json Directory.Build.props Directory.Packages.props NuGet.config .editorconfig ./
 COPY tests/Rendering/ReportService.PdfOracle/ tests/Rendering/ReportService.PdfOracle/
@@ -17,7 +17,7 @@ RUN dotnet publish tests/Rendering/ReportService.PdfOracle/ReportService.PdfOrac
 # Runtime: the pinned base plus the two pinned tools and their closure. The
 # install's package set is held to the owner's accepted list, and the versions,
 # the copyright hashes and the licence names are recorded inside the image.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble@sha256:d5633778c754e89a386882eddf8dbee6942447a8a4b8267c19cf1e1158d0b0ac
+FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute@sha256:bc0d6653979efba491ab3d6f589d691f96c309c3c3ef81325efa6978e7b7f242
 
 COPY eng/pdf-oracle/accepted-packages.txt /tmp/c3/accepted-packages.txt
 COPY eng/pdf-oracle/check-installed.sh /tmp/c3/check-installed.sh
@@ -25,8 +25,8 @@ COPY eng/pdf-oracle/check-installed.sh /tmp/c3/check-installed.sh
 RUN dpkg-query -W -f='${Package} ${Version}\n' >/tmp/c3/before \
     && apt-get update -qq \
     && apt-get install -y -qq --no-install-recommends \
-        poppler-utils=24.02.0-1ubuntu9.11 \
-        qpdf=11.9.0-1.1ubuntu0.1 \
+        poppler-utils=26.01.0-2ubuntu0.3 \
+        qpdf=12.3.2-1 \
     && bash /tmp/c3/check-installed.sh /tmp/c3/before /tmp/c3/accepted-packages.txt /oracle-evidence \
     && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 

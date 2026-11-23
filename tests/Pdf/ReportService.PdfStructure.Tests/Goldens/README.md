@@ -44,7 +44,7 @@ base image — the only Docker step, and never part of the V-Bounce:
    `dotnet run --project src/ReportService.AppHost -c Release -- --prepare-render-worker-image`
 2. Render each fixture with its package through the rendering host image
    (`report-service-rendering-host:0.10.0-dev`, built on the PDF base
-   `localhost:5055/report-service-pdf-base:1.63.0-10.0.13-noble`), keep the
+   `localhost:5055/report-service-pdf-base:1.63.0-11.0.0-resolute`), keep the
    printed `.pdf`, and pair it with the fixture snapshot
    (`ReportService.Testing` fixture library) and the package declaration
    (`ReportService.Testing/OracleExpectations/<package>.json`).

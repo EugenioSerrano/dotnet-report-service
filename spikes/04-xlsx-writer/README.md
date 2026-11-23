@@ -1,5 +1,12 @@
 # 04 — Raw XLSX writer: bounded memory and exact per-column typing
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 A throwaway console program that writes the high-volume pilot dataset
 (1 000 000 records, 30 % unique strings) to XLSX with two libraries —
 **MiniExcel 1.46.0** and the **Open XML SDK 3.5.1 `OpenXmlWriter`** — and

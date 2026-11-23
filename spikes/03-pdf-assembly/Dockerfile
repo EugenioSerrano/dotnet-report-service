@@ -1,5 +1,5 @@
 # Build stage — same SDK band as global.json.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-resolute AS build
 WORKDIR /repo
 COPY global.json Directory.Build.props NuGet.config .editorconfig ./
 COPY spikes/Directory.Build.props spikes/
@@ -12,7 +12,7 @@ RUN dotnet publish spikes/03-pdf-assembly/PdfAssemblySpike/PdfAssemblySpike.cspr
     -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false
 
 # qpdf stage — the upstream release archive, verified by its published SHA-256.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS qpdf
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-resolute AS qpdf
 ARG QPDF_VERSION
 ARG QPDF_SHA256
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip \
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 # Runtime stage — the same .NET runtime base as the product's images, plus the
 # measuring and checking tools. This image is an experiment and is never published.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.13-noble AS final
+FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute AS final
 ARG QPDF_VERSION
 ARG QPDF_SHA256
 ENV QPDF_VERSION=${QPDF_VERSION} QPDF_ARCHIVE_SHA256=${QPDF_SHA256}

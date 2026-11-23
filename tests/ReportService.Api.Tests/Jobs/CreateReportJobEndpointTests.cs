@@ -799,7 +799,19 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Empty(_host.Jobs.Intents);
         Assert.Equal(0, _host.Versions.FindCalls);
         Assert.Equal(0, _host.Versions.ListCalls);
-        Assert.DoesNotContain(_host.Logs.Lines, line => line.Contains(planted, StringComparison.Ordinal) || line.Contains(version, StringComparison.Ordinal));
+        // The untrusted reference must not be echoed into the logs. The planted
+        // secret carried in the template id is unique, so it is scanned across
+        // every line. The requested version is scanned across every line EXCEPT
+        // the host identity banner ("ReportService.Startup: ... runtime=..."):
+        // that line prints the .NET runtime version (e.g. 11.0.0), of which short
+        // requested versions such as "1.0" / "1.0.0" are coincidental substrings;
+        // it never carries the request's reference, so excluding it loses no
+        // genuine-leak coverage while removing a false positive introduced by the
+        // runtime version string.
+        Assert.DoesNotContain(_host.Logs.Lines, line => line.Contains(planted, StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            _host.Logs.Lines.Where(line => !line.Contains("ReportService.Startup:", StringComparison.Ordinal)),
+            line => line.Contains(version, StringComparison.Ordinal));
     }
 
     [Fact]

@@ -1,5 +1,12 @@
 # Groups crossing block boundaries in a report assembled from parts
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 This folder measures what prints at a block boundary when a report of grouped
 records is laid out in several separately rendered parts and assembled into one
 numbered PDF: group headers, group totals, row membership, the page subtotal and

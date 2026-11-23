@@ -1,5 +1,12 @@
 # Table-and-grid experiment — rows split before Paged.js, checked page by page
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 Throwaway measurement harness. It lays the shared fixture series out with
 Paged.js 0.4.3 inside the PDF base image, after the in-page pre-split of
 `spikes/08-pagedjs-pre-split` (rows taller than one content area cut at line

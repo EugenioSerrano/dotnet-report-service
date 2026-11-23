@@ -138,12 +138,12 @@ What each test level may reach, the evidence a run leaves under
 
 ## Shared configuration
 
-- **`global.json`** pins the .NET SDK to the 10.0.4xx band (10.0.402 or a
+- **`global.json`** pins the .NET SDK to the 11.0.1xx band (11.0.100 or a
   later patch, no previews); any `dotnet` command run in the repository uses
   it or fails with an explanation of what to install. It also selects
   Microsoft.Testing.Platform as the runner of `dotnet test`.
 - **`Directory.Build.props`** is imported automatically by every project below
-  the root. It sets the shared defaults `net10.0` and analyzer level 10.0,
+  the root. It sets the shared defaults `net11.0` and analyzer level 11.0,
   enables nullable reference types and implicit usings, treats warnings as
   errors, enforces code style during build, declares the product version
   (`VersionPrefix`) and sets the package metadata (MIT licence, repository
@@ -166,7 +166,7 @@ What each test level may reach, the evidence a run leaves under
 
 ## Requirements
 
-- The **.NET 10 SDK, 10.0.402 or a later 10.0.4xx patch**
+- The **.NET 11 SDK, 11.0.100 or a later 11.0.1xx patch**
   (see `global.json`). It also opens `dotnet-report-service.slnx` (`.slnx` is
   the default solution format from .NET 10 on).
 
@@ -176,8 +176,8 @@ What each test level may reach, the evidence a run leaves under
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| .NET | 10 (LTS) — SDK 10.0.4xx band, `net10.0` | Supported until November 2028 |
-| Aspire | 17.0.0 | Local development composition; requires the .NET 10 SDK |
+| .NET | 11 (STS) — SDK 11.0.1xx band, `net11.0` | Standard-term support |
+| Aspire | 17.0.0 | Local development composition; requires the .NET 11 SDK |
 | Temporal | .NET SDK 1.21.0; dev server image `temporalio/temporal:1.9.1`; production reference server 1.32.x with PostgreSQL | |
 | PostgreSQL | 18 (client Npgsql 10.0.3) | |
 | Cache | Valkey 9.1 | Redis protocol — Redis works as well |
@@ -201,10 +201,10 @@ the metadata database connect with Npgsql and run explicit SQL with Dapper.
 | PostgreSQL | `postgres:18.6` | Local composition (metadata database); integration tests |
 | Valkey | `valkey/valkey:9.1.2` | Local composition (distributed cache); integration tests |
 | Temporal development server | `temporalio/temporal:1.9.1` | Local composition (`server start-dev`); integration tests |
-| .NET SDK | `mcr.microsoft.com/dotnet/sdk:10.0.402-noble` | Build stage of the PDF base image |
-| ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:10.0.13-noble` | Base of the PDF base image (and of every .NET image) |
+| .NET SDK | `mcr.microsoft.com/dotnet/sdk:11.0.100-resolute` | Build stage of the PDF base image |
+| ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute` | Base of the PDF base image (and of every .NET image) |
 | Local development registry | `registry:3.1.2` (pinned by digest) | Local composition only, on `127.0.0.1:5055`; holds the PDF base image; never shipped |
-| PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-noble` (now `1.63.0-10.0.13-noble`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
+| PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-resolute` (now `1.63.0-11.0.0-resolute`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
 | Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.9.0`) | Local composition (`render-worker`) |
 
 The three dependency images are pinned in one file,

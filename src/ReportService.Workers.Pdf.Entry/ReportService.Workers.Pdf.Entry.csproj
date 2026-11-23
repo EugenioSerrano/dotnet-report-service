@@ -28,9 +28,18 @@
   <PropertyGroup>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
+    <!--
+      This headless render worker serves no static web assets (no wwwroot, no
+      Razor/Blazor content); it uses the Web SDK only for Kestrel + SDK container
+      publish. The .NET 11 SDK's static-web-assets endpoint computation (the
+      Blazor HotReload scoped-css module) fails the build for this project because
+      it combines the Web SDK with an explicit RuntimeIdentifier. Static web
+      assets are not used here, so they are disabled — the minimal, idiomatic fix.
+    -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
     <PdfBaseImageRegistry>localhost:5055</PdfBaseImageRegistry>
     <PdfBaseImageRepository>report-service-pdf-base</PdfBaseImageRepository>
-    <PdfBaseImageTag>1.63.0-10.0.13-noble</PdfBaseImageTag>
+    <PdfBaseImageTag>1.63.0-11.0.0-resolute</PdfBaseImageTag>
     <PdfBaseImageDigest></PdfBaseImageDigest>
     <ContainerBaseImage>$(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)@$(PdfBaseImageDigest)</ContainerBaseImage>
     <ContainerRepository>report-service-render-worker</ContainerRepository>

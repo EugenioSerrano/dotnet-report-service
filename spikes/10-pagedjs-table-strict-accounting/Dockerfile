@@ -5,7 +5,7 @@ ARG PDF_BASE_DIGEST
 # Build stage — same SDK band as global.json. The harness links files of
 # spikes/02-pdf-layout and spikes/08-pagedjs-pre-split and references the fixture
 # library of spikes/07-native-tall-rows; all are copied read only, unchanged.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-resolute AS build
 WORKDIR /repo
 COPY global.json Directory.Build.props NuGet.config .editorconfig ./
 COPY spikes/Directory.Build.props spikes/
@@ -29,7 +29,7 @@ RUN chmod 0755 /app/.playwright/node/linux-x64/node && test "$(stat -c %a /app/.
 
 # Runtime stage — the PDF base image itself, so the Chromium, fonts and system
 # libraries measured here are the ones the PDF worker runs. Nothing is installed.
-FROM localhost:5055/report-service-pdf-base:1.63.0-10.0.13-noble@${PDF_BASE_DIGEST} AS final
+FROM localhost:5055/report-service-pdf-base:1.63.0-11.0.0-resolute@${PDF_BASE_DIGEST} AS final
 ARG PDF_BASE_DIGEST
 # Recorded in the results so every measurement names the base it ran on.
 ENV PDF_BASE_DIGEST=${PDF_BASE_DIGEST}

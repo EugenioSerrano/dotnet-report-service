@@ -1,5 +1,12 @@
 # 03 — PDF assembly: ordered merge and global page numbering (measurement)
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 A throwaway harness that takes hundreds of seeded synthetic partial PDFs,
 merges them in manifest order and stamps "Page X of Y" with global numbers
 into a reserved footer band, with **PDFsharp 6.2.4** (Core build, DejaVu

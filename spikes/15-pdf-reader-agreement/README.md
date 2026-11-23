@@ -1,5 +1,12 @@
 # Spike: a PDF text-and-position reader the product may ship
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 Every check the earlier PDF experiments made on a printed PDF read it with
 poppler-utils (`pdftotext -bbox`, `pdfinfo`), which lives only in their test
 images and is GPL, so it can never ship. The pagination decision makes a

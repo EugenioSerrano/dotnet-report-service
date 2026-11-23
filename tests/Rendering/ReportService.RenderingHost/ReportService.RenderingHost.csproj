@@ -18,7 +18,7 @@
     <SelfContained>false</SelfContained>
     <PdfBaseImageRegistry>localhost:5055</PdfBaseImageRegistry>
     <PdfBaseImageRepository>report-service-pdf-base</PdfBaseImageRepository>
-    <PdfBaseImageTag>1.63.0-10.0.13-noble</PdfBaseImageTag>
+    <PdfBaseImageTag>1.63.0-11.0.0-resolute</PdfBaseImageTag>
     <PdfBaseImageDigest></PdfBaseImageDigest>
     <ContainerBaseImage>$(PdfBaseImageRegistry)/$(PdfBaseImageRepository):$(PdfBaseImageTag)@$(PdfBaseImageDigest)</ContainerBaseImage>
     <ContainerRepository>report-service-rendering-host</ContainerRepository>

@@ -1,5 +1,12 @@
 # 06 — PDF assembly on Chromium-printed parts (measurement)
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 The earlier assembly experiment (`spikes/03-pdf-assembly/`) merged and
 numbered partial PDFs that PDFsharp had generated. The product's partial PDFs
 will be printed by Chromium. This experiment repeats the same five assembly

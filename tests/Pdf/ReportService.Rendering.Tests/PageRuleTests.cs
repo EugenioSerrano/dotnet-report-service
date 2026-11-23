@@ -14,21 +14,35 @@ namespace ReportService.Rendering.Tests;
 /// </summary>
 public sealed class PageRuleTests
 {
+    // The margins are passed as invariant-culture strings and parsed to decimal in
+    // the test body, never as bare numeric literals: a C# attribute cannot carry a
+    // decimal literal, so a bare "25.4" is a double, and converting that double to
+    // the decimal parameter yields the exact binary expansion
+    // (25.399999999999998578914528480) rather than the stored decimal 25.4m. Parsing
+    // the string gives the exact decimal the template would store, so the test
+    // asserts the product's real rendering ("25.4mm") independently of the platform's
+    // double-to-decimal conversion behaviour.
     [Theory]
-    [InlineData("A4", "portrait", 15, 12, 18, 12, "@page { size: 210mm 297mm !important; margin: 15mm 12mm 18mm 12mm !important; }")]
-    [InlineData("A4", "landscape", 20, 15, 20, 15, "@page { size: 297mm 210mm !important; margin: 20mm 15mm 20mm 15mm !important; }")]
-    [InlineData("Letter", "portrait", 25.4, 19.05, 25.4, 19.05, "@page { size: 215.9mm 279.4mm !important; margin: 25.4mm 19.05mm 25.4mm 19.05mm !important; }")]
-    [InlineData("Letter", "landscape", 19.05, 25.4, 19.05, 25.4, "@page { size: 279.4mm 215.9mm !important; margin: 19.05mm 25.4mm 19.05mm 25.4mm !important; }")]
+    [InlineData("A4", "portrait", "15", "12", "18", "12", "@page { size: 210mm 297mm !important; margin: 15mm 12mm 18mm 12mm !important; }")]
+    [InlineData("A4", "landscape", "20", "15", "20", "15", "@page { size: 297mm 210mm !important; margin: 20mm 15mm 20mm 15mm !important; }")]
+    [InlineData("Letter", "portrait", "25.4", "19.05", "25.4", "19.05", "@page { size: 215.9mm 279.4mm !important; margin: 25.4mm 19.05mm 25.4mm 19.05mm !important; }")]
+    [InlineData("Letter", "landscape", "19.05", "25.4", "19.05", "25.4", "@page { size: 279.4mm 215.9mm !important; margin: 19.05mm 25.4mm 19.05mm 25.4mm !important; }")]
     public void TheRuleIsTheDeclaredPageInInvariantMillimetres(
         string paper,
         string orientation,
-        decimal top,
-        decimal right,
-        decimal bottom,
-        decimal left,
+        string top,
+        string right,
+        string bottom,
+        string left,
         string expected)
     {
-        var rule = PageRule.From(Settings(paper, orientation, top, right, bottom, left));
+        var rule = PageRule.From(Settings(
+            paper,
+            orientation,
+            decimal.Parse(top, CultureInfo.InvariantCulture),
+            decimal.Parse(right, CultureInfo.InvariantCulture),
+            decimal.Parse(bottom, CultureInfo.InvariantCulture),
+            decimal.Parse(left, CultureInfo.InvariantCulture)));
 
         Assert.Equal(expected, rule.Css);
     }

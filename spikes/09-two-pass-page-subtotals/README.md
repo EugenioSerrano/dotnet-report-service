@@ -1,5 +1,12 @@
 # Two-pass page subtotals over native layout
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 **Status: measured and judged.** The probes, the measured matrix (one serial
 run, 94 runs) and its judgement are complete. The judgement was made on the
 recorded matrix files without measuring again; the files were shown unchanged

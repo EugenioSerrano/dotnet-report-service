@@ -1,5 +1,12 @@
 # PDF layout experiment: page accounting with Paged.js in headless Chromium
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 Throwaway experiment. It lays out blocks of the grouped pilot dataset with
 **Paged.js 0.4.3** inside the **headless Chromium 153** that Playwright 1.63.0
 pins, on Linux, in a container whose runtime stage is the project's **PDF

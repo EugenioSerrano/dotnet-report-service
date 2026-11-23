@@ -1,5 +1,12 @@
 # 01 — Streaming envelope reader and per-record rendering (measurement)
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 A throwaway measurement program. It reads the `header-items-v1` envelope
 incrementally, plain and gzip, and renders one record at a time through
 three template engines: Scriban, Handlebars (Handlebars.Net) and Liquid

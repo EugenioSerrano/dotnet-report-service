@@ -1,5 +1,12 @@
 # 05 — Markdown conversion routes
 
+> **Superseded — historical measurements (not re-measured).** The figures,
+> results files and measurement sections in this document were produced on
+> **.NET 10.0.13 / Ubuntu 24.04** during Stage 0, which is closed. The product
+> has since moved to **.NET 11 / Ubuntu 26.04**; this spike's code and
+> Dockerfile were retargeted to .NET 11, but these Stage-0 measurements were
+> **not** re-run and are kept verbatim as the historical record. Dated 2026-11-23.
+
 Throwaway measurement program. It converts the grouped pilot dataset to
 Markdown through four routes on one shared harness and measures, per route,
 whether grouped tables stay continuous across many fragments, how memory

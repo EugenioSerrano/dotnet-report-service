@@ -36,7 +36,7 @@ service=report-service-api version=0.10.0-dev+<commit> runtime=10.0.14 commit=<c
 The PDF worker writes its browser line beside it:
 
 ```text
-Chromium 153.0.8010.12 ready (Playwright 1.63.0, .NET 10.0.14)
+Chromium 153.0.8010.12 ready (Playwright 1.63.0, .NET 11.0.0)
 ```
 
 ### Traces
