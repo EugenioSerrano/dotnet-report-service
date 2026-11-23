@@ -44,9 +44,9 @@
       repository. Between releases builds carry the "dev" pre-release label
       (VersionSuffix); a released version has none.
     -->
-    <VersionPrefix>0.9.0</VersionPrefix>
+    <VersionPrefix>0.10.0</VersionPrefix>
     <!-- Pre-release label while this version is in progress; removed when the version is released. -->
-    <VersionSuffix></VersionSuffix>
+    <VersionSuffix>dev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
