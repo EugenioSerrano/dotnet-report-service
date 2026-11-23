@@ -612,9 +612,7 @@ public sealed class RenderingSuite : IAsyncLifetime
         }
 
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"Could not start {fileName}.");
-        var output = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-        var error = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
-        await process.WaitForExitAsync().ConfigureAwait(false);
+        var (output, error) = await ChildProcessStreams.DrainToExitAsync(process).ConfigureAwait(false);
         if (process.ExitCode != 0)
         {
             throw new InvalidOperationException($"{fileName} {string.Join(' ', arguments)} exited {process.ExitCode}.{Environment.NewLine}{output}{Environment.NewLine}{error}");

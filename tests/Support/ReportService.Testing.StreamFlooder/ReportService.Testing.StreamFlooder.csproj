@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A tiny child console used only by ReportService.Fixtures.Tests to reproduce an
+    OS pipe-buffer back-pressure condition: it writes a requested number of bytes to
+    standard error first, then to standard output, then exits with a requested code.
+    It depends on nothing but the base framework and is not a test project; it is
+    built as a plain executable and launched as `dotnet <dll>` by the hermetic test.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

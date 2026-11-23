@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ReportService.Testing;
 
 namespace ReportService.RenderingTests;
 
@@ -117,9 +118,7 @@ public sealed class VersionTagResolutionTests
                 return null;
             }
 
-            var stdout = process.StandardOutput.ReadToEnd();
-            process.StandardError.ReadToEnd();
-            process.WaitForExit();
+            var (stdout, _) = ChildProcessStreams.DrainToExitAsync(process).GetAwaiter().GetResult();
             if (process.ExitCode != 0)
             {
                 return null;

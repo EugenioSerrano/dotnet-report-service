@@ -11,6 +11,20 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!--
+    The child flooder's built binary, surfaced to the reproduction test as assembly
+    metadata (mirroring the RenderingImageTag pattern) so the test resolves it at
+    runtime without a hard-coded literal. It tracks the same Configuration and
+    TargetFramework this test project builds under.
+  -->
+  <PropertyGroup>
+    <StreamFlooderDll>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\ReportService.Testing.StreamFlooder\bin\$(Configuration)\$(TargetFramework)\ReportService.Testing.StreamFlooder.dll'))</StreamFlooderDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="StreamFlooderDll" Value="$(StreamFlooderDll)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="xunit.v3" />
@@ -25,6 +39,8 @@
     <ProjectReference Include="..\..\Rendering\ReportService.PdfOracle\ReportService.PdfOracle.csproj" />
     <ProjectReference Include="..\..\Rendering\ReportService.RenderingHost\ReportService.RenderingHost.csproj" />
     <ProjectReference Include="..\ReportService.Testing\ReportService.Testing.csproj" />
+    <!-- Build-only: the flooder is built with this level but adds no assembly dependency. -->
+    <ProjectReference Include="..\ReportService.Testing.StreamFlooder\ReportService.Testing.StreamFlooder.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

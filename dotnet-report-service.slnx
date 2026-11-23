@@ -76,6 +76,7 @@
   </Folder>
   <Folder Name="/tests/Support/">
     <Project Path="tests/Support/ReportService.Testing/ReportService.Testing.csproj" />
+    <Project Path="tests/Support/ReportService.Testing.StreamFlooder/ReportService.Testing.StreamFlooder.csproj" />
     <Project Path="tests/Support/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj" />
   </Folder>
 </Solution>
