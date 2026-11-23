@@ -1,19 +1,35 @@
-# The packages the oracle image installs, accepted by the owner as ADR-013 C3
-# (eng/pdf-oracle/THIRD-PARTY-TOOLS.md section 1; commit 611fd0f).
+# The packages the oracle image installs, accepted by the owner as ADR-044 C3
+# (eng/pdf-oracle/THIRD-PARTY-TOOLS.md "ACCEPTED — Ubuntu 26.04 closure").
+# Base: mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute (Ubuntu 26.04)
+#   @sha256:bc0d6653979efba491ab3d6f589d691f96c309c3c3ef81325efa6978e7b7f242
+# Accepted by human:eugenioserrano on 2026-11-23.
 # One package name per line; a package the install adds that is not listed here
 # stops the build.
+adduser
+dirmngr
 fontconfig-config
 fonts-dejavu-core
 fonts-dejavu-mono
+gnupg
+gpg
+gpg-agent
+gpgconf
+gpgsm
+libassuan9
 libbrotli1
-libbsd0
 libcairo2
 libcurl3t64-gnutls
 libdeflate0
 libexpat1
+libffi8
 libfontconfig1
 libfreetype6
+libgnutls30t64
+libgpgme45
+libgpgmepp7
 libgssapi-krb5-2
+libhogweed6t64
+libidn2-0
 libjbig0
 libjpeg-turbo8
 libjpeg8
@@ -21,25 +37,33 @@ libk5crypto3
 libkeyutils1
 libkrb5-3
 libkrb5support0
+libksba8
 liblcms2-2
+libldap-common
 libldap2
 liblerc4
+libnettle8t64
 libnghttp2-14
+libnpth0t64
 libnspr4
 libnss3
 libopenjp2-7
+libp11-kit0
 libpixman-1-0
 libpng16-16t64
-libpoppler134
+libpoppler156
 libpsl5t64
-libqpdf29t64
+libqpdf30
+libreadline8t64
 librtmp1
 libsasl2-2
 libsasl2-modules-db
 libsharpyuv0
 libsqlite3-0
-libssh-4
+libssh2-1t64
+libtasn1-6
 libtiff6
+libunistring5
 libwebp7
 libx11-6
 libx11-data
@@ -50,5 +74,7 @@ libxcb1
 libxdmcp6
 libxext6
 libxrender1
+pinentry-curses
 poppler-utils
 qpdf
+readline-common

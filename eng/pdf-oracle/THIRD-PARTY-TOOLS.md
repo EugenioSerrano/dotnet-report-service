@@ -1,4 +1,161 @@
-# Third-party tools in the test oracle image — ADR-013 C3
+# Third-party tools in the test oracle image — ADR-044 C3
+
+## ACCEPTED — Ubuntu 26.04 closure (owner-accepted, ADR-044 C3)
+
+**Status: accepted by the owner, `human:eugenioserrano`, on 2026-11-23 — the C3
+record of ADR-044.** The .NET 11 migration moves the oracle base image from
+`aspnet:10.0.13-noble` (Ubuntu 24.04) to `aspnet:11.0.0-resolute`
+(Ubuntu 26.04). The `poppler-utils` + `qpdf` apt dependency closure was
+re-resolved on the new base and the package-to-licence list below is the
+accepted set. `eng/pdf-oracle/accepted-packages.txt` is updated to this
+73-package closure, which the oracle build's `check-installed.sh` gate reads
+against the installed image. The accepted 2026-11-02 / Ubuntu-24.04 record is
+preserved below as history, **superseded by this record** and not rewritten;
+by ADR-044 §3.7 continuity, the ADR-013 citations in that historical record
+read as ADR-044.
+
+**Re-resolution evidence (2026-11-23):**
+`docker run --rm --user 0:0 <new base> bash -c 'apt-get update; dpkg-query -W
+before; apt-get install -y --no-install-recommends poppler-utils qpdf;
+dpkg-query -W after; diff'` on the pinned new base — **73 packages newly
+installed** (was 50 on 24.04).
+
+- **Base:** `mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute@sha256:bc0d6653979efba491ab3d6f589d691f96c309c3c3ef81325efa6978e7b7f242` (Ubuntu 26.04, `VERSION_CODENAME=resolute`, amd64).
+- **Pins (top level):** `poppler-utils=26.01.0-2ubuntu0.3`, `qpdf=12.3.2-1`.
+
+### Material licence change the owner accepted (ADR-044 waiver scope)
+
+The 26.04 closure is **larger** than the accepted 24.04 one (73 vs 50). The
+most significant expansion: **`libpoppler156` on 26.04 now depends on
+`libgpgmepp7 → libgpgme45 → gnupg`** (poppler gained signed-PDF verification
+via GPGME). This pulls a **whole GnuPG/gpg toolchain** into the apt
+dependency closure — `gnupg`, `gpg`, `gpg-agent`, `gpgsm`, `gpgconf`,
+`dirmngr`, `libgpgme45`, `libgpgmepp7`, `libassuan9`, `libksba8`,
+`libnpth0t64`, `pinentry-curses` — several of which are **GPL-3+**. These are
+genuine apt dependencies of `poppler-utils` (confirmed with
+`apt-get install -s` and `apt-cache rdepends`), so they fall **within**
+ADR-044 §3.1's scope ("poppler-utils and qpdf WITH the apt packages installed
+as their dependencies") and within the waiver's expiry (2027-10-31); nothing
+here is linked into a product assembly (C1–C5 unchanged — these tools are
+process-invoked only). **The inclusion of the GPL-3+ GnuPG toolchain is a
+material licence change to the accepted set; the owner accepts it as part of
+this C3 record (ADR-044).**
+
+**New in 26.04 vs the accepted 24.04 list — 27 added, 4 removed (two of the
+removed replaced by renamed soname successors `libpoppler156` and `libqpdf30`);
+50 → 73. The 25 newly named packages (the other 2 added are the successors
+`libpoppler156` and `libqpdf30` listed under removed below):** `adduser`, `dirmngr`,
+`gnupg`, `gpg`, `gpg-agent`, `gpgconf`, `gpgsm`, `libassuan9`, `libffi8`,
+`libgnutls30t64`, `libgpgme45`, `libgpgmepp7`, `libhogweed6t64`, `libidn2-0`,
+`libksba8`, `libldap-common`, `libnettle8t64`, `libnpth0t64`, `libp11-kit0`,
+`libreadline8t64`, `libssh2-1t64`, `libtasn1-6`, `libunistring5`,
+`pinentry-curses`, `readline-common`. (Several — `libffi8`, `libgnutls30t64`,
+`libhogweed6t64`, `libnettle8t64`, `libp11-kit0`, `libtasn1-6`,
+`libunistring5` — were base-image packages outside C3 on 24.04 and are now
+inside the installed closure on 26.04.)
+
+**No longer in the closure vs 24.04 (4):** `libbsd0`; `libpoppler134`
+(→ `libpoppler156`); `libqpdf29t64` (→ `libqpdf30`); `libssh-4`
+(→ `libssh2-1t64`).
+
+### Accepted 26.04 closure (73) — package | version | licence (from `/usr/share/doc/<pkg>/copyright`)
+
+| # | Package | Version (26.04, probe 2026-11-23) | Licence expression(s) |
+|---|---------|-----------------------------------|-----------------------|
+| 1 | adduser | 3.153ubuntu1 | GPL-2+ |
+| 2 | dirmngr | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 3 | fontconfig-config | 2.17.1-3ubuntu1 | permissive fontconfig grant (MIT/X11-style) [non-dep5] |
+| 4 | fonts-dejavu-core | 2.37-8build1 | Bitstream Vera + GPL-2+ (font exception) |
+| 5 | fonts-dejavu-mono | 2.37-8build1 | Bitstream Vera + GPL-2+ (font exception) |
+| 6 | gnupg | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 7 | gpg | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 8 | gpg-agent | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 9 | gpgconf | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 10 | gpgsm | 2.4.8-4ubuntu3.1 | **GPL-3+** (+ GPL-2+, LGPL-2.1+/LGPL-3+, BSD-3-clause, Expat, CC0-1.0, TinySCHEME, permissive) |
+| 11 | libassuan9 | 3.0.2-2build1 | LGPL-2.1/LGPL-3+ (+ GPL-2+/GPL-3+ with exceptions, FSFULLR, X11) |
+| 12 | libbrotli1 | 1.2.0-3ubuntu0.1 | MIT |
+| 13 | libcairo2 | 1.18.4-3 | LGPL-2.1 or MPL-1.1 [non-dep5] |
+| 14 | libcurl3t64-gnutls | 8.18.0-1ubuntu2.8 | curl (MIT-like) (+ ISC, OLDAP-2.8, BSD-4-Clause-UC, GPL-2+/GPL-3+ with exceptions) |
+| 15 | libdeflate0 | 1.23-2ubuntu1 | Expat (MIT) |
+| 16 | libexpat1 | 2.7.4-1ubuntu0.2 | MIT |
+| 17 | libffi8 | 3.5.2-4 | Expat (MIT) (+ GPL-2+/GPL-3+, MPL-1.1-or-GPL-2+-or-LGPL-2.1+, X11, public-domain) |
+| 18 | libfontconfig1 | 2.17.1-3ubuntu1 | permissive fontconfig grant (MIT/X11-style) [non-dep5] |
+| 19 | libfreetype6 | 2.14.2+dfsg-1ubuntu0.2 | FTL or GPL-2+ (+ BSD-3, Expat, BSL-1.0, Zlib, FSFAP) |
+| 20 | libgnutls30t64 | 3.8.12-2ubuntu1.1 | LGPL-2.1+ (+ GPL-3+, Apache-2.0, BSD-3, Expat, CC0, FSFAP) |
+| 21 | libgpgme45 | 2.0.1-2build1 | LGPL-2.1+ (+ GPL-2+/GPL-3+) |
+| 22 | libgpgmepp7 | 2.0.0-2 | LGPL-2.1+ (+ GPL-2/GPL-2+/GPL-3+, BSD-2/BSD-3) |
+| 23 | libgssapi-krb5-2 | 1.22.1-2ubuntu4.1 | MIT (Kerberos) [non-dep5] |
+| 24 | libhogweed6t64 | 3.10.2-1 | LGPL-3+ or GPL-2+ (+ Expat, GPL-2/GPL-3+ with exc, LGPL-2+, public-domain) |
+| 25 | libidn2-0 | 2.3.8-4build1 | LGPL-3+ or GPL-2+ (+ Expat, Unicode, GPL-2+/GPL-3+, FSFAP) |
+| 26 | libjbig0 | 2.1-6.1ubuntu3 | GPL-2+ |
+| 27 | libjpeg-turbo8 | 2.1.5-4ubuntu4 | BSD-3/IJG (+ Expat, NTP, Zlib) |
+| 28 | libjpeg8 | 8c-2ubuntu12 | LGPL-2.1 (empty transitional package) |
+| 29 | libk5crypto3 | 1.22.1-2ubuntu4.1 | MIT (Kerberos) [non-dep5] |
+| 30 | libkeyutils1 | 1.6.3-6ubuntu3 | GPL-2+ / LGPL-2+ |
+| 31 | libkrb5-3 | 1.22.1-2ubuntu4.1 | MIT (Kerberos) [non-dep5] |
+| 32 | libkrb5support0 | 1.22.1-2ubuntu4.1 | MIT (Kerberos) [non-dep5] |
+| 33 | libksba8 | 1.6.7-2build1 | LGPL-2.1-or-later (+ FSFUL) |
+| 34 | liblcms2-2 | 2.17-1ubuntu0.2 | MIT (+ GPL-2+, GPL-3, IJG) |
+| 35 | libldap-common | 2.6.10+dfsg-1ubuntu5 | OpenLDAP-2.8 (+ many BSD/Expat/GPL-2+/GPL-3+ with exceptions, public-domain) |
+| 36 | libldap2 | 2.6.10+dfsg-1ubuntu5 | OpenLDAP-2.8 (+ many BSD/Expat/GPL-2+/GPL-3+ with exceptions, public-domain) |
+| 37 | liblerc4 | 4.0.0+ds-5ubuntu2 | Apache-2.0 |
+| 38 | libnettle8t64 | 3.10.2-1 | LGPL-3+ or GPL-2+ (+ Expat, GPL-2/GPL-3+ with exc, LGPL-2+, public-domain) |
+| 39 | libnghttp2-14 | 1.68.0-2ubuntu0.2 | Expat/MIT (+ BSD-2, all-permissive, GPL-3+ with Autoconf exception) |
+| 40 | libnpth0t64 | 1.8-3build1 | LGPL-2.1+ |
+| 41 | libnspr4 | 2:4.38.2-1ubuntu1 | MPL-2.0 |
+| 42 | libnss3 | 2:3.120-1ubuntu2.2 | MPL-2.0 (+ BSD-3, Zlib, public-domain) |
+| 43 | libopenjp2-7 | 2.5.4-1ubuntu0.1 | BSD-2 (+ MIT, BSD-3, libpng/libtiff, Zlib) |
+| 44 | libp11-kit0 | 0.26.2-2 | Apache-2.0/BSD-3/ISC/LGPL-2.1+ (+ FSFAP, X11, GPL-2+/GPL-3+ with Autoconf-data exc) |
+| 45 | libpixman-1-0 | 0.46.4-1 | Expat (MIT) |
+| 46 | libpng16-16t64 | 1.6.57-1ubuntu0.1 | libpng (+ Apache-2.0, BSD-3, Expat, GPL-2+ alternative) |
+| 47 | libpoppler156 | 26.01.0-2ubuntu0.3 | GPL-2 or GPL-3 (+ Apache-2.0 stanzas) |
+| 48 | libpsl5t64 | 0.21.2-1.1build2 | MIT (+ gnulib, Chromium) |
+| 49 | libqpdf30 | 12.3.2-1 | Apache-2.0 (+ SAPHIR MIT-style, RSA notice) [non-dep5] |
+| 50 | libreadline8t64 | 8.3-4 | **GPL-3+** (+ GPL-2+, GFDL-NIV-1.3+, ISC-no-attribution) |
+| 51 | librtmp1 | 2.4+20151223.gitfa8646d.1-3 | GPL-2+ and LGPL-2.1+ (per file) |
+| 52 | libsasl2-2 | 2.1.28+dfsg1-9ubuntu3 | BSD-3-Clause-Attribution (+ many BSD/MIT variants, GPL-3/GPL-3+, RSA-MD) |
+| 53 | libsasl2-modules-db | 2.1.28+dfsg1-9ubuntu3 | BSD-3-Clause-Attribution (+ many BSD/MIT variants, GPL-3/GPL-3+, RSA-MD) |
+| 54 | libsharpyuv0 | 1.5.0-0.1build1 | BSD-3-Clause (+ Apache-2.0) |
+| 55 | libsqlite3-0 | 3.46.1-9ubuntu0.3 | public domain (option GPL-2+) |
+| 56 | libssh2-1t64 | 1.11.1-1ubuntu0.26.04.4 | BSD-3 (+ ISC) |
+| 57 | libtasn1-6 | 4.21.0-2 | GPL-3+ and LGPL-2.1+ [non-dep5] |
+| 58 | libtiff6 | 4.7.0-3ubuntu5 | libtiff (BSD-like / Hylafax) |
+| 59 | libunistring5 | 1.3-2build1 | LGPL-3+ or GPL-2+ (+ GFDL-1.3+, GPL-2+/GPL-3+, Expat, ISC, Unicode, public-domain) |
+| 60 | libwebp7 | 1.5.0-0.1build1 | BSD-3-Clause (+ Apache-2.0) |
+| 61 | libx11-6 | 2:1.8.13-1ubuntu0.1 | MIT (X.Org variant) [non-dep5] |
+| 62 | libx11-data | 2:1.8.13-1ubuntu0.1 | MIT (X.Org variant) [non-dep5] |
+| 63 | libxau6 | 1:1.0.11-1build2 | MIT (X.Org) [non-dep5] |
+| 64 | libxcb-render0 | 1.17.0-2ubuntu1 | MIT (X.Org) [non-dep5] |
+| 65 | libxcb-shm0 | 1.17.0-2ubuntu1 | MIT (X.Org) [non-dep5] |
+| 66 | libxcb1 | 1.17.0-2ubuntu1 | MIT (X.Org) [non-dep5] |
+| 67 | libxdmcp6 | 1:1.1.5-2 | MIT (X.Org / OpenGroup-MIT) |
+| 68 | libxext6 | 2:1.3.4-1build3 | MIT (X.Org) [non-dep5] |
+| 69 | libxrender1 | 1:0.9.12-1build1 | MIT (X.Org) [non-dep5] |
+| 70 | pinentry-curses | 1.3.2-3ubuntu1 | GPL-2+ (+ LGPL-3+ or GPL-2+, X11) |
+| 71 | poppler-utils | 26.01.0-2ubuntu0.3 | GPL-2 or GPL-3 (+ Apache-2.0 stanzas) |
+| 72 | qpdf | 12.3.2-1 | Apache-2.0 (+ SAPHIR MIT-style, RSA notice) [non-dep5] |
+| 73 | readline-common | 8.3-4 | **GPL-3+** (+ GPL-2+, GFDL-NIV-1.3+, ISC-no-attribution) |
+
+`[non-dep5]` = the package ships a non-machine-readable copyright file; the
+licence is taken from the 24.04 accepted record and/or the upstream project.
+The per-build `check-installed.sh` re-reads the **full** copyright file and
+stops on any stanza not listed, so these are confirmed at build time against
+this accepted record.
+
+**Licences new to the set, weighed and accepted by the owner:** the
+**GPL-3+** GnuPG toolchain (rows 2, 6–10) and the **GPL-3+** readline
+(rows 50, 73), plus GPL-3+/LGPL-3+ stanzas in the gnutls/nettle/hogweed/idn2/
+unistring crypto chain pulled in through poppler's new GPGME signature
+support. All are process-invoked test-only tools, never linked (ADR-044
+C1–C5). ADR-044 §3.1 covers the apt dependency closure; the owner accepts
+this expanded GPL-3+ set under the waiver as part of this C3 record.
+
+---
+
+*The accepted Ubuntu-24.04 record (owner-accepted 2026-11-02, superseded by the
+26.04 record above) follows and is preserved unchanged as history.*
+
+---
 
 **Status: accepted by the owner on 2026-11-02.** This record is the C3 condition of ADR-013
 before the first build of `eng/pdf-oracle`: the owner of the G21 waiver accepts
