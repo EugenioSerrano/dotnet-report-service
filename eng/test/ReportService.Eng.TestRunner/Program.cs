@@ -529,8 +529,10 @@ internal static partial class Program
             await using (var writer = new StreamWriter(log, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { NewLine = "\n", AutoFlush = true })
             {
                 await writer.WriteLineAsync($"> dotnet {string.Join(' ', arguments.Select(Quote))}").ConfigureAwait(false);
-                // Route the prepare step's child temp off the AV-scanned location (BUG-052 / US-000.BOLT-096).
-                exitCode = await RunStreamingAsync(root, "dotnet", arguments, TestTempRoot.SpawnEnvironment(), writer, cancellationToken, () => onExpired?.Invoke(problem())).ConfigureAwait(false);
+                // Route the prepare step's child temp off the AV-scanned location, and keep the
+                // CLI run hook from rerouting this AppHost `dotnet run` (which would drop the
+                // explicit -c Release / --no-launch-profile and start the Debug host instead).
+                exitCode = await RunStreamingAsync(root, "dotnet", arguments, TestTempRoot.AppHostRunSpawnEnvironment(), writer, cancellationToken, () => onExpired?.Invoke(problem())).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)

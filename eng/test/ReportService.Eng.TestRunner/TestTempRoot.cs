@@ -100,6 +100,29 @@ public static class TestTempRoot
     }
 
     /// <summary>
+    /// The designated CLI input that keeps a <c>dotnet run</c> on a C# AppHost from being
+    /// rerouted through the CLI run hook. The run hook, when it fires, relaunches the host
+    /// with <c>--no-build</c> and the default (Debug) build, silently dropping an explicit
+    /// <c>-c Release</c> and <c>--no-launch-profile</c> on the spawned command; the Release
+    /// host exe is then never started. Setting this to <c>true</c> for the spawn that
+    /// launches the AppHost keeps the explicit configuration and launch-profile flags, so
+    /// the Release host runs as asked. It is inert for a spawn that is not an AppHost run.
+    /// </summary>
+    public const string SuppressCliRunHookName = "ASPIRE_SUPPRESS_CLI_RUN_HOOK";
+
+    /// <summary>
+    /// The spawn environment for the AppHost <c>dotnet run</c> launch: the usual
+    /// <c>TMP</c>/<c>TEMP</c> routing plus <see cref="SuppressCliRunHookName"/> set so the
+    /// CLI run hook does not reroute the run and drop the explicit configuration flags.
+    /// </summary>
+    public static Dictionary<string, string> AppHostRunSpawnEnvironment()
+    {
+        var environment = SpawnEnvironment();
+        environment[SuppressCliRunHookName] = "true";
+        return environment;
+    }
+
+    /// <summary>
     /// Merges <c>TMP</c> and <c>TEMP</c> (the once-resolved root) into an existing environment
     /// dictionary, keeping its other entries. Used at the spawn site whose dictionary already
     /// carries entries.

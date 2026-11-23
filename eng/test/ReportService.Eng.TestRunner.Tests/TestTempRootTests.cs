@@ -124,6 +124,23 @@ public sealed class TestTempRootTests
         Assert.False(string.IsNullOrEmpty(environment["TMP"]));
     }
 
+    // The AppHost `dotnet run` launch must carry the CLI-run-hook suppression so the run is
+    // not rerouted through the CLI (which would drop -c Release/--no-launch-profile and start
+    // the Debug host). It also keeps the TMP/TEMP routing the other spawns get.
+    [Fact]
+    public void AppHostRunSpawnEnvironmentSuppressesTheCliRunHook()
+    {
+        var environment = TestTempRoot.AppHostRunSpawnEnvironment();
+
+        Assert.True(environment.ContainsKey(TestTempRoot.SuppressCliRunHookName));
+        Assert.Equal("true", environment[TestTempRoot.SuppressCliRunHookName]);
+        Assert.Equal("ASPIRE_SUPPRESS_CLI_RUN_HOOK", TestTempRoot.SuppressCliRunHookName);
+        // still routes temp like every other spawn
+        Assert.True(environment.ContainsKey("TMP"));
+        Assert.Equal(environment["TMP"], environment["TEMP"]);
+        Assert.Equal(TestTempRoot.SpawnEnvironment()["TMP"], environment["TMP"]);
+    }
+
     [Fact]
     public void ApplyToMergesAndKeepsExistingEntries()
     {
