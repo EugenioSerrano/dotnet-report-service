@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+<Project Sdk="Aspire.AppHost.Sdk/17.0.0">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,8 +12,16 @@
       pinned centrally in Directory.Packages.props; the Aspire CLI bundle is
       not used. The warning that recommends the bundle is therefore turned
       off for this project only.
+
+      ASPIRE012 / CS0618: Aspire 17 marks the Aspire.AppHost.Sdk and the
+      AddProject<TProject> composition API obsolete in favour of
+      Microsoft.NET.Sdk + Aspire.Hosting.Dotnet's AddDotnetProject(name, path).
+      Both the SDK and the API remain available and functional. Migrating off
+      the AppHost SDK is a separate decision, out of scope for this
+      Aspire-version bump; the two warnings are turned off for this project only
+      so the still-working composition builds unchanged.
     -->
-    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+    <NoWarn>$(NoWarn);ASPIRE010;ASPIRE012;CS0618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

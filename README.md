@@ -494,7 +494,7 @@ progress.
 
 | Area | Decision |
 |------|----------|
-| Platform | .NET 10 (LTS, supported until November 2028; SDK pinned in `global.json`) on Linux containers; Aspire 13.6 for local development; Kubernetes or Azure Container Apps for production |
+| Platform | .NET 10 (LTS, supported until November 2028; SDK pinned in `global.json`) on Linux containers; Aspire 17 for local development; Kubernetes or Azure Container Apps for production |
 | Orchestration | Temporal (self-hosted) with PostgreSQL 18; local development uses the official Temporal CLI dev-server image |
 | Metadata | PostgreSQL, accessed with Dapper and explicit SQL |
 | PDF | Playwright 1.63 + headless Chromium 153 baked into the worker image; Paged.js 0.4.3 for pagination (native Chromium `@page` margin boxes evaluated in Stage 0) |

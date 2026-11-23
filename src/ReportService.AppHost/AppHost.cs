@@ -110,9 +110,9 @@ var renderWorkerOtlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"]
 // database setting and no database check.
 var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
     .WithImagePullPolicy(ImagePullPolicy.Never)
-    // The watchdog's remedy: a worker it stopped is replaced by the runtime. Aspire 13.6.5
-    // expresses the policy as a runtime argument, not as a resource property; a deployment
-    // that runs the image elsewhere declares the same policy itself.
+    // The watchdog's remedy: a worker it stopped is replaced by the runtime. The policy is
+    // expressed here as a container runtime argument (still supported on Aspire 17.0.0); a
+    // deployment that runs the image elsewhere declares the same policy itself.
     .WithContainerRuntimeArgs("--restart=always")
     .WithEnvironment("Temporal__Address", temporalAddress)
     .WithEnvironment("Temporal__Namespace", "default")

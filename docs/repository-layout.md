@@ -177,7 +177,7 @@ What each test level may reach, the evidence a run leaves under
 | Component | Version | Notes |
 |-----------|---------|-------|
 | .NET | 10 (LTS) — SDK 10.0.4xx band, `net10.0` | Supported until November 2028 |
-| Aspire | 13.6.5 | Local development composition; requires the .NET 10 SDK |
+| Aspire | 17.0.0 | Local development composition; requires the .NET 10 SDK |
 | Temporal | .NET SDK 1.21.0; dev server image `temporalio/temporal:1.9.1`; production reference server 1.32.x with PostgreSQL | |
 | PostgreSQL | 18 (client Npgsql 10.0.3) | |
 | Cache | Valkey 9.1 | Redis protocol — Redis works as well |
@@ -185,12 +185,12 @@ What each test level may reach, the evidence a run leaves under
 | Paged.js | 0.4.3 | Vendored in the render image; no Node.js at runtime |
 
 Package versions appear in `Directory.Packages.props` as the first change
-that needs each package adds it. The product packages are Aspire hosting 13.6.5,
+that needs each package adds it. The product packages are Aspire hosting 17.0.0,
 Microsoft.Playwright 1.63.0, Temporalio 1.21.0, Npgsql 10.0.3, Dapper 2.1.89 and
 the OpenTelemetry set 1.20.1 (core, hosting, OTLP exporter and the ASP.NET Core,
 HTTP client and runtime instrumentation); the packages of the tests are xUnit v3
 4.0.2, coverlet.MTP 10.1.0, Microsoft.AspNetCore.Mvc.Testing 10.0.13,
-Testcontainers 4.16.0, Aspire.Hosting.Testing 13.6.5 and the in-memory exporter
+Testcontainers 4.16.0, Aspire.Hosting.Testing 17.0.0 and the in-memory exporter
 of OpenTelemetry 1.20.1. The one-shot migrator and the processes that use
 the metadata database connect with Npgsql and run explicit SQL with Dapper.
 
