@@ -48,6 +48,20 @@ internal static class TestComposition
         PublishByNameTemplateAsync,
         LazyThreadSafetyMode.ExecutionAndPublication);
 
+    /// <summary>
+    /// Serialises the construction of the testing builders, and that alone. The
+    /// builder's constructor imports any legacy user-secrets for the host's
+    /// user-secrets id by writing and moving one file in place; every composition
+    /// of this run shares the one user-secrets id, so several builders constructed
+    /// at the same instant race on that file and all but one fail with an access
+    /// error. Holding this for the construction lets the first one finish the import
+    /// before the next begins (once the file exists the import is a no-op); the gate
+    /// is released the moment the builder is constructed, so everything else — the
+    /// template seed, the view configuration, the worker endpoint wiring, the build
+    /// and the run itself — still proceeds in parallel across compositions.
+    /// </summary>
+    private static readonly SemaphoreSlim BuilderConstruction = new(1, 1);
+
     /// <summary>The switch that runs the test's telemetry view without a credential.</summary>
     public const string AnonymousSetting = "ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS";
 
@@ -110,10 +124,24 @@ internal static class TestComposition
         // receiver's bind and the container's destination are read from, so a machine
         // with more than one interface cannot answer differently for the two.
         var receiver = RequestedReceiver(Address());
-        var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
-            new DistributedApplicationTestingBuilderOptions { EnableDashboard = true },
-            arguments,
-            cancellationToken);
+
+        // The construction is serialised on its own so the shared user-secrets import that the
+        // builder's constructor performs runs once-at-a-time across compositions; see the note on
+        // BuilderConstruction. The gate is held across the construction only and released in the
+        // finally, so the rest of this method and the run stay parallel.
+        IDistributedApplicationTestingBuilder builder;
+        await BuilderConstruction.WaitAsync(cancellationToken);
+        try
+        {
+            builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.ReportService_AppHost>(
+                new DistributedApplicationTestingBuilderOptions { EnableDashboard = true },
+                arguments,
+                cancellationToken);
+        }
+        finally
+        {
+            BuilderConstruction.Release();
+        }
 
         // The testing builder starts its telemetry view secured and blanks both receiver
         // addresses, and it says so in a configuration source of its own that outranks an
