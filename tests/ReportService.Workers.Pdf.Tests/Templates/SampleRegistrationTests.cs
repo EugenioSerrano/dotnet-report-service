@@ -43,7 +43,7 @@ public sealed class SampleRegistrationTests
     [Fact]
     public void TheApiProjectReferencesNoneOfTheTakeEngineOrRenderingAssemblies()
     {
-        var api = Path.Combine(Root, "src", "Hosts", "ReportService.Api", "ReportService.Api.csproj");
+        var api = Path.Combine(Root, "src", "ReportService.Api", "ReportService.Api.csproj");
         Assert.True(File.Exists(api), api);
 
         var references = XDocument.Load(api).Descendants()

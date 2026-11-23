@@ -18,8 +18,8 @@ public sealed class ThirdPartyNoticesTests
     /// <summary>The two projects whose resolved graph is the set a shipped image carries.</summary>
     public static TheoryData<string> ShippedProjects { get; } = new()
     {
-        Path.Combine("src", "Hosts", "ReportService.Workers.Orchestration", "ReportService.Workers.Orchestration.csproj"),
-        Path.Combine("src", "Hosts", "ReportService.Workers.Pdf", "ReportService.Workers.Pdf.csproj"),
+        Path.Combine("src", "ReportService.Workers.Orchestration", "ReportService.Workers.Orchestration.csproj"),
+        Path.Combine("src", "ReportService.Workers.Pdf", "ReportService.Workers.Pdf.csproj"),
     };
 
     [Theory]

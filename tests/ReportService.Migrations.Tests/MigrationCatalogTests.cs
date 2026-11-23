@@ -246,7 +246,7 @@ public sealed class MigrationCatalogTests
     {
         foreach (var script in MigrationCatalog.Scripts)
         {
-            var path = Path.Combine(RepositoryPaths.Root, "src", "Hosts", "ReportService.Migrations", "Migrations", script.Name);
+            var path = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Migrations", "Migrations", script.Name);
             var bytes = File.ReadAllBytes(path);
 
             Assert.Equal(MigrationScript.ChecksumOf(bytes), script.Checksum);

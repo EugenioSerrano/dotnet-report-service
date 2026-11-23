@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

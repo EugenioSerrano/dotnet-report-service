@@ -6,12 +6,12 @@
     requests the API records.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
-    <ProjectReference Include="..\..\Jobs\ReportService.Data\ReportService.Data.csproj" />
-    <ProjectReference Include="..\..\Jobs\ReportService.DataContract\ReportService.DataContract.csproj" />
-    <ProjectReference Include="..\..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
-    <ProjectReference Include="..\..\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
-    <ProjectReference Include="..\..\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <ProjectReference Include="..\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
   </ItemGroup>
 
   <!-- The worker writes the durable requests it claims; the versions are declared centrally. -->

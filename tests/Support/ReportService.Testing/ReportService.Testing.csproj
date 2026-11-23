@@ -30,13 +30,13 @@
 
   <ItemGroup>
     <!-- The store contract is written against the product's own store interface. -->
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Api\ReportService.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Api\ReportService.Api.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
     <!-- The intent-store contract is written against the worker's own interface. -->
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
     <!-- The independent reading uses the product's own reader and normalisation. -->
     <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>

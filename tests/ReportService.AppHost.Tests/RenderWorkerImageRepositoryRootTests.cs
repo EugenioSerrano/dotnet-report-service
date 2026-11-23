@@ -5,7 +5,7 @@ namespace ReportService.AppHost.Tests;
 /// <summary>
 /// The repository-root resolution the render-worker-image prepare step relies on.
 /// The AppHost sits three directories below the repository root under the grouped
-/// layout (<c>src/Hosts/ReportService.AppHost</c>), and the resolution must reach
+/// layout (<c>src/ReportService.AppHost</c>), and the resolution must reach
 /// the root from there without doubling a path segment, so the worker entry project
 /// path it builds is the real file.
 /// </summary>
@@ -42,12 +42,12 @@ public sealed class RenderWorkerImageRepositoryRootTests
                 Path.GetTempPath(),
                 "report-service-apphost-root-" + Guid.NewGuid().ToString("N"));
 
-            AppHostDirectory = Path.Combine(Root, "src", "Hosts", "ReportService.AppHost");
+            AppHostDirectory = Path.Combine(Root, "src", "ReportService.AppHost");
             Directory.CreateDirectory(AppHostDirectory);
 
             File.WriteAllText(Path.Combine(Root, "global.json"), "{}");
 
-            var workerDirectory = Path.Combine(Root, "src", "Hosts", "ReportService.Workers.Pdf.Entry");
+            var workerDirectory = Path.Combine(Root, "src", "ReportService.Workers.Pdf.Entry");
             Directory.CreateDirectory(workerDirectory);
             File.WriteAllText(
                 Path.Combine(workerDirectory, "ReportService.Workers.Pdf.Entry.csproj"),

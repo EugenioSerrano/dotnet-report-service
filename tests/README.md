@@ -422,10 +422,14 @@ fixtures through a project reference.
 
 ## Naming
 
-- Unit/component: `tests/ReportService.<Area>.Tests/ReportService.<Area>.Tests.csproj`,
-  testing `src/ReportService.<Area>`.
-- Cross-cutting: `tests/ReportService.<Kind>Tests/`.
-- Shared support: `tests/ReportService.Testing/`.
+- Host tests: `tests/ReportService.<Area>.Tests/` at the `tests/` root, testing a
+  host at `src/ReportService.<Area>` (ADR-042).
+- Grouped unit/component: `tests/<Group>/ReportService.<Area>.Tests/`, testing
+  `src/<Group>/ReportService.<Area>` (`Jobs/`, `Templates/`, `Platform/`, `Pdf/`).
+- Cross-cutting: `tests/Suites/ReportService.<Kind>Tests/`.
+- Rendering regression, host and oracle: `tests/Rendering/<project>/`.
+- Shared support and its test suite: `tests/Support/ReportService.Testing/`,
+  `tests/Support/ReportService.Fixtures.Tests/`.
 
 Every test project is added to `dotnet-report-service.slnx` under the `tests`
 solution folder, and to its level in the test runner.
@@ -531,7 +535,7 @@ which carries `[Trait("Requires", "printing")]`).
 `SingleBlockLimitTests` holds the report that does not fit in one block: each case
 starts the composition with the record count it asserts (the setting is read when the
 worker starts), submits a snapshot of the families in
-`tests/ReportService.Testing/Limits/`, and asserts one state — the job and its PDF
+`tests/Support/ReportService.Testing/Limits/`, and asserts one state — the job and its PDF
 output failed with the same code and the same stored reason, the data step ran once,
 no render or publish step was scheduled, no partition record, part commit or artifact
 was written and no object reached the output namespace — or, for the document at the

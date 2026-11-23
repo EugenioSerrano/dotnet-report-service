@@ -97,7 +97,7 @@ public sealed class TemplateReleaseVersionPatternTests
     }
 
     private static string ScriptSql() => File.ReadAllText(
-        Path.Combine(RepositoryPaths.Root, "src", "Hosts", "ReportService.Migrations", "Migrations", Script));
+        Path.Combine(RepositoryPaths.Root, "src", "ReportService.Migrations", "Migrations", Script));
 
     private static bool IsRelease(string version) =>
         SemanticVersion.TryParse(version, out var parsed) && parsed.PreRelease.Count == 0;

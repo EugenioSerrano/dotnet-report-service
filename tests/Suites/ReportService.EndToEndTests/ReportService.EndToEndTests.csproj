@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.AppHost\ReportService.AppHost.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.AppHost\ReportService.AppHost.csproj" />
     <!-- Removes a run's objects from the shared storage root through the storage port. -->
     <ProjectReference Include="..\..\..\src\Platform\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
     <!-- The records and the take the demo's job is accepted and printed from. -->

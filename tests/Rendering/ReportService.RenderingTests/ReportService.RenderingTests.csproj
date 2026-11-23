@@ -22,13 +22,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Support\ReportService.Testing\ReportService.Testing.csproj" />
-    <ProjectReference Include="..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
-    <ProjectReference Include="..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
-    <ProjectReference Include="..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
-    <ProjectReference Include="..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
     <!-- The measurement reads the delivered take deadline, the render budget and the activity's bound. -->
-    <ProjectReference Include="..\..\src\Hosts\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

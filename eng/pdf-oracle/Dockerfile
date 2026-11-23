@@ -9,8 +9,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.402-noble AS build
 WORKDIR /repo
 COPY global.json Directory.Build.props Directory.Packages.props NuGet.config .editorconfig ./
-COPY tests/ReportService.PdfOracle/ tests/ReportService.PdfOracle/
-RUN dotnet publish tests/ReportService.PdfOracle/ReportService.PdfOracle.csproj \
+COPY tests/Rendering/ReportService.PdfOracle/ tests/Rendering/ReportService.PdfOracle/
+RUN dotnet publish tests/Rendering/ReportService.PdfOracle/ReportService.PdfOracle.csproj \
     -c Release -o /oracle \
     -p:EnableSourceControlManagerQueries=false -p:EnableSourceLink=false
 

@@ -25,15 +25,15 @@ internal static partial class Program
     /// <summary>Unit/component projects: no container runtime, measured for coverage.</summary>
     private static readonly string[] HermeticProjects =
     [
-        "tests/Hosts/ReportService.AppHost.Tests/ReportService.AppHost.Tests.csproj",
-        "tests/Hosts/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
+        "tests/ReportService.AppHost.Tests/ReportService.AppHost.Tests.csproj",
+        "tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj",
         "tests/Jobs/ReportService.Data.Tests/ReportService.Data.Tests.csproj",
         "tests/Jobs/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj",
-        "tests/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj",
+        "tests/Support/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj",
         "tests/Jobs/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj",
-        "tests/Hosts/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
+        "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj",
-        "tests/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
+        "tests/Rendering/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
         "tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/Platform/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",
         "tests/Templates/ReportService.TemplateChecks.Tests/ReportService.TemplateChecks.Tests.csproj",
@@ -41,8 +41,8 @@ internal static partial class Program
         "tests/Templates/ReportService.TemplatePackages.Tests/ReportService.TemplatePackages.Tests.csproj",
         "tests/Templates/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj",
         "tests/Jobs/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
-        "tests/Hosts/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
-        "tests/Hosts/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
+        "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
+        "tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
         // The hermetic PDF structure verification: reads the committed golden PDFs
         // in-process (PdfPig), no container. A no-coverage hermetic project
         // (CoverageFloors.NoCoverageProjects): it owns no product assembly.
@@ -50,7 +50,7 @@ internal static partial class Program
     ];
 
     /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
-    private const string RenderingProject = "tests/ReportService.RenderingTests/ReportService.RenderingTests.csproj";
+    private const string RenderingProject = "tests/Rendering/ReportService.RenderingTests/ReportService.RenderingTests.csproj";
 
     /// <summary>
     /// The on-demand NFR/performance tier: the heavy memory and large-buffer cases that
@@ -74,7 +74,7 @@ internal static partial class Program
     ];
 
     /// <summary>The composition host; the level prepares the render worker image through it.</summary>
-    private const string AppHostProject = "src/Hosts/ReportService.AppHost/ReportService.AppHost.csproj";
+    private const string AppHostProject = "src/ReportService.AppHost/ReportService.AppHost.csproj";
 
     /// <summary>The argument that makes the composition host prepare the render worker image and exit.</summary>
     private const string PrepareOnlyArgument = "--prepare-render-worker-image";
@@ -781,7 +781,7 @@ internal static partial class Program
 
     private static List<string> ReadPinnedReferences(string root)
     {
-        var path = Path.Combine(root, "src", "Hosts", "ReportService.AppHost", "composition-pins.json");
+        var path = Path.Combine(root, "src", "ReportService.AppHost", "composition-pins.json");
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         return [.. document.RootElement.EnumerateObject()
             .Select(entry => $"{entry.Value.GetProperty("image").GetString()}:{entry.Value.GetProperty("tag").GetString()}")];

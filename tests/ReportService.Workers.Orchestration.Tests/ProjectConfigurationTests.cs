@@ -26,7 +26,7 @@ public sealed class ProjectConfigurationTests
     {
         var source = Path.Combine(
             RepositoryPaths.Root,
-            "tests", "Hosts", "ReportService.Workers.Orchestration.Tests",
+            "tests", "ReportService.Workers.Orchestration.Tests",
             "appsettings.json");
         var output = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 

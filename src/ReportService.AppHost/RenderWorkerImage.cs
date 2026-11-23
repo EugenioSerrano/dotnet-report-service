@@ -72,7 +72,7 @@ internal sealed record RenderWorkerImage(
 
     /// <summary>The render worker's entry project file under a repository root.</summary>
     internal static string WorkerProjectPath(string repositoryRoot) => Path.Combine(
-        repositoryRoot, "src", "Hosts", "ReportService.Workers.Pdf.Entry", "ReportService.Workers.Pdf.Entry.csproj");
+        repositoryRoot, "src", "ReportService.Workers.Pdf.Entry", "ReportService.Workers.Pdf.Entry.csproj");
 
     /// <summary>Reads the image names from the render worker's entry project file.</summary>
     public static async Task<RenderWorkerImage> DescribeAsync(

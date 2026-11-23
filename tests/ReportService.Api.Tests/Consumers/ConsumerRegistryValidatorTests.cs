@@ -216,7 +216,7 @@ public sealed class ConsumerRegistryValidatorTests : IDisposable
     [Fact]
     public void RepositoryDevelopmentRegistryIsValidAndHoldsOnlyDevelopmentEntries()
     {
-        var path = Path.Combine(ReportService.Testing.RepositoryPaths.Root, "src", "Hosts", "ReportService.Api", "consumers.json");
+        var path = Path.Combine(ReportService.Testing.RepositoryPaths.Root, "src", "ReportService.Api", "consumers.json");
 
         var snapshot = ConsumerRegistryValidator.Validate(new ConfigurationBuilder().AddJsonFile(path).Build()).Snapshot!;
 

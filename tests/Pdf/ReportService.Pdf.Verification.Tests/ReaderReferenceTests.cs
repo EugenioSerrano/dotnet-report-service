@@ -27,7 +27,7 @@ public sealed class ReaderReferenceTests
     [Fact]
     public void TheJudgeReferencesNoProductAssembly()
     {
-        var judge = Path.Combine(Root, "tests", "ReportService.PdfOracle", "ReportService.PdfOracle.csproj");
+        var judge = Path.Combine(Root, "tests", "Rendering", "ReportService.PdfOracle", "ReportService.PdfOracle.csproj");
         Assert.True(File.Exists(judge), judge);
 
         var references = XDocument.Load(judge).Descendants()

@@ -25,11 +25,11 @@
 
   <ItemGroup>
     <!-- The download memory case reaches the API test host (JobApiHost) here. -->
-    <ProjectReference Include="..\..\Hosts\ReportService.Api.Tests\ReportService.Api.Tests.csproj" />
+    <ProjectReference Include="..\..\ReportService.Api.Tests\ReportService.Api.Tests.csproj" />
     <!-- The large-source memory case reaches the storage conformance fixtures and the memory probe here. -->
     <ProjectReference Include="..\..\Platform\ReportService.Storage.Tests\ReportService.Storage.Tests.csproj" />
     <!-- Products the upload verification and guarded-writer cases exercise directly. -->
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
     <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />

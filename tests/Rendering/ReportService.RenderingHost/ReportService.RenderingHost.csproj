@@ -38,11 +38,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
-    <ProjectReference Include="..\..\src\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
-    <ProjectReference Include="..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
-    <ProjectReference Include="..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
-    <ProjectReference Include="..\..\src\Hosts\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
   </ItemGroup>
 
   <!-- The base image must be pinned by digest, on the tag the browser package version names. -->

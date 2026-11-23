@@ -64,7 +64,7 @@ internal sealed class StartFailureProbe : IDisposable
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
             EnvironmentName = environmentName,
-            ContentRootPath = Path.Combine(RepositoryPaths.Root, "src", "Hosts", "ReportService.Api"),
+            ContentRootPath = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Api"),
         });
         builder.Configuration.AddInMemoryCollection(configuration);
 

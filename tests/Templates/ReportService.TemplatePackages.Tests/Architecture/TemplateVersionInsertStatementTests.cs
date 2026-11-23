@@ -123,7 +123,7 @@ public sealed class TemplateVersionInsertStatementTests
 
     private static IReadOnlyList<(string Name, string Text)> ScriptsThatTouchTheTable()
     {
-        var directory = Path.Combine(RepositoryPaths.Root, "src", "Hosts", "ReportService.Migrations", "Migrations");
+        var directory = Path.Combine(RepositoryPaths.Root, "src", "ReportService.Migrations", "Migrations");
         return
         [
             .. Directory.GetFiles(directory, "*.sql", SearchOption.TopDirectoryOnly)

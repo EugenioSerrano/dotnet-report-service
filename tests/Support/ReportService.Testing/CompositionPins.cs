@@ -17,7 +17,7 @@ public sealed record PinnedImage(string Image, string Tag)
 public sealed record CompositionPins(PinnedImage Database, PinnedImage Cache, PinnedImage WorkflowEngine)
 {
     /// <summary>The pins file, relative to the repository root.</summary>
-    public static readonly string RelativePath = Path.Combine("src", "Hosts", "ReportService.AppHost", "composition-pins.json");
+    public static readonly string RelativePath = Path.Combine("src", "ReportService.AppHost", "composition-pins.json");
 
     /// <summary>Reads the pins of the repository this test runs from.</summary>
     public static CompositionPins Load() => Read(Path.Combine(RepositoryPaths.Root, RelativePath));

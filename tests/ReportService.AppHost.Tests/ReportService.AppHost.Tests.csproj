@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.AppHost\ReportService.AppHost.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.AppHost\ReportService.AppHost.csproj" />
   </ItemGroup>
 
 </Project>

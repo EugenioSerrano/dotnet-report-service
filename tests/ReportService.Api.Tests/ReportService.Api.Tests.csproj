@@ -23,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Hosts\ReportService.Api\ReportService.Api.csproj" />
+    <ProjectReference Include="..\..\src\ReportService.Api\ReportService.Api.csproj" />
     <!-- The engine connection shared by the workers is tested here too; the API itself never references it. -->
-    <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
-    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 
 </Project>

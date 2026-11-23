@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\ReportService.RenderingTests\ReaderCases\*.pdf" Link="PdfCases\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Rendering\ReportService.RenderingTests\ReaderCases\*.pdf" Link="PdfCases\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -5,12 +5,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
-    <ProjectReference Include="..\..\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
-    <ProjectReference Include="..\..\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
-    <ProjectReference Include="..\..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
-    <ProjectReference Include="..\..\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
-    <ProjectReference Include="..\..\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <ProjectReference Include="..\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
   </ItemGroup>
 
   <!--

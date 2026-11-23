@@ -28,7 +28,7 @@ public sealed class RenderingSuite : IAsyncLifetime
     private const string BaseRegistry = "localhost:5055";
     private const string BaseRepository = "report-service-pdf-base";
     private const string BaseTag = "1.63.0-10.0.13-noble";
-    private const string HostProject = "tests/ReportService.RenderingHost/ReportService.RenderingHost.csproj";
+    private const string HostProject = "tests/Rendering/ReportService.RenderingHost/ReportService.RenderingHost.csproj";
 
     private static readonly string[] ManifestMediaTypes =
     [

@@ -8,48 +8,65 @@ has its own `README.md`.
 
 ```text
 dotnet-report-service/
-├── src/                       Product source — one folder per project
+├── src/                       Product source — the deployable hosts at the root, the libraries grouped by capability (ADR-042)
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
-│   ├── ReportService.Jobs/                        The report job records: acceptance, outputs, template references, shared by the API and the orchestration worker
-│   ├── ReportService.Data/                        The data-contract reader: the header-items-v1 profile and one sequential pass
-│   ├── ReportService.DataContract/                The template's data contract: the profile check, the compiled schema and its two roots, the first-violation mapping
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
-│   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
-│   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
-│   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
-│   ├── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
-│   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
-│   ├── ReportService.TemplateChecks/           The take's static checks: the eight checks in their fixed order, the refusal message, the source scans, and the registration the PDF worker calls
-│   ├── ReportService.TemplateSource/            The template source: its settings, the class read of the deployment's object storage, the publication record and its checks, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
-│   ├── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban adapter, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
-│   ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
-│   ├── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
 │   ├── ReportService.Workers.Pdf/                 The PDF worker (container image)
-│   └── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
-├── tests/                     Automated tests, mirroring src/
+│   ├── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
+│   ├── Platform/              Cross-cutting libraries with no report-domain knowledge
+│   │   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
+│   │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
+│   │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
+│   │   └── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
+│   ├── Jobs/                  The job and its input data
+│   │   ├── ReportService.Jobs/                        The report job records: acceptance, outputs, template references, shared by the API and the orchestration worker
+│   │   ├── ReportService.Uploads/                     The upload record and its store, shared by the API and the orchestration worker
+│   │   ├── ReportService.Data/                        The data-contract reader: the header-items-v1 profile and one sequential pass
+│   │   └── ReportService.DataContract/                The template's data contract: the profile check, the compiled schema and its two roots, the first-violation mapping
+│   ├── Templates/            The template lifecycle
+│   │   ├── ReportService.TemplateSource/            The template source: its settings, the class read of the deployment's object storage, the publication record and its checks, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
+│   │   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
+│   │   ├── ReportService.TemplateChecks/           The take's static checks: the eight checks in their fixed order, the refusal message, the source scans, and the registration the PDF worker calls
+│   │   └── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban adapter, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
+│   └── Pdf/                   Printing and verifying
+│       ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
+│       └── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
+├── tests/                     Automated tests — the host tests at the root, the unit/component tests grouped as src/ (ADR-042)
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
-│   ├── ReportService.Data.Tests/         Unit tests of the data-contract reader: the hostile-input matrix, plain and gzip (hermetic)
-│   ├── ReportService.DataContract.Tests/ Unit tests of the template data contract: profile, compilation, evaluation, cache (hermetic)
-│   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
+│   ├── ReportService.AppHost.Tests/      Unit/component tests of the composition (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
-│   ├── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
-│   ├── ReportService.Uploads.Tests/        Unit tests of the shared upload library (hermetic)
-│   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version: keys, version syntax and precedence, the package archive and its reader, the manifest, the ownership predicate (hermetic)
-│   ├── ReportService.TemplateChecks.Tests/    Unit/component tests of the take's static checks: the order, the message, the schema and its patterns, the sample, the anchors, the syntax, the includes and assets, the lint, the engine version and the budget (hermetic)
-│   ├── ReportService.TemplateSource.Tests/      Unit/component tests of the template source: settings, the object-store class read and its four states, the publication record and its checks, the key grammar, the changed-version warning, the by-name resolution, the manifest reader and the take (hermetic)
+│   ├── ReportService.Workers.Orchestration.Tests/  Unit/component tests of the orchestration worker (hermetic)
 │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
-│   ├── ReportService.Templates.Tests/         Unit/component tests of the composer: the adapter, the context, escaping, the guards, the block mode and the cache (hermetic)
-│   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)
-│   ├── ReportService.Pdf.Verification.Tests/  Unit tests of the reader, the normalisation, the alignment and the checks, with synthetic extraction inputs (hermetic, integrity-critical floors)
-│   ├── Pdf/ReportService.PdfStructure.Tests/  The hermetic PDF structure verification: reads the committed golden PDFs in-process (PdfPig) and checks order, global "Page X of Y", row coverage and per-page words (hermetic, no container)
-│   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
-│   ├── ReportService.RenderingHost/      The console the rendering suite starts in its own image: composes a block, prints it and applies a known-bad control
-│   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
-│   ├── ReportService.EndToEndTests/      Tests over the whole local composition
-│   ├── ReportService.PerformanceTests/   Memory and throughput measurements over the generated datasets (reference environment)
-│   └── ReportService.Testing/            Support library shared by the test projects: the repository and image pins, the template-source and template-package fixtures, the in-memory stores and the waits
+│   ├── Jobs/                  Unit/component tests of the Jobs group
+│   │   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
+│   │   ├── ReportService.Uploads.Tests/      Unit tests of the shared upload library (hermetic)
+│   │   ├── ReportService.Data.Tests/         Unit tests of the data-contract reader: the hostile-input matrix, plain and gzip (hermetic)
+│   │   └── ReportService.DataContract.Tests/ Unit tests of the template data contract: profile, compilation, evaluation, cache (hermetic)
+│   ├── Templates/            Unit/component tests of the Templates group
+│   │   ├── ReportService.TemplateSource.Tests/      Unit/component tests of the template source (hermetic)
+│   │   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version (hermetic)
+│   │   ├── ReportService.TemplateChecks.Tests/    Unit/component tests of the take's static checks (hermetic)
+│   │   └── ReportService.Templates.Tests/         Unit/component tests of the composer (hermetic)
+│   ├── Platform/            Unit/component tests of the Platform group
+│   │   └── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
+│   ├── Pdf/                  Unit/component tests of the Pdf group, plus the hermetic PDF structure verification
+│   │   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)
+│   │   ├── ReportService.Pdf.Verification.Tests/  Unit tests of the reader, the normalisation, the alignment and the checks, with synthetic extraction inputs (hermetic, integrity-critical floors)
+│   │   └── ReportService.PdfStructure.Tests/  The hermetic PDF structure verification: reads the committed golden PDFs in-process (PdfPig) and checks order, global "Page X of Y", row coverage and per-page words (hermetic, no container)
+│   ├── Suites/              Cross-cutting test suites
+│   │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
+│   │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
+│   │   └── ReportService.PerformanceTests/   Memory and throughput measurements over the generated datasets (reference environment)
+│   ├── Rendering/           The rendering regression suite, its host and the independent reader (oracle)
+│   │   ├── ReportService.RenderingHost/      The console the rendering suite starts in its own image: composes a block, prints it and applies a known-bad control
+│   │   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
+│   │   ├── ReportService.PdfOracle/          The independent reader of a printed PDF (its own image, process-invoked text tools)
+│   │   └── ReportService.PdfOracle.Tests/    Tests of the oracle
+│   └── Support/             Shared test support and its hermetic test suite
+│       ├── ReportService.Testing/            Support library shared by the test projects: the repository and image pins, the template-source and template-package fixtures, the in-memory stores and the waits
+│       └── ReportService.Fixtures.Tests/     Hermetic tests of the fixture library in ReportService.Testing
 ├── samples/                   Templates and datasets for adopters
 ├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md; writing a template: template-authoring.md; how a printed PDF is verified: pdf-verification.md)
 ├── eng/                       Build and engineering assets
@@ -76,11 +93,14 @@ dotnet-report-service/
 
 | What | Rule | Example |
 |------|------|---------|
-| Product project | `src/ReportService.<Area>/ReportService.<Area>.csproj` | `src/ReportService.Workers.Pdf/` |
-| Root namespace | Same as the project name | `ReportService.Workers.Pdf` |
-| Unit/component tests | `tests/ReportService.<Area>.Tests/` — one per product project; a provider project is tested in its port's project | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Storage.Tests/` (the port and its Filesystem provider) |
-| Cross-cutting test suites | `tests/ReportService.<Kind>Tests/` | `tests/ReportService.IntegrationTests/`, `tests/ReportService.EndToEndTests/`, `tests/ReportService.PerformanceTests/` |
-| Shared test support (library, referenced by test projects only) | `tests/ReportService.Testing/` | `tests/ReportService.Testing/` |
+| Host project (entry point) | `src/ReportService.<Area>/ReportService.<Area>.csproj` — at the `src/` root (ADR-042 §3.3) | `src/ReportService.Api/`, `src/ReportService.AppHost/` |
+| Grouped product library | `src/<Group>/ReportService.<Area>/` — `Platform/`, `Jobs/`, `Templates/`, `Pdf/` | `src/Pdf/ReportService.Rendering/`, `src/Platform/ReportService.Storage/` |
+| Root namespace | Same as the project name (never includes the group folder) | `ReportService.Workers.Pdf` |
+| Host test project | `tests/ReportService.<Area>.Tests/` — at the `tests/` root, mirroring the hosts | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Api.Tests/` |
+| Grouped unit/component tests | `tests/<Group>/ReportService.<Area>.Tests/` — one per product project, in its src group | `tests/Pdf/ReportService.Rendering.Tests/`, `tests/Platform/ReportService.Storage.Tests/` |
+| Cross-cutting test suites | `tests/Suites/ReportService.<Kind>Tests/` | `tests/Suites/ReportService.IntegrationTests/`, `tests/Suites/ReportService.EndToEndTests/`, `tests/Suites/ReportService.PerformanceTests/` |
+| Rendering regression suite, host and oracle | `tests/Rendering/<project>/` | `tests/Rendering/ReportService.RenderingTests/`, `tests/Rendering/ReportService.PdfOracle/` |
+| Shared test support and its test suite | `tests/Support/<project>/` | `tests/Support/ReportService.Testing/`, `tests/Support/ReportService.Fixtures.Tests/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |
 | Sample tool | `samples/<area>/ReportService.Samples.<Tool>/` | `samples/datasets/ReportService.Samples.DatasetGenerator/` |
 | Image built from a Dockerfile | `eng/<image>/Dockerfile` — only for images that need operating-system steps; product images are built by the .NET SDK from their project file | `eng/pdf-base/Dockerfile` |
