@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ReportService.Testing;
 
 namespace ReportService.Storage.Tests;
 
@@ -35,8 +36,8 @@ internal static class Links
         }
 
         using var process = Process.Start(startInfo)!;
-        var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
-        process.WaitForExit();
+        var (stdOut, stdErr) = ChildProcessStreams.DrainToExitAsync(process).GetAwaiter().GetResult();
+        var output = stdOut + stdErr;
         Assert.True(process.ExitCode == 0, "The junction could not be created: " + output);
     }
 

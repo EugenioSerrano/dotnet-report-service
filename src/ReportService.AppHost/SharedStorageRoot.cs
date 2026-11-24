@@ -68,9 +68,7 @@ internal sealed record SharedStorageRoot(string HostPath, string MountSource)
         try
         {
             using var process = Process.Start(startInfo)!;
-            var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.StandardError.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
+            var (output, _) = await DrainToExitAsync(process, cancellationToken);
             return process.ExitCode == 0 && output.Trim() == "Docker Desktop";
         }
         catch (Win32Exception)
@@ -78,6 +76,27 @@ internal sealed record SharedStorageRoot(string HostPath, string MountSource)
             // No container engine: the composition cannot start its containers either way.
             return false;
         }
+    }
+
+    /// <summary>
+    /// Drains a started child process's standard output and standard error and waits for it
+    /// to exit, returning the two captured strings. Both redirected streams must be consumed
+    /// so that a child writing a large volume to either stream cannot fill one pipe buffer and
+    /// block while the parent waits on the other. The child is started and owned by the
+    /// caller, which also reads <see cref="Process.ExitCode"/> itself; this method never
+    /// starts or kills the process, so a caller can impose its own timeout and terminate the
+    /// process tree if the child does not complete.
+    /// </summary>
+    /// <param name="process">A started process with both output streams redirected.</param>
+    /// <param name="cancellationToken">Cancels the drain and the wait for exit.</param>
+    /// <returns>The captured standard output and standard error.</returns>
+    internal static async Task<(string StdOut, string StdErr)> DrainToExitAsync(Process process, CancellationToken cancellationToken)
+    {
+        var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        return (await outputTask.ConfigureAwait(false), await errorTask.ConfigureAwait(false));
     }
 }
 
