@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Assembling the rendered parts of a multi-block output into one document and
+    stamping every page with its global number. The assembly is storage-agnostic:
+    it receives the ordered parts, the numbering contract and a caller-owned
+    temporary folder, and it returns the saved document. The only packages are the
+    writing library (Core build, exact pin) and the transitive signature patch it
+    requires; the reading side is the product's own verification assembly.
+  -->
+  <ItemGroup>
+    <PackageReference Include="PDFsharp" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+</Project>

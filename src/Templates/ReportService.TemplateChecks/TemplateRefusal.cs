@@ -106,6 +106,9 @@ public static class TemplateRefusal
         /// <summary>A PDF version aligns a splittable grid cell to the bottom of the page.</summary>
         public const string GridCellAlignment = "pdf-grid-cell-alignment";
 
+        /// <summary>The global page-numbering contract a PDF version declares is unusable.</summary>
+        public const string NumberingContract = "pdf-numbering-contract";
+
         /// <summary>The checks ran out of their share of the take's deadline.</summary>
         public const string Budget = "check-budget";
 

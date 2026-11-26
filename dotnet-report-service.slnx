@@ -34,6 +34,7 @@
     <Project Path="src/Templates/ReportService.Templates/ReportService.Templates.csproj" />
   </Folder>
   <Folder Name="/src/Pdf/">
+    <Project Path="src/Pdf/ReportService.Pdf.Assembly/ReportService.Pdf.Assembly.csproj" />
     <Project Path="src/Pdf/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
     <Project Path="src/Pdf/ReportService.Rendering/ReportService.Rendering.csproj" />
   </Folder>
@@ -60,6 +61,7 @@
     <Project Path="tests/Templates/ReportService.Templates.Tests/ReportService.Templates.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Pdf/">
+    <Project Path="tests/Pdf/ReportService.Pdf.Assembly.Tests/ReportService.Pdf.Assembly.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />

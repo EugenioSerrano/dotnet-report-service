@@ -110,7 +110,20 @@ public static class PdfWordReader
         }
     }
 
-    private static PrintedPage ReadPage(Page page, int number, PageMargins margins)
+    /// <summary>
+    /// Reads the document at <paramref name="path"/> with each page's media box and
+    /// its own dictionary, beside the words <see cref="Read"/> returns. The additive
+    /// reading is what the assembly verification compares; the per-block reading
+    /// above keeps its behaviour exactly.
+    /// </summary>
+    /// <param name="path">The file of the printed document.</param>
+    /// <param name="margins">The template's declared margins, in points.</param>
+    /// <returns>The pages of the document, each with its words, box and dictionary.</returns>
+    /// <exception cref="PdfUnreadableException">The document cannot be opened or read.</exception>
+    public static PdfDocumentReading ReadDocument(string path, PageMargins margins) =>
+        PdfDocumentReader.Read(path, margins);
+
+    internal static PrintedPage ReadPage(Page page, int number, PageMargins margins)
     {
         var letters = page.Letters;
         var positions = new Dictionary<Letter, int>(LetterIdentity.Instance);

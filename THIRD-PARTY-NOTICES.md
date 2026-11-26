@@ -275,6 +275,40 @@ product ships it as the package bundles it:
 - Project: https://dot.net/.
 - The licence text is reproduced in [MIT](#mit) below.
 
+## PDFsharp 6.2.4
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Copyright (c) 2005-2024 empira Software GmbH, Troisdorf (Germany)` -
+  from the package's own `.nuspec`.
+- Project: https://github.com/empira/PDFsharp.
+- The licence text is reproduced in [MIT](#mit) below.
+
+## System.Security.Cryptography.Pkcs 8.0.2
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `.NET Foundation and Contributors` - from the package's own
+  `.nuspec`.
+- Project: https://github.com/dotnet/runtime.
+- The licence text is reproduced in [MIT](#mit) below. The exact pin is the
+  transitive signature patch the PDF writing library requires.
+
+## Liberation Sans Regular
+
+- Licence: SIL Open Font License 1.1 - the licence text ships beside the font at
+  `tests/Support/ReportService.Testing/Fonts/LiberationSans-OFL.txt`, and the
+  canonical text is published at https://openfontlicense.org/open-font-license-official-text/.
+- Copyright: `Digitized data copyright (c) 2010 Google Corporation with Reserved
+  Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved
+  Font Name Liberation.`
+- Source: https://github.com/liberationfonts.
+- Vendored at `tests/Support/ReportService.Testing/Fonts/LiberationSans-Regular.ttf`
+  with the licence at the same folder's `LiberationSans-OFL.txt`. The font is a
+  test-support asset only: the numbering contract's fixtures carry it and the
+  assembly tests draw with it; no product image copies it and no font is ever
+  read from the host.
+
 ## Licence texts
 
 ### MIT

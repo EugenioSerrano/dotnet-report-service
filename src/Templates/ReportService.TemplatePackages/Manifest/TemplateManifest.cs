@@ -176,6 +176,10 @@ public sealed record TemplatePdfOutput
     [JsonPropertyName("pageTotals")]
     public TemplatePageTotals? PageTotals { get; init; }
 
+    /// <summary>The global page-numbering contract, when the package declares one.</summary>
+    [JsonPropertyName("numbering")]
+    public TemplatePdfNumbering? Numbering { get; init; }
+
     /// <summary>The parts of the PDF document, when it is rendered from parts.</summary>
     [JsonPropertyName("parts")]
     public TemplateParts? Parts { get; init; }
@@ -311,4 +315,65 @@ public sealed record TemplateLocaleDefaults
     /// <summary>The time zone name.</summary>
     [JsonPropertyName("timeZone")]
     public string? TimeZone { get; init; }
+}
+
+/// <summary>
+/// The global page-numbering contract a template declares for a multi-block PDF:
+/// the reserved area, the packaged font, the wording and the culture. A package
+/// that declares none is still taken and still prints single-block PDFs; it is
+/// simply not assemblable.
+/// </summary>
+public sealed record TemplatePdfNumbering
+{
+    /// <summary>The reserved rectangle, in millimetres in the page's displayed frame.</summary>
+    [JsonPropertyName("area")]
+    public TemplateNumberingArea? Area { get; init; }
+
+    /// <summary>The packaged font and the size the stamp is drawn at.</summary>
+    [JsonPropertyName("font")]
+    public TemplateNumberingFont? Font { get; init; }
+
+    /// <summary>The wording, with exactly one <c>{X}</c> and one <c>{Y}</c>.</summary>
+    [JsonPropertyName("format")]
+    public string? Format { get; init; }
+
+    /// <summary>The BCP 47 culture the numbers are written in.</summary>
+    [JsonPropertyName("culture")]
+    public string? Culture { get; init; }
+}
+
+/// <summary>The rectangle a numbering contract reserves, in millimetres.</summary>
+public sealed record TemplateNumberingArea
+{
+    /// <summary>The distance from the page's left edge.</summary>
+    [JsonPropertyName("leftMm")]
+    public decimal? LeftMm { get; init; }
+
+    /// <summary>The distance from the page's top edge.</summary>
+    [JsonPropertyName("topMm")]
+    public decimal? TopMm { get; init; }
+
+    /// <summary>The area's width.</summary>
+    [JsonPropertyName("widthMm")]
+    public decimal? WidthMm { get; init; }
+
+    /// <summary>The area's height.</summary>
+    [JsonPropertyName("heightMm")]
+    public decimal? HeightMm { get; init; }
+}
+
+/// <summary>The font a numbering contract draws its stamp with.</summary>
+public sealed record TemplateNumberingFont
+{
+    /// <summary>The family name the template declares.</summary>
+    [JsonPropertyName("family")]
+    public string? Family { get; init; }
+
+    /// <summary>The package-relative path of the font file.</summary>
+    [JsonPropertyName("file")]
+    public string? File { get; init; }
+
+    /// <summary>The size the stamp is drawn at, in points.</summary>
+    [JsonPropertyName("sizePt")]
+    public decimal? SizePt { get; init; }
 }

@@ -30,4 +30,9 @@
     <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\Support\ReportService.Testing\Fonts\LiberationSans-Regular.ttf"
+          Link="Fonts\LiberationSans-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

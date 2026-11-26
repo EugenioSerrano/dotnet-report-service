@@ -93,7 +93,8 @@ public sealed class PageAccountingCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("EngineVersionCheck", order[^6]);
+        Assert.Equal("EngineVersionCheck", order[^7]);
+        Assert.Equal("NumberingContractCheck", order[^6]);
         Assert.Equal("PageAccountingCheck", order[^5]);
         Assert.Equal("NamedFontFamilyCheck", order[^4]);
         Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
@@ -105,6 +106,7 @@ public sealed class PageAccountingCheckTests
             .AddTemplateVersionChecks()
             .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();
+        Assert.Equal("NumberingContractCheck", names[^6]);
         Assert.Equal("PageAccountingCheck", names[^5]);
         Assert.Equal("NamedFontFamilyCheck", names[^4]);
         Assert.Equal("BottomAlignedGridCellCheck", names[^3]);
@@ -127,6 +129,7 @@ public sealed class PageAccountingCheckTests
                 "IncludeAndAssetCheck",
                 "TemplateLintCheck",
                 "EngineVersionCheck",
+                "NumberingContractCheck",
                 "PageAccountingCheck",
                 "NamedFontFamilyCheck",
                 "BottomAlignedGridCellCheck",

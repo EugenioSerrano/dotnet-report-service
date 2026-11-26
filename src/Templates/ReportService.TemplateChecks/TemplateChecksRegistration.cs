@@ -42,6 +42,7 @@ public static class TemplateChecksRegistration
         "IncludeAndAssetCheck",
         "TemplateLintCheck",
         "EngineVersionCheck",
+        "NumberingContractCheck",
         "PageAccountingCheck",
         "NamedFontFamilyCheck",
         "BottomAlignedGridCellCheck",
@@ -65,6 +66,7 @@ public static class TemplateChecksRegistration
         services.AddSingleton<ITemplateVersionCheck, IncludeAndAssetCheck>();
         services.AddSingleton<ITemplateVersionCheck, TemplateLintCheck>();
         services.AddSingleton<ITemplateVersionCheck, EngineVersionCheck>();
+        services.AddSingleton<ITemplateVersionCheck, NumberingContractCheck>();
         services.AddSingleton<ITemplateVersionCheck, PageAccountingCheck>();
         services.AddSingleton<ITemplateVersionCheck, NamedFontFamilyCheck>();
         services.AddSingleton<ITemplateVersionCheck, BottomAlignedGridCellCheck>();

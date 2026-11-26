@@ -207,6 +207,7 @@ internal static class Packages
             new IncludeAndAssetCheck(session),
             new TemplateLintCheck(session),
             new EngineVersionCheck(),
+            new NumberingContractCheck(session),
             new PageAccountingCheck(),
             new NamedFontFamilyCheck(session),
             new BottomAlignedGridCellCheck(session),

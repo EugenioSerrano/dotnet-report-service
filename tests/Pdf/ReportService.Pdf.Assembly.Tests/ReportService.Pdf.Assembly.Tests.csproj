@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit/component tests of the assembly: staged merge, manifest order, the global
+    stamp, the fit measurement, the structural verification and its known-bad
+    controls, the ceiling, reproducibility and restart. Hermetic: every document is
+    generated in the test's own temporary directory with the packaged font; no
+    browser, no container, no network.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Assembly\ReportService.Pdf.Assembly.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+  <!--
+    The packaged font the numbering contract names, taken from the test support
+    library's own vendored copy (SIL Open Font License 1.1, recorded in
+    THIRD-PARTY-NOTICES.md). No font is read from the host or the image.
+  -->
+  <ItemGroup>
+    <None Include="..\..\Support\ReportService.Testing\Fonts\LiberationSans-Regular.ttf"
+          Link="Fonts\LiberationSans-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
