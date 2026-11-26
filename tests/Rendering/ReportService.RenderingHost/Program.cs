@@ -241,6 +241,28 @@ internal static partial class Program
             composed = KnownBad.ApplyComposition(mutation, composed);
         }
 
+        // A package that declares the printed page totals prints on the accounting path: the
+        // product's own block renderer marks the block, prints it with the pinned layout
+        // scripts and verifies the printed accounting. A control of this path acts on the
+        // served document after the reference is extracted, the way the seam is defined.
+        if (manifest.DeclaresPageTotals)
+        {
+            return await RenderAccountedAsync(
+                outFolder,
+                name,
+                fixtureId,
+                packageId,
+                mutation,
+                manifest,
+                composition,
+                files,
+                records,
+                header,
+                frame,
+                composed,
+                CancellationToken.None).ConfigureAwait(false);
+        }
+
         // The product's own checks: the units of the composition, then the checks that
         // need no page. A control applied at the page level changes the document after
         // this point, so only the printed text can be wrong - which is what the check
@@ -346,6 +368,159 @@ internal static partial class Program
             resultPath,
             JsonSerializer.Serialize(result, RenderResultContext.Default.RenderResult) + "\n",
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Prints one block of a page-accounting package through the product's own renderer: the
+    /// block is marked from its records and the partition's facts, printed with the pinned
+    /// layout scripts, and verified with the page-accounting check. The index facts a live
+    /// job would read are computed here for the one block: no opening carried-forward, no
+    /// open group and the exact sum of the block's amounts as its own total. The result keeps
+    /// the same shape as the native print's, so the suite reads it the same way.
+    /// </summary>
+    private static async Task<int> RenderAccountedAsync(
+        string outFolder,
+        string name,
+        string fixtureId,
+        string packageId,
+        string? mutation,
+        RenderManifest manifest,
+        CompositionRequest composition,
+        ITemplatePackageFiles files,
+        IReadOnlyList<ComposedRecord> records,
+        IReadOnlyDictionary<string, object?> header,
+        PageFrame frame,
+        ComposedBlock composed,
+        CancellationToken cancellationToken)
+    {
+        var amountField = manifest.Pdf.AmountField
+            ?? throw new InvalidDataException("The page-accounting package names no amount field.");
+        var blockTotal = records.Sum(record => AmountOf(record, amountField));
+        var request = new BlockRenderRequest(
+            manifest,
+            composition,
+            files,
+            new PartitionFacts(1, records.Count),
+            new IndexFacts(0, records.Count, 1, BlockAmountTotal: blockTotal),
+            new BlockFacts(0, 1, [.. records.Select(record => new BlockRecord(record.Ordinal, record.Values))], header),
+            0,
+            IsFirstBlock: true,
+            Path.Combine(outFolder, name + "-work"));
+
+        IComposedHtmlMutation? control = mutation switch
+        {
+            null => null,
+            "AC-AMOUNT" or "AC-BAND" => new AccountedControl(mutation),
+            _ => throw new InvalidDataException($"The host knows no accounting control '{mutation}'."),
+        };
+
+        await using var session = new BrowserSession();
+        var printer = new ChromiumPdfPrinter(session, TimeProvider.System);
+        var renderer = new BlockRenderer(
+            new BlockComposer(TimeProvider.System),
+            printer,
+            new BlockVerifier(),
+            TemplateEngineAdapters.Registry());
+        BlockRenderOutcome outcome;
+        try
+        {
+            outcome = await renderer.RenderAsync(request, blockMutation: null, htmlMutation: control, cancellationToken).ConfigureAwait(false);
+        }
+        catch (PrintTemporarilyFailedException exception)
+        {
+            Console.Error.WriteLine($"the accounting print of {name} failed: {exception.Message}");
+            return ExitFailed;
+        }
+
+        var pdfName = (string?)null;
+        if (outcome.PdfPath is { } printed)
+        {
+            pdfName = name + ".pdf";
+            File.Move(printed, Path.Combine(outFolder, pdfName), overwrite: true);
+        }
+
+        var verification = outcome.Verification;
+        var result = new RenderResult(
+            Fixture: fixtureId,
+            Template: packageId,
+            Mutation: mutation,
+            Pdf: pdfName,
+            Sha256: outcome.Sha256,
+            HtmlSha256: Convert.ToHexStringLower(SHA256.HashData(composed.Html)),
+            SizeBytes: outcome.SizeBytes,
+            AbortedRequests: outcome.Print?.AbortedRequests ?? 0,
+            ConsoleErrors: outcome.Print?.ConsoleErrors ?? 0,
+            DurationMs: (long)(outcome.Print?.Duration.TotalMilliseconds ?? 0),
+            VerificationPassed: verification.Passed,
+            VerificationReason: verification.Reason,
+            VerificationPage: verification.Page,
+            VerificationUnit: verification.UnitIndex,
+            VerificationOffset: verification.Offset,
+            VerificationField: verification.Field,
+            VerificationMs: verification.ReadAndAlignMs,
+            Pages: verification.Pages,
+            Words: verification.Words);
+
+        await WriteResultAsync(outFolder, name, result).ConfigureAwait(false);
+        Console.WriteLine($"rendered {name}: accounted, verification {verification.Passed}, {verification.Pages} page(s)");
+        return ExitOk;
+    }
+
+    /// <summary>The exact amount of one record, read from the manifest's amount field.</summary>
+    private static decimal AmountOf(ComposedRecord record, string amountField)
+    {
+        if (!record.Values.TryGetValue(amountField, out var value) || value is null)
+        {
+            return 0m;
+        }
+
+        return value switch
+        {
+            decimal exact => exact,
+            int integer => integer,
+            long large => large,
+            string text when decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => 0m,
+        };
+    }
+
+    /// <summary>
+    /// A known-bad control of the accounting print, applied to the served document after the
+    /// expected units are extracted: the first row's printed amount is given a leading digit,
+    /// or the band's element is never shown, so the check after printing is the only one that
+    /// can catch it.
+    /// </summary>
+    private sealed class AccountedControl(string name) : IComposedHtmlMutation
+    {
+        /// <inheritdoc />
+        public string Name => name;
+
+        /// <inheritdoc />
+        public string Apply(string html) => name switch
+        {
+            "AC-AMOUNT" => TamperAmount(html),
+            "AC-BAND" => html + "<style>.accounting-band{display:none !important;}</style>",
+            _ => throw new InvalidDataException($"The host knows no accounting control '{name}'."),
+        };
+
+        private static string TamperAmount(string html)
+        {
+            const string marker = "data-role=\"amount\"";
+            var at = html.IndexOf(marker, StringComparison.Ordinal);
+            if (at < 0)
+            {
+                throw new InvalidDataException("The document prints no amount cell to change.");
+            }
+
+            var open = html.IndexOf('>', at);
+            var close = open < 0 ? -1 : html.IndexOf('<', open + 1);
+            if (open < 0 || close < 0)
+            {
+                throw new InvalidDataException("The amount cell is not a closed element.");
+            }
+
+            return html[..(open + 1)] + "9" + html[(open + 1)..];
+        }
     }
 
     private static async Task<int> SampleAsync(string[] args)
@@ -655,6 +830,8 @@ internal static partial class KnownBad
     /// <summary>Every control the host knows, by the name the suite selects it with.</summary>
     public static readonly IReadOnlyList<string> Names =
     [
+        "AC-AMOUNT",
+        "AC-BAND",
         "AnchorDoubleEncoded",
         "AnchorTruncated",
         "BoundCharDropped",
@@ -674,7 +851,7 @@ internal static partial class KnownBad
 
     /// <summary>Whether the control acts on the printed page rather than on the composition.</summary>
     /// <param name="name">The control's name.</param>
-    public static bool IsHtmlLevel(string name) => name is "BoundCharDropped" or "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
+    public static bool IsHtmlLevel(string name) => name is "AC-AMOUNT" or "AC-BAND" or "BoundCharDropped" or "NC-W" or "NC-L" or "NC-R" or "NC-F" or "PF-SIZE" or "PF-OVERLAP" or "PF-MARGINS";
 
     /// <summary>Whether the control links a package stylesheet before the page rule.</summary>
     /// <param name="name">The control's name.</param>
