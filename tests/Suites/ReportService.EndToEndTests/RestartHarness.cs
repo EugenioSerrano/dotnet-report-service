@@ -156,60 +156,6 @@ internal static class RestartHarness
             ?? throw new InvalidOperationException($"the cancel-job request of {reportJobId} was readable but carried no instant");
     }
 
-    /// <summary>
-    /// Every log line the composition holds for the render worker, in the order the worker wrote
-    /// them. It is the worker's own output — the lines its activities log — read through the
-    /// composition's log stream, so an entry can prove that a block started and that no block above
-    /// it was ever named.
-    /// </summary>
-    /// <param name="app">The running composition.</param>
-    /// <param name="cancellationToken">The test's cancellation token.</param>
-    public static async Task<IReadOnlyList<string>> RenderLogAsync(
-        DistributedApplication app,
-        CancellationToken cancellationToken)
-    {
-        var logs = app.Services.GetRequiredService<ResourceLoggerService>();
-        var lines = new List<string>();
-        await foreach (var batch in logs
-            .GetAllAsync(TestComposition.RenderWorkerName)
-            .WithCancellation(cancellationToken)
-            .ConfigureAwait(false))
-        {
-            lines.AddRange(batch.Select(line => line.Content));
-        }
-
-        return lines;
-    }
-
-    /// <summary>
-    /// Waits until the render worker's log holds a line the entry requires before it can stop the
-    /// worker inside the window — the line that says the attempt began, never a timing guess.
-    /// </summary>
-    /// <param name="app">The running composition.</param>
-    /// <param name="what">What the line says, named in the diagnostic.</param>
-    /// <param name="predicate">The condition one log line must satisfy.</param>
-    /// <param name="cancellationToken">The test's cancellation token.</param>
-    /// <returns>Every line the log held when the wait ended.</returns>
-    public static async Task<IReadOnlyList<string>> WaitForRenderLogAsync(
-        DistributedApplication app,
-        string what,
-        Func<string, bool> predicate,
-        CancellationToken cancellationToken)
-    {
-        IReadOnlyList<string> held = [];
-        await Wait.UntilAsync(
-            $"the render worker's log to hold {what}",
-            async token =>
-            {
-                held = await RenderLogAsync(app, token).ConfigureAwait(false);
-                return held.Any(predicate);
-            },
-            LogDeadline,
-            PollInterval,
-            cancellationToken).ConfigureAwait(false);
-        return held;
-    }
-
     private static async Task ExecuteAsync(
         DistributedApplication app,
         string resource,
@@ -258,4 +204,194 @@ internal static class RestartHarness
 
     private static string? CurrentState(ResourceNotificationService notifications, string resource) =>
         notifications.TryGetCurrentState(resource, out var current) ? current.Snapshot.State?.Text : null;
+}
+
+/// <summary>
+/// The render worker's own log, tapped once and buffered: one live subscription to the composition's
+/// log stream for the resource, opened when the tap is created and read from the buffer afterwards.
+/// <para>
+/// The instrument is the live stream, not a snapshot. <see cref="ResourceLoggerService.WatchAsync"/>
+/// delivers the lines already written and then the lines as they are written, and stays open while
+/// the resource lives; <see cref="ResourceLoggerService.GetAllAsync"/> is a DI-backed console-log
+/// read that completes, so re-reading it on every poll misses a one-shot line written between two
+/// reads — a render attempt's <c>Block … started, attempt …</c> line is written once, when the
+/// attempt begins, and must be observed rather than re-read (the cause of the integration run
+/// <c>261126-2026</c>'s R2/R3/R5 failures). The tap is therefore created <b>before</b> the job is
+/// submitted, so the line cannot precede the subscription.
+/// </para>
+/// <para>
+/// Waits read the buffer with the harness's bounded poll and its named diagnostic: a line that never
+/// arrives still fails the entry after <see cref="RestartHarness.LogDeadline"/>, naming what was
+/// awaited. Nothing here weakens an assertion — it makes the same assertions observable.
+/// </para>
+/// </summary>
+internal sealed class RenderLogTap : IAsyncDisposable
+{
+    private readonly CancellationTokenSource _stop = new();
+    private readonly List<string> _lines = [];
+    private readonly Lock _gate = new();
+    private readonly Task _pump;
+    private bool _closed;
+
+    /// <summary>Opens the one subscription and starts buffering the render worker's lines.</summary>
+    /// <param name="app">The running composition.</param>
+    public RenderLogTap(DistributedApplication app)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        var logs = app.Services.GetRequiredService<ResourceLoggerService>();
+        _pump = PumpAsync(logs, _stop.Token);
+    }
+
+    /// <summary>Every line the render worker wrote since the tap was opened, in the order it wrote them.</summary>
+    public IReadOnlyList<string> Lines
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _lines];
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the composition completed the resource's log stream. A completed stream never
+    /// delivers another line — the composed line that a later assertion waits for is then
+    /// unobservable, and the wait says so instead of passing on an empty read.
+    /// </summary>
+    public bool IsClosed
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _closed;
+            }
+        }
+    }
+
+    /// <summary>The lines written after the first <paramref name="count"/> lines of the buffer.</summary>
+    /// <param name="count">How many lines the buffer held when the boundary was taken.</param>
+    public IReadOnlyList<string> Since(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        lock (_gate)
+        {
+            return [.. _lines.Skip(count)];
+        }
+    }
+
+    /// <summary>
+    /// Waits until the buffer holds a line the entry requires before it can close a window — the line
+    /// that says the render attempt began, never a timing guess — and answers the whole buffer when
+    /// the wait ends.
+    /// </summary>
+    /// <param name="what">What the line says, named in the diagnostic.</param>
+    /// <param name="predicate">The condition one log line must satisfy.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>Every line the buffer held when the wait ended.</returns>
+    public async Task<IReadOnlyList<string>> WaitForAsync(
+        string what,
+        Func<string, bool> predicate,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        IReadOnlyList<string> held = [];
+        await Wait.UntilAsync(
+            $"the render worker's log to hold {what}",
+            token =>
+            {
+                held = Lines;
+                return Task.FromResult(held.Any(predicate));
+            },
+            RestartHarness.LogDeadline,
+            RestartHarness.PollInterval,
+            cancellationToken).ConfigureAwait(false);
+        return held;
+    }
+
+    /// <summary>
+    /// Waits until a line was written after the buffer held <paramref name="count"/> lines: the proof
+    /// that the stream is still live for the process restarted after that boundary. It is what makes
+    /// the entries' "no line after the restart names …" assertions observe something instead of
+    /// passing on an empty read; a stream the composition completed fails the wait, naming it.
+    /// </summary>
+    /// <param name="count">How many lines the buffer held when the boundary was taken.</param>
+    /// <param name="what">What the line proves, named in the diagnostic.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task WaitForLineAfterAsync(int count, string what, CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        try
+        {
+            await Wait.UntilAsync(
+                $"the render worker's log to hold {what}",
+                token =>
+                {
+                    lock (_gate)
+                    {
+                        return Task.FromResult(_lines.Count > count);
+                    }
+                },
+                RestartHarness.LogDeadline,
+                RestartHarness.PollInterval,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new TimeoutException(
+                $"the render worker's log did not hold {what} within {(int)RestartHarness.LogDeadline.TotalSeconds} s; "
+                + $"the buffer holds {Lines.Count} line(s) and the composition's stream for {TestComposition.RenderWorkerName} is "
+                + (IsClosed ? "closed (a completed stream delivers no further line)" : "open but silent")
+                + ".",
+                exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync().ConfigureAwait(false);
+        try
+        {
+            await _pump.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The subscription was cancelled: the tap is being disposed.
+        }
+
+        _stop.Dispose();
+    }
+
+    private async Task PumpAsync(ResourceLoggerService logs, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var batch in logs
+                .WatchAsync(TestComposition.RenderWorkerName)
+                .WithCancellation(cancellationToken)
+                .ConfigureAwait(false))
+            {
+                lock (_gate)
+                {
+                    _lines.AddRange(batch.Select(line => line.Content));
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception)
+        {
+            // The stream ended in a way the next subscription could not resume: a completed stream
+            // delivers nothing more, so the tap records it and every later wait names it.
+        }
+
+        lock (_gate)
+        {
+            _closed = true;
+        }
+    }
 }

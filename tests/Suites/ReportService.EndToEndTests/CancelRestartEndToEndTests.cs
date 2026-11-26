@@ -134,11 +134,12 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.True(IsCancelIntentConsumed(intents), DescribeIntents(intents));
         Assert.Equal(1, await ExecutionReferenceCountAsync(world.DataSource, reportJobId, cancellationToken));
 
-        // N1–N3: nothing was rendered, committed or published for the job.
+        // N1–N3: nothing was rendered, committed or published for the job. The tap has held the
+        // render worker's log since before the job was seeded, so this is every line the worker
+        // wrote for this composition, not a later snapshot of it.
         Assert.Equal(0, await PartCommitCountAsync(world.DataSource, reportJobId, cancellationToken));
         Assert.Equal(0, await ArtifactCountAsync(world.DataSource, reportJobId, cancellationToken));
-        var lines = await RestartHarness.RenderLogAsync(world.App, cancellationToken);
-        Assert.DoesNotContain(lines, line => NamesOutput(line, output.OutputId));
+        Assert.DoesNotContain(world.Logs.Lines, line => NamesOutput(line, output.OutputId));
     }
 
     /// <summary>
@@ -255,10 +256,10 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal(HttpStatusCode.Accepted, cancel.StatusCode);
         var cancelInstant = await RestartHarness.CancelInstantAsync(world.DataSource, reportJobId, cancellationToken);
 
-        // Step 3: the attempt dies with the container the watchdog's remedy replaces; the log read
-        // here is the pre-cancel view of what had begun.
+        // Step 3: the attempt dies with the container the watchdog's remedy replaces; the buffer is
+        // the pre-cancel view of what had begun, held since before the job was submitted.
         await RestartHarness.StopAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
-        var beforeRestart = await RestartHarness.RenderLogAsync(world.App, cancellationToken);
+        var beforeRestart = world.Logs.Lines;
         var highestBegun = await HighestBlockBegunBeforeAsync(
             world.DataSource,
             reportJobId,
@@ -271,8 +272,14 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal("CANCELLING", stopped.Status);
         Assert.Null(stopped.FinishedAt);
 
-        // Step 4: the container is replaced by the platform, as the watchdog's remedy does.
+        // Step 4: the container is replaced by the platform, as the watchdog's remedy does. The wait
+        // is the proof the stream is live for the restarted process: without a line written after
+        // the stop, the "no block above …" assertion below would pass on an empty read.
         await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+        await world.Logs.WaitForLineAfterAsync(
+            beforeRestart.Count,
+            "a line written after the render worker was stopped",
+            cancellationToken);
         var job = await WaitForTerminalAsync(world.DataSource, reportJobId, cancellationToken);
 
         Assert.Equal("CANCELLED", job.Status);
@@ -292,9 +299,8 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal(
             0,
             await BlocksAboveAsync(world.DataSource, reportJobId, highestBegun, cancellationToken));
-        var afterRestart = await RestartHarness.RenderLogAsync(world.App, cancellationToken);
         Assert.DoesNotContain(
-            afterRestart.Skip(beforeRestart.Count),
+            world.Logs.Since(beforeRestart.Count),
             line => NamesOutput(line, outputId) && BlockIndexIn(line, outputId) > highestBegun);
 
         // T: one terminal write, unchanged on a later read.
@@ -394,7 +400,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         var cancelInstant = await RestartHarness.CancelInstantAsync(world.DataSource, reportJobId, cancellationToken);
 
         await RestartHarness.StopAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
-        var beforeRestart = await RestartHarness.RenderLogAsync(world.App, cancellationToken);
+        var beforeRestart = world.Logs.Lines;
         var highestBegun = await HighestBlockBegunBeforeAsync(
             world.DataSource,
             reportJobId,
@@ -406,6 +412,10 @@ public sealed class CancelRestartEndToEndTests : IDisposable
 
         await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
         await RestartHarness.WaitUntilHealthyAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+        await world.Logs.WaitForLineAfterAsync(
+            beforeRestart.Count,
+            "a line written after the render worker was stopped",
+            cancellationToken);
 
         var job = await WaitForTerminalAsync(world.DataSource, reportJobId, cancellationToken);
         Assert.Equal("CANCELLED", job.Status);
@@ -429,9 +439,8 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             0,
             await BlocksAboveAsync(world.DataSource, reportJobId, highestBegun, cancellationToken));
         Assert.Equal(0, await PartCommitsAfterAsync(world.DataSource, reportJobId, cancelInstant, cancellationToken));
-        var afterRestart = await RestartHarness.RenderLogAsync(world.App, cancellationToken);
         Assert.DoesNotContain(
-            afterRestart.Skip(beforeRestart.Count),
+            world.Logs.Since(beforeRestart.Count),
             line => NamesOutput(line, outputId) && BlockIndexIn(line, outputId) > highestBegun);
     }
 
@@ -486,6 +495,11 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         var builder = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
         var app = await builder.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
+
+        // The render worker's log is tapped here, before any job is submitted: its attempt's
+        // "started" line is written once and must be observed rather than re-read later.
+        var logs = new RenderLogTap(app);
+
         using (var health = app.CreateHttpClient("api"))
         {
             await Wait.UntilAsync(
@@ -503,7 +517,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         var connectionString = await app.GetConnectionStringAsync("reportservice", cancellationToken)
             ?? throw new InvalidOperationException("the composition had no connection string for its metadata database");
         var dataSource = NpgsqlDataSource.Create(connectionString);
-        return new World(app, dataSource, app.CreateHttpClient("api"));
+        return new World(app, dataSource, app.CreateHttpClient("api"), logs);
     }
 
     // Takes the fixture package into the composition's shared storage and metadata, the way a
@@ -780,8 +794,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             cancellationToken);
 
         var id = outputId!;
-        await RestartHarness.WaitForRenderLogAsync(
-            world.App,
+        await world.Logs.WaitForAsync(
             $"the first render attempt of output {id}",
             line => NamesOutput(line, id) && line.Contains("started, attempt", StringComparison.Ordinal),
             cancellationToken);
@@ -1154,12 +1167,17 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             : -1;
     }
 
-    private sealed record World(DistributedApplication App, NpgsqlDataSource DataSource, HttpClient Api) : IAsyncDisposable
+    private sealed record World(
+        DistributedApplication App,
+        NpgsqlDataSource DataSource,
+        HttpClient Api,
+        RenderLogTap Logs) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {
             Api.Dispose();
             await DataSource.DisposeAsync();
+            await Logs.DisposeAsync();
             await App.DisposeAsync();
         }
     }
