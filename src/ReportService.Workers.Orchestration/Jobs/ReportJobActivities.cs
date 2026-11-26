@@ -44,8 +44,10 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
 
     /// <summary>
     /// Reads the job and the upload it reports on, once, and answers what the workflow
-    /// is to do. A job that already ended answers <see cref="InputOutcome.Terminal"/>;
-    /// an upload that is not usable yet answers <see cref="InputOutcome.Verifying"/>
+    /// is to do. A job that already ended answers <see cref="InputOutcome.Terminal"/>; a job
+    /// that is being cancelled answers <see cref="InputOutcome.Cancelled"/>, so a cancellation
+    /// observed before any work began closes the job instead of producing anything; an upload
+    /// that is not usable yet answers <see cref="InputOutcome.Verifying"/>
     /// and the job stays where it is, because waiting is a later step's work. An upload
     /// that ran out of time — its session ended, or its verification deadline passed —
     /// answers <see cref="InputOutcome.Expired"/> even when nothing has marked it
@@ -72,6 +74,14 @@ public sealed class ReportJobActivities(IJobStore jobs, TimeProvider clock, Orch
         if (state.Job.IsTerminal)
         {
             return new ResolveInputResult(InputOutcome.Terminal, null);
+        }
+
+        if (state.Job.Status is ReportJobStatus.Cancelling)
+        {
+            // The cancellation was requested before this run produced anything: the run closes
+            // the job instead, and no upload state can reopen it.
+            logger.LogInformation("Job {ReportJobId} is being cancelled; the run produces nothing", input.ReportJobId);
+            return new ResolveInputResult(InputOutcome.Cancelled, null);
         }
 
         var result = state.UploadStatus switch

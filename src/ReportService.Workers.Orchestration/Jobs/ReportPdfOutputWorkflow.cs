@@ -159,10 +159,13 @@ public sealed class ReportPdfOutputWorkflow
                 metadata).ConfigureAwait(true);
         }
         catch (ActivityFailureException failure)
+            when (!TemporalException.IsCanceledException(failure))
         {
             // The render, the assembly or the publication could not finish: the output ends
             // with the code the failure carries, and one that carries none ends with the
             // generic code, so the job is never left waiting on an output that will not end.
+            // A cancellation is not a failure: the run was cancelled under its parent, which
+            // owns the output through the job's finalisation, so nothing is ended here.
             var carried = (failure.InnerException as ApplicationFailureException)?.ErrorType;
             var (code, reason) = await ExhaustionAsync(
                 carried,

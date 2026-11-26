@@ -105,8 +105,12 @@ public sealed class IntentDispatcher : BackgroundService
     public static string RetryPolicySummaryFor(string kind, TimeSpan verificationStartToClose) => kind switch
     {
         IntentKinds.StartJob => ReportJobActivityOptions.RetryPolicySummary,
+        IntentKinds.CancelJob => CancellationRetryPolicySummary,
         _ => RetryPolicySummary(verificationStartToClose),
     };
+
+    /// <summary>The one-line summary a delivered cancellation records in its execution reference.</summary>
+    public const string CancellationRetryPolicySummary = "cancellation: delivered to the job execution";
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -178,14 +182,20 @@ public sealed class IntentDispatcher : BackgroundService
                 throw new InvalidOperationException("no engine connection is current.");
             }
 
-            // Describe before starting: an execution that already exists serves the request,
+            // Describe before acting: the identifier is served already when an execution exists,
             // whether it is still running or already closed.
             var served = await _starter.DescribeAsync(workflowId, cancellationToken).ConfigureAwait(false);
+            if (plan.IsCancellation)
+            {
+                await DeliverCancellationAsync(claim, intent, workflowId, served, now, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             if (served is null)
             {
                 try
                 {
-                    served = await plan.Start(workflowId, cancellationToken).ConfigureAwait(false);
+                    served = await plan.Start!(workflowId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
@@ -230,24 +240,78 @@ public sealed class IntentDispatcher : BackgroundService
         }
     }
 
+    // A cancellation is delivered by asking the engine to cancel the job's execution. There is
+    // nothing to cancel when the identifier names no execution: the request is recorded as
+    // delivered and writes no reference, because there is no run to reference — it must still
+    // leave the pending set, so the pending age means "not delivered" (ADR-012 §3.10(2)).
+    private async Task DeliverCancellationAsync(
+        IIntentClaim claim,
+        IntentRecord intent,
+        string workflowId,
+        WorkflowStart? served,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (served is null)
+        {
+            await claim.MarkDeliveredAsync(intent.IntentId, now, cancellationToken).ConfigureAwait(false);
+            _metrics.DispatchAttempt(intent.Kind, OrchestrationMetrics.DispatchedResult);
+            _logger.LogInformation(
+                "Intent {IntentId} ({Kind}) delivered as {WorkflowId}: there is no execution to cancel",
+                intent.IntentId,
+                intent.Kind,
+                workflowId);
+            return;
+        }
+
+        // An execution that is closed is served by the engine: the request is accepted and
+        // ignored, so it counts as delivered exactly as the running one does.
+        await _starter.CancelWorkflowAsync(served.WorkflowId, cancellationToken).ConfigureAwait(false);
+        await claim.MarkDispatchedAsync(
+            intent.IntentId,
+            new ExecutionReference(
+                served.WorkflowId,
+                served.RunId,
+                ConfigurationValidation.ProductVersion(),
+                RetryPolicySummaryFor(intent.Kind, _verification.StartToClose),
+                now),
+            now,
+            cancellationToken).ConfigureAwait(false);
+
+        _metrics.DispatchAttempt(intent.Kind, OrchestrationMetrics.DispatchedResult);
+        _logger.LogInformation("Intent {IntentId} ({Kind}) dispatched as {WorkflowId}", intent.IntentId, intent.Kind, served.WorkflowId);
+    }
+
     // What a request of this kind is turned into: the identifier its execution must have, and
-    // the start that produces it. A kind this process does not serve has no plan.
+    // either the start that produces it or the fact that it is delivered by cancelling it. A kind
+    // this process does not serve has no plan.
     private DispatchPlan? PlanFor(IntentRecord intent) => intent.Kind switch
     {
-        IntentKinds.StartUploadVerification => new DispatchPlan(
+        IntentKinds.StartUploadVerification => DispatchPlan.Starting(
             UploadVerificationWorkflow.WorkflowIdFor(intent.SubjectId),
             (workflowId, cancellationToken) => _starter.StartUploadVerificationAsync(workflowId, intent.SubjectId, cancellationToken)),
-        IntentKinds.StartJob => new DispatchPlan(
+        IntentKinds.StartJob => DispatchPlan.Starting(
             ReportJobWorkflow.WorkflowIdFor(intent.SubjectId),
             (workflowId, cancellationToken) => _starter.StartReportJobAsync(workflowId, intent.SubjectId, cancellationToken)),
+        IntentKinds.CancelJob => DispatchPlan.Cancelling(ReportJobWorkflow.WorkflowIdFor(intent.SubjectId)),
         _ => null,
     };
 
-    // The two things a plan needs: the identifier an execution must have, and the start
-    // that asks the engine for it.
+    // The two shapes a plan takes: a start, which produces the execution the request names, or a
+    // cancellation, which asks that execution to wind down and needs no start at all.
     private readonly record struct DispatchPlan(
         string WorkflowId,
-        Func<string, CancellationToken, Task<WorkflowStart>> Start);
+        Func<string, CancellationToken, Task<WorkflowStart>>? Start,
+        bool IsCancellation)
+    {
+        public static DispatchPlan Starting(
+            string workflowId,
+            Func<string, CancellationToken, Task<WorkflowStart>> start) =>
+            new(workflowId, start, IsCancellation: false);
+
+        public static DispatchPlan Cancelling(string workflowId) =>
+            new(workflowId, Start: null, IsCancellation: true);
+    }
 
     // One warning per waiting request and process, so a stuck request is visible once and not once per poll.
     private void ReportIfLate(IntentRecord intent, DateTimeOffset now)

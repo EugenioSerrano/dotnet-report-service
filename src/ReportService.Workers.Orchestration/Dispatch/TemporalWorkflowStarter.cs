@@ -68,6 +68,26 @@ public sealed class TemporalWorkflowStarter(TemporalClientHolder holder) : IWork
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task CancelWorkflowAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workflowId);
+        var client = Current();
+        try
+        {
+            await client.GetWorkflowHandle(workflowId)
+                .CancelAsync(new WorkflowCancelOptions())
+                .WaitAsync(RpcTimeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (RpcException exception) when ((int)exception.Code == NotFoundStatus)
+        {
+            // There is no execution behind the identifier, so there is nothing to wind down: the
+            // cancellation request counts as delivered all the same (ADR-012 §3.10(2)). Every other
+            // engine error stays the failed attempt the dispatcher retries.
+        }
+    }
+
     // One start, whatever the workflow: the identifier is stable, a second start of it is
     // refused by the engine and served by the execution already there.
     private async Task<WorkflowStart> StartAsync<TWorkflow>(

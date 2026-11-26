@@ -87,6 +87,31 @@ public sealed class ReportJobReplayTests
         Assert.Equal(TimeSpan.FromSeconds(30), options.RetryPolicy.MaximumInterval);
         Assert.Equal(0, options.RetryPolicy.MaximumAttempts);
     }
+
+    /// <summary>
+    /// ADR-012 §2.10 V1: every added step is gated by its own patch, so a run recorded before it
+    /// replays inactive. The cancellation wind-down is the fifth patch the workflow declares, and
+    /// its identifier is pinned: changing a declared patch's text is a different patch, which the
+    /// engine treats as one it has never seen.
+    /// </summary>
+    [Fact]
+    public void TheCancellationWindDownIsGatedByItsOwnPatch()
+    {
+        Assert.Equal("cancel-wind-down-v1", ReportJobWorkflow.CancellationWindDownPatch);
+
+        string[] declared =
+        [
+            ReportJobWorkflow.JobStatusPathPatch,
+            ReportJobWorkflow.TemplateResolvePatch,
+            ReportJobWorkflow.PrintingPathPatch,
+            ReportJobWorkflow.HtmlOutputPathPatch,
+        ];
+        Assert.All(declared, patch => Assert.False(string.IsNullOrWhiteSpace(patch)));
+        Assert.DoesNotContain(ReportJobWorkflow.CancellationWindDownPatch, declared);
+        Assert.Equal(
+            5,
+            declared.Append(ReportJobWorkflow.CancellationWindDownPatch).Distinct(StringComparer.Ordinal).Count());
+    }
 }
 
 /// <summary>

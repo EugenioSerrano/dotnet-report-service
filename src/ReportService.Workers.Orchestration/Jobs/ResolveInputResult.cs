@@ -6,8 +6,9 @@ namespace ReportService.Workers.Orchestration.Jobs;
 /// What checking a job's data reference came to. The workflow decides by this and
 /// nothing else: <see cref="Ready"/> and <see cref="Verifying"/> leave the job where
 /// it is, <see cref="Rejected"/> and <see cref="Expired"/> end it with the code the
-/// outcome carries, and <see cref="Terminal"/> says the job had already ended and
-/// must not be touched again.
+/// outcome carries, <see cref="Terminal"/> says the job had already ended and
+/// must not be touched again, and <see cref="Cancelled"/> says the job is being
+/// cancelled, so the run closes it and produces nothing.
 /// </summary>
 public enum InputOutcome
 {
@@ -25,6 +26,13 @@ public enum InputOutcome
 
     /// <summary>The job had already ended, so there is nothing to do.</summary>
     Terminal,
+
+    /// <summary>
+    /// The job is <c>CANCELLING</c>: the cancellation was requested before this run produced
+    /// anything, so the run must close the job and produce nothing. Appended last, so a result
+    /// recorded by an older run keeps the value it was recorded with.
+    /// </summary>
+    Cancelled,
 }
 
 /// <summary>

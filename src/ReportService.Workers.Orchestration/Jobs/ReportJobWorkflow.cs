@@ -101,10 +101,51 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string HtmlOutputPathPatch = "html-output-path-v1";
 
-    /// <summary>Runs one job up to its continuation point.</summary>
+    /// <summary>
+    /// The identifier of the patch that gates the job's cancellation wind-down: the cancelled
+    /// input outcome, the wind-down wrapper that finalises a cancelled run in a non-cancellable
+    /// step, and the read a wait performs when its job left the queue. A run recorded before it
+    /// carries no marker for it, so it replays with the patch inactive and writes exactly the
+    /// commands it recorded (ADR-012 §2.10 V1).
+    /// </summary>
+    public const string CancellationWindDownPatch = "cancel-wind-down-v1";
+
+    /// <summary>Runs one job up to its continuation point, winding it down when it is cancelled.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
     public async Task RunAsync(ReportJobInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        if (!Workflow.Patched(CancellationWindDownPatch))
+        {
+            // A run recorded before the wind-down: its own commands only, exactly as recorded.
+            await RunBodyAsync(input, windDown: false).ConfigureAwait(true);
+            return;
+        }
+
+        try
+        {
+            await RunBodyAsync(input, windDown: true).ConfigureAwait(true);
+        }
+        catch (Exception failure) when (TemporalException.IsCanceledException(failure))
+        {
+            // The cancellation unwound the run: nothing new is scheduled, and the children and
+            // activities it started have completed their own cancellation (the long steps wait for
+            // it). The job is closed here — in the one step a cancelled run still executes — and
+            // the run rethrows, so the execution closes cancelled with the job already terminal
+            // (ADR-012 §3.10(3)).
+            Workflow.Logger.LogInformation(
+                "Job {ReportJobId} cancellation observed; winding the job down",
+                input.ReportJobId);
+            await FinalizeAfterCancellationAsync(input.ReportJobId).ConfigureAwait(true);
+            throw;
+        }
+    }
+
+    /// <summary>Runs one job up to its continuation point.</summary>
+    /// <param name="input">The job to run.</param>
+    /// <param name="windDown">Whether the run carries the cancellation wind-down this patch added.</param>
+    private async Task RunBodyAsync(ReportJobInput input, bool windDown)
     {
         ArgumentNullException.ThrowIfNull(input);
         var options = ReportJobActivityOptions.Create();
@@ -123,12 +164,28 @@ public sealed class ReportJobWorkflow
                 // for its upload. Only an upload that became ready brings control to the
                 // continuation point; a wait that ended with the job itself, or with the
                 // upload rejected or expired, has already ended the job.
-                if (!await WaitForInputAsync(input.ReportJobId).ConfigureAwait(true))
+                switch (await WaitForInputAsync(input.ReportJobId, windDown).ConfigureAwait(true))
                 {
-                    return;
+                    case InputWaitOutcome.Ready:
+                        break;
+
+                    case InputWaitOutcome.Cancelled:
+                        // The cancellation reached the job while it waited: the run closes it
+                        // instead of continuing to produce anything.
+                        await FinalizeAfterCancellationAsync(input.ReportJobId).ConfigureAwait(true);
+                        return;
+
+                    default:
+                        return;
                 }
 
                 break;
+
+            case InputOutcome.Cancelled:
+                // The job was cancelled before this run produced anything: the run closes it and
+                // produces nothing (ADR-012 §3.10(2), the cancelled-before-start path).
+                await FinalizeAfterCancellationAsync(input.ReportJobId).ConfigureAwait(true);
+                return;
 
             case InputOutcome.Rejected:
                 await FailAsync(input.ReportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
@@ -341,6 +398,10 @@ public sealed class ReportJobWorkflow
                     {
                         Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
                         ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                        // The dependency is recorded at the call site: a cancelled job waits for
+                        // its child's cleanup before it finalises (ADR-012 §3.10(3)). It is the
+                        // SDK's default, stated so it cannot be lost silently.
+                        CancellationType = ChildWorkflowCancellationType.WaitCancellationCompleted,
                     });
                 children.Add(IsolateOutputAsync(pdfChild, pdfOutputId, ReportPdfOutputWorkflow.CodeOf, options));
             }
@@ -358,6 +419,7 @@ public sealed class ReportJobWorkflow
                 {
                     Id = ReportHtmlOutputWorkflow.WorkflowIdFor(input.ReportJobId),
                     ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                    CancellationType = ChildWorkflowCancellationType.WaitCancellationCompleted,
                 });
             children.Add(IsolateOutputAsync(htmlChild, htmlOutputId, ReportHtmlOutputWorkflow.CodeOf, options));
         }
@@ -446,13 +508,15 @@ public sealed class ReportJobWorkflow
     /// upload settles, the job ends elsewhere or the run has taken all the checks it may.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="windDown">Whether the run carries the cancellation wind-down this patch added.</param>
     /// <returns>
-    /// True when the upload became ready, so the job continues at the point after the wait;
-    /// false when the wait ended for any other reason — the upload was rejected or expired,
-    /// so the job has failed, or the job itself ended while it waited, so nothing is left to
-    /// run and nothing may claim its input is ready.
+    /// <see cref="InputWaitOutcome.Ready"/> when the upload became ready, so the job continues at
+    /// the point after the wait; <see cref="InputWaitOutcome.Cancelled"/> when the job is being
+    /// cancelled, so the run closes it and produces nothing; <see cref="InputWaitOutcome.Ended"/>
+    /// when the wait ended for any other reason — the upload was rejected or expired, so the job
+    /// has failed, or the job itself ended while it waited, so nothing is left to run.
     /// </returns>
-    private async Task<bool> WaitForInputAsync(string reportJobId)
+    private async Task<InputWaitOutcome> WaitForInputAsync(string reportJobId, bool windDown)
     {
         var options = ReportJobActivityOptions.Create();
         var begun = await Workflow.ExecuteActivityAsync(
@@ -460,8 +524,20 @@ public sealed class ReportJobWorkflow
             InputWaitActivityOptions.Create()).ConfigureAwait(true);
         if (begun == BeginInputWaitOutcome.NotQueued)
         {
-            // The job ended while this run was busy; there is nothing to wait for.
-            return false;
+            // The job left the queue while this run was busy. Without the wind-down there is
+            // nothing to wait for and the run ends; with it, a job that is being cancelled is
+            // closed here instead of being left silently behind.
+            if (!windDown)
+            {
+                return InputWaitOutcome.Ended;
+            }
+
+            var current = await Workflow.ExecuteActivityAsync(
+                (ReportJobActivities activities) => activities.ResolveInputAsync(new ResolveInputInput(reportJobId)),
+                options).ConfigureAwait(true);
+            return current.Outcome == InputOutcome.Cancelled
+                ? InputWaitOutcome.Cancelled
+                : InputWaitOutcome.Ended;
         }
 
         // How many checks one wait took, for the operator: the signal says a timer is tuned too
@@ -499,27 +575,35 @@ public sealed class ReportJobWorkflow
                     // cleared, and the run ends here without a step of its own.
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
-                    return false;
+                    return InputWaitOutcome.Ended;
+
+                case InputOutcome.Cancelled:
+                    // The job is being cancelled: the stage it left behind is cleared and the run
+                    // closes the job in its non-cancellable finalisation.
+                    performed.Record(checks);
+                    await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
+                    Workflow.Logger.LogInformation("Job {ReportJobId} cancelled after {Checks} checks", reportJobId, checks);
+                    return InputWaitOutcome.Cancelled;
 
                 case InputOutcome.Ready:
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input ready after {Checks} checks", reportJobId, checks);
-                    return true;
+                    return InputWaitOutcome.Ready;
 
                 case InputOutcome.Rejected:
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input rejected after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
-                    return false;
+                    return InputWaitOutcome.Ended;
 
                 case InputOutcome.Expired:
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input expired after {Checks} checks", reportJobId, checks);
                     await FailAsync(reportJobId, ReportJobActivities.InputNotFound, "input-expired", options).ConfigureAwait(true);
-                    return false;
+                    return InputWaitOutcome.Ended;
 
                 case InputOutcome.Verifying:
                     // The count is read after the check, never before it: a nudge that arrived
@@ -539,6 +623,28 @@ public sealed class ReportJobWorkflow
         Workflow.ExecuteActivityAsync(
             (InputWaitActivities activities) => activities.EndAsync(new InputWaitInput(reportJobId)),
             InputWaitActivityOptions.Create());
+
+    /// <summary>
+    /// Closes a cancelled job, in the one step a cancelled run still executes: the finalisation
+    /// is scheduled with its own non-cancellable token, so the request that cancelled the run
+    /// cannot cancel the closure that writes the terminal status (ADR-012 §3.10(3)). A
+    /// finalisation that keeps failing is retried by the metadata policy and never discarded: the
+    /// run stays open and the job non-terminal until the store answers, which is the intended
+    /// "a database outage makes jobs wait, never fail" behaviour.
+    /// </summary>
+    /// <param name="reportJobId">The job to close.</param>
+    private static async Task FinalizeAfterCancellationAsync(string reportJobId)
+    {
+        var result = await Workflow.ExecuteActivityAsync(
+            (JobTransitionActivities activities) => activities.FinalizeJobAsync(new FinalizeJobInput(reportJobId)),
+            ReportJobActivityOptions.CreateFinalization()).ConfigureAwait(true);
+
+        Workflow.Logger.LogInformation(
+            "Job {ReportJobId} cancellation finalisation: {Outcome} ({Status})",
+            reportJobId,
+            result.Outcome,
+            result.Status is { } status ? JobWireValues.ToStoredText(status) : OrchestrationMetrics.NoCode);
+    }
 
     /// <summary>
     /// Fixes the job's template, once, and answers whether the job has ended. A version
@@ -690,6 +796,24 @@ public sealed class ReportJobWorkflow
         _inputChanges++;
         return Task.CompletedTask;
     }
+}
+
+/// <summary>
+/// How a job's wait for its upload ended: <see cref="Ready"/> when the upload became usable,
+/// <see cref="Cancelled"/> when the job is being cancelled and must be closed instead of
+/// continuing, and <see cref="Ended"/> when the wait ended any other way — the upload was
+/// rejected or expired, or the job itself ended while it waited.
+/// </summary>
+public enum InputWaitOutcome
+{
+    /// <summary>The upload became ready: the job continues after the wait.</summary>
+    Ready,
+
+    /// <summary>The wait ended with the job ended, or with its upload unusable: nothing follows it.</summary>
+    Ended,
+
+    /// <summary>The job is being cancelled: its run closes it and produces nothing.</summary>
+    Cancelled,
 }
 
 /// <summary>

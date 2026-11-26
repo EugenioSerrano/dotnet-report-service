@@ -101,10 +101,12 @@ public sealed class ReportHtmlOutputWorkflow
                 metadata).ConfigureAwait(true);
         }
         catch (ActivityFailureException failure)
+            when (!TemporalException.IsCanceledException(failure))
         {
             // The assembly or the publication could not finish: the output ends with the code the
             // failure carries, and one that carries none (or a non-HTML code) ends with the
-            // generic code, so the job is never left waiting on an output that will not end.
+            // generic code, so the job is never left waiting on an output that will not end. A
+            // cancellation is not a failure: the job's finalisation owns the output then.
             var code = CodeOf(failure.InnerException);
             Workflow.Logger.LogWarning("Output {OutputId} ended with {ErrorCode}", input.OutputId, code);
             await Workflow.ExecuteActivityAsync(

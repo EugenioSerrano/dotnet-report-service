@@ -40,6 +40,9 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The histogram of how long a job waited between acceptance and its first stage.</summary>
     public const string QueueToFirstStageDurationInstrumentName = "reportservice.job.queue_to_first_stage.duration";
 
+    /// <summary>The histogram of how long a cancelled job took from its request to its closure.</summary>
+    public const string CancellationDurationInstrumentName = "reportservice.job.cancellation.duration";
+
     /// <summary>The counter of a job's template resolutions, by form, path and code.</summary>
     public const string TemplateResolutionsInstrumentName = "reportservice.template.resolutions";
 
@@ -90,6 +93,7 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Counter<long> _inputWaitOutcomes;
     private readonly Counter<long> _inputWaitNotifications;
     private readonly Histogram<double> _queueToFirstStageDuration;
+    private readonly Histogram<double> _cancellationDuration;
     private readonly Counter<long> _templateResolutions;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
@@ -128,6 +132,10 @@ public sealed class OrchestrationMetrics : IDisposable
             QueueToFirstStageDurationInstrumentName,
             unit: "s",
             description: "How long a job waited between its acceptance and its first stage.");
+        _cancellationDuration = _meter.CreateHistogram<double>(
+            CancellationDurationInstrumentName,
+            unit: "s",
+            description: "How long a cancelled job took from its cancellation request to its closure.");
         _templateResolutions = _meter.CreateCounter<long>(
             TemplateResolutionsInstrumentName,
             unit: "{resolution}",
@@ -194,6 +202,14 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <param name="elapsed">The elapsed time; it is recorded with no tag at all, so it can never carry an identifier.</param>
     public void RecordQueueToFirstStageDuration(TimeSpan elapsed) =>
         _queueToFirstStageDuration.Record(elapsed.TotalSeconds);
+
+    /// <summary>Records how long one cancelled job took from its cancellation request to its closure.</summary>
+    /// <param name="elapsed">
+    /// The elapsed time; it is recorded with no tag at all, so the job's identifier can never
+    /// become a metric dimension (ADR-012 §3.11(4)).
+    /// </param>
+    public void RecordCancellationDuration(TimeSpan elapsed) =>
+        _cancellationDuration.Record(elapsed.TotalSeconds);
 
     /// <summary>Records how one job's template was fixed, or which code failed it.</summary>
     /// <param name="form">A fixed form: exact or by-name.</param>

@@ -142,6 +142,24 @@ public sealed class ReportJobActivitiesTests
     }
 
     [Fact]
+    public async Task AJobBeingCancelledAnswersCancelledEvenOverAReadyUpload()
+    {
+        // US-010 AC-3 (cancelled before start) + ADR-012 §3.10(2): the durable cancellation must be
+        // sufficient on its own, so the first step of the run sees it - a READY upload cannot
+        // reopen a job that is already being cancelled.
+        using var rig = await Rig.CreateAsync();
+        rig.Jobs.SetJobCancelling(rig.ReportJobId);
+
+        var resolution = await rig.ResolveAsync();
+
+        Assert.Equal(InputOutcome.Cancelled, resolution.Outcome);
+        Assert.Null(resolution.RejectionCode);
+        Assert.Equal(0, rig.Jobs.FailCalls);
+        Assert.Equal(ReportJobStatus.Cancelling, (await rig.StateAsync()).Job.Status);
+        Assert.Equal(OutputStatus.Pending, Assert.Single((await rig.StateAsync()).Outputs).Status);
+    }
+
+    [Fact]
     public async Task AJobThatIsNotRecordedIsTerminal()
     {
         using var rig = await Rig.CreateAsync();

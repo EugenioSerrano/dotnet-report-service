@@ -160,6 +160,16 @@ public sealed class PostgresIntentStore(NpgsqlDataSource dataSource) : IIntentSt
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken));
 
+        public Task MarkDeliveredAsync(long intentId, DateTimeOffset now, CancellationToken cancellationToken) =>
+            // The same update the dispatched state is written with, and no reference row: a
+            // cancellation delivered to an execution that does not exist has no run to name.
+            connection.ExecuteAsync(new CommandDefinition(
+                MarkDispatchedSql,
+                new { IntentId = intentId, Now = now },
+                transaction,
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken));
+
         public async Task CommitAsync(CancellationToken cancellationToken)
         {
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

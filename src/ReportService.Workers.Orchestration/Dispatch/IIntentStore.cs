@@ -31,6 +31,17 @@ public interface IIntentClaim : IAsyncDisposable
     /// <param name="cancellationToken">The poll's cancellation token.</param>
     Task MarkDispatchedAsync(long intentId, ExecutionReference reference, DateTimeOffset now, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Records that <paramref name="intentId"/> was delivered by an act that named no execution:
+    /// the row becomes dispatched with its instant and its attempt count, and no execution
+    /// reference is written, because there is no run to reference. It is the cancellation
+    /// delivered to an execution that does not exist (ADR-012 §3.10(2)).
+    /// </summary>
+    /// <param name="intentId">The request's identifier.</param>
+    /// <param name="now">When the delivery happened, in UTC.</param>
+    /// <param name="cancellationToken">The poll's cancellation token.</param>
+    Task MarkDeliveredAsync(long intentId, DateTimeOffset now, CancellationToken cancellationToken);
+
     /// <summary>Records a failed attempt and when the next one is due.</summary>
     /// <param name="intentId">The request's identifier.</param>
     /// <param name="now">When the attempt failed, in UTC.</param>

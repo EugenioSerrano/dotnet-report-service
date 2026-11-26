@@ -360,6 +360,14 @@ public sealed partial class InMemoryJobStore : IJobStore
                 return Task.FromResult(JobFailureOutcome.AlreadyTerminal);
             }
 
+            // A job that is being cancelled never ends failed: the cancellation's finalisation owns
+            // its closure and writes CANCELLED, and neither the job nor any of its outputs is
+            // written by a failure racing the cancellation (ADR-048 R0).
+            if (job.Status is ReportJobStatus.Cancelling)
+            {
+                return Task.FromResult(JobFailureOutcome.AlreadyTerminal);
+            }
+
             foreach (var output in _outputs.Values
                          .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal)
                              && output.Status is OutputStatus.Pending or OutputStatus.Running)

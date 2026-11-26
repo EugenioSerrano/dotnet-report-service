@@ -56,4 +56,18 @@ public static class ReportJobActivityOptions
             NonRetryableErrorTypes = NonRetryableErrorTypes,
         },
     };
+
+    /// <summary>
+    /// Builds the execution settings of the one step a cancelled run still executes: the job's
+    /// finalisation. It is exactly <see cref="Create"/> with a cancellation token of its own, so
+    /// the request that cancelled the run cannot cancel the closure that writes the job's
+    /// terminal status (ADR-012 §3.10(3)); every other step keeps the workflow's token. A new
+    /// instance is built on every call, so no shared options are mutated.
+    /// </summary>
+    public static ActivityOptions CreateFinalization()
+    {
+        var options = Create();
+        options.CancellationToken = CancellationToken.None;
+        return options;
+    }
 }

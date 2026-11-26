@@ -85,4 +85,11 @@ public sealed class InMemoryJobStoreContractTests : JobStoreContract
         ((InMemoryJobStore)Store).SetJobCancelling(reportJobId);
         return Task.FromResult(true);
     }
+
+    /// <summary>Removes every output of a job through the double's own seam, the shape a job requesting none has.</summary>
+    protected override Task<bool> TryRemoveOutputsAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        ((InMemoryJobStore)Store).RemoveOutputs(reportJobId);
+        return Task.FromResult(true);
+    }
 }

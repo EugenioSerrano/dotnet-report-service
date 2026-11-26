@@ -338,6 +338,114 @@ public sealed class IntentDispatcherTests : IDisposable
         Assert.Equal("run-existing", Assert.Single(_store.References).RunId);
     }
 
+    // ----- US-010 AC-2/AC-3 + ADR-012 §3.10(2): the cancel-job plan. The oracles are the approved
+    //       ADR (a cancellation request is delivered to report-job/{id}; a request to a closed
+    //       execution, or to one that never existed, counts as delivered; a delivery failure is
+    //       retried and never recorded as a failure state), never the implementation (G06).
+
+    [Fact]
+    public async Task ACancelJobRequestCancelsTheJobsExecutionAndIsDispatched()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-running");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // ADR-012 §3.10(2): the request a cancellation is delivered as, aimed at the job's own
+        // execution; the intent is DISPATCHED with that execution's reference.
+        Assert.Equal([$"report-job/{ReportJobId}"], _starter.Cancelled);
+        Assert.Equal(0, _starter.Starts);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        var reference = Assert.Single(_store.References);
+        Assert.Equal($"report-job/{ReportJobId}", reference.WorkflowId);
+        Assert.Equal("run-running", reference.RunId);
+        Assert.Equal(IntentDispatcher.CancellationRetryPolicySummary, reference.RetryPolicy);
+        Assert.DoesNotContain(_logs.Lines, line => line.Contains("does not serve", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ACancelJobRequestWithNoExecutionIsDeliveredAndWritesNoReference()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = null;
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // ADR-012 §3.10(2): a cancellation aimed at an execution that never started counts as
+        // delivered. It leaves the pending set, so the pending-age signal keeps meaning "not
+        // delivered", and it writes no reference because there is no run to reference.
+        Assert.Empty(_starter.Cancelled);
+        Assert.Equal(0, _starter.Starts);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        Assert.Empty(_store.References);
+        Assert.Equal(1, Assert.Single(_store.Requests).Attempts);
+    }
+
+    [Fact]
+    public async Task ACancelJobRequestOfAClosedExecutionIsDelivered()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-closed");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // The dispatcher never inspects liveness: an execution the engine can describe is asked to
+        // cancel, and an engine that accepts the request of a closed execution serves it. The
+        // request is delivered exactly as the running one.
+        Assert.Equal([$"report-job/{ReportJobId}"], _starter.Cancelled);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        Assert.Equal("run-closed", Assert.Single(_store.References).RunId);
+    }
+
+    [Fact]
+    public async Task ACancelJobWhoseEngineFailsIsRetriedWithTheBackoffAndNeverFails()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-running");
+        _starter.OnCancel = _ => throw new TimeoutException("the engine did not answer");
+        var dispatcher = Dispatcher();
+
+        await dispatcher.DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // A delivery that failed is an attempt with a wait, never a failed state: the request
+        // stays pending and is tried again after the dispatcher's backoff.
+        Assert.Equal("PENDING", _store.StatusOf(1));
+        Assert.Empty(_store.References);
+        Assert.Equal(1, Assert.Single(_store.Requests).Attempts);
+
+        _starter.OnCancel = null;
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        await dispatcher.DispatchDueAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1, Assert.Single(_store.Requests).Attempts);
+
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        await dispatcher.DispatchDueAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        Assert.Equal(2, Assert.Single(_store.Requests).Attempts);
+    }
+
+    [Fact]
+    public async Task TheStartPlansKeepTheirBehaviour()
+    {
+        const string Upload = "upload-0123456789abcdef0123456789abcdef";
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.StartUploadVerification, Upload, Now);
+        _store.Enqueue(IntentKinds.StartJob, ReportJobId, Now);
+        _starter.OnStart = (workflowId, _) => new WorkflowStart(workflowId, "run-started");
+
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // The two start kinds are unchanged: they start their own workflow, they never ask the
+        // engine to cancel anything, and each records its reference.
+        Assert.Equal([$"upload/{Upload}", $"report-job/{ReportJobId}"], _starter.Started);
+        Assert.Empty(_starter.Cancelled);
+        Assert.Equal(2, _store.References.Count);
+    }
+
     private IntentDispatcher Dispatcher(
         int batchSize = 50,
         TimeSpan? verificationBound = null) =>
@@ -367,9 +475,13 @@ public sealed class IntentDispatcherTests : IDisposable
 
         public Func<string, string, WorkflowStart>? OnStart { get; set; }
 
+        public Func<string, Task>? OnCancel { get; set; }
+
         public int Starts { get; private set; }
 
         public List<string> Started { get; } = [];
+
+        public List<string> Cancelled { get; } = [];
 
         public Task<WorkflowStart?> DescribeAsync(string workflowId, CancellationToken cancellationToken)
         {
@@ -382,6 +494,12 @@ public sealed class IntentDispatcherTests : IDisposable
 
         public Task<WorkflowStart> StartReportJobAsync(string workflowId, string reportJobId, CancellationToken cancellationToken) =>
             Start(workflowId, reportJobId);
+
+        public Task CancelWorkflowAsync(string workflowId, CancellationToken cancellationToken)
+        {
+            Cancelled.Add(workflowId);
+            return OnCancel is null ? Task.CompletedTask : OnCancel(workflowId);
+        }
 
         private Task<WorkflowStart> Start(string workflowId, string subjectId)
         {

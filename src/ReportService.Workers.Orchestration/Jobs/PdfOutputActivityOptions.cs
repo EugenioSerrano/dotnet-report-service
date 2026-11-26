@@ -56,6 +56,10 @@ public static class PdfOutputActivityOptions
         TaskQueue = DataQueue,
         StartToCloseTimeout = StartToClose,
         HeartbeatTimeout = HeartbeatTimeout,
+        // A cancellation stops scheduling new work but lets the running step finish its own
+        // cleanup before the workflow closes the job (ADR-012 §3.10(3)); the SDK's activity
+        // default reports the cancellation immediately and would not wait.
+        CancellationType = ActivityCancellationType.WaitCancellationCompleted,
         RetryPolicy = new RetryPolicy
         {
             InitialInterval = InitialInterval,

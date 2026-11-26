@@ -73,7 +73,10 @@ public interface IJobStore
     /// Fails a job and every output of it that has not ended, in one transaction: the
     /// outputs are marked failed with <paramref name="code"/> and the job is marked
     /// failed with the code, the reason and the message. A job that already ended is left
-    /// exactly as it is, and the call says so.
+    /// exactly as it is, and the call says so. A job that is being cancelled is left exactly
+    /// as it is too: the cancellation's finalisation owns its closure and writes CANCELLED
+    /// (ADR-048 R0), so a failure racing the cancellation — a rejected input, an expired
+    /// upload, a refused template — writes nothing.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="code">The code of the condition that ended the job.</param>
@@ -281,6 +284,12 @@ public interface IJobStore
     /// <param name="reason">The diagnostic recorded beside the code, or <see langword="null"/> when the condition carries none.</param>
     /// <param name="now">The instant the failure is decided at, in UTC.</param>
     /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <remarks>
+    /// After the job was cancelled no output is failed: the cancellation rollup writes the
+    /// remaining outputs <c>CANCELLED</c> (US-010 AC-4). The call answers
+    /// <see cref="OutputFailureOutcome.JobCancelling"/> and writes nothing when the output's job
+    /// is <c>CANCELLING</c>/<c>CANCELLED</c>, distinct from an output that had already ended.
+    /// </remarks>
     Task<OutputFailureOutcome> FailOutputAsync(string outputId, string code, string? reason, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
@@ -288,7 +297,11 @@ public interface IJobStore
     /// succeeded makes the job succeeded, a failed output makes it failed with that output's
     /// code and - when it carries one - its own diagnostic; an output that carries none keeps
     /// the fixed reason of an output-scoped failure. A job that already ended, or whose outputs
-    /// have not all ended, is left as it is.
+    /// have not all ended, is left as it is. A job that is being cancelled is closed
+    /// <c>CANCELLED</c> by ADR-048 <b>R0</b>: its outputs still <c>PENDING</c>/<c>RUNNING</c> are
+    /// written <c>CANCELLED</c> in the same transaction, an output that already succeeded keeps
+    /// its status and its published artifact, and the "every output terminal" wait does not hold
+    /// a cancelled job.
     /// </summary>
     /// <param name="reportJobId">The identifier of the job.</param>
     /// <param name="now">The instant the close is decided at, in UTC.</param>

@@ -490,6 +490,27 @@ public sealed partial class InMemoryJobStore
         }
     }
 
+    /// <summary>
+    /// Removes every output of a job, so a case can present a job that requests none — the shape
+    /// a cancelled job with no requested output closes by R0 without the wait guard.
+    /// </summary>
+    /// <param name="reportJobId">The job whose outputs are removed.</param>
+    public void RemoveOutputs(string reportJobId)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            foreach (var output in _outputs.Values
+                         .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal))
+                         .ToList())
+            {
+                _outputs.Remove(output.OutputId);
+                _outputOrder.Remove(output.OutputId);
+            }
+        }
+    }
+
     /// <inheritdoc />
     public Task<OutputFailureOutcome> FailOutputAsync(
         string outputId,
@@ -504,8 +525,21 @@ public sealed partial class InMemoryJobStore
 
         lock (_gate)
         {
-            if (!_outputs.TryGetValue(outputId, out var output)
-                || output.Status is not (OutputStatus.Pending or OutputStatus.Running))
+            if (!_outputs.TryGetValue(outputId, out var output))
+            {
+                return Task.FromResult(OutputFailureOutcome.AlreadyTerminal);
+            }
+
+            // The database's guarded update matches no row while the job is being (or already was)
+            // cancelled, and the read that follows names the job: the output is left for the
+            // cancellation rollup instead of being failed (ADR-048 R0, US-010 AC-4).
+            if (_jobs.TryGetValue(output.ReportJobId, out var job)
+                && job.Status is ReportJobStatus.Cancelling or ReportJobStatus.Cancelled)
+            {
+                return Task.FromResult(OutputFailureOutcome.JobCancelling);
+            }
+
+            if (output.Status is not (OutputStatus.Pending or OutputStatus.Running))
             {
                 return Task.FromResult(OutputFailureOutcome.AlreadyTerminal);
             }
@@ -537,6 +571,36 @@ public sealed partial class InMemoryJobStore
                 return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null));
             }
 
+            var jobBeingCancelled = job.Status == ReportJobStatus.Cancelling;
+
+            // The cancellation arm (ADR-012 §3.10(3), ADR-048 R0/R4): every requested output that
+            // had not reached a terminal state ends CANCELLED in the same act that closes the job,
+            // while an output that already succeeded keeps its status and its artifact.
+            if (jobBeingCancelled)
+            {
+                foreach (var unfinished in _outputs.Values
+                             .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal)
+                                 && output.Status is OutputStatus.Pending or OutputStatus.Running)
+                             .ToList())
+                {
+                    _outputs[unfinished.OutputId] = unfinished with
+                    {
+                        Status = OutputStatus.Cancelled,
+                        FinishedAt = now.ToUniversalTime(),
+                    };
+                }
+            }
+
+            // The instant the cancellation was requested, from the durable request the cancel
+            // surface recorded; null for a job that was not being cancelled.
+            var cancellationRequestedAt = jobBeingCancelled
+                ? _intents
+                    .Where(intent => string.Equals(intent.Kind, CancelJobKind, StringComparison.Ordinal)
+                        && string.Equals(intent.ReportJobId, reportJobId, StringComparison.Ordinal))
+                    .Select(intent => (DateTimeOffset?)intent.RecordedAt)
+                    .Min()
+                : null;
+
             var outputs = _outputs.Values
                 .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal))
                 .OrderBy(output => output.OutputId, StringComparer.Ordinal)
@@ -545,9 +609,11 @@ public sealed partial class InMemoryJobStore
             // The ADR-048 R0–R4 rollup (SPEC-261125-1224 Phase D.1/D.3/D.6), mirroring the real
             // store. The guard split first: the job is finalised only once every requested output
             // is terminal; while any is still pending/running the job waits, instead of finalising
-            // early on the first failure.
-            if (outputs.Count == 0
-                || outputs.Any(output => output.Status is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled)))
+            // early on the first failure. A cancelled job is not held by that guard: its
+            // cancellation arm ended every output above, and a job requesting none closes by R0.
+            if (!jobBeingCancelled
+                && (outputs.Count == 0
+                    || outputs.Any(output => output.Status is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled))))
             {
                 return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null));
             }
@@ -560,7 +626,7 @@ public sealed partial class InMemoryJobStore
             // succeeded; R2 some succeeded and some not; R3 none succeeded with a failure; R4 the
             // remaining all-cancelled case.
             var status =
-                job.Status == ReportJobStatus.Cancelling ? ReportJobStatus.Cancelled
+                jobBeingCancelled ? ReportJobStatus.Cancelled
                 : succeeded == outputs.Count ? ReportJobStatus.Succeeded
                 : succeeded >= 1 ? ReportJobStatus.PartiallySucceeded
                 : failedCount >= 1 ? ReportJobStatus.Failed
@@ -581,6 +647,7 @@ public sealed partial class InMemoryJobStore
             return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
             {
                 ErrorCode = code,
+                CancellationRequestedAt = cancellationRequestedAt,
             });
         }
     }

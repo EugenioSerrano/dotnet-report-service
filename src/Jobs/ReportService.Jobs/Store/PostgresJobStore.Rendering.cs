@@ -187,6 +187,30 @@ public sealed partial class PostgresJobStore
         UPDATE report_service.report_outputs
            SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
          WHERE output_id = @OutputId AND status IN ('PENDING', 'RUNNING')
+           AND NOT EXISTS (SELECT 1 FROM report_service.report_jobs j
+                            WHERE j.report_job_id = report_service.report_outputs.report_job_id
+                              AND j.status IN ('CANCELLING', 'CANCELLED'))
+        """;
+
+    private const string SelectJobStatusOfOutputSql = """
+        SELECT j.status
+        FROM report_service.report_outputs o
+        JOIN report_service.report_jobs j ON j.report_job_id = o.report_job_id
+        WHERE o.output_id = @OutputId
+        """;
+
+    // The cancellation arm of the finalisation: every requested output that had not reached a
+    // terminal state ends CANCELLED, and its error columns stay untouched (they are null, which
+    // the output's (status = 'FAILED') = (error_code IS NOT NULL) check already requires).
+    private const string CancelOutputsSql = """
+        UPDATE report_service.report_outputs
+           SET status = 'CANCELLED', finished_at = @Now
+         WHERE report_job_id = @ReportJobId AND status IN ('PENDING', 'RUNNING')
+        """;
+
+    private const string SelectCancellationRequestedAtSql = """
+        SELECT min(created_at) FROM report_service.intents
+        WHERE kind = 'cancel-job' AND subject_id = @ReportJobId
         """;
 
     private const string SelectOutputsForFinalizationSql = """
@@ -766,7 +790,24 @@ public sealed partial class PostgresJobStore
                 new { OutputId = outputId, Code = code, Reason = reason, Now = UtcInstant(now) },
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
-            return changed > 0 ? OutputFailureOutcome.Applied : OutputFailureOutcome.AlreadyTerminal;
+            if (changed > 0)
+            {
+                return OutputFailureOutcome.Applied;
+            }
+
+            // The guarded update matched no row. A job that is being (or was) cancelled owns its
+            // outputs through its finalisation, which writes them CANCELLED: the failure writes
+            // nothing and says so, so a render, publication or assembly failure racing a
+            // cancellation never leaves an output FAILED after the job was cancelled (ADR-048 R0).
+            var jobStatus = await connection.ExecuteScalarAsync<string?>(new CommandDefinition(
+                SelectJobStatusOfOutputSql,
+                new { OutputId = outputId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return jobStatus is not null
+                && JobWireValues.ParseStoredStatus(jobStatus) is ReportJobStatus.Cancelling or ReportJobStatus.Cancelled
+                    ? OutputFailureOutcome.JobCancelling
+                    : OutputFailureOutcome.AlreadyTerminal;
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -802,6 +843,20 @@ public sealed partial class PostgresJobStore
 
             var jobBeingCancelled = JobWireValues.ParseStoredStatus(jobStatus) == ReportJobStatus.Cancelling;
 
+            if (jobBeingCancelled)
+            {
+                // The cancellation arm (ADR-012 §3.10(3), ADR-048 R0/R4): every requested output
+                // that had not reached a terminal state ends CANCELLED here, in the transaction
+                // that also writes the rollup, so an output that already succeeded keeps its
+                // status and its artifact and nothing is left pending or running.
+                await connection.ExecuteAsync(new CommandDefinition(
+                    CancelOutputsSql,
+                    new { ReportJobId = reportJobId, Now = UtcInstant(now) },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+            }
+
             var outputs = (await connection.QueryAsync<OutputStatusRow>(new CommandDefinition(
                 SelectOutputsForFinalizationSql,
                 new { ReportJobId = reportJobId },
@@ -812,9 +867,11 @@ public sealed partial class PostgresJobStore
             // The ADR-048 R0–R4 rollup (SPEC-261125-1224 Phase D.1/D.3). The guard split first:
             // the job is finalised only once every requested output is terminal; while any is
             // still pending/running the job waits (AlreadyTerminal no-op), instead of finalising
-            // early on the first failure.
+            // early on the first failure. A cancelled job is not held by that guard: its
+            // cancellation arm ended every output above, and a job requesting none closes by R0.
             var states = outputs.Select(output => JobWireValues.ParseStoredOutputStatus(output.Status)).ToList();
-            if (states.Count == 0 || states.Any(state => state is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled)))
+            if (!jobBeingCancelled
+                && (states.Count == 0 || states.Any(state => state is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled))))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null);
@@ -852,10 +909,27 @@ public sealed partial class PostgresJobStore
                 transaction,
                 CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            // The instant the cancellation was requested, from the durable request the cancel
+            // surface recorded — read in the same transaction that writes the closure, so the
+            // reported latency belongs to the closure it measured.
+            DateTimeOffset? cancellationRequestedAt = null;
+            if (jobBeingCancelled)
+            {
+                var requested = await connection.ExecuteScalarAsync<DateTime?>(new CommandDefinition(
+                    SelectCancellationRequestedAtSql,
+                    new { ReportJobId = reportJobId },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+                cancellationRequestedAt = requested is { } instant ? Utc(instant) : null;
+            }
+
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
             {
                 ErrorCode = code,
+                CancellationRequestedAt = cancellationRequestedAt,
             };
         }
         catch (Exception exception) when (IsUnavailable(exception))

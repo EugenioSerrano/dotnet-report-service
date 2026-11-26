@@ -33,6 +33,9 @@ public sealed class AssembleHtmlStepOptionsTests
         Assert.Equal(TimeSpan.FromSeconds(2), options.RetryPolicy.InitialInterval);
         Assert.Equal(2f, options.RetryPolicy.BackoffCoefficient);
         Assert.Equal(TimeSpan.FromSeconds(60), options.RetryPolicy.MaximumInterval);
+        // The assembly acknowledges the cancellation before the workflow finalises the job
+        // (ADR-012 §3.10(3)).
+        Assert.Equal(Temporalio.Workflows.ActivityCancellationType.WaitCancellationCompleted, options.CancellationType);
     }
 
     [Fact]

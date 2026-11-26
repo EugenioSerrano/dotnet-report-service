@@ -57,6 +57,9 @@ public static class RenderPdfBlockStepOptions
         TaskQueue = Queue,
         StartToCloseTimeout = StartToClose,
         HeartbeatTimeout = HeartbeatTimeout,
+        // The workflow waits until the render has acknowledged the cancellation (its page,
+        // context and attempt directory released) before it finalises the job (ADR-012 §3.10(3)).
+        CancellationType = ActivityCancellationType.WaitCancellationCompleted,
         RetryPolicy = new RetryPolicy
         {
             InitialInterval = InitialInterval,

@@ -191,6 +191,41 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.True(renderer.Called);
     }
 
+    /// <summary>
+    /// US-010 AC-2, hermetically: a render that is cancelled while it works stops at its safe
+    /// point, and the step releases the attempt's temporary directory on the way out. Nothing is
+    /// committed and nothing is published from a cancelled render, so no partial or corrupt
+    /// artifact exists (ADR-012 §3.10(3)(4)). The cancellation is the engine's own: the activity
+    /// host is asked to cancel the attempt the way the engine does.
+    /// </summary>
+    [Fact]
+    public async Task ACancelledRenderStopsReleasesItsDirectoryAndCommitsNothing()
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new BlockingRenderer();
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var environment = new ActivityEnvironment();
+        var running = environment.RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0)));
+        await renderer.Started.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+        environment.Cancel();
+
+        await Assert.ThrowsAnyAsync<Exception>(() => running);
+        Assert.True(renderer.ObservedCancellation, "the render had to observe the cancellation its engine delivered");
+        Assert.NotNull(renderer.WorkDirectory);
+        Assert.False(Directory.Exists(renderer.WorkDirectory), "the attempt's temporary directory had to be released");
+        Assert.Null(jobs.Committed);
+    }
+
     [Fact]
     public async Task ASecondBlockReadsItsRecordsWithTheGlobalOrdinalsItsIndexDeclares()
     {
@@ -990,6 +1025,46 @@ internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer{
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
             Print: print,
             new VerificationResult(true, null, 0, null, null, null, null, null, 2, 10, 1, 1));
+    }
+}
+
+/// <summary>
+/// The renderer that works until it is cancelled: it records the attempt's temporary directory
+/// the step built and the token its caller passed, so a case can prove both that the render
+/// observed the cancellation and that the step released the directory on the way out.
+/// </summary>
+internal sealed class BlockingRenderer : IBlockRenderer
+{
+    private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>Completes once the step is inside the render.</summary>
+    public Task Started => _started.Task;
+
+    /// <summary>The attempt's temporary directory, as the step built the request.</summary>
+    public string? WorkDirectory { get; private set; }
+
+    /// <summary>Whether the render saw its token fire, which is where it stops.</summary>
+    public bool ObservedCancellation { get; private set; }
+
+    /// <inheritdoc />
+    public async Task<BlockRenderOutcome> RenderAsync(
+        BlockRenderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        WorkDirectory = request.WorkDirectory;
+        Directory.CreateDirectory(request.WorkDirectory);
+        _started.TrySetResult();
+        try
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            ObservedCancellation = true;
+            throw;
+        }
+
+        throw new InvalidOperationException("a render that was not cancelled cannot finish this case");
     }
 }
 

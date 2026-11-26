@@ -190,13 +190,20 @@ public sealed partial class PostgresJobStore : IJobStore
         UPDATE report_service.report_outputs
            SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
          WHERE report_job_id = @ReportJobId AND status IN ('PENDING', 'RUNNING')
+           AND NOT EXISTS (SELECT 1 FROM report_service.report_jobs j
+                            WHERE j.report_job_id = @ReportJobId
+                              AND j.status IN ('CANCELLING', 'CANCELLED'))
         """;
 
+    // A job that is being cancelled never ends failed: the cancellation's finalisation owns its
+    // closure and writes CANCELLED (ADR-048 R0). A failure racing the cancellation therefore
+    // writes nothing at all — neither the job nor any of its outputs.
     private const string FailJobSql = """
         UPDATE report_service.report_jobs
            SET status = 'FAILED', error_code = @Code, error_reason = @Reason,
                error_message = @Message, finished_at = @Now
-         WHERE report_job_id = @ReportJobId AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
+         WHERE report_job_id = @ReportJobId
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED', 'CANCELLING')
         """;
 
     private const string BeginInputWaitSql = """

@@ -141,6 +141,14 @@ public sealed class InMemoryIntentStore : IIntentStore
             return Task.CompletedTask;
         }
 
+        public Task MarkDeliveredAsync(long intentId, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            // Delivered with no execution named: the row leaves the pending set and keeps no
+            // reference, exactly as the database's own delivered update writes it.
+            _changes[intentId] = (true, null, now, null);
+            return Task.CompletedTask;
+        }
+
         public Task RecordFailureAsync(long intentId, DateTimeOffset now, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken)
         {
             _changes[intentId] = (false, null, now, nextAttemptAt);

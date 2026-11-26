@@ -49,4 +49,21 @@ public sealed class ReportJobActivityOptionsTests
     {
         Assert.Equal("metadata: start-to-close 30s, backoff 1s x2 max 30s, unbounded", ReportJobActivityOptions.RetryPolicySummary);
     }
+
+    [Fact]
+    public void TheFinalisationRunsUnderTheSamePolicyWithATokenNothingCanCancel()
+    {
+        var normal = ReportJobActivityOptions.Create();
+        var finalisation = ReportJobActivityOptions.CreateFinalization();
+
+        // ADR-012 §3.10(3): the one step a cancelled run still executes. Every value of the policy
+        // is the metadata policy's, and the token is a per-call override that the cancellation of
+        // the run cannot reach - the mechanism at Temporalio 1.21.0, which has no cancellation scope.
+        Assert.Equal(normal.TaskQueue, finalisation.TaskQueue);
+        Assert.Equal(normal.StartToCloseTimeout, finalisation.StartToCloseTimeout);
+        Assert.Equal(normal.RetryPolicy!.MaximumAttempts, finalisation.RetryPolicy!.MaximumAttempts);
+        Assert.Equal(CancellationToken.None, finalisation.CancellationToken);
+        Assert.Null(normal.CancellationToken);
+        Assert.NotSame(normal, finalisation);
+    }
 }

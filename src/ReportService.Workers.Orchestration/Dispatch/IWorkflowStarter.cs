@@ -7,11 +7,11 @@ public sealed record WorkflowStart(string WorkflowId, string RunId);
 
 /// <summary>
 /// The engine operations dispatching needs: ask whether a workflow identifier is
-/// already served by an execution, and start one. This is the seam the tests
-/// replace, so the dispatcher's own rules are provable without an engine; the
+/// already served by an execution, start one, and ask one to cancel. This is the seam
+/// the tests replace, so the dispatcher's own rules are provable without an engine; the
 /// production implementation reads the process's current connection on every call,
 /// so a connection the host replaced after an engine loss is used from the next call.
-/// Each kind of request has its own start, because the workflow it names and the
+/// Each kind of request has its own operation, because the workflow it names and the
 /// input it takes differ; the identifier is the same in both, chosen by the caller.
 /// </summary>
 public interface IWorkflowStarter
@@ -35,4 +35,14 @@ public interface IWorkflowStarter
     /// <param name="reportJobId">The job to run.</param>
     /// <param name="cancellationToken">The poll's cancellation token.</param>
     Task<WorkflowStart> StartReportJobAsync(string workflowId, string reportJobId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Asks the engine to cancel the execution behind <paramref name="workflowId"/>. An execution
+    /// that is closed is served — the engine accepts the request and ignores it — and an identifier
+    /// the engine does not know means there was nothing to cancel; both count as delivered, so this
+    /// call never fails for them. Any other engine error is a failed attempt the caller retries.
+    /// </summary>
+    /// <param name="workflowId">The identifier of the execution to cancel.</param>
+    /// <param name="cancellationToken">The poll's cancellation token.</param>
+    Task CancelWorkflowAsync(string workflowId, CancellationToken cancellationToken);
 }

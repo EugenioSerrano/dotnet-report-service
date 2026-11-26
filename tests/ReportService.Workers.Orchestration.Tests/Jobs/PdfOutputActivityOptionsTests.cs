@@ -27,6 +27,9 @@ public sealed class PdfOutputActivityOptionsTests
         Assert.Equal(TimeSpan.FromSeconds(2), options.RetryPolicy.InitialInterval);
         Assert.Equal(2f, options.RetryPolicy.BackoffCoefficient);
         Assert.Equal(TimeSpan.FromSeconds(60), options.RetryPolicy.MaximumInterval);
+        // The step waits for its own cancellation to complete before the workflow finalises the
+        // job (ADR-012 §3.10(3)); the SDK's activity default would report it immediately.
+        Assert.Equal(Temporalio.Workflows.ActivityCancellationType.WaitCancellationCompleted, options.CancellationType);
     }
 
     [Fact]

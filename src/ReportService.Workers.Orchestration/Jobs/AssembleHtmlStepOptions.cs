@@ -54,6 +54,9 @@ public static class AssembleHtmlStepOptions
         TaskQueue = Queue,
         StartToCloseTimeout = StartToClose,
         HeartbeatTimeout = HeartbeatTimeout,
+        // The workflow waits until the assembly has acknowledged the cancellation before it
+        // finalises the job (ADR-012 §3.10(3)).
+        CancellationType = ActivityCancellationType.WaitCancellationCompleted,
         RetryPolicy = new RetryPolicy
         {
             InitialInterval = InitialInterval,

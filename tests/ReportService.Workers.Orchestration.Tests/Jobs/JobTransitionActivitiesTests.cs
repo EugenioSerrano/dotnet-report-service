@@ -130,6 +130,69 @@ public sealed class JobTransitionActivitiesTests
             () => RunAsync(() => activity.FinalizeJobAsync(new FinalizeJobInput(ReportJobId))));
     }
 
+    /// <summary>
+    /// ADR-012 §3.11(5): the cancellation latency is observed once, when the finalisation that
+    /// wrote the closure reports the instant the cancellation was requested. The elapsed time is
+    /// recorded with no tag at all — the job's identifier is never a metric dimension (§3.11(4)) —
+    /// and a retried finalisation, which finds the job terminal, adds nothing.
+    /// </summary>
+    [Fact]
+    public async Task ACancelledFinalisationRecordsOneLatencyObservationWithNoTag()
+    {
+        var store = new RecordingJobStore
+        {
+            Finalization = new JobFinalizationResult(JobFinalizationOutcome.Applied, ReportJobStatus.Cancelled)
+            {
+                CancellationRequestedAt = Now.AddSeconds(-7),
+            },
+        };
+        using var metrics = new OrchestrationMetrics(Identity);
+        using var measurements = new DoubleMeasurements(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+
+        await RunAsync(() => activity.FinalizeJobAsync(new FinalizeJobInput(ReportJobId)));
+
+        var recorded = Assert.Single(
+            measurements.Captured,
+            measurement => measurement.Name == OrchestrationMetrics.CancellationDurationInstrumentName);
+        Assert.Equal(7, recorded.Value);
+        Assert.Empty(recorded.Tags);
+
+        // A repeated finalisation wrote nothing, so it observes nothing: one cancelled job is one
+        // latency, never one per attempt.
+        store.Finalization = new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null);
+        await RunAsync(() => activity.FinalizeJobAsync(new FinalizeJobInput(ReportJobId)));
+        Assert.Single(
+            measurements.Captured,
+            measurement => measurement.Name == OrchestrationMetrics.CancellationDurationInstrumentName);
+    }
+
+    /// <summary>A job that was not cancelled records no cancellation latency at all.</summary>
+    [Fact]
+    public async Task ANonCancelledFinalisationRecordsNoLatencyObservation()
+    {
+        var store = new RecordingJobStore();
+        using var metrics = new OrchestrationMetrics(Identity);
+        using var measurements = new DoubleMeasurements(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+
+        await RunAsync(() => activity.FinalizeJobAsync(new FinalizeJobInput(ReportJobId)));
+
+        Assert.DoesNotContain(
+            measurements.Captured,
+            measurement => measurement.Name == OrchestrationMetrics.CancellationDurationInstrumentName);
+    }
+
     private static Task RunAsync(Func<Task> body) => new ActivityEnvironment().RunAsync(body);
 
     [Fact]
@@ -168,6 +231,10 @@ public sealed class JobTransitionActivitiesTests
 
         public Exception? Failure { get; set; }
 
+        /// <summary>The closure the store answers with.</summary>
+        public JobFinalizationResult Finalization { get; set; } =
+            new(JobFinalizationOutcome.Applied, ReportJobStatus.Succeeded);
+
         public List<(string ReportJobId, DateTimeOffset Now)> Finalizations { get; } = [];
 
         /// <summary>The output failures the step asked for, in the order it asked.</summary>
@@ -189,7 +256,7 @@ public sealed class JobTransitionActivitiesTests
             }
 
             Finalizations.Add((reportJobId, now));
-            return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, ReportJobStatus.Succeeded));
+            return Task.FromResult(Finalization);
         }
 
         public Task<JobAcceptanceResult> AcceptAsync(JobAcceptance acceptance, DateTimeOffset now, CancellationToken cancellationToken) => throw new NotSupportedException();

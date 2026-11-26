@@ -205,6 +205,13 @@ public enum OutputFailureOutcome
 
     /// <summary>The output had already ended; nothing was written.</summary>
     AlreadyTerminal,
+
+    /// <summary>
+    /// The job is being cancelled (or was cancelled); nothing was written and the output stays
+    /// for the cancellation rollup. Distinct from <see cref="AlreadyTerminal"/>: an output that
+    /// had not ended is not ended by a failure once its job was cancelled (ADR-048 R0).
+    /// </summary>
+    JobCancelling,
 }
 
 /// <summary>What closing a job did.</summary>
@@ -224,4 +231,11 @@ public sealed record JobFinalizationResult(JobFinalizationOutcome Outcome, Repor
 {
     /// <summary>The code the job ended with, when it ended failed; null otherwise.</summary>
     public string? ErrorCode { get; init; }
+
+    /// <summary>
+    /// When the cancellation of the job was requested — the instant its <c>cancel-job</c> request
+    /// was recorded — or <see langword="null"/> for a job that was not being cancelled. It is the
+    /// measurement's start, so the cancellation latency is reported from the consumer's request.
+    /// </summary>
+    public DateTimeOffset? CancellationRequestedAt { get; init; }
 }

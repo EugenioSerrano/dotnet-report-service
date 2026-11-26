@@ -108,9 +108,10 @@ public sealed class JobTransitionActivities(
         ArgumentNullException.ThrowIfNull(input);
         using var context = JobContext.Begin(input.ReportJobId, loggers);
 
+        var now = clock.GetUtcNow();
         var result = await jobs.FinalizeJobAsync(
             input.ReportJobId,
-            clock.GetUtcNow(),
+            now,
             ActivityExecutionContext.Current.CancellationToken).ConfigureAwait(false);
 
         if (result.Status is { } status)
@@ -135,6 +136,13 @@ public sealed class JobTransitionActivities(
             if (result.Outcome == JobFinalizationOutcome.Applied)
             {
                 metrics.JobOutcome(ReportJobMetricsName(status), result.ErrorCode ?? OrchestrationMetrics.NoCode);
+                if (result.CancellationRequestedAt is { } requested)
+                {
+                    // The one observation of a cancelled job's latency, from the consumer's own
+                    // request to the closure that wrote it (ADR-012 §3.11(5)); a retried
+                    // finalisation finds the job terminal and adds nothing.
+                    metrics.RecordCancellationDuration(now - requested);
+                }
             }
         }
         else
@@ -174,6 +182,12 @@ public sealed class JobTransitionActivities(
         if (outcome == ReportService.Jobs.OutputFailureOutcome.Applied)
         {
             logger.LogInformation("Output {OutputId} ended with {ErrorCode}", input.OutputId, input.ErrorCode);
+        }
+        else if (outcome == ReportService.Jobs.OutputFailureOutcome.JobCancelling)
+        {
+            // The job is being cancelled: the output is not failed, it is left for the
+            // cancellation rollup, which writes it CANCELLED (ADR-048 R0).
+            logger.LogInformation("Output {OutputId} left for the cancellation rollup", input.OutputId);
         }
 
         return outcome;
