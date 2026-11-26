@@ -5,8 +5,8 @@ namespace ReportService.Data.Tests;
 /// <summary>
 /// The group tracking a page-boundary cut prefers: a group is a contiguous run of
 /// records with an equal group key (the field the manifest names in
-/// partitioning.groupKey, a string or an integer, compared by type and exact value —
-/// ADR-022 §3.2 item 5). A boundary is where that key changes; a key that reappears
+/// partitioning.groupKey, a string or an integer, compared by type and exact value).
+/// A boundary is where that key changes; a key that reappears
 /// after a different one starts a new group (contiguity is a producer obligation).
 /// </summary>
 public sealed class GroupBoundaryTrackerTests

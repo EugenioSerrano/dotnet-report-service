@@ -4,8 +4,7 @@ using ReportService.Data.Partitioning;
 namespace ReportService.Data.Tests;
 
 /// <summary>
-/// Restart-safe resume during partitioning (US-009 AC-9, partitioning stage; ADR-012
-/// §3.5, Block RULE-05). A pass that resumes from the durable checkpoint and the
+/// Restart-safe resume during the partitioning stage. A pass that resumes from the durable checkpoint and the
 /// committed blocks completes with a block set and index identical to a clean,
 /// no-restart run — no duplicated, lost or reordered record or block — and a
 /// speculative block that was never durably committed is discarded and rewritten,
@@ -106,7 +105,7 @@ public sealed class StreamingPartitionResumeTests
         }
 
         // Blocks 0 and 1 were carried in and must be byte-for-byte the committed ones (a block is
-        // committed only once its index entry with SHA-256 is durable — Block RULE-05).
+        // committed only once its index entry with SHA-256 is durable).
         Assert.Equal(cleanSink.Block(0), resumedSink.Block(0));
         Assert.Equal(cleanSink.Block(1), resumedSink.Block(1));
     }

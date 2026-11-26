@@ -7,8 +7,8 @@ using ReportService.Data.Partitioning;
 namespace ReportService.PerformanceTests;
 
 /// <summary>
-/// The flat-memory profile of the streaming partition pass at scale (US-009 AC-2;
-/// RNF-001). Partitioning a snapshot far larger than one block must keep the data
+/// The flat-memory profile of the streaming partition pass at scale.
+/// Partitioning a snapshot far larger than one block must keep the data
 /// worker's working set flat relative to the dataset size — it holds only the header,
 /// the current record and the open block, never the collection. A pass over a dataset
 /// many times larger grows the working set no more than a small allowance over a pass

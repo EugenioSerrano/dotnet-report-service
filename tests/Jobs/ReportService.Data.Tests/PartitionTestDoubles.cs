@@ -18,7 +18,7 @@ internal static class PartitionFixtures
     /// <summary>The field name a snapshot's group key lives under (the manifest's partitioning.groupKey).</summary>
     public const string GroupField = "group";
 
-    /// <summary>The field name the page-totals amount lives under (ADR-021 §3.1 item 5).</summary>
+    /// <summary>The field name the page-totals amount lives under.</summary>
     public const string AmountField = "amount";
 
     /// <summary>The spec a grouped, amount-bearing partition runs under, with the limits the case wants.</summary>

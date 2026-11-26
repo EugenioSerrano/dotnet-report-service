@@ -28,7 +28,7 @@ public sealed class BlockIndexPageTests
         Assert.Equal(900, entry.RecordBytes);
 
         // An entry built without the enriched fields defaults them, so the live single-block
-        // path keeps writing the same shape (SPEC §12 compatibility).
+        // path keeps writing the same on-disk shape (backward compatibility).
         Assert.False(entry.ContinuesPreviousGroup);
         Assert.False(entry.ContinuesNextGroup);
         Assert.Null(entry.OpeningGroupKey);

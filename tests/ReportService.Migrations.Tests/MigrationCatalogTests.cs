@@ -45,13 +45,14 @@ public sealed class MigrationCatalogTests
     private const string JobIdempotency = "0017_job-idempotency.sql";
     private const string AttemptCauses = "0018_pdf-attempt-causes.sql";
     private const string PartiallySucceeded = "0019_job-partially-succeeded-status.sql";
+    private const string CancelJobIntent = "0020_intent-kind-cancel-job.sql";
 
     [Fact]
     public void TheShippedSetIsTheBaselineAndTheUploadsTableInNameOrder()
     {
-        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound, JobIdempotency, AttemptCauses, PartiallySucceeded }, MigrationCatalog.Scripts.Select(script => script.Name));
+        Assert.Equal(new[] { Baseline, Uploads, Content, Deadline, Jobs, PdfOutput, TemplateVersions, JobProgress, TemplateResolution, VersionSyntax, Provenance, Locale, Expiry, OutputReason, Presentation, RowBound, JobIdempotency, AttemptCauses, PartiallySucceeded, CancelJobIntent }, MigrationCatalog.Scripts.Select(script => script.Name));
         Assert.All(MigrationCatalog.Scripts, script => Assert.True(MigrationScriptName.IsValid(script.Name)));
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(CancelJobIntent, MigrationCatalog.ExpectedVersion);
     }
 
     /// <summary>
@@ -194,7 +195,7 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == VersionSyntax);
 
-        Assert.Equal(19, MigrationCatalog.Scripts.Count);
+        Assert.Equal(20, MigrationCatalog.Scripts.Count);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ADD CONSTRAINT template_versions_version_syntax CHECK (", script.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script.Sql, StringComparison.OrdinalIgnoreCase);
@@ -215,9 +216,9 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == Provenance);
 
-        Assert.Equal(19, MigrationCatalog.Scripts.Count);
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.ExpectedVersion);
+        Assert.Equal(20, MigrationCatalog.Scripts.Count);
+        Assert.Equal(CancelJobIntent, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(CancelJobIntent, MigrationCatalog.ExpectedVersion);
         Assert.Contains("ALTER TABLE report_service.template_versions", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN commit_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
         Assert.Contains("ALTER COLUMN source_tree_sha DROP NOT NULL", script.Sql, StringComparison.Ordinal);
@@ -374,8 +375,8 @@ public sealed class MigrationCatalogTests
     {
         var script = Assert.Single(MigrationCatalog.Scripts, candidate => candidate.Name == OutputReason);
 
-        Assert.Equal(19, MigrationCatalog.Scripts.Count);
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.Scripts[^1].Name);
+        Assert.Equal(20, MigrationCatalog.Scripts.Count);
+        Assert.Equal(CancelJobIntent, MigrationCatalog.Scripts[^1].Name);
         Assert.Equal(1, CountOf(script.Sql, "ALTER TABLE"));
         Assert.Equal(1, CountOf(script.Sql, "ADD COLUMN"));
         Assert.Contains("ALTER TABLE report_service.report_outputs", script.Sql, StringComparison.Ordinal);

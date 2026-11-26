@@ -164,6 +164,36 @@ public interface IJobStore
         DateTimeOffset now,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Requests the cancellation of one report job, owner-scoped, in one transaction: a
+    /// job of <paramref name="consumerId"/> that is non-terminal and not already being
+    /// cancelled is moved to <see cref="ReportJobStatus.Cancelling"/> and a single durable
+    /// <c>cancel-job</c> intent is recorded for it, together; a job already
+    /// <see cref="ReportJobStatus.Cancelling"/> records no second intent and does not
+    /// regress; a job already in a terminal state is left exactly as it is; and a job that
+    /// does not exist for the consumer — absent, or owned by another consumer — is
+    /// <see cref="CancellationRequestResult.NotFound"/>, the same answer either way, so no
+    /// other consumer's job is revealed. Every write is conditional on the job's current
+    /// status, so a job that reached a terminal state between a read and this call is not
+    /// moved (the cancel/completion race: whichever commits first wins).
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job to cancel.</param>
+    /// <param name="consumerId">The declared consumer that must own the job.</param>
+    /// <param name="now">The instant the cancel intent is recorded at, in UTC.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <remarks>
+    /// A default implementation is provided so the narrow test doubles of unrelated features —
+    /// which never exercise cancellation — need not implement it; the two real stores
+    /// (<c>PostgresJobStore</c>, <c>InMemoryJobStore</c>) and the cancel surface's own doubles
+    /// override it. Calling it on a store that did not is a programming error, not a job outcome.
+    /// </remarks>
+    Task<CancellationRequestResult> RequestCancellationAsync(
+        string reportJobId,
+        string consumerId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken) =>
+        throw new NotSupportedException("this job store does not implement cancellation requests");
+
     /// <summary>Moves a pending output to running, recording when it started.</summary>
     /// <param name="outputId">The identifier of the output.</param>
     /// <param name="now">The instant the change is decided at, in UTC.</param>

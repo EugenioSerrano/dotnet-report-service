@@ -7,10 +7,9 @@ namespace ReportService.Data.Tests;
 /// <summary>
 /// The enriched, durable index page: the page-level chunk layout and the per-entry
 /// group-continuity flags, opening group key and opening carried-forward / block total
-/// are written in block order and read back exactly (ADR-022 §3.6 item 2, ADR-021 §3.3,
-/// Block RULE-06). Contiguity is validated on read — block indices 0..N with no gap and
+/// are written in block order and read back exactly. Contiguity is validated on read — block indices 0..N with no gap and
 /// record ordinals contiguous across entries — and an old single-entry page still parses
-/// with the new fields defaulted (SPEC §12 compatibility).
+/// with the new fields defaulted (backward compatibility).
 /// </summary>
 public sealed class BlockIndexPageLayoutTests
 {

@@ -61,6 +61,7 @@ app.MapUploadContentEndpoint();
 app.MapCompleteUploadEndpoint();
 app.MapCreateReportJobEndpoint();
 app.MapReportJobStatusEndpoint();
+app.MapCancelReportJobEndpoint();
 app.MapArtifactListEndpoint();
 app.MapArtifactDownloadEndpoint();
 app.MapGetTemplateVersionEndpoint();

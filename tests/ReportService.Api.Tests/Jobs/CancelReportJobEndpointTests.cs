@@ -64,8 +64,9 @@ public sealed class CancelReportJobEndpointTests : IDisposable
 
         // The cancel intent is durably recorded — exactly one row for this job (no duplication of
         // the start intent, no second cancel intent).
-        Assert.Single(_host.Jobs.Intents.Where(intent =>
-            intent.Kind == CancelJobKind && intent.ReportJobId == jobId));
+        Assert.Single(
+            _host.Jobs.Intents,
+            intent => intent.Kind == CancelJobKind && intent.ReportJobId == jobId);
 
         // A subsequent read of the job reports CANCELLING.
         using var read = await StatusAsync(JobApiHost.Consumer, jobId);
@@ -94,8 +95,9 @@ public sealed class CancelReportJobEndpointTests : IDisposable
         Assert.Equal("cancelling", answer.GetProperty("status").GetString());
 
         // No second cancel intent was recorded: exactly one remains.
-        Assert.Single(_host.Jobs.Intents.Where(intent =>
-            intent.Kind == CancelJobKind && intent.ReportJobId == jobId));
+        Assert.Single(
+            _host.Jobs.Intents,
+            intent => intent.Kind == CancelJobKind && intent.ReportJobId == jobId);
     }
 
     // ----- AC-6: a cancel on each terminal status is an idempotent no-op → 200, state unchanged, no intent.
@@ -143,8 +145,9 @@ public sealed class CancelReportJobEndpointTests : IDisposable
             // no cancel intent is recorded.
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(terminalStatus, answer.GetProperty("status").GetString());
-            Assert.Empty(_host.Jobs.Intents.Where(intent =>
-                intent.Kind == CancelJobKind && intent.ReportJobId == jobId));
+            Assert.DoesNotContain(
+                _host.Jobs.Intents,
+                intent => intent.Kind == CancelJobKind && intent.ReportJobId == jobId);
         }
     }
 
@@ -161,7 +164,7 @@ public sealed class CancelReportJobEndpointTests : IDisposable
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(ErrorCodes.ConsumerUnknown, (await JobApiHost.AnswerAsync(response)).GetProperty("code").GetString());
         Assert.Equal(writesBefore, _host.Jobs.WriteCalls);
-        Assert.Empty(_host.Jobs.Intents.Where(intent => intent.Kind == CancelJobKind));
+        Assert.DoesNotContain(_host.Jobs.Intents, intent => intent.Kind == CancelJobKind);
     }
 
     // ----- Owner scoping (SPEC §14 D2): a foreign, absent or malformed identifier is the same 404.
@@ -199,7 +202,7 @@ public sealed class CancelReportJobEndpointTests : IDisposable
 
         Assert.Equal(writesBefore, _host.Jobs.WriteCalls);
         // A foreign job was never cancelled: no leak, and no intent recorded for anyone.
-        Assert.Empty(_host.Jobs.Intents.Where(intent => intent.Kind == CancelJobKind));
+        Assert.DoesNotContain(_host.Jobs.Intents, intent => intent.Kind == CancelJobKind);
         // The foreign, absent and malformed cases are indistinguishable: one problem document.
         Assert.Single(problems.Distinct(StringComparer.Ordinal));
     }
@@ -227,8 +230,9 @@ public sealed class CancelReportJobEndpointTests : IDisposable
         // the structural guarantee that a disconnect/timeout (RequestAborted) never cancels.
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         Assert.Equal("cancelling", answer.GetProperty("status").GetString());
-        Assert.Single(host.Jobs.Intents.Where(intent =>
-            intent.Kind == CancelJobKind && intent.ReportJobId == observedJob));
+        Assert.Single(
+            host.Jobs.Intents,
+            intent => intent.Kind == CancelJobKind && intent.ReportJobId == observedJob);
         Assert.NotNull(probe);
         Assert.True(probe!.Observed, "the cancel had to reach the store");
         Assert.False(probe.LastToken.CanBeCanceled, "the cancel decision must not observe the request's connection (CancellationToken.None)");

@@ -7,6 +7,7 @@ using Npgsql;
 using ReportService.Api.Http;
 using ReportService.Api.Jobs;
 using ReportService.Jobs;
+using ReportService.Storage;
 using ReportService.Testing;
 using ReportService.Uploads;
 

@@ -5,9 +5,9 @@ namespace ReportService.Data.Tests;
 /// <summary>
 /// The per-block opening carried-forward: the exact-decimal running sum of the
 /// page-totals amount field over all records in earlier blocks, and the block's own
-/// amount total (ADR-022 §3.6 item 2, ADR-021 §3.1 item 5, Block RULE-06). Both
-/// depend solely on previous records. This is the BOLT-001↔BOLT-003 boundary: there
-/// is no page subtotal, no page-level chain and no grand total here (AC-4).
+/// amount total. Both
+/// depend solely on previous records. This is the partition-stage boundary: there
+/// is no page subtotal, no page-level chain and no grand total here.
 /// </summary>
 public sealed class CarriedForwardAccumulatorTests
 {

@@ -34,6 +34,28 @@ public sealed partial class PostgresJobStore
          WHERE output_id = @OutputId AND status = 'PENDING'
         """;
 
+    // The cancel request's guarded move: a job of this consumer that is non-terminal and not
+    // already being cancelled moves to CANCELLING. A job that reached a terminal state, is
+    // already CANCELLING, or belongs to another consumer matches no row — so the cancel/
+    // completion race resolves to whichever commits first, and a repeat writes nothing.
+    private const string CancelJobSql = """
+        UPDATE report_service.report_jobs
+           SET status = 'CANCELLING'
+         WHERE report_job_id = @ReportJobId
+           AND consumer_id = @ConsumerId
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED', 'CANCELLING')
+        """;
+
+    // The durable cancel intent, recorded in the same transaction as the transition. The
+    // outbox's UNIQUE (kind, subject_id) with ON CONFLICT DO NOTHING keeps at most one
+    // cancel-job intent per job. The dispatcher's plan for it is US-010.BOLT-002; until then
+    // it stays PENDING and is never delivered.
+    private const string InsertCancelIntentSql = """
+        INSERT INTO report_service.intents (kind, subject_id, status, attempts, created_at, next_attempt_at)
+        VALUES ('cancel-job', @ReportJobId, 'PENDING', 0, @Now, @Now)
+        ON CONFLICT (kind, subject_id) DO NOTHING
+        """;
+
     private const string InsertPartitionSql = """
         INSERT INTO report_service.partitions
             (report_job_id, partitioner_version, block_count, record_count, record_bytes,
@@ -234,6 +256,68 @@ public sealed partial class PostgresJobStore
             return current is not null && JobWireValues.ParseStoredStatus(current) == to
                 ? new TransitionJobResult(TransitionOutcome.AlreadyApplied, null)
                 : new TransitionJobResult(TransitionOutcome.NotApplicable, null);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<CancellationRequestResult> RequestCancellationAsync(
+        string reportJobId,
+        string consumerId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(consumerId);
+        var parameters = new { ReportJobId = reportJobId, ConsumerId = consumerId, Now = UtcInstant(now) };
+
+        try
+        {
+            bool transitioned;
+            await using (var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false))
+            {
+                await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+                // One guarded UPDATE moves a non-terminal, not-already-cancelling job of this
+                // consumer to CANCELLING. Of concurrent first cancels the row lock lets exactly
+                // one match, so exactly one records the intent.
+                var moved = await connection.ExecuteAsync(new CommandDefinition(
+                    CancelJobSql, parameters, transaction, CommandTimeoutSeconds, cancellationToken: cancellationToken))
+                    .ConfigureAwait(false);
+                transitioned = moved > 0;
+                if (transitioned)
+                {
+                    // The cancel intent and the transition commit together; the conflict guard
+                    // keeps the durable intent single and idempotent.
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        InsertCancelIntentSql, parameters, transaction, CommandTimeoutSeconds, cancellationToken: cancellationToken))
+                        .ConfigureAwait(false);
+                }
+
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            // The current state, read owner-scoped: it carries the answer's body and classifies
+            // the edges. An absent or foreign job is NotFound — the same answer either way, so no
+            // existence leaks — and a move that changed nothing is a job already cancelling or
+            // already terminal.
+            var view = await FindStatusAsync(reportJobId, consumerId, cancellationToken).ConfigureAwait(false);
+            if (view is null)
+            {
+                return new CancellationRequestResult.NotFound();
+            }
+
+            if (transitioned)
+            {
+                return new CancellationRequestResult.Transitioned(view);
+            }
+
+            return view.Status == ReportJobStatus.Cancelling
+                ? new CancellationRequestResult.AlreadyCancelling(view)
+                : new CancellationRequestResult.AlreadyTerminal(view);
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {

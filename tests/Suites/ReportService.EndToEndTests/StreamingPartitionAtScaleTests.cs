@@ -5,8 +5,8 @@ using ReportService.Storage;
 namespace ReportService.EndToEndTests;
 
 /// <summary>
-/// The streaming partition at scale, against real object storage (US-009 AC-2, AC-7;
-/// boundary AC-4). A large multi-block snapshot — ordinary and grouped, plain and gzip —
+/// The streaming partition at scale, against real object storage: multi-block cutting,
+/// group-boundary preference and the carried-forward boundary. A large multi-block snapshot — ordinary and grouped, plain and gzip —
 /// is driven through the durable partition driver against the filesystem object store;
 /// the committed block objects and the durable block index are read back and verified:
 /// block count, per-block digest and size against the stored object, ordinal contiguity,

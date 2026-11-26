@@ -5,12 +5,12 @@ namespace ReportService.Data.Tests;
 
 /// <summary>
 /// The streaming partitioner: one sequential pass that cuts a validated record stream
-/// into contiguous, ordered blocks within the ADR-022 §3.6 limits, prefers group
+/// into contiguous, ordered blocks within the soft and hard limits, prefers group
 /// boundaries, carries continuity metadata across a group that spans a cut, lays the
 /// blocks out page-boundary, records a durable ordered index, and computes the opening
 /// carried-forward from previous records only. The expectations are derived from
-/// US-009 AC-2/AC-7 and the boundary AC-4, and from ADR-021/022 — never from the
-/// partitioner. The cases drive small test limits so the cut logic is exercised
+/// the large-report story's block-limit, group-boundary and carried-forward rules —
+/// never from the partitioner. The cases drive small test limits so the cut logic is exercised
 /// cheaply; production runs on <see cref="PartitionLimits.Default"/>.
 /// </summary>
 public sealed class StreamingPartitionerTests
@@ -20,8 +20,9 @@ public sealed class StreamingPartitionerTests
     // Soft target 2 records, hard maximum 3 records; bytes left wide so the record count drives the cuts.
     private static PartitionLimits SmallRecordLimits => new(SoftMaxRecords: 2, SoftMaxRecordBytes: 1_000_000, HardMaxRecords: 3, HardMaxRecordBytes: 1_000_000);
 
-    // Hard byte maximum 200 bytes, so two ordinary records cannot share a block; records drive nothing.
-    private static PartitionLimits SmallByteLimits => new(SoftMaxRecords: 1_000_000, SoftMaxRecordBytes: 150, HardMaxRecords: 1_000_000, HardMaxRecordBytes: 200);
+    // Hard byte maximum 40 bytes — below two ordinary records (~28 bytes each) but above one, so each
+    // ordinary record fills a block of its own by the hard byte rule; records drive nothing.
+    private static PartitionLimits SmallByteLimits => new(SoftMaxRecords: 1_000_000, SoftMaxRecordBytes: 20, HardMaxRecords: 1_000_000, HardMaxRecordBytes: 40);
 
     [Fact]
     public async Task TheRecordsAreCutIntoContiguousOrderedBlocksWithNoGapOrOverlap()
@@ -202,7 +203,7 @@ public sealed class StreamingPartitionerTests
         }
 
         // The last block's opening + its own total is the running sum of every record — but it is
-        // carried as opening + block total, never printed as a grand total here (the BOLT-003 boundary, AC-4).
+        // carried as opening + block total, never printed as a grand total here (the partition-stage boundary).
         Assert.Equal(30m, blocks[0].BlockAmountTotal);
         Assert.Equal(30m, blocks[1].OpeningCarriedForward);
         Assert.Equal(100m, blocks[2].OpeningCarriedForward);
@@ -244,7 +245,7 @@ public sealed class StreamingPartitionerTests
     public async Task ALateInvalidRecordStopsThePassAndNothingIsReportedAsSuccess()
     {
         // Several good records, then a record whose amount has no exact decimal where one is required
-        // (ADR-022 §3.2 item 7): the pass fails DATA_INVALID reason=number-out-of-range.
+        // the pass fails DATA_INVALID reason=number-out-of-range.
         var records = new[]
         {
             PartitionFixtures.PlainRecord(1, "1.00"),

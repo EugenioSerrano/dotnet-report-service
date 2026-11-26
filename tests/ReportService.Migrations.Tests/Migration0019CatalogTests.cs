@@ -24,6 +24,8 @@ public sealed class Migration0019CatalogTests
 
     private const string AttemptCauses = "0018_pdf-attempt-causes.sql";
 
+    private const string CancelJobIntent = "0020_intent-kind-cancel-job.sql";
+
     [Fact]
     public void TheNineteenthScriptIsEmbeddedNamedPerConventionAndOrderedAfterTheEighteenth()
     {
@@ -31,11 +33,11 @@ public sealed class Migration0019CatalogTests
 
         Assert.Contains(PartiallySucceeded, names);
         Assert.True(MigrationScriptName.IsValid(PartiallySucceeded));
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(PartiallySucceeded, MigrationCatalog.ExpectedVersion);
 
-        // Ordered strictly after 0018, with no other script between them.
+        // Ordered strictly after 0018 and immediately before 0020 (US-010.BOLT-001 added the
+        // twentieth script, which is now the catalogue's last — see Migration0020CatalogTests).
         Assert.Equal(names.IndexOf(AttemptCauses) + 1, names.IndexOf(PartiallySucceeded));
+        Assert.Equal(names.IndexOf(PartiallySucceeded) + 1, names.IndexOf(CancelJobIntent));
     }
 
     [Fact]

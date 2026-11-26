@@ -5,7 +5,7 @@ namespace ReportService.Data.Tests;
 /// <summary>
 /// The block-limit policy of the streaming partitioner: where the soft target is
 /// reached (cut at the next group boundary) and where the hard maximum forces a cut.
-/// The expected values are ADR-022 §3.6's — soft target 1 000 records or 512 KiB of
+/// The expected values are the governed limits — soft target 1 000 records or 512 KiB of
 /// record bytes, hard maximum 2 000 records or 1 MiB, whichever first; a record is
 /// never split, and a block holds at least one record. Nothing here is read from the
 /// partitioner.

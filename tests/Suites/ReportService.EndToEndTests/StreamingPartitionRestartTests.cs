@@ -5,8 +5,8 @@ using ReportService.Storage;
 namespace ReportService.EndToEndTests;
 
 /// <summary>
-/// A forced mid-partition restart against real object storage (US-009 AC-9,
-/// partitioning stage; ADR-012 §3.5, Block RULE-05). A large snapshot is partitioned,
+/// A forced mid-partition restart against real object storage, at the
+/// partitioning stage. A large snapshot is partitioned,
 /// the driver is interrupted after a committed block, and the partition is resumed from
 /// the durable oracle — the committed block objects, the durable block index and the
 /// last returned checkpoint. The resumed partition is field-identical to a clean,
