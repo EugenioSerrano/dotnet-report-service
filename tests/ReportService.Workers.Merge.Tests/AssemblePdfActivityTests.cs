@@ -137,6 +137,38 @@ public sealed class AssemblePdfActivityTests
     }
 
     [Fact]
+    public async Task TheInterruptionIsOneShotAndTheResumedAttemptPublishesTheDocument()
+    {
+        using var harness = new MergeStepHarness(blocks: 2, pagesEach: 1);
+        var markerRoot = Path.Combine(harness.Root, "interrupt");
+        var first = new AssemblyInterruption(1, _ => throw new SimulatedExit(), markerRoot);
+
+        await Assert.ThrowsAsync<SimulatedExit>(() =>
+            new ActivityEnvironment().RunAsync(() =>
+                harness.Activity(first).RunAsync(new AssemblePdfInput(MergeStepHarness.JobId, MergeStepHarness.OutputId))));
+
+        var markers = Path.Combine(markerRoot, AssemblyInterruption.MarkerDirectory);
+        Assert.True(Directory.Exists(markers));
+        Assert.Single(Directory.EnumerateFiles(markers, "*.marker"));
+
+        // A resumed process builds a fresh seam from the same environment; the marker
+        // tells it the interruption was already consumed, so this attempt assembles the
+        // committed parts instead of exiting again.
+        var second = new AssemblyInterruption(1, _ => throw new SimulatedExit(), markerRoot);
+        Assert.True(second.IsConsumed(MergeStepHarness.OutputId));
+
+        var result = await new ActivityEnvironment().RunAsync(() =>
+            harness.Activity(second).RunAsync(new AssemblePdfInput(MergeStepHarness.JobId, MergeStepHarness.OutputId)));
+
+        Assert.Equal(2, result.PageCount);
+        Assert.True(result.SizeBytes > 0);
+        var stored = await harness.Store.OpenReadAsync(
+            ObjectKey.Create(result.ObjectKey), result.SizeBytes, result.Sha256, TestContext.Current.CancellationToken);
+        Assert.True(stored.Succeeded, stored.Outcome.ToString());
+        stored.Value!.Dispose();
+    }
+
+    [Fact]
     public async Task TheOutputKeyIsAttemptScoped()
     {
         using var harness = new MergeStepHarness(blocks: 1, pagesEach: 1);

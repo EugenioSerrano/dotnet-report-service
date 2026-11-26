@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -506,6 +507,19 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     private static string StorageRoot() => System.IO.Path.Combine(RepositoryPaths.Root, ".storage");
+
+    /// <summary>
+    /// The one-shot marker the test-only assembly interruption writes under the shared
+    /// storage root once it has fired. Its name mirrors the seam's own
+    /// (<c>AssemblyInterruption.MarkerName</c>: the SHA-256 of the output id), so the
+    /// case can wait for the interruption before resuming the worker.
+    /// </summary>
+    /// <param name="outputId">The output the assembly is for.</param>
+    public static string InterruptionMarker(string outputId) =>
+        System.IO.Path.Combine(
+            StorageRoot(),
+            "assembly-interrupt",
+            Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(outputId))) + ".marker");
 
     /// <summary>The handles one composition exposes to the stage's cases.</summary>
     public sealed record Composition(

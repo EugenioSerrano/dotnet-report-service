@@ -35,11 +35,14 @@ public static class MergeWorkerRegistration
 
         // The step is resolved with the process's own dependencies and then given the
         // interruption seam, which only the composition can install and only when the
-        // process is told to interrupt. A normal process holds none.
+        // process is told to interrupt. A normal process holds none. The seam's
+        // one-shot marker lives under the shared storage root the worker already
+        // mounts, so a resumed process sees it.
         services.AddSingleton(provider =>
         {
             var activity = ActivatorUtilities.CreateInstance<AssemblePdfActivity>(provider);
-            activity.Interruption = AssemblyInterruption.FromEnvironment();
+            activity.Interruption = AssemblyInterruption.FromEnvironment(
+                builder.Configuration["Storage:Filesystem:Root"]);
             return activity;
         });
 

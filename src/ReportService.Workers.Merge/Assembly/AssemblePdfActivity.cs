@@ -79,6 +79,11 @@ public sealed class AssemblePdfActivity(
         using var context = JobContext.Begin(input.ReportJobId, loggers);
         System.Diagnostics.Activity.Current?.SetTag("output.id", input.OutputId);
 
+        // The seam is one-shot per output: an attempt that starts after the marker
+        // was written assembles instead of exiting again, which is what lets the
+        // worker's retry finish from the committed parts.
+        var interruption = Interruption is { } seam && !seam.IsConsumed(input.OutputId) ? seam : null;
+
         var partition = await jobs.FindPartitionAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false)
             ?? throw Refuse(ExecutionFailed, "the job has no partition");
         if (partition.BlockCount < 1)
@@ -145,7 +150,7 @@ public sealed class AssemblePdfActivity(
                 work.Root,
                 AssemblyLimits.BatchSize,
                 Metrics: null,
-                OnBatch: batch => BatchWrittenAsync(work, batch));
+                OnBatch: batch => BatchWrittenAsync(work, batch, interruption, input.OutputId));
 
             AssemblyResult assembled;
             try
@@ -321,11 +326,15 @@ public sealed class AssemblePdfActivity(
         return parts;
     }
 
-    private async ValueTask BatchWrittenAsync(AssemblyTemporaryDirectory work, int batch)
+    private async ValueTask BatchWrittenAsync(
+        AssemblyTemporaryDirectory work,
+        int batch,
+        AssemblyInterruption? interruption,
+        string outputId)
     {
         ActivityExecutionContext.Current.Heartbeat();
         work.EnsureWithinQuota();
-        Interruption?.AfterBatch(batch);
+        interruption?.AfterBatch(batch, outputId);
         await ValueTask.CompletedTask;
     }
 
