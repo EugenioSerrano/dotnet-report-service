@@ -23,6 +23,12 @@ internal static class AssemblyFixture
     /// <summary>The reserved numbering area at the bottom of the page, in millimetres.</summary>
     public static NumberingArea Area { get; } = new(120, 268, 80, 8);
 
+    /// <summary>The width Chromium writes for an A4 page, in points (ADR-007 §1.3).</summary>
+    public const double ChromiumA4WidthPt = 594.95996d;
+
+    /// <summary>The height Chromium writes for an A4 page, in points (ADR-007 §1.3).</summary>
+    public const double ChromiumA4HeightPt = 841.91998d;
+
     /// <summary>The packaged font, read from the test project's own output.</summary>
     public static NumberingFont Font()
     {
@@ -63,7 +69,19 @@ internal static class AssemblyFixture
     }
 
     /// <summary>Creates one part: <paramref name="pages"/> pages, each carrying its own two words.</summary>
-    public static AssemblyPart CreatePart(string directory, int index, int pages, string fileName = "")
+    /// <param name="directory">The part's directory.</param>
+    /// <param name="index">The part's manifest position, which also names its file.</param>
+    /// <param name="pages">How many pages the part holds.</param>
+    /// <param name="fileName">A suffix that distinguishes parts built in one test.</param>
+    /// <param name="widthPt">The page width to print, in points; the frame's width when null.</param>
+    /// <param name="heightPt">The page height to print, in points; the frame's height when null.</param>
+    public static AssemblyPart CreatePart(
+        string directory,
+        int index,
+        int pages,
+        string fileName = "",
+        double? widthPt = null,
+        double? heightPt = null)
     {
         var path = Path.Combine(directory, $"part-{index}{(fileName.Length == 0 ? string.Empty : "-" + fileName)}.pdf");
         using (var document = new PdfDocument())
@@ -72,8 +90,8 @@ internal static class AssemblyFixture
             for (var page = 1; page <= pages; page++)
             {
                 var sheet = document.AddPage();
-                sheet.Width = XUnit.FromPoint(Frame.WidthPt);
-                sheet.Height = XUnit.FromPoint(Frame.HeightPt);
+                sheet.Width = XUnit.FromPoint(widthPt ?? Frame.WidthPt);
+                sheet.Height = XUnit.FromPoint(heightPt ?? Frame.HeightPt);
                 using var graphics = XGraphics.FromPdfPage(sheet);
                 graphics.DrawString(
                     $"part{index}page{page}start part{index}page{page}end",

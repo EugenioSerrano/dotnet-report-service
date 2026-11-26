@@ -26,7 +26,17 @@ public sealed record AssemblyVerificationRequest(
 /// </summary>
 public static class AssemblyVerifier
 {
-    private const double TolerancePt = 0.05d;
+    // A part's page box is the box its producer printed, not the assembler's own
+    // output: Chromium writes A4 as 594.95996 x 841.91998 while the declared frame is
+    // 595.27559 x 841.88976, a 0.31563 pt width delta. The render step already treats
+    // that page as the declared page (PageGeometryCheck, one point each side), and the
+    // assembly input compares the same fact with the same window - one shared constant.
+    private const double PageBoxTolerancePt = PageGeometryCheck.TolerancePt;
+
+    // The numbering area window is a different fact: the stamp is the assembler's own
+    // output, drawn inside the contract's area, so a twentieth of a point of rounding
+    // is enough and a misplaced or wrong-area stamp still falls outside.
+    private const double StampAreaTolerancePt = 0.05d;
 
     // The changes a stamped page may carry beside its source: the stamp's content
     // stream, the resources it needs, the transparency group some writers add, the
@@ -177,8 +187,8 @@ public static class AssemblyVerifier
             (width, height) = (height, width);
         }
 
-        return Math.Abs(width - frame.WidthPt) <= TolerancePt
-            && Math.Abs(height - frame.HeightPt) <= TolerancePt;
+        return Math.Abs(width - frame.WidthPt) <= PageBoxTolerancePt
+            && Math.Abs(height - frame.HeightPt) <= PageBoxTolerancePt;
     }
 
     private static AssemblyVerdict? StampVerdict(
@@ -242,10 +252,10 @@ public static class AssemblyVerifier
     {
         var x = (word.Left + word.Right) / 2d;
         var y = (word.Top + word.Bottom) / 2d;
-        return x >= area.LeftPt - TolerancePt
-            && x <= area.LeftPt + area.WidthPt + TolerancePt
-            && y >= area.TopPt - TolerancePt
-            && y <= area.TopPt + area.HeightPt + TolerancePt;
+        return x >= area.LeftPt - StampAreaTolerancePt
+            && x <= area.LeftPt + area.WidthPt + StampAreaTolerancePt
+            && y >= area.TopPt - StampAreaTolerancePt
+            && y <= area.TopPt + area.HeightPt + StampAreaTolerancePt;
     }
 
     private static string Normalize(string text) =>
