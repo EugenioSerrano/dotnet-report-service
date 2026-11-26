@@ -193,15 +193,15 @@ public sealed class SampleRenderCheckTests
     }
 
     [Fact]
-    public async Task DeclaredPageSubtotalsAreRefusedInTheirOwnWords()
+    public async Task ADeclaredAccountingBandThatWasNotPrintedIsRefusedInItsOwnWords()
     {
         var result = await Refused(new SampleFailure(
             SampleFailureKind.Verification,
             "template.yaml",
-            Reason: "page-accounting"));
+            Reason: "accounting-footer-missing"));
 
         Assert.Equal(
-            "template.yaml: the template declares page subtotals, which this service does not print. Print the totals in the template or turn them off.",
+            "template.yaml: the sample printed no accounting footer on a page. Declare outputs.pdf.pageTotals.footer and keep it inside the bottom margin band.",
             result.Reason);
     }
 

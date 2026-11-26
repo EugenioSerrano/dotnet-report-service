@@ -23,7 +23,7 @@ public static class TemplateDocumentBase
 /// <summary>
 /// Registers the take checks in the fixed order. The order is the contract: the same
 /// package always reports the same first refusal, and a later check may trust what an
-/// earlier one confirmed. The thirteen checks are the eleven static ones, the sample
+/// earlier one confirmed. The fourteen checks are the twelve static ones, the sample
 /// render and the record at the row bound last: the sample render needs the process to
 /// have registered the <c>ISampleRenderer</c> of the renderer it runs on, and the
 /// at-bound record is the most expensive render and the last thing between a well-formed
@@ -43,7 +43,8 @@ public static class TemplateChecksRegistration
         "TemplateLintCheck",
         "EngineVersionCheck",
         "NumberingContractCheck",
-        "PageAccountingCheck",
+        "AccountedDetailMarkupCheck",
+        "AccountingFooterCheck",
         "NamedFontFamilyCheck",
         "BottomAlignedGridCellCheck",
         "sample-render",
@@ -67,7 +68,8 @@ public static class TemplateChecksRegistration
         services.AddSingleton<ITemplateVersionCheck, TemplateLintCheck>();
         services.AddSingleton<ITemplateVersionCheck, EngineVersionCheck>();
         services.AddSingleton<ITemplateVersionCheck, NumberingContractCheck>();
-        services.AddSingleton<ITemplateVersionCheck, PageAccountingCheck>();
+        services.AddSingleton<ITemplateVersionCheck, AccountedDetailMarkupCheck>();
+        services.AddSingleton<ITemplateVersionCheck, AccountingFooterCheck>();
         services.AddSingleton<ITemplateVersionCheck, NamedFontFamilyCheck>();
         services.AddSingleton<ITemplateVersionCheck, BottomAlignedGridCellCheck>();
         services.AddSingleton<ITemplateVersionCheck, SampleRenderCheck>();

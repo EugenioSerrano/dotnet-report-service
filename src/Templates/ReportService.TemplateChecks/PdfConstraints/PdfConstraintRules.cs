@@ -84,6 +84,23 @@ public static class PdfConstraintRules
     /// <summary>The elements whose content the page never paints, whatever it holds.</summary>
     public static IReadOnlySet<string> NonRenderedElements { get; } = Set("script", "style", "template");
 
+    /// <summary>
+    /// The table markup of HTML: the elements a page-accounting template may not use
+    /// for detail, because a table row cannot be split before layout at line
+    /// boundaries while keeping the columns (ADR-021 §3.1 item 1, Alternative D).
+    /// </summary>
+    public static IReadOnlySet<string> TableElements { get; } = Set(
+        "table",
+        "thead",
+        "tbody",
+        "tfoot",
+        "tr",
+        "td",
+        "th",
+        "caption",
+        "colgroup",
+        "col");
+
     private static IReadOnlySet<string> Set(params string[] values) =>
         new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
 }

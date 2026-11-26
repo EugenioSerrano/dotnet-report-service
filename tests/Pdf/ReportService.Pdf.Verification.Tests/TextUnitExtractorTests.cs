@@ -20,6 +20,25 @@ public sealed class TextUnitExtractorTests
     }
 
     [Fact]
+    public void AUnitInsideAnAccountingCellIsMarkedAsAccounting()
+    {
+        var units = Units(Sample.Block((FragmentKind.DocumentStart, 0,
+            "<div class=\"item\"><div class=\"desc\">First</div><div data-role=\"amount\">10.00</div><span data-role=\"group-total\"><b>20.00</b></span></div>")));
+
+        Assert.Equal(["First", "10.00", "20.00"], units.Select(unit => unit.Text));
+        Assert.Equal([false, true, true], units.Select(unit => unit.Accounting));
+    }
+
+    [Fact]
+    public void AUnitAfterTheAccountingCellIsNotAccounting()
+    {
+        var units = Units(Sample.Block((FragmentKind.DocumentStart, 0,
+            "<div><div data-role=\"amount\">10.00</div></div><p>after</p>")));
+
+        Assert.Equal([true, false], units.Select(unit => unit.Accounting));
+    }
+
+    [Fact]
     public void AnInlineElementDoesNotSplitAUnit()
     {
         var units = Units(Sample.Block((FragmentKind.DocumentStart, 0, "<p>a<span>b</span><b>c</b>d</p>")));

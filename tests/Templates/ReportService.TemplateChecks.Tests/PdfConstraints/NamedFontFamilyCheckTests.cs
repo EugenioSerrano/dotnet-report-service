@@ -645,11 +645,12 @@ public sealed class NamedFontFamilyCheckTests
     }
 
     [Fact]
-    public void TheCheckRunsAfterThePageAccountingRuleAndBeforeTheGridRule()
+    public void TheCheckRunsAfterTheAccountingRulesAndBeforeTheGridRule()
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("PageAccountingCheck", order[^5]);
+        Assert.Equal("AccountedDetailMarkupCheck", order[^6]);
+        Assert.Equal("AccountingFooterCheck", order[^5]);
         Assert.Equal("NamedFontFamilyCheck", order[^4]);
         Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
         Assert.Equal("sample-render", order[^2]);

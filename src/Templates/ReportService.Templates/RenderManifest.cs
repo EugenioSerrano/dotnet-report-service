@@ -31,7 +31,7 @@ public sealed record RenderManifest(
     /// <summary>Whether the package declares <paramref name="part"/>.</summary>
     public bool Has(TemplatePart part) => Parts.ContainsKey(part);
 
-    /// <summary>Whether the package declares page subtotals, which this increment cannot print.</summary>
+    /// <summary>Whether the package declares page subtotals, which are printed on the accounting path.</summary>
     public bool DeclaresPageTotals => Pdf.PageTotalsEnabled;
 }
 
@@ -41,12 +41,44 @@ public sealed record RenderManifest(
 /// <param name="MarginMm">The declared margins, in millimetres.</param>
 /// <param name="PageTotalsEnabled">Whether the package declares page subtotals.</param>
 /// <param name="Verification">The fields the package prints as they are, or <see langword="null"/> when the manifest does not declare them.</param>
+/// <param name="AmountField">The record field the accounting totals sum, or <see langword="null"/>.</param>
+/// <param name="Scale">The fraction digits the printed accounting values carry.</param>
+/// <param name="Footer">The reserved accounting band and its labels, or <see langword="null"/>.</param>
+/// <param name="NumberingArea">The global page-numbering area the assembly stamps, or <see langword="null"/>.</param>
 public sealed record PdfSettings(
     string Paper,
     string Orientation,
     PageMarginsMm MarginMm,
     bool PageTotalsEnabled,
-    VerificationAnchors? Verification);
+    VerificationAnchors? Verification,
+    string? AmountField = null,
+    int Scale = 2,
+    AccountingFooter? Footer = null,
+    NumberingAreaMm? NumberingArea = null);
+
+/// <summary>The reserved global page-numbering area, in millimetres.</summary>
+/// <param name="LeftMm">The distance from the page's left edge.</param>
+/// <param name="TopMm">The distance from the page's top edge.</param>
+/// <param name="WidthMm">The area's width.</param>
+/// <param name="HeightMm">The area's height.</param>
+public sealed record NumberingAreaMm(double LeftMm, double TopMm, double WidthMm, double HeightMm);
+
+/// <summary>The reserved accounting band and the labels it prints, in millimetres.</summary>
+/// <param name="LeftMm">The distance from the page's left edge.</param>
+/// <param name="TopMm">The distance from the page's top edge.</param>
+/// <param name="WidthMm">The band's width.</param>
+/// <param name="HeightMm">The band's height.</param>
+/// <param name="BroughtForward">The template's label of the brought-forward line.</param>
+/// <param name="PageSubtotal">The template's label of the page-subtotal line.</param>
+/// <param name="CarriedForward">The template's label of the carried-forward line.</param>
+public sealed record AccountingFooter(
+    double LeftMm,
+    double TopMm,
+    double WidthMm,
+    double HeightMm,
+    string BroughtForward,
+    string PageSubtotal,
+    string CarriedForward);
 
 /// <summary>The declared margins of a page, in millimetres.</summary>
 public sealed record PageMarginsMm(double Top, double Right, double Bottom, double Left);

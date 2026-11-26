@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
+using ReportService.Rendering.Accounting;
+using ReportService.Rendering.Layout;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
@@ -189,12 +191,27 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         }
 
         var blockManifest = RenderManifestMapping.From(request.Manifest, declared, adapter.Version);
+
+        // The accounting contract is checked before anything is composed: a version that
+        // declares the totals without the band, or without the field the totals sum, prints
+        // nothing and is refused in the take's own words.
         if (blockManifest.DeclaresPageTotals)
         {
-            return FailedAttempt(new SampleFailure(
-                SampleFailureKind.Verification,
-                PackagePath.ManifestFileName,
-                Reason: VerificationReasons.PageAccounting));
+            if (blockManifest.Pdf.Footer is null)
+            {
+                return FailedAttempt(new SampleFailure(
+                    SampleFailureKind.Verification,
+                    PackagePath.ManifestFileName,
+                    Reason: VerificationReasons.AccountingFooterMissing));
+            }
+
+            if (string.IsNullOrWhiteSpace(blockManifest.Pdf.AmountField))
+            {
+                return FailedAttempt(new SampleFailure(
+                    SampleFailureKind.Verification,
+                    PackagePath.ManifestFileName,
+                    Reason: VerificationReasons.AccountingAmountInvalid));
+            }
         }
 
         var htmlManifest = HtmlManifestOf(request.Manifest, blockManifest);
@@ -234,6 +251,55 @@ public sealed class PdfSampleRenderer : ISampleRenderer
                     Reason: VerificationReasons.PageSettingsInvalid));
             }
 
+            // A package that declares page totals prints its sample on the accounting path
+            // too, with the sample's own block facts: it starts at record one, so it carries
+            // no opening and continues no group.
+            AccountingLayoutFacts? accountingFacts = null;
+            AccountingCheckInput? accounting = null;
+            if (blockManifest.DeclaresPageTotals)
+            {
+                accountingFacts = new AccountingLayoutFacts(
+                    0m,
+                    null,
+                    null,
+                    blockManifest.Pdf.Footer!,
+                    blockManifest.Pdf.Scale,
+                    presentation.Culture.Name,
+                    (double)(page.WidthMm - page.MarginLeftMm - page.MarginRightMm),
+                    (double)(page.HeightMm - page.MarginTopMm - page.MarginBottomMm));
+
+                var marked = BlockAccountingMarkup.Mark(block.Block!, new AccountingMarkupContext(
+                    blockManifest.Pdf.AmountField!,
+                    blockManifest.Pdf.Scale,
+                    presentation.Culture.Name,
+                    accountingFacts,
+                    ContinuesNextGroup: false,
+                    sample.Records.ToDictionary(record => record.Ordinal, record => record.Values)));
+                if (marked.Block is not { } markedBlock)
+                {
+                    return FailedAttempt(new SampleFailure(
+                        SampleFailureKind.Verification,
+                        PackagePath.ManifestFileName,
+                        Reason: marked.Reason,
+                        RecordOrdinal: marked.RecordOrdinal));
+                }
+
+                block = block with { Block = markedBlock };
+                accounting = new AccountingCheckInput(
+                    new BlockFacts(
+                        BlockIndex: 0,
+                        FirstRecordOrdinal: 1,
+                        [.. sample.Records.Select(record => new BlockRecord(record.Ordinal, record.Values))],
+                        sample.Header),
+                    new IndexFacts(BlockIndex: 0, sample.Records.Count, FirstRecordOrdinal: 1),
+                    blockManifest.Pdf.AmountField!,
+                    request.Manifest.Partitioning?.GroupKey,
+                    blockManifest.Pdf.Scale,
+                    presentation.Culture.Name,
+                    blockManifest.Pdf.Footer!,
+                    blockManifest.Pdf.NumberingArea);
+            }
+
             var pageRule = PageRule.From(page);
             var frame = PageFrame.FromMillimetres(
                 (double)page.WidthMm,
@@ -255,7 +321,8 @@ public sealed class PdfSampleRenderer : ISampleRenderer
                 block.Block!,
                 text,
                 blockManifest.Pdf.Verification,
-                IsFirstBlock: true);
+                IsFirstBlock: true,
+                PageAccounting: accountingFacts is not null);
 
             SourceCheckOutcome sourceChecks;
             long sourceChecksMs;
@@ -287,7 +354,15 @@ public sealed class PdfSampleRenderer : ISampleRenderer
             try
             {
                 print = await _printer
-                    .PrintAsync(pageRule.AppendTo(block.Block!.Text), pageRule, request.Files, pdfPath, budgetToken)
+                    .PrintAsync(
+                        new PdfPrintRequest(
+                            pageRule.AppendTo(block.Block!.Text),
+                            pageRule,
+                            request.Files,
+                            accountingFacts is null ? PdfPrintMode.Native : PdfPrintMode.Accounted,
+                            accountingFacts,
+                            pdfPath),
+                        budgetToken)
                     .ConfigureAwait(false);
             }
             catch (Exception exception)
@@ -301,10 +376,20 @@ public sealed class PdfSampleRenderer : ISampleRenderer
                 return attempt;
             }
 
+            if (print.Guard is { Breached: true } guard)
+            {
+                Delete(pdfPath);
+                return FailedAttempt(new SampleFailure(
+                    SampleFailureKind.Verification,
+                    PackagePath.ManifestFileName,
+                    Reason: VerificationReasons.LayoutGuard,
+                    BlockIndex: guard.Pages > 0 ? 0 : null));
+            }
+
             VerificationResult verification;
             try
             {
-                verification = _verifier.Verify(new PrintedCheckInput(pdfPath, 0, frame, block.Block!, text, sourceChecksMs));
+                verification = _verifier.Verify(new PrintedCheckInput(pdfPath, 0, frame, block.Block!, text, sourceChecksMs, accounting));
             }
             catch (Exception exception)
             {
@@ -466,7 +551,8 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         }
 
         var row = manifest.PathOf(TemplatePart.Row);
-        if (reason is "blank-page" or "no-page" or "page-size" or "page-settings-invalid" or "page-accounting")
+        if (reason is "blank-page" or "no-page" or "page-size" or "page-settings-invalid"
+            or "accounting-footer-missing" or "layout-guard")
         {
             return row ?? manifest.Stylesheets.FirstOrDefault() ?? PackagePath.ManifestFileName;
         }

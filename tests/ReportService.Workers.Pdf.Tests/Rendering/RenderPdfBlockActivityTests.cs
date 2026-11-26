@@ -1132,6 +1132,12 @@ internal sealed class PrinterThatMustNotPrint : IPdfPrinter
         Called = true;
         return Task.FromResult(new PrintOutcome(pdfPath, AbortedRequests: 0, ConsoleErrors: 0, TimeSpan.Zero));
     }
+
+    public Task<PrintOutcome> PrintAsync(ReportService.Rendering.Layout.PdfPrintRequest request, CancellationToken cancellationToken = default)
+    {
+        Called = true;
+        return Task.FromResult(new PrintOutcome(request.PdfPath, AbortedRequests: 0, ConsoleErrors: 0, TimeSpan.Zero));
+    }
 }
 
 /// <summary>What the product's meter published while a case ran, listened to by its own identity.</summary>

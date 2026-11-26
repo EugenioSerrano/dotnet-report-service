@@ -49,21 +49,37 @@ public sealed class BlockIndexPageTests
                 1,
                 3,
                 900,
-                ContinuesPreviousGroup: false,
+                ContinuesPreviousGroup: true,
                 ContinuesNextGroup: true,
                 OpeningGroupKey: "north",
                 OpeningCarriedForward: 0m,
-                BlockAmountTotal: 42.42m)],
+                BlockAmountTotal: 42.42m,
+                OpeningGroupAccumulated: 12.34m)],
             "page-boundary");
 
         var parsed = BlockIndexPage.Parse(BlockIndexPage.Serialize(page));
         var entry = Assert.Single(parsed.Blocks);
 
         Assert.Equal("page-boundary", parsed.ChunkLayout);
+        Assert.True(entry.ContinuesPreviousGroup);
         Assert.True(entry.ContinuesNextGroup);
         Assert.Equal("north", entry.OpeningGroupKey);
         Assert.Equal(0m, entry.OpeningCarriedForward);
         Assert.Equal(42.42m, entry.BlockAmountTotal);
+        Assert.Equal(12.34m, entry.OpeningGroupAccumulated);
+    }
+
+    [Fact]
+    public void APageWrittenBeforeTheOpenGroupAmountParsesItAsAbsent()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"partitionerVersion":2,"chunkLayout":"page-boundary","blocks":[{"blockIndex":0,"key":"block/job-0123456789abcdef0123456789abcdef/0/dd","sha256":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","sizeBytes":1024,"firstRecordOrdinal":1,"recordCount":3,"recordBytes":900,"continuesPreviousGroup":true,"continuesNextGroup":true,"openingGroupKey":"north","openingCarriedForward":0,"blockAmountTotal":42.42}]}""");
+
+        var parsed = BlockIndexPage.Parse(json);
+
+        var entry = Assert.Single(parsed.Blocks);
+        Assert.Null(entry.OpeningGroupAccumulated);
+        Assert.Equal("north", entry.OpeningGroupKey);
     }
 
     [Fact]

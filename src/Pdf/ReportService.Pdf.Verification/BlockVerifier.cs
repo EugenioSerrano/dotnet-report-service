@@ -18,6 +18,7 @@ public sealed class BlockVerifier
     private readonly AnchorCheck anchors = new();
     private readonly PageCheck pages = new();
     private readonly PageGeometryCheck geometry = new();
+    private readonly PageAccountingCheck accounting = new();
     private readonly ContentOrderAligner aligner;
 
     /// <summary>Creates a verifier whose alignment spends at most <paramref name="alignmentBudget"/> comparisons per block.</summary>
@@ -45,6 +46,17 @@ public sealed class BlockVerifier
         {
             sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             return SourceCheckOutcome.Fail(VerificationReasons.AnchorsUndeclared);
+        }
+
+        // A block that continues a group owes its group total the group's earlier rows;
+        // the partition records that opening, and a block that lacks it fails closed
+        // rather than printing the total as if the group began here.
+        if (input.PageAccounting
+            && input.Index.ContinuesPreviousGroup
+            && input.Index.OpeningGroupAccumulated is null)
+        {
+            sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            return SourceCheckOutcome.Fail(VerificationReasons.AccountingIndexIncomplete);
         }
 
         var outcome = coverage.CheckSource(input);
@@ -132,7 +144,9 @@ public sealed class BlockVerifier
         }
 
         var pageTexts = reading.Pages
-            .Select(PlacementConvention.ContentText)
+            .Select(page => input.Accounting is null
+                ? PlacementConvention.ContentText(page)
+                : AccountingReading.ContentTextWithoutMark(page))
             .ToList();
         var alignment = aligner.Align(pageTexts, input.Text.Units);
         if (!alignment.Passed)
@@ -162,6 +176,23 @@ public sealed class BlockVerifier
                 reading.WordCount,
                 Elapsed(started),
                 input.SourceChecksMs);
+        }
+
+        if (accounting.Check(input, reading, alignment) is { Passed: false } verdict)
+        {
+            return VerificationResult.Failed(
+                verdict.Reason!,
+                input.BlockIndex,
+                verdict.Page,
+                null,
+                null,
+                reading.Pages.Count,
+                reading.WordCount,
+                Elapsed(started),
+                input.SourceChecksMs) with
+            {
+                RecordOrdinal = verdict.RecordOrdinal,
+            };
         }
 
         return new VerificationResult(

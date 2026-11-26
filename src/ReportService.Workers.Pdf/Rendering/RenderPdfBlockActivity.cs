@@ -269,7 +269,9 @@ public sealed class RenderPdfBlockActivity(
                     records.Count,
                     entry.FirstRecordOrdinal,
                     IsFirst: input.BlockIndex == 0,
-                    IsLast: input.BlockIndex == partition.BlockCount - 1),
+                    IsLast: input.BlockIndex == partition.BlockCount - 1,
+                    ContinuesPreviousGroup: entry.ContinuesPreviousGroup,
+                    ContinuesNextGroup: entry.ContinuesNextGroup),
                 header,
                 records,
                 new CompositionRender(
@@ -284,7 +286,15 @@ public sealed class RenderPdfBlockActivity(
                 composition,
                 files,
                 new PartitionFacts(partition.BlockCount, partition.RecordCount),
-                new IndexFacts(entry.BlockIndex, entry.RecordCount, entry.FirstRecordOrdinal),
+                new IndexFacts(
+                    entry.BlockIndex,
+                    entry.RecordCount,
+                    entry.FirstRecordOrdinal,
+                    entry.ContinuesPreviousGroup,
+                    entry.ContinuesNextGroup,
+                    entry.OpeningGroupKey,
+                    entry.OpeningCarriedForward,
+                    entry.OpeningGroupAccumulated),
                 new BlockFacts(
                     entry.BlockIndex,
                     entry.FirstRecordOrdinal,
@@ -498,18 +508,6 @@ public sealed class RenderPdfBlockActivity(
     private ApplicationFailureException VerificationFailed(RenderPdfBlockInput input, BlockRenderOutcome outcome)
     {
         var verification = outcome.Verification;
-        if (string.Equals(verification.Reason, VerificationReasons.PageAccounting, StringComparison.Ordinal))
-        {
-            logger.LogWarning(
-                "Block {BlockIndex} of output {OutputId} refused: the package declares page totals",
-                input.BlockIndex,
-                input.OutputId);
-            return new ApplicationFailureException(
-                $"the package declares page totals, which this service cannot print (reason={verification.Reason})",
-                errorType: UnsupportedCapability,
-                nonRetryable: true);
-        }
-
         if (string.Equals(verification.Reason, VerificationReasons.PageSettingsInvalid, StringComparison.Ordinal))
         {
             // The member's path is configuration, never a value of the consumer's data.

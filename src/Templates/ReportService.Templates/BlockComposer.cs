@@ -26,7 +26,8 @@ public enum FragmentKind
 /// <param name="Start">The byte offset of its first byte.</param>
 /// <param name="Length">Its length in bytes.</param>
 /// <param name="RecordOrdinal">The record it belongs to, or 0 for a document or group fragment.</param>
-public sealed record ComposedFragment(FragmentKind Kind, int Start, int Length, long RecordOrdinal);
+/// <param name="GroupKey">The group the fragment belongs to, or <see langword="null"/> when the package groups none.</param>
+public sealed record ComposedFragment(FragmentKind Kind, int Start, int Length, long RecordOrdinal, string? GroupKey = null);
 
 /// <summary>A composed block: the HTML a printed page is laid out from, and the map of its fragments.</summary>
 public sealed class ComposedBlock(byte[] html, IReadOnlyList<ComposedFragment> fragments)
@@ -62,7 +63,16 @@ public sealed record ComposedRecord(long Ordinal, IReadOnlyDictionary<string, ob
 /// <param name="FirstRecordOrdinal">The ordinal of its first record.</param>
 /// <param name="IsFirst">Whether it is the first block of the job.</param>
 /// <param name="IsLast">Whether it is the last block of the job.</param>
-public sealed record CompositionBlock(int Index, long RecordCount, long FirstRecordOrdinal, bool IsFirst, bool IsLast);
+/// <param name="ContinuesPreviousGroup">Whether the block's first record continues a group carried in from the previous block.</param>
+/// <param name="ContinuesNextGroup">Whether the block's last group continues into the next block.</param>
+public sealed record CompositionBlock(
+    int Index,
+    long RecordCount,
+    long FirstRecordOrdinal,
+    bool IsFirst,
+    bool IsLast,
+    bool ContinuesPreviousGroup = false,
+    bool ContinuesNextGroup = false);
 
 /// <summary>The fixed render values of the job.</summary>
 /// <param name="Culture">The job's culture.</param>
@@ -136,7 +146,7 @@ public sealed class BlockComposer(TimeProvider clock)
             await stall.StallAsync(RenderPhase.Composition, cancellationToken).ConfigureAwait(false);
         }
 
-        Compose(request, adapter, settings, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, adapter, settings, TemplatePart.DocumentStart, FragmentKind.DocumentStart, null, null, 0, null, writer, fragments, cancellationToken);
 
         string? groupKey = null;
         for (var i = 0; i < request.Records.Count; i++)
@@ -147,20 +157,20 @@ public sealed class BlockComposer(TimeProvider clock)
             if (startsGroup)
             {
                 groupKey = key;
-                ComposeGroup(request, adapter, settings, key, first: true, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, adapter, settings, key, first: true, continuesPrevious: i == 0 && request.Block.ContinuesPreviousGroup, record.Ordinal, writer, fragments, cancellationToken);
             }
 
-            Compose(request, adapter, settings, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, writer, fragments, cancellationToken);
+            Compose(request, adapter, settings, TemplatePart.Row, FragmentKind.Row, record.Values, null, record.Ordinal, key, writer, fragments, cancellationToken);
 
             var endsGroup = request.GroupKey is not null
                 && (i == request.Records.Count - 1 || !SameKey(KeyOf(request, request.Records[i + 1]), key));
             if (endsGroup)
             {
-                ComposeGroup(request, adapter, settings, key, first: false, record.Ordinal, writer, fragments, cancellationToken);
+                ComposeGroup(request, adapter, settings, key, first: false, continuesPrevious: false, record.Ordinal, writer, fragments, cancellationToken);
             }
         }
 
-        Compose(request, adapter, settings, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, writer, fragments, cancellationToken);
+        Compose(request, adapter, settings, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, null, writer, fragments, cancellationToken);
 
         text.Flush();
         var html = stream.ToArray();
@@ -178,6 +188,7 @@ public sealed class BlockComposer(TimeProvider clock)
         PresentationSettings settings,
         string? key,
         bool first,
+        bool continuesPrevious,
         long ordinal,
         GuardedWriter writer,
         List<ComposedFragment> fragments,
@@ -190,9 +201,16 @@ public sealed class BlockComposer(TimeProvider clock)
             return;
         }
 
-        var group = RenderContextFactory.Group(key, first, continuesFromPreviousBlock: false, continuesInNextBlock: false);
-        Compose(request, adapter, settings, part, kind, null, group, ordinal, writer, fragments, cancellationToken);
+        // A group that spans a block boundary says so: the first group of a block that
+        // continues one carries the continuity in, and a group end carries it out when the
+        // block ends inside it.
+        var continuesNext = !first && request.Block.ContinuesNextGroup && ordinal == LastRecordOrdinal(request);
+        var group = RenderContextFactory.Group(key, first, continuesPrevious, continuesNext);
+        Compose(request, adapter, settings, part, kind, null, group, ordinal, key, writer, fragments, cancellationToken);
     }
+
+    private static long LastRecordOrdinal(CompositionRequest request) =>
+        request.Records.Count > 0 ? request.Records[^1].Ordinal : 0;
 
     private void Compose(
         CompositionRequest request,
@@ -203,6 +221,7 @@ public sealed class BlockComposer(TimeProvider clock)
         IReadOnlyDictionary<string, object?>? item,
         IReadOnlyDictionary<string, object?>? group,
         long recordOrdinal,
+        string? fragmentGroupKey,
         GuardedWriter writer,
         List<ComposedFragment> fragments,
         CancellationToken cancellationToken)
@@ -229,7 +248,7 @@ public sealed class BlockComposer(TimeProvider clock)
 
         var start = checked((int)writer.BytesWritten);
         adapter.RenderPart(request.Template, part, context, settings, writer, cancellationToken);
-        fragments.Add(new ComposedFragment(kind, start, checked((int)writer.BytesWritten) - start, kind == FragmentKind.Row ? recordOrdinal : 0));
+        fragments.Add(new ComposedFragment(kind, start, checked((int)writer.BytesWritten) - start, kind == FragmentKind.Row ? recordOrdinal : 0, fragmentGroupKey));
     }
 
     private static string? KeyOf(CompositionRequest request, ComposedRecord record)

@@ -26,12 +26,15 @@ public sealed class ShippedSamplesTests
         var candidate = Packages.ReadCandidate(folder);
         using var session = new TemplateCheckSession(TimeProvider.System);
 
-        var pageAccounting = await new PageAccountingCheck().CheckAsync(candidate, TestContext.Current.CancellationToken);
+        var pageAccounting = await new AccountedDetailMarkupCheck(session).CheckAsync(candidate, TestContext.Current.CancellationToken);
+        var accountingFooter = await new AccountingFooterCheck().CheckAsync(candidate, TestContext.Current.CancellationToken);
         var fontFamily = await new NamedFontFamilyCheck(session).CheckAsync(candidate, TestContext.Current.CancellationToken);
         var gridCell = await new BottomAlignedGridCellCheck(session).CheckAsync(candidate, TestContext.Current.CancellationToken);
 
         Assert.True(pageAccounting.Passed, pilot + ": " + pageAccounting.Reason);
         Assert.Null(pageAccounting.Reason);
+        Assert.True(accountingFooter.Passed, pilot + ": " + accountingFooter.Reason);
+        Assert.Null(accountingFooter.Reason);
         Assert.True(fontFamily.Passed, pilot + ": " + fontFamily.Reason);
         Assert.Null(fontFamily.Reason);
         Assert.True(gridCell.Passed, pilot + ": " + gridCell.Reason);

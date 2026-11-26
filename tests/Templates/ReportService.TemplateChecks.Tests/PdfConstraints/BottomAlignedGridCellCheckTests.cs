@@ -441,7 +441,9 @@ public sealed class BottomAlignedGridCellCheckTests
         var candidate = Packages.ReadCandidate(package.Directory);
         using var session = new TemplateCheckSession(TimeProvider.System);
 
-        var pageAccounting = await new PageAccountingCheck()
+        var pageAccounting = await new AccountedDetailMarkupCheck(session)
+            .CheckAsync(candidate, TestContext.Current.CancellationToken);
+        var accountingFooter = await new AccountingFooterCheck()
             .CheckAsync(candidate, TestContext.Current.CancellationToken);
         var fontFamily = await new NamedFontFamilyCheck(session)
             .CheckAsync(candidate, TestContext.Current.CancellationToken);
@@ -449,7 +451,10 @@ public sealed class BottomAlignedGridCellCheckTests
             .CheckAsync(candidate, TestContext.Current.CancellationToken);
 
         Assert.False(pageAccounting.Passed);
-        Assert.Equal(TemplateCheckCodes.UnsupportedCapability, pageAccounting.Code);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, pageAccounting.Code);
+        Assert.Contains("data-role=\"amount\"", pageAccounting.Reason!, StringComparison.Ordinal);
+        Assert.False(accountingFooter.Passed);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, accountingFooter.Code);
         Assert.False(fontFamily.Passed);
         Assert.Equal(TemplateCheckCodes.TemplateInvalid, fontFamily.Code);
         Assert.Contains("sans-serif", fontFamily.Reason!, StringComparison.Ordinal);
@@ -459,7 +464,7 @@ public sealed class BottomAlignedGridCellCheckTests
     }
 
     [Fact]
-    public async Task TheFirstRefusalOfTheMultiFaultVersionIsPageAccountingOnEveryRun()
+    public async Task TheFirstRefusalOfTheMultiFaultVersionIsTheDetailRuleOnEveryRun()
     {
         using var package = Packages.WritePackage(PdfConstraintFixtures.MultiFault());
         var candidate = Packages.ReadCandidate(package.Directory);
@@ -468,10 +473,10 @@ public sealed class BottomAlignedGridCellCheckTests
         var second = await Packages.RunAsync(Packages.Checks(), candidate);
 
         Assert.False(first.Passed);
-        Assert.Equal(TemplateCheckCodes.UnsupportedCapability, first.Code);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, first.Code);
         Assert.NotNull(first.Reason);
-        Assert.StartsWith("template.yaml:", first.Reason, StringComparison.Ordinal);
-        Assert.Contains("page subtotals", first.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("html/row.html.sbn:", first.Reason, StringComparison.Ordinal);
+        Assert.Contains("data-role", first.Reason, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(first.Code, second.Code);
         Assert.Equal(first.Reason, second.Reason);
     }
@@ -496,7 +501,7 @@ public sealed class BottomAlignedGridCellCheckTests
         var candidate = Packages.ReadCandidate(package.Directory);
         using var session = new TemplateCheckSession(TimeProvider.System);
 
-        var pageAccounting = await new PageAccountingCheck()
+        var pageAccounting = await new AccountedDetailMarkupCheck(session)
             .CheckAsync(candidate, TestContext.Current.CancellationToken);
         var fontFamily = await new NamedFontFamilyCheck(session)
             .CheckAsync(candidate, TestContext.Current.CancellationToken);
@@ -516,7 +521,7 @@ public sealed class BottomAlignedGridCellCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("PageAccountingCheck", order[^5]);
+        Assert.Equal("AccountingFooterCheck", order[^5]);
         Assert.Equal("NamedFontFamilyCheck", order[^4]);
         Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
         Assert.Equal("sample-render", order[^2]);
@@ -527,7 +532,7 @@ public sealed class BottomAlignedGridCellCheckTests
             .AddTemplateVersionChecks()
             .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();
-        Assert.Equal("PageAccountingCheck", names[^5]);
+        Assert.Equal("AccountingFooterCheck", names[^5]);
         Assert.Equal("NamedFontFamilyCheck", names[^4]);
         Assert.Equal("BottomAlignedGridCellCheck", names[^3]);
         Assert.Equal("sample-render", names[^2]);

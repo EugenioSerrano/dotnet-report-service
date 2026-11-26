@@ -127,7 +127,51 @@ public static class RenderManifestMapping
             (double)(pdf.MarginMm?.Bottom ?? 0m),
             (double)(pdf.MarginMm?.Left ?? 0m)),
         pdf.PageTotals?.Enabled ?? false,
-        AnchorsOf(pdf.Verification?.Anchors));
+        AnchorsOf(pdf.Verification?.Anchors),
+        pdf.PageTotals?.AmountField,
+        ScaleOf(pdf.PageTotals?.Scale),
+        FooterOf(pdf.PageTotals?.Footer),
+        AreaOf(pdf.Numbering?.Area));
+
+    /// <summary>The reserved global page-numbering area, or <see langword="null"/> when the package declares none.</summary>
+    private static NumberingAreaMm? AreaOf(TemplateNumberingArea? area) =>
+        area?.LeftMm is { } left
+        && area.TopMm is { } top
+        && area.WidthMm is { } width
+        && area.HeightMm is { } height
+            ? new NumberingAreaMm((double)left, (double)top, (double)width, (double)height)
+            : null;
+
+    /// <summary>
+    /// The fraction digits the printed values use. An absent declaration prints at two
+    /// digits; a declared value is read as the whole number the take admitted.
+    /// </summary>
+    private static int ScaleOf(decimal? scale) =>
+        scale is { } declared && declared >= 0m && declared <= 9m && declared == decimal.Truncate(declared)
+            ? (int)declared
+            : 2;
+
+    /// <summary>The reserved accounting band, or <see langword="null"/> when the package declares none.</summary>
+    private static AccountingFooter? FooterOf(TemplateAccountingFooter? footer)
+    {
+        if (footer?.LeftMm is not { } left
+            || footer.TopMm is not { } top
+            || footer.WidthMm is not { } width
+            || footer.HeightMm is not { } height
+            || footer.Labels is not { } labels)
+        {
+            return null;
+        }
+
+        return new AccountingFooter(
+            (double)left,
+            (double)top,
+            (double)width,
+            (double)height,
+            labels.BroughtForward ?? string.Empty,
+            labels.PageSubtotal ?? string.Empty,
+            labels.CarriedForward ?? string.Empty);
+    }
 
     /// <summary>
     /// The declared fields, or <see langword="null"/> when the package declares none:
