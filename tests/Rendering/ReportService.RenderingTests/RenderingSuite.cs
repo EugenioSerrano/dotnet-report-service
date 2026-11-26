@@ -8,6 +8,7 @@ using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using ReportService.Testing;
 using ReportService.Testing.Fixtures;
+using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.VerificationLoss;
 
 namespace ReportService.RenderingTests;
@@ -442,6 +443,14 @@ public sealed class RenderingSuite : IAsyncLifetime
         {
             CopyFolder(version, Path.Combine(PackagesDirectory, "sample-gate-" + Path.GetFileName(version)));
         }
+
+        // The page-accounting fixture is built by the test support, so the suite prints the same
+        // package the end-to-end cases publish: the band, the role markers and the numbering
+        // contract are written once, in the fixture.
+        PageAccountingFixtures.WriteFolder(
+            Path.Combine(PackagesDirectory, PageAccountingFixtures.TemplateId),
+            "consumer-a",
+            PageAccountingFixtures.TemplateId);
 
         // The verification-loss corpus packages are printed by this tier alone, and each keeps
         // its own folder: the host composes a document from the package it is mounted under.

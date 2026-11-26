@@ -1,0 +1,32 @@
+{
+  "_note": "The page-accounting declaration of the fixture package: the band's geometry and labels, the amount field, the scale, the culture and the reserved numbering area. It is consumed by the rendering and end-to-end accounting oracle (tests/Support/ReportService.Testing/Fixtures/PageAccountingExpectations.cs), not by ReportService.PdfOracle: that judge refuses grouped documents and continuation marks by design, so the accounting document is judged by the independent source oracle instead. A hermetic case holds this file to the fixture's own manifest.",
+  "paper": "A4",
+  "widthMm": 210,
+  "heightMm": 297,
+  "marginMm": { "top": 15, "right": 12, "bottom": 18, "left": 12 },
+  "amountField": "amount",
+  "groupKey": "groupId",
+  "scale": 2,
+  "culture": "es-AR",
+  "footer": {
+    "leftMm": 12,
+    "topMm": 280,
+    "widthMm": 186,
+    "heightMm": 14,
+    "labels": {
+      "broughtForward": "Saldo anterior",
+      "pageSubtotal": "Subtotal de pagina",
+      "carriedForward": "Saldo siguiente"
+    }
+  },
+  "numbering": {
+    "area": { "leftMm": 12, "topMm": 4, "widthMm": 70, "heightMm": 8 },
+    "format": "Pagina {X} de {Y}",
+    "culture": "es-AR"
+  },
+  "fixtures": {
+    "rendering": "GE30",
+    "zeroRecord": "K0",
+    "multiBlock": "pilot-grouped"
+  }
+}

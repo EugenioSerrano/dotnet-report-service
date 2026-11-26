@@ -24,6 +24,7 @@ using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Templates;
 using ReportService.Testing;
+using ReportService.Testing.Fixtures;
 using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
 using ReportService.Testing.Uploads;
@@ -46,18 +47,27 @@ internal sealed class MultiBlockStage : IDisposable
     /// <summary>The consumer every job and template belongs to.</summary>
     public const string Consumer = "consumer-a";
 
-    /// <summary>The published template identity.</summary>
+    /// <summary>The published template identity of the native multi-block package.</summary>
     public const string Template = "pilot-multi-block";
 
-    /// <summary>The shipped sample the package is built from.</summary>
+    /// <summary>The shipped sample the native package is built from.</summary>
     public const string Sample = "pilot-simple";
 
     /// <summary>The version every package declares.</summary>
     public const string Version = "1.0.0";
 
     private const int SnapshotRecords = 3_000;
+
+    /// <summary>The accounted slice: it must reach the pilot dataset's one group larger than a block (G0012, 2 400 records).</summary>
+    private const int AccountingSnapshotRecords = 6_000;
     private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
     private static readonly TimeSpan JobDeadline = TimeSpan.FromMinutes(15);
+
+    private readonly bool _accounted;
+
+    private readonly string? _templateId;
+
+    private readonly string? _amountField;
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -74,11 +84,39 @@ internal sealed class MultiBlockStage : IDisposable
         (double)NumberedMultiBlockFixture.AreaWidthMm,
         (double)NumberedMultiBlockFixture.AreaHeightMm);
 
+    /// <summary>The accounted fixture's numbering area, in points: the top band the accounting print leaves free.</summary>
+    public static NumberingBounds AccountedArea { get; } = NumberingBounds.FromMillimetres(
+        (double)PageAccountingFixtures.NumberingLeftMm,
+        (double)PageAccountingFixtures.NumberingTopMm,
+        (double)PageAccountingFixtures.NumberingWidthMm,
+        (double)PageAccountingFixtures.NumberingHeightMm);
+
     /// <summary>The directory this stage's evidence and temporary files live under.</summary>
     public string Directory => _directory;
 
+    /// <summary>The template identity the stage publishes: the native package or the accounted one.</summary>
+    public string TemplateId => _accounted ? _templateId ?? PageAccountingFixtures.TemplateId : Template;
+
+    /// <summary>The numbering area the stage's package declares, in points.</summary>
+    public NumberingBounds ReserveArea => _accounted ? AccountedArea : Area;
+
+    /// <summary>The records of the accounted snapshot, in ordinal order, for the independent oracle.</summary>
+    public IReadOnlyList<AccountedRecord> AccountingRecords { get; private set; } = [];
+
+    /// <summary>The declaration the accounted package and its expected values follow.</summary>
+    public PageAccountingDeclaration AccountingDeclaration => PageAccountingDeclaration.Load();
+
     /// <summary>Creates the stage's directory.</summary>
-    public MultiBlockStage() => System.IO.Directory.CreateDirectory(_directory);
+    /// <param name="accounted">Whether the stage publishes and renders the page-accounting fixture instead of the native one.</param>
+    /// <param name="templateId">The published identity, or the fixture's own.</param>
+    /// <param name="amountField">The amount field the accounted fixture declares, or its own; a non-numeric field is the known-bad control.</param>
+    public MultiBlockStage(bool accounted = false, string? templateId = null, string? amountField = null)
+    {
+        _accounted = accounted;
+        _templateId = templateId;
+        _amountField = amountField;
+        System.IO.Directory.CreateDirectory(_directory);
+    }
 
     /// <summary>Starts the composition and returns the handles a case reads through.</summary>
     public async Task<Composition> StartAsync(CancellationToken cancellationToken)
@@ -118,11 +156,14 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     /// <summary>Takes the multi-block template with its numbering contract, font and native page counter.</summary>
-    public async Task TakeTemplateAsync(Composition composition, CancellationToken cancellationToken)
+    public async Task TakeTemplateAsync(
+        Composition composition,
+        CancellationToken cancellationToken,
+        IReadOnlyList<ReportService.TemplateSource.Checks.ITemplateVersionCheck>? checks = null)
     {
         var source = TemplateSourceClass.Over(composition.Storage);
-        await source.RemoveAsync(Template, Version);
-        await source.PublishAsync(Template, Version, PackageFiles());
+        await source.RemoveAsync(TemplateId, Version);
+        await source.PublishAsync(TemplateId, Version, PackageFiles());
 
         var options = new TemplateSourceOptions();
         var take = new TemplateTake(
@@ -135,15 +176,39 @@ internal sealed class MultiBlockStage : IDisposable
             composition.Storage,
             new TemplateManifestReader(),
             new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
-            [],
+            checks ?? [],
             new TemplateTakeMetrics(),
             TimeProvider.System,
             Options.Create(options),
             NullLogger<TemplateTake>.Instance);
 
-        var outcome = await take.TakeAsync(Template, Version, Consumer, reportJobId: null, cancellationToken);
+        var outcome = await take.TakeAsync(TemplateId, Version, Consumer, reportJobId: null, cancellationToken);
         var record = outcome.Record
             ?? throw new InvalidOperationException("the multi-block template was not taken: " + outcome.Name);
+
+        if (_accounted)
+        {
+            // The accounted fixture's declaration must survive the publication: a package the
+            // renderer would refuse at take is refused here, in the fixture, not later.
+            var totals = record.Manifest.Outputs?.Pdf?.PageTotals;
+            if (totals is not { Enabled: true }
+                || string.IsNullOrWhiteSpace(totals.AmountField)
+                || totals.Footer?.Labels is not { BroughtForward: { Length: > 0 }, PageSubtotal: { Length: > 0 }, CarriedForward: { Length: > 0 } })
+            {
+                throw new InvalidOperationException("the accounted fixture's taken manifest carries no usable outputs.pdf.pageTotals");
+            }
+
+            var contract = record.Manifest.Outputs?.Pdf?.Numbering;
+            if (contract?.Area is not { LeftMm: not null, TopMm: not null, WidthMm: not null, HeightMm: not null }
+                || contract.Font is not { Family: { Length: > 0 }, File: { Length: > 0 }, SizePt: not null }
+                || string.IsNullOrWhiteSpace(contract.Format)
+                || string.IsNullOrWhiteSpace(contract.Culture))
+            {
+                throw new InvalidOperationException("the accounted fixture's taken outputs.pdf.numbering is incomplete");
+            }
+
+            return;
+        }
 
         // The fixture's numbering contract must survive the injection: a silent no-op once
         // reached the covering run and the merge worker correctly refused the package
@@ -182,9 +247,11 @@ internal sealed class MultiBlockStage : IDisposable
     /// wrote - so the handoff helpers accept either order instead of assuming the
     /// upload is still verifying.
     /// </summary>
-    public async Task<string> SeedConfirmingUploadAsync(Composition composition, CancellationToken cancellationToken)
+    public async Task<string> SeedConfirmingUploadAsync(Composition composition, CancellationToken cancellationToken, int? recordsInSnapshot = null)
     {
-        var snapshot = Snapshot(SnapshotRecords);
+        var recordsInSlice = recordsInSnapshot ?? (_accounted ? AccountingSnapshotRecords : SnapshotRecords);
+        var (snapshot, records) = SnapshotForUpload(recordsInSlice);
+        AccountingRecords = records;
         var seed = await ConfirmingUploadSeed.SeedAsync(
             composition.Uploads,
             composition.Storage,
@@ -200,14 +267,14 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     /// <summary>Submits the job for the upload and answers its identifier.</summary>
-    public async Task<string> SubmitAsync(Composition composition, string uploadId, CancellationToken cancellationToken)
+    public async Task<string> SubmitAsync(Composition composition, string uploadId, CancellationToken cancellationToken, string outputs = "\"pdf\"")
     {
         using var api = composition.App.CreateHttpClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
-                "{\"template\":{\"id\":\"" + Template + "\",\"version\":\"" + Version + "\"},"
-                + "\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[\"pdf\"]}",
+                "{\"template\":{\"id\":\"" + TemplateId + "\",\"version\":\"" + Version + "\"},"
+                + "\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[" + outputs + "]}",
                 Encoding.UTF8,
                 "application/json"),
         };
@@ -228,7 +295,9 @@ internal sealed class MultiBlockStage : IDisposable
     {
         var snapshot = await File.ReadAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
         using var source = new MemoryStream(snapshot, writable: false);
-        var driver = new DurablePartitionDriver(composition.Storage, new PartitionSpec(GroupKeyField: null, "amount", PartitionLimits.Default));
+        var driver = new DurablePartitionDriver(
+            composition.Storage,
+            new PartitionSpec(GroupKeyField: _accounted ? PageAccountingFixtures.GroupKey : null, "amount", PartitionLimits.Default));
         var partition = await driver.RunAsync(
             reportJobId,
             HeaderItemsReader.ReadAsync(source, cancellationToken),
@@ -452,8 +521,13 @@ internal sealed class MultiBlockStage : IDisposable
             reader.IsDBNull(8) ? null : reader.GetInt64(8));
     }
 
-    private static Dictionary<string, byte[]> PackageFiles()
+    private Dictionary<string, byte[]> PackageFiles()
     {
+        if (_accounted)
+        {
+            return PageAccountingFixtures.Files(Consumer, TemplateId, _amountField ?? PageAccountingFixtures.AmountField);
+        }
+
         var root = System.IO.Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var file in System.IO.Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
@@ -505,6 +579,17 @@ internal sealed class MultiBlockStage : IDisposable
         return Encoding.UTF8.GetBytes(sample.ToJsonString());
     }
 
+    /// <summary>The snapshot a job uploads, and the accounted records the oracle needs.</summary>
+    private (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) SnapshotForUpload(int records) =>
+        _accounted ? AccountingSnapshot(records) : (Snapshot(records), []);
+
+    /// <summary>
+    /// The first records of the pilot grouped dataset, with the fixture package's header:
+    /// the dataset's per-group structure gives one group larger than a block, and its amounts
+    /// and group keys are kept for the independent oracle.
+    /// </summary>
+    private static (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) AccountingSnapshot(int records) =>
+        PageAccountingFixtures.ReadGroupedSlice(records);
     private static string StorageRoot() => System.IO.Path.Combine(RepositoryPaths.Root, ".storage");
 
     /// <summary>

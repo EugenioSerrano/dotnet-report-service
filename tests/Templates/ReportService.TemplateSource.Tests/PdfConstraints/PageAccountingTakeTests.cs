@@ -16,12 +16,13 @@ using ManifestReader = ReportService.TemplateSource.Manifest.TemplateManifestRea
 namespace ReportService.TemplateSource.Tests.PdfConstraints;
 
 /// <summary>
-/// The page-subtotal refusal at the take, over the real source read: a version that
-/// declares the printed totals is refused when it is taken, with the capability code
-/// and no record, no object and no leftover; a version that declares them off or
-/// leaves the member out is taken and kept as its write-once object and its record,
-/// and the second take of it answers that it is already taken. The take's own log
-/// line is asserted for what it carries.
+/// The page-accounting admission at the take, over the real source read: a version that
+/// declares the printed totals without the accounting contract is refused as
+/// <c>TEMPLATE_INVALID</c> by the rules that replaced the old capability refusal, with no
+/// record, no object and no leftover; a version that declares the contract — a grid row
+/// with an amount role, a group total role, the reserved band and its three labels — is
+/// taken and kept as its write-once object and its record; a version that declares no
+/// totals is unaffected. The take's own log line is asserted for what it carries.
 /// </summary>
 public sealed class PageAccountingTakeTests : IAsyncDisposable
 {
@@ -73,18 +74,16 @@ public sealed class PageAccountingTakeTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AVersionThatDeclaresPageTotalsIsRefusedAndNothingIsKept()
+    public async Task AVersionThatDeclaresPageTotalsWithoutTheAccountingContractIsRefusedAndNothingIsKept()
     {
         await _source.PublishAsync(Template, Version, PdfConstraintFixtures.PageTotalsEnabled(Engine));
 
         var outcome = await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
 
         var refused = Assert.IsType<RefusedVersion>(outcome);
-        Assert.True(
-            refused.Code == TemplateCheckCodes.UnsupportedCapability,
-            "the refusal must be the capability one, not an earlier rule's: " + refused.Code + " - " + refused.Reason);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, refused.Code);
         Assert.False(refused.Retryable);
-        Assert.Contains("page subtotals", refused.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("table markup", refused.Reason, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(_versions.Records);
         Assert.Empty(await KeysAsync(TemplatePackageKeys.ClassPrefix));
     }
@@ -102,7 +101,60 @@ public sealed class PageAccountingTakeTests : IAsyncDisposable
                 && line.Contains(Template, StringComparison.Ordinal)
                 && line.Contains(Version, StringComparison.Ordinal)
                 && line.Contains(Consumer, StringComparison.Ordinal)
-                && line.Contains(TemplateCheckCodes.UnsupportedCapability, StringComparison.Ordinal));
+                && line.Contains(TemplateCheckCodes.TemplateInvalid, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("scriban")]
+    [InlineData("handlebars")]
+    [InlineData("liquid")]
+    public async Task AVersionWithTheAccountingContractIsTaken(string engine)
+    {
+        await _source.PublishAsync(Template, Version, PdfConstraintFixtures.Accounted(engine));
+
+        var outcome = await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
+
+        var taken = Assert.IsType<TakenVersion>(outcome);
+        Assert.Equal(Template, taken.Version.TemplateId);
+        Assert.Equal(Version, taken.Version.Version);
+        Assert.Equal(Consumer, taken.Version.OwnerConsumerId);
+        Assert.Equal(64, taken.Version.SourceDescriptorSha256!.Length);
+        Assert.Single(_versions.Records);
+        var copies = await KeysAsync(TemplatePackageKeys.ClassPrefix);
+        _ = Assert.Single(copies);
+    }
+
+    [Fact]
+    public async Task AVersionWithPageTotalsButNoReservedBandIsRefusedWithTheFooterRule()
+    {
+        var manifest = PdfConstraintFixtures.AccountedManifest(Engine);
+        var start = manifest.IndexOf("      footer:", StringComparison.Ordinal);
+        var end = manifest.IndexOf("    verification:", StringComparison.Ordinal);
+        var package = PdfConstraintFixtures.Accounted(Engine);
+        package["template.yaml"] = System.Text.Encoding.UTF8.GetBytes(manifest[..start] + manifest[end..]);
+        await _source.PublishAsync(Template, Version, package);
+
+        var outcome = await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
+
+        var refused = Assert.IsType<RefusedVersion>(outcome);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, refused.Code);
+        Assert.Contains("footer", refused.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(_versions.Records);
+    }
+
+    [Fact]
+    public async Task AVersionWhoseBandCrossesTheBottomMarginIsRefused()
+    {
+        var package = PdfConstraintFixtures.Accounted(Engine);
+        package["template.yaml"] = System.Text.Encoding.UTF8.GetBytes(
+            PdfConstraintFixtures.AccountedManifest(Engine).Replace("topMm: 282", "topMm: 270", StringComparison.Ordinal));
+        await _source.PublishAsync(Template, Version, package);
+
+        var outcome = await Take().TakeAsync(Template, Version, Consumer, "job-1", TestContext.Current.CancellationToken);
+
+        var refused = Assert.IsType<RefusedVersion>(outcome);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, refused.Code);
+        Assert.Contains("bottom margin", refused.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -159,10 +211,12 @@ public sealed class PageAccountingTakeTests : IAsyncDisposable
     }
 
     [Fact]
-    public void TheRefusalCarriesTheWordTheRenderSideGuardUses()
+    public void TheTwoRulesCarryTheirOwnIdentifiers()
     {
-        Assert.Equal("pdf-page-accounting", PageAccountingCheck.RuleId);
-        Assert.Equal("page-accounting", PageAccountingCheck.ReasonToken);
+        Assert.Equal("pdf-accounted-detail", AccountedDetailMarkupCheck.RuleId);
+        Assert.Equal("pdf-accounting-footer", AccountingFooterCheck.RuleId);
+        Assert.Equal("AccountedDetailMarkupCheck", new AccountedDetailMarkupCheck(_session).Name);
+        Assert.Equal("AccountingFooterCheck", new AccountingFooterCheck().Name);
     }
 
     private async Task<IReadOnlyList<string>> KeysAsync(string prefix)
@@ -189,7 +243,7 @@ public sealed class PageAccountingTakeTests : IAsyncDisposable
             Options.Create(_options),
             _loggerFactory.CreateLogger<TemplateTake>());
 
-    /// <summary>The delivered checks in their fixed order, with the three PDF rules appended as the build registers them.</summary>
+    /// <summary>The delivered checks in their fixed order, with the PDF rules appended as the build registers them.</summary>
     private IReadOnlyList<ITemplateVersionCheck> Checks() =>
     [
         new ManifestAndPathsCheck(_session),
@@ -200,7 +254,8 @@ public sealed class PageAccountingTakeTests : IAsyncDisposable
         new IncludeAndAssetCheck(_session),
         new TemplateLintCheck(_session),
         new EngineVersionCheck(),
-        new PageAccountingCheck(),
+        new AccountedDetailMarkupCheck(_session),
+        new AccountingFooterCheck(),
         new NamedFontFamilyCheck(_session),
         new BottomAlignedGridCellCheck(_session),
     ];

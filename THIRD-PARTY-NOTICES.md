@@ -294,6 +294,20 @@ product ships it as the package bundles it:
 - The licence text is reproduced in [MIT](#mit) below. The exact pin is the
   transitive signature patch the PDF writing library requires.
 
+## Paged.js 0.4.3
+
+- Licence: MIT - Copyright (c) 2018 Adam Hyde; the licence text ships beside the
+  vendored file at
+  [`src/Pdf/ReportService.Rendering/Layout/paged.polyfill.js`](src/Pdf/ReportService.Rendering/Layout/paged.polyfill.js)'s
+  upstream `LICENSE.md` and is reproduced in [MIT](#mit) below.
+- Project: https://pagedjs.org/ (https://gitlab.coko.foundation/pagedjs/pagedjs).
+- The polyfill is vendored unchanged as a static, embedded asset of the rendering
+  assembly (`Layout/paged.polyfill.js`, SHA-256
+  `f59f361802416c770d549a647958649af2cf6601999924bc00e4f507dad5269f`, 921 702
+  bytes). It is not a NuGet package: the render worker image carries it, no
+  Node.js runs at deployment and no job downloads it. Its licence text is
+  reproduced in [MIT](#mit) below.
+
 ## Liberation Sans Regular
 
 - Licence: SIL Open Font License 1.1 - the licence text ships beside the font at

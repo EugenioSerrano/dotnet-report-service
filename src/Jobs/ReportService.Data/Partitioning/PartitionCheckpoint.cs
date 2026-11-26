@@ -14,10 +14,12 @@ namespace ReportService.Data.Partitioning;
 /// <param name="NextContinuesGroup">Whether the next block continues a group carried out of the last committed block.</param>
 /// <param name="NextOpeningGroupKey">The group key the next block opens with when it continues a group; null otherwise.</param>
 /// <param name="CommittedBlocks">The durable index entries of blocks 0..<see cref="LastCommittedBlockIndex"/>, in order.</param>
+/// <param name="NextOpeningGroupAccumulated">The open group's sum over the committed blocks when the next block continues it; null otherwise.</param>
 public sealed record PartitionCheckpoint(
     int LastCommittedBlockIndex,
     int LastRecordOrdinal,
     decimal CarriedForward,
     bool NextContinuesGroup,
     string? NextOpeningGroupKey,
-    IReadOnlyList<BlockIndexEntry> CommittedBlocks);
+    IReadOnlyList<BlockIndexEntry> CommittedBlocks,
+    decimal? NextOpeningGroupAccumulated = null);

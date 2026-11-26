@@ -80,7 +80,7 @@ public sealed class FontFamilyTakeTests : IAsyncDisposable
         try
         {
             var candidate = Candidate(files, directory);
-            var pageAccounting = await new PageAccountingCheck().CheckAsync(candidate, TestContext.Current.CancellationToken);
+            var pageAccounting = await new AccountedDetailMarkupCheck(_session).CheckAsync(candidate, TestContext.Current.CancellationToken);
             var fontFamily = await new NamedFontFamilyCheck(_session).CheckAsync(candidate, TestContext.Current.CancellationToken);
             var gridCell = await new BottomAlignedGridCellCheck(_session).CheckAsync(candidate, TestContext.Current.CancellationToken);
 
@@ -190,7 +190,8 @@ public sealed class FontFamilyTakeTests : IAsyncDisposable
         new IncludeAndAssetCheck(_session),
         new TemplateLintCheck(_session),
         new EngineVersionCheck(),
-        new PageAccountingCheck(),
+        new AccountedDetailMarkupCheck(_session),
+        new AccountingFooterCheck(),
         new NamedFontFamilyCheck(_session),
         new BottomAlignedGridCellCheck(_session),
     ];

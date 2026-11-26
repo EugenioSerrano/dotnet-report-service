@@ -6,6 +6,7 @@ using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ReportService.Testing;
+using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
 
 namespace ReportService.EndToEndTests;
@@ -203,6 +204,15 @@ internal static class TestComposition
                 ByNameTemplate,
                 ByNameTemplateVersion,
                 TemplatePackageFixtures.Valid(ByNameTemplate, ByNameTemplateVersion, FixtureConsumer));
+
+            // The page-accounting fixture is published beside the by-name package so the
+            // composition's own template source holds the package the accounting cases take:
+            // it is a source publication, not a taken version, and a case still takes it.
+            await source.RemoveAsync(PageAccountingFixtures.TemplateId, PageAccountingFixtures.Version);
+            await source.PublishAsync(
+                PageAccountingFixtures.TemplateId,
+                PageAccountingFixtures.Version,
+                PageAccountingFixtures.Files(FixtureConsumer, PageAccountingFixtures.TemplateId));
         }
         finally
         {

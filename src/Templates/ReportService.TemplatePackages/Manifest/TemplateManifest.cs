@@ -223,6 +223,54 @@ public sealed record TemplatePageTotals
     /// <summary>The scale the printed amounts use.</summary>
     [JsonPropertyName("scale")]
     public decimal? Scale { get; init; }
+
+    /// <summary>The reserved accounting band and the labels it prints.</summary>
+    [JsonPropertyName("footer")]
+    public TemplateAccountingFooter? Footer { get; init; }
+}
+
+/// <summary>
+/// The band a page-accounting template reserves for its three values: a rectangle in
+/// millimetres in the page's displayed frame, inside the bottom margin so it never
+/// moves a row, and the template's own labels for the three lines.
+/// </summary>
+public sealed record TemplateAccountingFooter
+{
+    /// <summary>The distance from the page's left edge.</summary>
+    [JsonPropertyName("leftMm")]
+    public decimal? LeftMm { get; init; }
+
+    /// <summary>The distance from the page's top edge.</summary>
+    [JsonPropertyName("topMm")]
+    public decimal? TopMm { get; init; }
+
+    /// <summary>The band's width.</summary>
+    [JsonPropertyName("widthMm")]
+    public decimal? WidthMm { get; init; }
+
+    /// <summary>The band's height.</summary>
+    [JsonPropertyName("heightMm")]
+    public decimal? HeightMm { get; init; }
+
+    /// <summary>The template's labels for the three lines.</summary>
+    [JsonPropertyName("labels")]
+    public TemplateAccountingLabels? Labels { get; init; }
+}
+
+/// <summary>The template's own labels for the three accounting lines.</summary>
+public sealed record TemplateAccountingLabels
+{
+    /// <summary>The label of the brought-forward line.</summary>
+    [JsonPropertyName("broughtForward")]
+    public string? BroughtForward { get; init; }
+
+    /// <summary>The label of the page-subtotal line.</summary>
+    [JsonPropertyName("pageSubtotal")]
+    public string? PageSubtotal { get; init; }
+
+    /// <summary>The label of the carried-forward line.</summary>
+    [JsonPropertyName("carriedForward")]
+    public string? CarriedForward { get; init; }
 }
 
 /// <summary>The verification a printed PDF document must pass.</summary>

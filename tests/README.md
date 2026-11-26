@@ -96,6 +96,29 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   formatted value in the invariant culture fails both readings. The tier keeps the
   three engines' documents of one hundred records and the two locale documents in
   the run's `evidence/` folder with `same-report-demo.sha256`.
+- The **page-accounting fixture** is published by the suite from
+  `ReportService.Testing.TemplatePackages.PageAccountingFixtures` (the same builder
+  the end-to-end cases publish) and printed by the host's **accounted branch**: for
+  a package that declares `outputs.pdf.pageTotals`, the host renders through the
+  product's `BlockRenderer`, so the block is marked, printed with the pinned
+  Paged.js 0.4.3 layout script and verified with the page-accounting check.
+  `PageAccountingRenderingTests` prints the fixture library's `GE30` (250 records,
+  several groups and a 30-line row that splits) and judges the result with the
+  independent source oracle in
+  `ReportService.Testing.Fixtures.PageAccountingExpectations` /
+  `AccountedDocumentCheck`: every page's subtotal, brought and carried forward, each
+  group's total and the chain closing on the grand total are recomputed from the
+  snapshot and the page each row ended on, and the continuation mark is proved on
+  the split row's earlier page. The judge in `ReportService.PdfOracle` is **not**
+  used for this document: it refuses grouped documents and continuation marks by
+  design, so the accounting judgment is the independent source oracle's. Two
+  known-bad controls, injected through the host's seam between composition and
+  verification, must fail the block with no document produced: `AC-AMOUNT` gives the
+  first row's printed amount a leading digit after the reference is extracted, and
+  `AC-BAND` suppresses the band's element with an inline stylesheet.
+  `ZeroRecordAccountingRenderingTests` prints the fixture library's `K0` (zero
+  records) over the same package and proves ADR-021 §3.11.4: no row prints, every
+  page's three values are zero and the chain closes on the block total 0.
 - The **hermetic PDF structure verification** (`ReportService.PdfStructure.Tests`,
   in the Pdf group `tests/Pdf/`) is what keeps the V-Bounce **Docker-free**
   (ADR-039 §3.5.8). It reads the **committed golden PDFs** in

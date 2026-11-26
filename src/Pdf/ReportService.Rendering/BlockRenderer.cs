@@ -1,4 +1,6 @@
 using ReportService.Pdf.Verification;
+using ReportService.Rendering.Accounting;
+using ReportService.Rendering.Layout;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.Templates;
 namespace ReportService.Rendering;
@@ -58,13 +60,15 @@ public interface IBlockRenderer
 }
 
 /// <summary>
-/// Renders one block: it refuses a package that declares page subtotals, refuses a
-/// package that declares no field it prints as it is, composes the block, extracts
-/// the text units of the composition, runs the checks that need no page - a failure
-/// there ends the render with nothing printed - prints the document with the
-/// product printer, and verifies what was printed against the composition and
-/// against the block's own records. The printed file is returned only when every
-/// check passed; a refused block leaves no file behind.
+/// Renders one block: refuses a package that declares no field it prints as it is,
+/// composes the block, extracts the text units of the composition, runs the checks that
+/// need no page - a failure there ends the render with nothing printed - prints the
+/// document with the product printer, and verifies what was printed against the
+/// composition and against the block's own records. A package that declares page totals
+/// prints on the accounting path: the block is marked with its own amounts and opening
+/// facts, the print runs the pinned layout scripts, the in-render guard must pass, and
+/// the verification adds the page-accounting check. The printed file is returned only
+/// when every check passed; a refused block leaves no file behind.
 /// </summary>
 public sealed class BlockRenderer(
     BlockComposer composer,
@@ -96,11 +100,6 @@ public sealed class BlockRenderer(
     {
         ArgumentNullException.ThrowIfNull(request);
         var blockIndex = request.BlockIndex;
-
-        if (request.Manifest.DeclaresPageTotals)
-        {
-            return Refused(blockIndex, VerificationReasons.PageAccounting);
-        }
 
         if (request.Manifest.Pdf.Verification is null)
         {
@@ -148,6 +147,50 @@ public sealed class BlockRenderer(
             block = blockMutation.Apply(block);
         }
 
+        // The accounting path marks the block from its own records and the partition's
+        // facts before anything is extracted or printed: the marks are the layout script's
+        // data, and the text checks read the composed text they leave unchanged.
+        AccountingLayoutFacts? facts = null;
+        if (request.Manifest.DeclaresPageTotals)
+        {
+            if (request.Manifest.Pdf.Footer is not { } footer)
+            {
+                return Refused(blockIndex, VerificationReasons.AccountingFooterMissing);
+            }
+
+            var amountField = request.Manifest.Pdf.AmountField;
+            if (string.IsNullOrWhiteSpace(amountField))
+            {
+                return Refused(blockIndex, VerificationReasons.AccountingAmountInvalid);
+            }
+
+            facts = new AccountingLayoutFacts(
+                request.Index.OpeningCarriedForward ?? 0m,
+                request.Index.OpeningGroupKey,
+                request.Index.OpeningGroupAccumulated,
+                footer,
+                request.Manifest.Pdf.Scale,
+                presentation.Culture.Name,
+                (double)(settings.WidthMm - settings.MarginLeftMm - settings.MarginRightMm),
+                (double)(settings.HeightMm - settings.MarginTopMm - settings.MarginBottomMm),
+                (double)settings.WidthMm,
+                (double)settings.HeightMm);
+
+            var marked = BlockAccountingMarkup.Mark(block, new AccountingMarkupContext(
+                amountField,
+                request.Manifest.Pdf.Scale,
+                presentation.Culture.Name,
+                facts,
+                request.Index.ContinuesNextGroup,
+                request.Block.Records.ToDictionary(record => record.Ordinal, record => record.Values)));
+            if (marked.Block is not { } markedBlock)
+            {
+                return Refused(blockIndex, marked.Reason ?? VerificationReasons.AccountingAmountInvalid, recordOrdinal: marked.RecordOrdinal);
+            }
+
+            block = markedBlock;
+        }
+
         var text = new TextUnitExtractor().Extract(block);
         var source = new SourceCheckInput(
             request.Partition,
@@ -156,7 +199,8 @@ public sealed class BlockRenderer(
             block,
             text,
             request.Manifest.Pdf.Verification,
-            request.IsFirstBlock);
+            request.IsFirstBlock,
+            request.Manifest.DeclaresPageTotals);
 
         SourceCheckOutcome sourceChecks;
         long sourceChecksMs;
@@ -225,12 +269,61 @@ public sealed class BlockRenderer(
             // the printer is asked for a document, so the activity neither writes nor returns -
             // exactly what the worker's watchdog exists to stop.
             await composer.StallAsync(RenderPhase.Print, cancellationToken).ConfigureAwait(false);
-            print = await printer.PrintAsync(html, pageRule, request.Files, pdfPath, cancellationToken).ConfigureAwait(false);
+            print = await printer.PrintAsync(
+                new PdfPrintRequest(
+                    html,
+                    pageRule,
+                    request.Files,
+                    facts is null ? PdfPrintMode.Native : PdfPrintMode.Accounted,
+                    facts,
+                    pdfPath),
+                cancellationToken).ConfigureAwait(false);
             printSpan?.SetTag("print.aborted_requests", print.AbortedRequests);
             printSpan?.SetTag("print.console_errors", print.ConsoleErrors);
         }
 
+        if (print.Guard is { Breached: true } guard)
+        {
+            // The layout never finished, or the in-render guard refused it: the block prints
+            // nothing, and the reason carries the guard's counts, never a value.
+            Delete(pdfPath);
+            return new BlockRenderOutcome(
+                PdfPath: null,
+                SizeBytes: 0,
+                Sha256: null,
+                Print: print,
+                new VerificationResult(
+                    Passed: false,
+                    Reason: VerificationReasons.LayoutGuard,
+                    BlockIndex: blockIndex,
+                    RecordOrdinal: null,
+                    AnchorPath: null,
+                    Page: null,
+                    UnitIndex: null,
+                    Offset: null,
+                    Pages: guard.Pages,
+                    Words: 0,
+                    ReadAndAlignMs: 0,
+                    SourceChecksMs: sourceChecksMs,
+                    Paper: settings.PaperName,
+                    Orientation: settings.OrientationName))
+            {
+                ComposeMs = composeMs,
+            };
+        }
+
         VerificationResult verification;
+        var accounting = facts is null
+            ? null
+            : new AccountingCheckInput(
+                request.Block,
+                request.Index,
+                request.Manifest.Pdf.AmountField!,
+                request.Manifest.GroupKey,
+                request.Manifest.Pdf.Scale,
+                presentation.Culture.Name,
+                facts.Footer,
+                request.Manifest.Pdf.NumberingArea);
         using (var verifySpan = Source.StartActivity("verify"))
         {
             verifySpan?.SetTag("block.index", blockIndex);
@@ -240,7 +333,8 @@ public sealed class BlockRenderer(
                 frame,
                 block,
                 text,
-                sourceChecksMs)) with
+                sourceChecksMs,
+                accounting)) with
             {
                 Paper = settings.PaperName,
                 Orientation = settings.OrientationName,
@@ -294,7 +388,7 @@ public sealed class BlockRenderer(
         }
     }
 
-    private static BlockRenderOutcome Refused(int blockIndex, string reason, string? field = null) =>
+    private static BlockRenderOutcome Refused(int blockIndex, string reason, string? field = null, long? recordOrdinal = null) =>
         new(
             PdfPath: null,
             SizeBytes: 0,
@@ -304,7 +398,7 @@ public sealed class BlockRenderer(
                 Passed: false,
                 Reason: reason,
                 BlockIndex: blockIndex,
-                RecordOrdinal: null,
+                RecordOrdinal: recordOrdinal,
                 AnchorPath: null,
                 Page: null,
                 UnitIndex: null,

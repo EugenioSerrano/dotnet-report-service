@@ -141,6 +141,10 @@ public sealed class RenderPdfBlockActivity(
             // publish. A refusal is not logged here: every one of them is logged where it is
             // decided (the presentation and engine catches, the page and verification checks,
             // the commit, and the sites that call RefuseAndLog), so no line is written twice.
+            // The one exception is a print the browser itself failed: that message is the
+            // browser's own (and, for the accounting print, the page's console text), it
+            // carries no value of the report, and without it a failed layout is not
+            // observable in the run's artifacts.
             try
             {
                 result = await PrintAsync(input, cancellationToken).ConfigureAwait(false);
@@ -148,10 +152,11 @@ public sealed class RenderPdfBlockActivity(
             catch (Exception unhandled) when (unhandled is not ApplicationFailureException)
             {
                 logger.LogWarning(
-                    "Block {BlockIndex} of output {OutputId} could not be finished ({ExceptionType})",
+                    "Block {BlockIndex} of output {OutputId} could not be finished ({ExceptionType}){FailureDetail}",
                     input.BlockIndex,
                     input.OutputId,
-                    unhandled.GetType().Name);
+                    unhandled.GetType().Name,
+                    unhandled is PrintTemporarilyFailedException ? ": " + BoundedDetail(unhandled.Message) : string.Empty);
                 throw;
             }
         }
@@ -269,7 +274,9 @@ public sealed class RenderPdfBlockActivity(
                     records.Count,
                     entry.FirstRecordOrdinal,
                     IsFirst: input.BlockIndex == 0,
-                    IsLast: input.BlockIndex == partition.BlockCount - 1),
+                    IsLast: input.BlockIndex == partition.BlockCount - 1,
+                    ContinuesPreviousGroup: entry.ContinuesPreviousGroup,
+                    ContinuesNextGroup: entry.ContinuesNextGroup),
                 header,
                 records,
                 new CompositionRender(
@@ -284,7 +291,15 @@ public sealed class RenderPdfBlockActivity(
                 composition,
                 files,
                 new PartitionFacts(partition.BlockCount, partition.RecordCount),
-                new IndexFacts(entry.BlockIndex, entry.RecordCount, entry.FirstRecordOrdinal),
+                new IndexFacts(
+                    entry.BlockIndex,
+                    entry.RecordCount,
+                    entry.FirstRecordOrdinal,
+                    entry.ContinuesPreviousGroup,
+                    entry.ContinuesNextGroup,
+                    entry.OpeningGroupKey,
+                    entry.OpeningCarriedForward,
+                    entry.OpeningGroupAccumulated),
                 new BlockFacts(
                     entry.BlockIndex,
                     entry.FirstRecordOrdinal,
@@ -498,18 +513,6 @@ public sealed class RenderPdfBlockActivity(
     private ApplicationFailureException VerificationFailed(RenderPdfBlockInput input, BlockRenderOutcome outcome)
     {
         var verification = outcome.Verification;
-        if (string.Equals(verification.Reason, VerificationReasons.PageAccounting, StringComparison.Ordinal))
-        {
-            logger.LogWarning(
-                "Block {BlockIndex} of output {OutputId} refused: the package declares page totals",
-                input.BlockIndex,
-                input.OutputId);
-            return new ApplicationFailureException(
-                $"the package declares page totals, which this service cannot print (reason={verification.Reason})",
-                errorType: UnsupportedCapability,
-                nonRetryable: true);
-        }
-
         if (string.Equals(verification.Reason, VerificationReasons.PageSettingsInvalid, StringComparison.Ordinal))
         {
             // The member's path is configuration, never a value of the consumer's data.
@@ -557,6 +560,13 @@ public sealed class RenderPdfBlockActivity(
         Append(message, "offset", verification.Offset);
         return new ApplicationFailureException(message.ToString(), errorType: PaginationFailed, nonRetryable: true);
     }
+
+    /// <summary>The longest browser failure text one log line carries; the rest stays in the worker's error stream.</summary>
+    private const int FailureDetailCharacters = 1_200;
+
+    /// <summary>The bounded text of a browser failure, for the one log line that names it.</summary>
+    private static string BoundedDetail(string text) =>
+        text.Length <= FailureDetailCharacters ? text : text[..FailureDetailCharacters] + "…";
 
     private static void Append(System.Text.StringBuilder message, string name, object? value)
     {

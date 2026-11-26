@@ -18,6 +18,7 @@ public sealed class BlockVerifier
     private readonly AnchorCheck anchors = new();
     private readonly PageCheck pages = new();
     private readonly PageGeometryCheck geometry = new();
+    private readonly PageAccountingCheck accounting = new();
     private readonly ContentOrderAligner aligner;
 
     /// <summary>Creates a verifier whose alignment spends at most <paramref name="alignmentBudget"/> comparisons per block.</summary>
@@ -45,6 +46,17 @@ public sealed class BlockVerifier
         {
             sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             return SourceCheckOutcome.Fail(VerificationReasons.AnchorsUndeclared);
+        }
+
+        // A block that continues a group owes its group total the group's earlier rows;
+        // the partition records that opening, and a block that lacks it fails closed
+        // rather than printing the total as if the group began here.
+        if (input.PageAccounting
+            && input.Index.ContinuesPreviousGroup
+            && input.Index.OpeningGroupAccumulated is null)
+        {
+            sourceChecksMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            return SourceCheckOutcome.Fail(VerificationReasons.AccountingIndexIncomplete);
         }
 
         var outcome = coverage.CheckSource(input);
@@ -131,10 +143,24 @@ public sealed class BlockVerifier
             }
         }
 
-        var pageTexts = reading.Pages
-            .Select(PlacementConvention.ContentText)
-            .ToList();
-        var alignment = aligner.Align(pageTexts, input.Text.Units);
+        // The accounting cells' units are excluded from the composed-text check (their text
+        // is written by the layout and judged by the accounting check): the alignment runs
+        // over the other units, and the accounting units are then consumed at their own
+        // positions so the row-coverage check sees every unit.
+        AlignmentOutcome alignment;
+        if (input.Accounting is { } accountingContract)
+        {
+            var judged = input.Text.Units.Where(unit => !unit.Accounting).ToList();
+            alignment = aligner.Align(accounting.PageTexts(reading, accountingContract), judged);
+            alignment = ContentOrderAligner.ConsumeAccountingUnits(alignment, input.Text.Units);
+        }
+        else
+        {
+            alignment = aligner.Align(
+                reading.Pages.Select(PlacementConvention.ContentText).ToList(),
+                input.Text.Units);
+        }
+
         if (!alignment.Passed)
         {
             return VerificationResult.Failed(
@@ -162,6 +188,23 @@ public sealed class BlockVerifier
                 reading.WordCount,
                 Elapsed(started),
                 input.SourceChecksMs);
+        }
+
+        if (accounting.Check(input, reading, alignment) is { Passed: false } verdict)
+        {
+            return VerificationResult.Failed(
+                verdict.Reason!,
+                input.BlockIndex,
+                verdict.Page,
+                null,
+                null,
+                reading.Pages.Count,
+                reading.WordCount,
+                Elapsed(started),
+                input.SourceChecksMs) with
+            {
+                RecordOrdinal = verdict.RecordOrdinal,
+            };
         }
 
         return new VerificationResult(

@@ -88,7 +88,7 @@ public sealed class PdfSampleRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task APackageThatDeclaresPageTotalsIsRefused()
+    public async Task APackageThatDeclaresPageTotalsWithoutTheAccountingBandIsRefused()
     {
         var adapter = new FakeAdapter(Text());
         var manifest = Variant(json => json["outputs"]!["pdf"]!["pageTotals"] = new JsonObject { ["enabled"] = true });
@@ -97,7 +97,7 @@ public sealed class PdfSampleRendererTests : IDisposable
             .RenderAsync(Request(manifest, Sample), TestContext.Current.CancellationToken);
 
         var failure = Assert.IsType<SampleAttempt.Failed>(attempt).Failure;
-        Assert.Equal("page-accounting", failure.Reason);
+        Assert.Equal("accounting-footer-missing", failure.Reason);
         Assert.Equal("template.yaml", failure.Part);
         Assert.Equal(0, adapter.Renders);
     }
@@ -341,6 +341,55 @@ public sealed class PdfSampleRendererTests : IDisposable
         Assert.Equal(10, adapter.Renders);
     }
 
+    [Fact]
+    public async Task AnAccountedSamplePrintsThroughTheAccountingPathAndIsVerified()
+    {
+        var adapter = new FakeAdapter(AccountedText());
+        var printer = new FakePrinter(WriteUnreadable);
+        var manifest = Accounted();
+        var sample = """{"contractVersion":"1.0","header":{"title":"Invoice"},"items":[{"p":10.00}]}""";
+
+        var attempt = await Renderer(adapter, printer).RenderAsync(Request(manifest, sample), TestContext.Current.CancellationToken);
+
+        var failure = Assert.IsType<SampleAttempt.Failed>(attempt).Failure;
+        Assert.Equal(SampleFailureKind.Verification, failure.Kind);
+        Assert.Equal("unreadable", failure.Reason);
+        Assert.Equal(1, printer.Calls);
+        Assert.Single(printer.Documents);
+        Assert.Contains("data-accounting=", printer.Documents[0], StringComparison.Ordinal);
+        Assert.Contains("data-seq=\"1\"", printer.Documents[0], StringComparison.Ordinal);
+        Assert.Contains("data-amount=\"10.00\"", printer.Documents[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnAccountedSampleWhoseLayoutGuardFailsIsRefused()
+    {
+        var adapter = new FakeAdapter(AccountedText());
+        var printer = new FakePrinter(WriteUnreadable) { Guard = ReportService.Rendering.Layout.LayoutGuardReport.Missing with { Phase = "failed" } };
+        var sample = """{"contractVersion":"1.0","header":{"title":"Invoice"},"items":[{"p":10.00}]}""";
+
+        var attempt = await Renderer(adapter, printer).RenderAsync(Request(Accounted(), sample), TestContext.Current.CancellationToken);
+
+        var failure = Assert.IsType<SampleAttempt.Failed>(attempt).Failure;
+        Assert.Equal(SampleFailureKind.Verification, failure.Kind);
+        Assert.Equal(VerificationReasons.LayoutGuard, failure.Reason);
+        Assert.Equal("template.yaml", failure.Part);
+    }
+
+    [Fact]
+    public async Task AnAccountedSampleWhoseAmountIsNotANumberIsRefusedBeforePrinting()
+    {
+        var adapter = new FakeAdapter(AccountedText());
+        var printer = new FakePrinter(WriteUnreadable);
+
+        var attempt = await Renderer(adapter, printer).RenderAsync(Request(Accounted(), Sample), TestContext.Current.CancellationToken);
+
+        var failure = Assert.IsType<SampleAttempt.Failed>(attempt).Failure;
+        Assert.Equal(VerificationReasons.AccountingAmountInvalid, failure.Reason);
+        Assert.Equal(1, failure.RecordOrdinal);
+        Assert.Equal(0, printer.Calls);
+    }
+
     private PdfSampleRenderer Renderer(ITemplateEngineAdapter adapter, IPdfPrinter printer) =>
         new(
             new BlockComposer(TimeProvider.System),
@@ -368,6 +417,43 @@ public sealed class PdfSampleRendererTests : IDisposable
         change(json);
         return Manifest(json.ToJsonString());
     }
+
+    /// <summary>The valid declaration with the printed page totals and their accounting contract.</summary>
+    private TemplateManifest Accounted() => Variant(json =>
+    {
+        json["outputs"]!["pdf"]!["pageTotals"] = new JsonObject
+        {
+            ["enabled"] = true,
+            ["amountField"] = "p",
+            ["scale"] = 2,
+            ["footer"] = new JsonObject
+            {
+                ["leftMm"] = 12,
+                ["topMm"] = 282,
+                ["widthMm"] = 186,
+                ["heightMm"] = 12,
+                ["labels"] = new JsonObject
+                {
+                    ["broughtForward"] = "Saldo anterior",
+                    ["pageSubtotal"] = "Subtotal de pagina",
+                    ["carriedForward"] = "Saldo siguiente",
+                },
+            },
+        };
+    });
+
+    /// <summary>The accounting path's text: a document element, one grid row with its amount cell, and the document end.</summary>
+    private static Action<TemplatePart, RenderContext, GuardedWriter, PresentationSettings> AccountedText() =>
+        (part, _, writer, _) =>
+        {
+            writer.Write(part switch
+            {
+                TemplatePart.DocumentStart => "<div class=\"doc\">Invoice",
+                TemplatePart.Row => "<div class=\"item\"><div data-role=\"amount\">10.00</div></div>",
+                TemplatePart.DocumentEnd => "</div>",
+                _ => string.Empty,
+            });
+        };
 
     private TemplateManifest Manifest(string json)
     {
@@ -447,6 +533,12 @@ public sealed class PdfSampleRendererTests : IDisposable
     {
         public int Calls { get; private set; }
 
+        /// <summary>What the accounting layout reported, or <see langword="null"/> on the native path.</summary>
+        public ReportService.Rendering.Layout.LayoutGuardReport? Guard { get; init; }
+
+        /// <summary>The documents the printer was given, in order.</summary>
+        public List<string> Documents { get; } = [];
+
         public Task<PrintOutcome> PrintAsync(
             string document,
             PageRule pageRule,
@@ -455,8 +547,12 @@ public sealed class PdfSampleRendererTests : IDisposable
             CancellationToken cancellationToken = default)
         {
             Calls++;
+            Documents.Add(document);
             print(pdfPath);
-            return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.FromMilliseconds(1)));
+            return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.FromMilliseconds(1), Guard));
         }
+
+        public Task<PrintOutcome> PrintAsync(ReportService.Rendering.Layout.PdfPrintRequest request, CancellationToken cancellationToken = default) =>
+            PrintAsync(request.Document, request.PageRule, request.Files, request.PdfPath, cancellationToken);
     }
 }

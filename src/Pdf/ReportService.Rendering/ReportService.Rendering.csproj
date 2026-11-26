@@ -17,8 +17,14 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ReportService.RenderingHost" />
+    <InternalsVisibleTo Include="ReportService.Workers.Pdf" />
     <InternalsVisibleTo Include="ReportService.Rendering.Tests" />
     <InternalsVisibleTo Include="ReportService.RenderingTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Layout\paged.polyfill.js" LogicalName="ReportService.Rendering.Layout.paged.polyfill.js" />
+    <EmbeddedResource Include="Layout\page-accounting.js" LogicalName="ReportService.Rendering.Layout.page-accounting.js" />
   </ItemGroup>
 
 </Project>

@@ -75,16 +75,67 @@ public sealed class BlockRendererTests : IDisposable
     }
 
     [Fact]
-    public async Task APackageWithPageTotalsIsRefusedBeforeAnythingIsPrinted()
+    public async Task APackageWithPageTotalsButNoAccountingBandIsRefusedBeforeAnythingIsPrinted()
     {
         var outcome = await Renderer(new PrintingPrinter()).RenderAsync(
             Request(Manifest(pageTotals: true, anchors: VerificationAnchors.None), "<p>nothing</p>"),
             TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Passed);
-        Assert.Equal(VerificationReasons.PageAccounting, outcome.Verification.Reason);
+        Assert.Equal(VerificationReasons.AccountingFooterMissing, outcome.Verification.Reason);
         Assert.Null(outcome.PdfPath);
         Assert.False(Directory.Exists(work) && Directory.EnumerateFiles(work, "*.pdf").Any());
+    }
+
+    [Fact]
+    public async Task APackageThatDeclaresPageTotalsPrintsOnTheAccountingPath()
+    {
+        var printer = new RecordingPrinter();
+        var manifest = Manifest(pageTotals: true, anchors: VerificationAnchors.None);
+        manifest = manifest with
+        {
+            Pdf = manifest.Pdf with
+            {
+                AmountField = "amount",
+                Scale = 2,
+                Footer = new AccountingFooter(12, 282, 186, 12, "Saldo anterior", "Subtotal de pagina", "Saldo siguiente"),
+            },
+        };
+        var records = new[]
+        {
+            new BlockRecord(1, new Dictionary<string, object?>(StringComparer.Ordinal) { ["amount"] = "10.00" }),
+        };
+
+        var outcome = await Renderer(printer).RenderAsync(
+            Request(manifest, "<div class=\"doc\">start</div>", records) with
+            {
+                Index = new IndexFacts(0, 1, 1),
+                Partition = new PartitionFacts(1, 1),
+            },
+            TestContext.Current.CancellationToken);
+
+        // The block is marked and printed through the accounting print; the golden document
+        // it prints is another composition, so the verification refuses it afterwards.
+        Assert.True(printer.Mode is not null, outcome.Verification.Reason);
+        Assert.Equal(ReportService.Rendering.Layout.PdfPrintMode.Accounted, printer.Mode);
+        Assert.NotNull(printer.Document);
+        Assert.Contains("data-brought-forward=", printer.Document, StringComparison.Ordinal);
+        Assert.Contains("data-accounting=", printer.Document, StringComparison.Ordinal);
+        Assert.False(outcome.Passed);
+    }
+
+    [Fact]
+    public async Task APackageWithoutPageTotalsKeepsTheNativePrint()
+    {
+        var printer = new RecordingPrinter();
+
+        _ = await Renderer(printer).RenderAsync(
+            Request(Manifest(pageTotals: false, anchors: VerificationAnchors.None), ComposedTextOfTheDocument()),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ReportService.Rendering.Layout.PdfPrintMode.Native, printer.Mode);
+        Assert.NotNull(printer.Document);
+        Assert.DoesNotContain("data-brought-forward=", printer.Document, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -367,6 +418,9 @@ public sealed class BlockRendererTests : IDisposable
             File.Copy(DocumentPath, pdfPath, overwrite: true);
             return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.Zero));
         }
+
+        public Task<PrintOutcome> PrintAsync(ReportService.Rendering.Layout.PdfPrintRequest request, CancellationToken cancellationToken = default) =>
+            PrintAsync(request.Document, request.PageRule, request.Files, request.PdfPath, cancellationToken);
     }
 
     /// <summary>A printer that records the document and the rule it was given, and writes the kept document.</summary>
@@ -386,6 +440,14 @@ public sealed class BlockRendererTests : IDisposable
             File.Copy(DocumentPath, pdfPath, overwrite: true);
             return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.Zero));
         }
+
+        public Task<PrintOutcome> PrintAsync(ReportService.Rendering.Layout.PdfPrintRequest request, CancellationToken cancellationToken = default)
+        {
+            Mode = request.Mode;
+            return PrintAsync(request.Document, request.PageRule, request.Files, request.PdfPath, cancellationToken);
+        }
+
+        public ReportService.Rendering.Layout.PdfPrintMode? Mode { get; private set; }
     }
 
     /// <summary>The test-only control that acts on the served document after the page rule.</summary>

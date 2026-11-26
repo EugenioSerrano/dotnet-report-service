@@ -44,6 +44,7 @@ public static class StreamingPartitioner
 
         var committed = new List<BlockIndexEntry>();
         var accumulator = new CarriedForwardAccumulator();
+        var groups = new GroupAmountAccumulator();
         var nextBlockIndex = 0;
         var skipThroughOrdinal = 0;
         var pendingContinuesPrevious = false;
@@ -53,6 +54,9 @@ public static class StreamingPartitioner
         {
             committed.AddRange(resumeFrom.CommittedBlocks);
             accumulator = new CarriedForwardAccumulator(resumeFrom.CarriedForward);
+            groups = resumeFrom.NextContinuesGroup
+                ? new GroupAmountAccumulator(resumeFrom.NextOpeningGroupAccumulated ?? 0m, resumeFrom.NextOpeningGroupKey)
+                : new GroupAmountAccumulator();
             nextBlockIndex = resumeFrom.LastCommittedBlockIndex + 1;
             skipThroughOrdinal = resumeFrom.LastRecordOrdinal;
             pendingContinuesPrevious = resumeFrom.NextContinuesGroup;
@@ -87,7 +91,15 @@ public static class StreamingPartitioner
 
             if (open is null)
             {
-                open = OpenNewBlock(sink, header.Span, nextBlockIndex++, value.Ordinal, pendingContinuesPrevious, pendingContinuesPrevious ? pendingOpeningGroupKey : null, accumulator.OpeningCarriedForward);
+                open = OpenNewBlock(
+                    sink,
+                    header.Span,
+                    nextBlockIndex++,
+                    value.Ordinal,
+                    pendingContinuesPrevious,
+                    pendingContinuesPrevious ? pendingOpeningGroupKey : null,
+                    accumulator.OpeningCarriedForward,
+                    pendingContinuesPrevious ? groups.Accumulated : null);
             }
             else
             {
@@ -96,9 +108,31 @@ public static class StreamingPartitioner
                 var spanning = fill == BlockFill.MustCut && groupKey is { } nextHard && open.LastGroupKey is { } lastHard && nextHard.SameGroup(lastHard);
                 if (fill == BlockFill.MustCut || (fill == BlockFill.SoftReached && boundary))
                 {
-                    await CommitBlockAsync(open, spanning, accumulator, committed, onBlockCommitted).ConfigureAwait(false);
-                    open = OpenNewBlock(sink, header.Span, nextBlockIndex++, value.Ordinal, spanning, spanning ? groupKey!.Value.ToText() : null, accumulator.OpeningCarriedForward);
+                    await CommitBlockAsync(open, spanning, accumulator, groups, committed, onBlockCommitted).ConfigureAwait(false);
+                    var continuesGroup = spanning && spec.GroupKeyField is not null;
+                    open = OpenNewBlock(
+                        sink,
+                        header.Span,
+                        nextBlockIndex++,
+                        value.Ordinal,
+                        spanning,
+                        spanning ? groupKey!.Value.ToText() : null,
+                        accumulator.OpeningCarriedForward,
+                        continuesGroup ? groups.Accumulated : null);
                 }
+            }
+
+            if (spec.GroupKeyField is not null)
+            {
+                // The group's own running sum: it opens zero for a group that begins here
+                // and continues the value carried in for a group the pass resumes inside.
+                var keyText = groupKey?.ToText();
+                if (groups.Key is null || !string.Equals(groups.Key, keyText, StringComparison.Ordinal))
+                {
+                    groups.Begin(keyText);
+                }
+
+                groups.Add(amount);
             }
 
             BlockDocumentWriter.WriteRecord(open.Stream, value.Json.Span, open.RecordCount == 0);
@@ -116,12 +150,12 @@ public static class StreamingPartitioner
         if (open is null && resumeFrom is null)
         {
             // The empty snapshot: exactly one empty block 0.
-            open = OpenNewBlock(sink, header.Span, nextBlockIndex, firstOrdinal: 1, continuesPrevious: false, openingGroupKey: null, openingCarriedForward: accumulator.OpeningCarriedForward);
+            open = OpenNewBlock(sink, header.Span, nextBlockIndex, firstOrdinal: 1, continuesPrevious: false, openingGroupKey: null, openingCarriedForward: accumulator.OpeningCarriedForward, openingGroupAccumulated: null);
         }
 
         if (open is not null)
         {
-            await CommitBlockAsync(open, continuesNext: false, accumulator, committed, onBlockCommitted).ConfigureAwait(false);
+            await CommitBlockAsync(open, continuesNext: false, accumulator, groups, committed, onBlockCommitted).ConfigureAwait(false);
         }
 
         return new StreamingPartition(new BlockIndexPage(PartitionerVersion, committed, BlockIndexPage.PageBoundaryLayout));
@@ -134,7 +168,8 @@ public static class StreamingPartitioner
         int firstOrdinal,
         bool continuesPrevious,
         string? openingGroupKey,
-        decimal openingCarriedForward)
+        decimal openingCarriedForward,
+        decimal? openingGroupAccumulated)
     {
         var inner = sink.OpenBlock(index, out var key);
         var stream = new HashingStream(inner);
@@ -148,6 +183,7 @@ public static class StreamingPartitioner
             ContinuesPrevious = continuesPrevious,
             OpeningGroupKey = openingGroupKey,
             OpeningCarriedForward = openingCarriedForward,
+            OpeningGroupAccumulated = openingGroupAccumulated,
         };
     }
 
@@ -155,6 +191,7 @@ public static class StreamingPartitioner
         OpenBlockState open,
         bool continuesNext,
         CarriedForwardAccumulator accumulator,
+        GroupAmountAccumulator groups,
         List<BlockIndexEntry> committed,
         Action<PartitionCheckpoint>? onBlockCommitted)
     {
@@ -179,7 +216,8 @@ public static class StreamingPartitioner
             continuesNext,
             open.OpeningGroupKey,
             open.OpeningCarriedForward,
-            blockTotal));
+            blockTotal,
+            open.OpeningGroupAccumulated));
         accumulator.CloseBlock();
 
         var lastOrdinal = open.RecordCount > 0 ? open.FirstOrdinal + (int)open.RecordCount - 1 : open.FirstOrdinal - 1;
@@ -189,7 +227,8 @@ public static class StreamingPartitioner
             accumulator.OpeningCarriedForward,
             continuesNext,
             continuesNext ? open.LastGroupKey?.ToText() : null,
-            [.. committed]));
+            [.. committed],
+            continuesNext ? groups.Accumulated : null));
     }
 
     // The amount and the group key of one record, read in a single parse. An amount with no
@@ -241,6 +280,8 @@ public static class StreamingPartitioner
         public required string? OpeningGroupKey { get; init; }
 
         public required decimal OpeningCarriedForward { get; init; }
+
+        public required decimal? OpeningGroupAccumulated { get; init; }
 
         public long RecordCount { get; set; }
 

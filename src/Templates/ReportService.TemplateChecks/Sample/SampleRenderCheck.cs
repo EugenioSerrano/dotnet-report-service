@@ -256,13 +256,13 @@ public sealed class SampleRenderCheck(ISampleRenderer renderer, ILogger<SampleRe
                 "Declare outputs.pdf.paper, orientation and the four margins.");
         }
 
-        if (string.Equals(failure.Reason, "page-accounting", StringComparison.Ordinal))
+        if (string.Equals(failure.Reason, "accounting-footer-missing", StringComparison.Ordinal))
         {
             return TemplateRefusal.Refuse(
                 TemplateCheckCodes.TemplateInvalid,
                 file,
-                "the template declares page subtotals, which this service does not print.",
-                "Print the totals in the template or turn them off.");
+                "the sample printed no accounting footer on a page.",
+                "Declare outputs.pdf.pageTotals.footer and keep it inside the bottom margin band.");
         }
 
         if (IsPageReason(failure.Reason))
@@ -309,7 +309,7 @@ public sealed class SampleRenderCheck(ISampleRenderer renderer, ILogger<SampleRe
 
     /// <summary>The verification reasons that are a page-level cause.</summary>
     private static bool IsPageReason(string? reason) =>
-        reason is "blank-page" or "no-page" or "page-size" or "page-settings-invalid" or "page-accounting" or "unreadable";
+        reason is "blank-page" or "no-page" or "page-size" or "page-settings-invalid" or "layout-guard" or "unreadable";
 
     private static string Number(long value) => value.ToString(CultureInfo.InvariantCulture);
 

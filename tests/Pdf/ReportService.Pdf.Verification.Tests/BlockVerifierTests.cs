@@ -32,6 +32,44 @@ public sealed class BlockVerifierTests
     }
 
     [Fact]
+    public void AnAccountedBlockThatContinuesAGroupWithoutItsOpeningAmountFailsClosed()
+    {
+        var composition = Sample.Rows("one");
+        var accounting = new SourceCheckInput(
+            new PartitionFacts(1, 1),
+            new IndexFacts(1, 1, 1, ContinuesPreviousGroup: true, ContinuesNextGroup: false, OpeningGroupKey: "a", OpeningGroupAccumulated: null),
+            new BlockFacts(1, 1, [new BlockRecord(1, new Dictionary<string, object?> { ["description"] = "one" })], new Dictionary<string, object?>()),
+            composition,
+            new TextUnitExtractor().Extract(composition),
+            new VerificationAnchors([], []),
+            IsFirstBlock: false,
+            PageAccounting: true);
+
+        var outcome = new BlockVerifier().CheckSource(accounting, out _);
+
+        Assert.False(outcome.Passed);
+        Assert.Equal(VerificationReasons.AccountingIndexIncomplete, outcome.Reason);
+    }
+
+    [Fact]
+    public void ANativeBlockContinuingAGroupNeedsNoOpeningAmount()
+    {
+        var composition = Sample.Rows("one");
+        var native = new SourceCheckInput(
+            new PartitionFacts(1, 1),
+            new IndexFacts(1, 1, 1, ContinuesPreviousGroup: true, ContinuesNextGroup: false, OpeningGroupKey: "a"),
+            new BlockFacts(1, 1, [new BlockRecord(1, new Dictionary<string, object?> { ["description"] = "one" })], new Dictionary<string, object?>()),
+            composition,
+            new TextUnitExtractor().Extract(composition),
+            new VerificationAnchors([], []),
+            IsFirstBlock: false);
+
+        var outcome = new BlockVerifier().CheckSource(native, out _);
+
+        Assert.True(outcome.Passed, outcome.Reason);
+    }
+
+    [Fact]
     public void TheDeclaredFieldsAreCheckedBeforeTheRest()
     {
         // The block lacks a record and declares no field: an undeclared package is a
