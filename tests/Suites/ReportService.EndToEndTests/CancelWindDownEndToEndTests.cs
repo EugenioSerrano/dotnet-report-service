@@ -60,6 +60,13 @@ public sealed class CancelWindDownEndToEndTests : IDisposable
 
     private static readonly TimeSpan RunningDeadline = TimeSpan.FromMinutes(3);
 
+    // The dispatcher polls the durable requests on its own schedule (1 s in the composition) and its
+    // delivery is independent of the workflow that closes the job: a terminal job does not imply a
+    // consumed intent, so the intent predicate is polled within this bound, never read once.
+    private static readonly TimeSpan CancelIntentDeadline = TimeSpan.FromSeconds(60);
+
+    private static readonly TimeSpan CancelIntentPollInterval = TimeSpan.FromMilliseconds(250);
+
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-e2e-cancel-wind-down",
@@ -203,7 +210,9 @@ public sealed class CancelWindDownEndToEndTests : IDisposable
     /// delivers the intent and the real workflow closes the job: <c>CANCELLED</c> by R0, the
     /// succeeded output and its artifact kept, the other output <c>CANCELLED</c>, and exactly one
     /// <c>cancel-job</c> row <c>DISPATCHED</c> with its instant and no row left <c>PENDING</c>
-    /// (the intent-consumed predicate, SPEC §14 D8).
+    /// (the intent-consumed predicate, SPEC §14 D8). The intent is polled within a bound: the
+    /// dispatcher's poll is asynchronous and independent of the finalisation, so the closure being
+    /// terminal never implies the intent was delivered yet.
     /// </summary>
     [Fact]
     public async Task A4_AJobCancelledBeforeItStartedEndsCancelledKeepingItsPriorSuccess()
@@ -233,8 +242,8 @@ public sealed class CancelWindDownEndToEndTests : IDisposable
         var bytes = await download.Content.ReadAsByteArrayAsync(cancellationToken);
         Assert.Equal(artifactSha256, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
 
-        // D8's exact predicate: one cancel-job row, DISPATCHED with its instant, none pending.
-        var intents = await CancelIntentsAsync(world.DataSource, reportJobId, cancellationToken);
+        // D8's exact predicate, polled: one cancel-job row, DISPATCHED with its instant, none pending.
+        var intents = await WaitForCancelIntentConsumedAsync(world.DataSource, reportJobId, cancellationToken);
         var dispatched = Assert.Single(intents);
         Assert.Equal("DISPATCHED", dispatched.Status);
         Assert.NotNull(dispatched.DispatchedAt);
@@ -691,22 +700,86 @@ public sealed class CancelWindDownEndToEndTests : IDisposable
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
 
+    // The instant the cancellation was requested, read from the durable request the cancel surface
+    // recorded. It is bounded like the consumed-intent predicate: the read never races a commit,
+    // even though an accepted cancel has already committed its row when its answer returns.
     private static async Task<DateTimeOffset?> CancelIntentInstantAsync(
         NpgsqlDataSource dataSource,
         string reportJobId,
         CancellationToken cancellationToken)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            "SELECT min(created_at) FROM report_service.intents WHERE kind = @kind AND subject_id = @id";
-        command.Parameters.Add(new NpgsqlParameter("kind", CancelJobKind));
-        command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
-        var value = await command.ExecuteScalarAsync(cancellationToken);
-        return value is DBNull or null
-            ? null
-            : new DateTimeOffset(DateTime.SpecifyKind((DateTime)value, DateTimeKind.Utc), TimeSpan.Zero);
+        var deadline = DateTimeOffset.UtcNow + CancelIntentDeadline;
+        while (true)
+        {
+            await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT min(created_at) FROM report_service.intents WHERE kind = @kind AND subject_id = @id";
+            command.Parameters.Add(new NpgsqlParameter("kind", CancelJobKind));
+            command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
+            var value = await command.ExecuteScalarAsync(cancellationToken);
+            if (value is DateTime recorded)
+            {
+                return new DateTimeOffset(DateTime.SpecifyKind(recorded, DateTimeKind.Utc), TimeSpan.Zero);
+            }
+
+            if (DateTimeOffset.UtcNow >= deadline)
+            {
+                Assert.Fail(
+                    $"no cancel-job row of {reportJobId} was readable within {CancelIntentDeadline.TotalSeconds:0} s; the predicate is one cancel-job row whose created_at carries the request instant");
+            }
+
+            await Task.Delay(CancelIntentPollInterval, cancellationToken);
+        }
     }
+
+    // Waits, bounded, until the cancel-job request of the job is consumed: exactly one row for the
+    // job, DISPATCHED with its instant, and none still PENDING (SPEC §8.2 A4 / §14 D8). The
+    // dispatcher's poll is asynchronous and independent of the workflow that finalises the job, so
+    // a terminal job never implies a delivered intent; on timeout the failure names the last
+    // status observed and the predicate it had to satisfy.
+    private static async Task<IReadOnlyList<CancelIntent>> WaitForCancelIntentConsumedAsync(
+        NpgsqlDataSource dataSource,
+        string reportJobId,
+        CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow + CancelIntentDeadline;
+        while (true)
+        {
+            var observed = await CancelIntentsAsync(dataSource, reportJobId, cancellationToken);
+            if (IsCancelIntentConsumed(observed))
+            {
+                return observed;
+            }
+
+            if (DateTimeOffset.UtcNow >= deadline)
+            {
+                Assert.Fail(
+                    $"the cancel-job intent of {reportJobId} was not consumed within {CancelIntentDeadline.TotalSeconds:0} s: "
+                    + $"last observed [{DescribeIntents(observed)}]; the predicate is exactly one cancel-job row "
+                    + "DISPATCHED with dispatched_at set and zero rows PENDING");
+            }
+
+            await Task.Delay(CancelIntentPollInterval, cancellationToken);
+        }
+    }
+
+    // The SPEC §14 D8 predicate, as one expression: one cancel-job row for the job, DISPATCHED with
+    // its instant, and no row left pending.
+    private static bool IsCancelIntentConsumed(IReadOnlyList<CancelIntent> intents) =>
+        intents.Count == 1
+        && string.Equals(intents[0].Status, "DISPATCHED", StringComparison.Ordinal)
+        && intents[0].DispatchedAt is not null
+        && !intents.Any(intent => string.Equals(intent.Status, "PENDING", StringComparison.Ordinal));
+
+    private static string DescribeIntents(IReadOnlyList<CancelIntent> intents) =>
+        intents.Count == 0
+            ? "no cancel-job row"
+            : string.Join(
+                ", ",
+                intents.Select(intent => intent.DispatchedAt is { } instant
+                    ? intent.Status + " at " + instant.ToString("O", CultureInfo.InvariantCulture)
+                    : intent.Status + " without dispatched_at"));
 
     private static async Task<IReadOnlyList<CancelIntent>> CancelIntentsAsync(
         NpgsqlDataSource dataSource,
