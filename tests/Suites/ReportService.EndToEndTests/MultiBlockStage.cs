@@ -23,6 +23,7 @@ using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Templates;
 using ReportService.Testing;
+using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
 using ReportService.Uploads;
 
@@ -135,9 +136,36 @@ internal sealed class MultiBlockStage : IDisposable
             NullLogger<TemplateTake>.Instance);
 
         var outcome = await take.TakeAsync(Template, Version, Consumer, reportJobId: null, cancellationToken);
-        if (outcome.Record is null)
+        var record = outcome.Record
+            ?? throw new InvalidOperationException("the multi-block template was not taken: " + outcome.Name);
+
+        // The fixture's numbering contract must survive the injection: a silent no-op once
+        // reached the covering run and the merge worker correctly refused the package
+        // TEMPLATE_INVALID. The check reads the manifest the take recorded and the stored
+        // JSON, so an injection that did not apply fails here, in the fixture, not later.
+        var numbering = record.Manifest.Outputs?.Pdf?.Numbering
+            ?? throw new InvalidOperationException(
+                "the multi-block fixture's taken manifest carries no outputs.pdf.numbering; the YAML injection did not apply");
+        var font = numbering.Font;
+        if (numbering.Area is not { LeftMm: not null, TopMm: not null, WidthMm: not null, HeightMm: not null }
+            || font is null
+            || string.IsNullOrWhiteSpace(font.Family)
+            || string.IsNullOrWhiteSpace(font.File)
+            || font.SizePt is null
+            || string.IsNullOrWhiteSpace(numbering.Format)
+            || string.IsNullOrWhiteSpace(numbering.Culture))
         {
-            throw new InvalidOperationException("the multi-block template was not taken: " + outcome.Name);
+            throw new InvalidOperationException(
+                "the multi-block fixture's taken outputs.pdf.numbering is incomplete");
+        }
+
+        using var stored = JsonDocument.Parse(record.ManifestJson);
+        if (!stored.RootElement.TryGetProperty("outputs", out var outputs)
+            || !outputs.TryGetProperty("pdf", out var pdf)
+            || !pdf.TryGetProperty("numbering", out _))
+        {
+            throw new InvalidOperationException(
+                "the multi-block fixture's stored manifest carries no outputs.pdf.numbering; the YAML injection did not apply");
         }
     }
 
@@ -432,23 +460,19 @@ internal sealed class MultiBlockStage : IDisposable
             {
                 text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
                 text = text.Replace("id: " + Sample, "id: " + Template, StringComparison.Ordinal);
-                text = text.Replace(
-                    "  pdf:" + Environment.NewLine,
-                    "  pdf:" + Environment.NewLine
-                    + "    numbering:" + Environment.NewLine
-                    + "      area: { leftMm: 120, topMm: 268, widthMm: 80, heightMm: 8 }" + Environment.NewLine
-                    + "      font: { family: \"Liberation Sans\", file: \"fonts/LiberationSans-Regular.ttf\", sizePt: 9 }" + Environment.NewLine
-                    + "      format: \"Page {X} of {Y}\"" + Environment.NewLine
-                    + "      culture: \"en-US\"" + Environment.NewLine,
-                    StringComparison.Ordinal);
+                text = NumberedMultiBlockFixture.InsertNumberingContract(text);
             }
 
             if (string.Equals(relative, "html/styles.css", StringComparison.Ordinal))
             {
-                text = text.Replace("font-family: sans-serif;", "font-family: \"Liberation Sans\", sans-serif;", StringComparison.Ordinal);
-                text += Environment.NewLine
+                text = text.Replace(
+                    "font-family: sans-serif;",
+                    "font-family: \"Liberation Sans\", sans-serif;",
+                    StringComparison.Ordinal);
+                var newline = NumberedMultiBlockFixture.NewlineOf(text);
+                text += newline
                     + "@page { @bottom-center { content: \"PART-COUNTER \" counter(page) \" of \" counter(pages); } @top-center { content: \"Statement\"; } }"
-                    + Environment.NewLine;
+                    + newline;
             }
 
             files[relative] = Encoding.UTF8.GetBytes(text);
