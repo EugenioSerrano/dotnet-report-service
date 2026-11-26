@@ -99,14 +99,14 @@ public sealed class HtmlOutputPublicationTests
             () => new ActivityEnvironment().RunAsync(() => activity.PublishHtmlOutputAsync(
                 new PublishHtmlOutputInput(
                     acceptance.ReportJobId,
-                    acceptance.OutputId,
-                    $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+                    acceptance.Outputs[0].OutputId,
+                    $"outputs/{acceptance.ReportJobId}/{acceptance.Outputs[0].OutputId}/attempt",
                     Hash,
                     4_096))));
 
         Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
         Assert.True(failure.NonRetryable);
-        Assert.Null(jobs.ArtifactOf(acceptance.OutputId));
+        Assert.Null(jobs.ArtifactOf(acceptance.Outputs[0].OutputId));
     }
 
     private static (InMemoryJobStore Jobs, InMemoryUploadStore Uploads) Stores()
@@ -162,7 +162,7 @@ public sealed class HtmlOutputPublicationTests
 
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             Consumer,
             uploadId,
             "pilot-grouped",

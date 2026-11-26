@@ -21,18 +21,18 @@ public sealed class AttemptCauseActivityTests
         var acceptance = await ReportJobFixture.AcceptedAsync(stores);
         var cancellationToken = TestContext.Current.CancellationToken;
         await stores.Jobs.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
             cancellationToken);
         await stores.Jobs.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 2, AttemptCauseVocabulary.WatchdogDeadline, Now.AddMinutes(1)),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 2, AttemptCauseVocabulary.WatchdogDeadline, Now.AddMinutes(1)),
             cancellationToken);
         await stores.Jobs.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 3, AttemptCauseVocabulary.GuardDeadline, Now.AddMinutes(2)),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 3, AttemptCauseVocabulary.GuardDeadline, Now.AddMinutes(2)),
             cancellationToken);
         var activity = new AttemptCauseActivities(stores.Jobs);
 
         var answer = await new ActivityEnvironment().RunAsync(() => activity.FindLastAttemptCauseAsync(
-            new FindLastAttemptCauseInput(acceptance.OutputId, 0)));
+            new FindLastAttemptCauseInput(acceptance.Outputs[0].OutputId, 0)));
 
         Assert.NotNull(answer);
         Assert.Equal(3, answer!.Attempt);
@@ -47,7 +47,7 @@ public sealed class AttemptCauseActivityTests
         var activity = new AttemptCauseActivities(stores.Jobs);
 
         var answer = await new ActivityEnvironment().RunAsync(() => activity.FindLastAttemptCauseAsync(
-            new FindLastAttemptCauseInput(acceptance.OutputId, 0)));
+            new FindLastAttemptCauseInput(acceptance.Outputs[0].OutputId, 0)));
 
         Assert.Null(answer);
     }
@@ -60,12 +60,12 @@ public sealed class AttemptCauseActivityTests
         var other = await ReportJobFixture.AcceptedAsync(stores);
         var cancellationToken = TestContext.Current.CancellationToken;
         await stores.Jobs.RecordAttemptCauseAsync(
-            new AttemptCause(other.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            new AttemptCause(other.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
             cancellationToken);
         var activity = new AttemptCauseActivities(stores.Jobs);
 
         var answer = await new ActivityEnvironment().RunAsync(() => activity.FindLastAttemptCauseAsync(
-            new FindLastAttemptCauseInput(one.OutputId, 0)));
+            new FindLastAttemptCauseInput(one.Outputs[0].OutputId, 0)));
 
         Assert.Null(answer);
     }
@@ -77,12 +77,12 @@ public sealed class AttemptCauseActivityTests
         var acceptance = await ReportJobFixture.AcceptedAsync(stores);
         var cancellationToken = TestContext.Current.CancellationToken;
         await stores.Jobs.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.GuardDeadline, Now),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.GuardDeadline, Now),
             cancellationToken);
         var activity = new AttemptCauseActivities(stores.Jobs);
 
         var answer = await new ActivityEnvironment().RunAsync(() => activity.FindLastAttemptCauseAsync(
-            new FindLastAttemptCauseInput(acceptance.OutputId, 1)));
+            new FindLastAttemptCauseInput(acceptance.Outputs[0].OutputId, 1)));
 
         Assert.Null(answer);
     }

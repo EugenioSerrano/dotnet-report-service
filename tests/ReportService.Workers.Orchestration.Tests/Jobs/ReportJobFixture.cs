@@ -81,7 +81,7 @@ internal static class ReportJobFixture
 
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             Consumer,
             uploadId,
             "pilot-grouped",

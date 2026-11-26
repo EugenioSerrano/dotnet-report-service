@@ -79,7 +79,7 @@ public sealed partial class PostgresJobStore : IJobStore
         INSERT INTO report_service.report_outputs
             (output_id, report_job_id, format, status, error_code, started_at, finished_at)
         VALUES
-            (@OutputId, @ReportJobId, 'PDF', 'PENDING', NULL, NULL, NULL)
+            (@OutputId, @ReportJobId, @Format, 'PENDING', NULL, NULL, NULL)
         """;
 
     private const string InsertReferenceSql = """
@@ -275,7 +275,6 @@ public sealed partial class PostgresJobStore : IJobStore
         var parameters = new
         {
             acceptance.ReportJobId,
-            acceptance.OutputId,
             acceptance.ConsumerId,
             acceptance.UploadId,
             acceptance.TemplateId,
@@ -388,12 +387,24 @@ public sealed partial class PostgresJobStore : IJobStore
                 return new JobAcceptanceResult.UploadUnusable();
             }
 
-            await connection.ExecuteAsync(new CommandDefinition(
-                InsertOutputSql,
-                parameters,
-                transaction,
-                CommandTimeoutSeconds,
-                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            // One independent output row per requested format, each its own identifier and format,
+            // all PENDING, inside the same acceptance transaction as the job row. The orchestration
+            // finds each output by its format, so the rows need no ordering of their own here.
+            foreach (var output in acceptance.Outputs)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    InsertOutputSql,
+                    new
+                    {
+                        output.OutputId,
+                        acceptance.ReportJobId,
+                        Format = JobWireValues.ToStoredText(output.Format),
+                    },
+                    transaction,
+                    CommandTimeoutSeconds,
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
+            }
+
             await connection.ExecuteAsync(new CommandDefinition(
                 InsertReferenceSql,
                 parameters,

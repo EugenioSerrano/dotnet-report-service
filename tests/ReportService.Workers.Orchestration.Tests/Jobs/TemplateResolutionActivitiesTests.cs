@@ -341,7 +341,7 @@ public sealed class TemplateResolutionActivitiesTests
 
             var acceptance = new JobAcceptance(
                 JobIdentifier.Create(),
-                JobIdentifier.CreateOutput(),
+                [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
                 Consumer,
                 uploadId,
                 Template,

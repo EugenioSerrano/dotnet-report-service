@@ -84,11 +84,25 @@ public abstract class JobStoreContract : IAsyncLifetime
         var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.NotNull(state);
         Assert.Equal(ReportJobStatus.Queued, state!.Job.Status);
-        var output = Assert.Single(state.Outputs);
-        Assert.Equal(acceptance.OutputId, output.OutputId);
-        Assert.Equal(OutputFormat.Pdf, output.Format);
-        Assert.Equal(OutputStatus.Pending, output.Status);
-        Assert.Null(output.ErrorCode);
+
+        // US-008 AC-1: each requested output is materialized as its own independent output row —
+        // one PENDING row per requested format, with its own identifier. The acceptance carries
+        // an ordered list of requested outputs (AC-1); the store need not preserve that order
+        // (no US-008 AC specifies cross-format order, and the real store reads rows back ordered
+        // by output_id — SPEC §8.1 D5), so the rows are asserted as a SET: exactly one stored row
+        // per requested (id, format), each PENDING, every identifier distinct.
+        Assert.Equal(acceptance.Outputs.Count, state.Outputs.Count);
+        Assert.Equal(
+            acceptance.Outputs.Count,
+            state.Outputs.Select(output => output.OutputId).Distinct(StringComparer.Ordinal).Count());
+        foreach (var requested in acceptance.Outputs)
+        {
+            var output = Assert.Single(state.Outputs, row => row.OutputId == requested.OutputId);
+            Assert.Equal(requested.Format, output.Format);
+            Assert.Equal(OutputStatus.Pending, output.Status);
+            Assert.Null(output.ErrorCode);
+        }
+
         Assert.Equal(UploadStatus.Ready, state.UploadStatus);
         Assert.Equal(Now.AddHours(1), state.UploadExpiresAt);
     }
@@ -280,7 +294,7 @@ public abstract class JobStoreContract : IAsyncLifetime
 
         // The repeat is built with the same identity and new identifiers: it must not write a
         // second job, and the first job's own row is the one that stays.
-        var repeat = acceptance with { ReportJobId = JobIdentifier.Create(), OutputId = JobIdentifier.CreateOutput() };
+        var repeat = acceptance with { ReportJobId = JobIdentifier.Create(), Outputs = [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)] };
         var result = await Store.AcceptAsync(repeat, Now.AddMinutes(5), cancellationToken);
 
         Assert.Equal(acceptance.ReportJobId, Assert.IsType<JobAcceptanceResult.SameRequest>(result).ReportJobId);
@@ -367,7 +381,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         {
             UploadId = absent,
             ReportJobId = JobIdentifier.Create(),
-            OutputId = JobIdentifier.CreateOutput(),
+            Outputs = [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
         };
         Assert.Equal(
             acceptance.ReportJobId,
@@ -416,7 +430,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         var first = Acceptance(uploadId, idempotencyKey: "K1");
 
         var attempts = Enumerable.Range(0, 32)
-            .Select(_ => first with { ReportJobId = JobIdentifier.Create(), OutputId = JobIdentifier.CreateOutput() })
+            .Select(_ => first with { ReportJobId = JobIdentifier.Create(), Outputs = [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)] })
             .ToArray();
 
         var results = await Task.WhenAll(
@@ -481,8 +495,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
 
-        Assert.Equal(TransitionOutcome.Applied, await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
-        Assert.Equal(TransitionOutcome.AlreadyApplied, await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+        Assert.Equal(TransitionOutcome.Applied, await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken));
+        Assert.Equal(TransitionOutcome.AlreadyApplied, await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken));
     }
 
     [Fact]
@@ -492,16 +506,16 @@ public abstract class JobStoreContract : IAsyncLifetime
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
 
-        var refused = await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        var refused = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId), cancellationToken);
         Assert.Equal(PartCommitOutcome.GuardRefused, refused.Outcome);
-        Assert.Null(await Store.FindPartAsync(acceptance.OutputId, 0, cancellationToken));
+        Assert.Null(await Store.FindPartAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken));
 
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        var committed = await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        var committed = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId), cancellationToken);
         Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
         Assert.Equal(Hash, committed.Existing!.Sha256);
 
-        var again = await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 9 }, cancellationToken);
+        var again = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId) with { PageCount = 9 }, cancellationToken);
         Assert.Equal(PartCommitOutcome.AlreadyCommitted, again.Outcome);
         Assert.Equal(3, again.Existing!.PageCount);
     }
@@ -519,7 +533,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
         var presentation = new PresentationProvenance(
             "es-AR",
@@ -530,16 +544,16 @@ public abstract class JobStoreContract : IAsyncLifetime
             "74.2",
             "2025b");
 
-        var committed = await Store.CommitPartAsync(Commit(acceptance.OutputId) with { Presentation = presentation }, cancellationToken);
+        var committed = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId) with { Presentation = presentation }, cancellationToken);
         Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
 
-        var read = await Store.FindPartAsync(acceptance.OutputId, 0, cancellationToken);
+        var read = await Store.FindPartAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken);
         Assert.NotNull(read);
         Assert.Equal(presentation, read!.Presentation);
 
-        var without = await Store.CommitPartAsync(Commit(acceptance.OutputId, blockIndex: 1), cancellationToken);
+        var without = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId, blockIndex: 1), cancellationToken);
         Assert.Equal(PartCommitOutcome.Committed, without.Outcome);
-        var none = await Store.FindPartAsync(acceptance.OutputId, 1, cancellationToken);
+        var none = await Store.FindPartAsync(acceptance.Outputs[0].OutputId, 1, cancellationToken);
         Assert.NotNull(none);
         Assert.Null(none!.Presentation);
     }
@@ -550,13 +564,13 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
-        var published = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        var published = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken);
         Assert.Equal(PublishOutcome.Published, published.Outcome);
         Assert.Equal(ArtifactId, published.ArtifactId);
 
-        var again = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        var again = await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken);
         Assert.Equal(PublishOutcome.AlreadyPublished, again.Outcome);
 
         var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
@@ -576,12 +590,12 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
-        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
         Assert.Equal(
             OutputFailureOutcome.AlreadyTerminal,
-            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+            await Store.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
 
         var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
         Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
@@ -609,10 +623,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PublishOutcome.Published,
-            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
 
         var html = JobIdentifier.CreateOutput();
         if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken))
@@ -633,7 +647,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         // The succeeded output stays succeeded and downloadable; the failed one keeps its code.
         Assert.Equal(
             OutputStatus.Succeeded,
-            Assert.Single(state.Outputs, output => output.OutputId == acceptance.OutputId).Status);
+            Assert.Single(state.Outputs, output => output.OutputId == acceptance.Outputs[0].OutputId).Status);
         Assert.Equal(OutputStatus.Failed, Assert.Single(state.Outputs, output => output.OutputId == html).Status);
     }
 
@@ -644,10 +658,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PublishOutcome.Published,
-            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
 
         var html = JobIdentifier.CreateOutput();
         if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Succeeded, cancellationToken))
@@ -670,10 +684,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+            await Store.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
 
         var html = JobIdentifier.CreateOutput();
         if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken))
@@ -702,10 +716,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PublishOutcome.Published,
-            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
 
         var html = JobIdentifier.CreateOutput();
         if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken)
@@ -733,7 +747,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
 
         var html = JobIdentifier.CreateOutput();
-        if (!await TryCancelExistingOutputAsync(acceptance.OutputId, cancellationToken)
+        if (!await TryCancelExistingOutputAsync(acceptance.Outputs[0].OutputId, cancellationToken)
             || !await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Cancelled, cancellationToken))
         {
             return;
@@ -758,10 +772,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PublishOutcome.Published,
-            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
 
         var html = JobIdentifier.CreateOutput();
         if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Running, cancellationToken))
@@ -810,12 +824,12 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         const string Code = "ROW_BOUND_EXCEEDED";
         const string Reason =
             "the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description";
 
-        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.OutputId, Code, Reason, Now, cancellationToken));
+        Assert.Equal(OutputFailureOutcome.Applied, await Store.FailOutputAsync(acceptance.Outputs[0].OutputId, Code, Reason, Now, cancellationToken));
         var failed = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.Equal(Reason, Assert.Single(failed!.Outputs).ErrorReason);
 
@@ -843,15 +857,15 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(
             AttemptCauseOutcome.Recorded,
             await Store.RecordAttemptCauseAsync(
-                new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.GuardDeadline, Now),
+                new AttemptCause(acceptance.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.GuardDeadline, Now),
                 cancellationToken));
         Assert.Equal(
             AttemptCauseOutcome.AlreadyRecorded,
             await Store.RecordAttemptCauseAsync(
-                new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now.AddSeconds(1)),
+                new AttemptCause(acceptance.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now.AddSeconds(1)),
                 cancellationToken));
 
-        var row = await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken);
+        var row = await Store.FindLastAttemptCauseAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken);
         Assert.NotNull(row);
         Assert.Equal(1, row!.Attempt);
         Assert.Equal(AttemptCauseVocabulary.GuardDeadline, row.Cause);
@@ -871,34 +885,34 @@ public abstract class JobStoreContract : IAsyncLifetime
         var other = await AcceptedAsync(cancellationToken);
 
         await Store.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
             cancellationToken);
         await Store.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 2, AttemptCauseVocabulary.WatchdogDeadline, Now.AddMinutes(1)),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 2, AttemptCauseVocabulary.WatchdogDeadline, Now.AddMinutes(1)),
             cancellationToken);
         await Store.RecordAttemptCauseAsync(
-            new AttemptCause(acceptance.OutputId, 0, 3, AttemptCauseVocabulary.GuardDeadline, Now.AddMinutes(2)),
+            new AttemptCause(acceptance.Outputs[0].OutputId, 0, 3, AttemptCauseVocabulary.GuardDeadline, Now.AddMinutes(2)),
             cancellationToken);
 
-        var last = await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken);
+        var last = await Store.FindLastAttemptCauseAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken);
         Assert.NotNull(last);
         Assert.Equal(3, last!.Attempt);
         Assert.Equal(AttemptCauseVocabulary.GuardDeadline, last.Cause);
         Assert.Equal(Now.AddMinutes(2), last.RecordedAt);
 
         // The block no attempt recorded, and the other output's row, are not this read's.
-        Assert.Null(await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 1, cancellationToken));
-        Assert.Null(await Store.FindLastAttemptCauseAsync(other.OutputId, 0, cancellationToken));
+        Assert.Null(await Store.FindLastAttemptCauseAsync(acceptance.Outputs[0].OutputId, 1, cancellationToken));
+        Assert.Null(await Store.FindLastAttemptCauseAsync(other.Outputs[0].OutputId, 0, cancellationToken));
 
         await Store.RecordAttemptCauseAsync(
-            new AttemptCause(other.OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
+            new AttemptCause(other.Outputs[0].OutputId, 0, 1, AttemptCauseVocabulary.WatchdogDeadline, Now),
             cancellationToken);
         Assert.Equal(
             AttemptCauseVocabulary.GuardDeadline,
-            (await Store.FindLastAttemptCauseAsync(acceptance.OutputId, 0, cancellationToken))!.Cause);
+            (await Store.FindLastAttemptCauseAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken))!.Cause);
         Assert.Equal(
             AttemptCauseVocabulary.WatchdogDeadline,
-            (await Store.FindLastAttemptCauseAsync(other.OutputId, 0, cancellationToken))!.Cause);
+            (await Store.FindLastAttemptCauseAsync(other.Outputs[0].OutputId, 0, cancellationToken))!.Cause);
     }
 
     [Fact]
@@ -1079,8 +1093,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken);
 
         var status = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
 
@@ -1096,8 +1110,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
         Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
 
         var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
@@ -1126,8 +1140,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
         Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
 
         // A retried publication carries a later expiry of its own: the row the first one wrote
@@ -1148,12 +1162,12 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
         // The schema refuses a row that expires before it was created, and so does the double:
         // no store answers a publication that cannot describe a downloadable artifact.
         await Assert.ThrowsAnyAsync<Exception>(() => Store.PublishAsync(
-            Artifact(acceptance.ReportJobId, acceptance.OutputId) with { ExpiresAt = Now.AddSeconds(-1) },
+            Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId) with { ExpiresAt = Now.AddSeconds(-1) },
             cancellationToken));
 
         var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
@@ -1193,8 +1207,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var otherJob = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
         Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(otherJob, Now, cancellationToken));
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        var artifact = Artifact(acceptance.ReportJobId, acceptance.OutputId);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        var artifact = Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
         Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
 
         Assert.NotNull(await Store.FindArtifactAsync(
@@ -1271,8 +1285,8 @@ public abstract class JobStoreContract : IAsyncLifetime
             await SeedAsync(UploadState.Ready, other, cancellationToken),
             other);
         Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(otherOwned, Now, cancellationToken));
-        await Store.TransitionOutputAsync(otherOwned.OutputId, Now, cancellationToken);
-        var otherArtifact = ArtifactOf(otherOwned.ReportJobId, otherOwned.OutputId, NextArtifactId(), OutputFormat.Pdf);
+        await Store.TransitionOutputAsync(otherOwned.Outputs[0].OutputId, Now, cancellationToken);
+        var otherArtifact = ArtifactOf(otherOwned.ReportJobId, otherOwned.Outputs[0].OutputId, NextArtifactId(), OutputFormat.Pdf);
         Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(otherArtifact, cancellationToken)).Outcome);
 
         // Another consumer on the owner's job and artifact: live and expired.
@@ -1298,8 +1312,8 @@ public abstract class JobStoreContract : IAsyncLifetime
             var uploadId = await SeedAsync(UploadState.Ready, consumerId, cancellationToken);
             var acceptance = Acceptance(uploadId, consumerId);
             Assert.IsType<JobAcceptanceResult.Accepted>(await Store.AcceptAsync(acceptance, Now, cancellationToken));
-            await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-            var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, NextArtifactId(), OutputFormat.Pdf);
+            await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+            var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.Outputs[0].OutputId, NextArtifactId(), OutputFormat.Pdf);
             Assert.Equal(PublishOutcome.Published, (await Store.PublishAsync(artifact, cancellationToken)).Outcome);
             seeded.Add((consumerId, acceptance, artifact.ArtifactId));
         }
@@ -1338,8 +1352,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         CancellationToken cancellationToken)
     {
         var acceptance = await AcceptedAsync(cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, NextArtifactId(), OutputFormat.Pdf);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        var artifact = ArtifactOf(acceptance.ReportJobId, acceptance.Outputs[0].OutputId, NextArtifactId(), OutputFormat.Pdf);
         if (!live)
         {
             artifact = artifact with { CreatedAt = Now.AddDays(-8), ExpiresAt = Now.AddDays(-1) };
@@ -1394,10 +1408,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
         await Store.CommitPartitionAsync(
             Partition(acceptance.ReportJobId, recordCount: 0, blockCount: 1), cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PublishOutcome.Published,
-            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
 
         var listed = await Store.ListArtifactsAsync(acceptance.ReportJobId, Consumer, cancellationToken);
 
@@ -1485,23 +1499,23 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
-        Assert.Equal(PartCommitOutcome.Committed, (await Store.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken)).Outcome);
+        Assert.Equal(PartCommitOutcome.Committed, (await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId), cancellationToken)).Outcome);
         var first = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(1, first!.BlocksCompleted);
         Assert.Equal(3, first.PagesGenerated);
 
         Assert.Equal(
             PartCommitOutcome.AlreadyCommitted,
-            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 9 }, cancellationToken)).Outcome);
+            (await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId) with { PageCount = 9 }, cancellationToken)).Outcome);
         var repeated = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(1, repeated!.BlocksCompleted);
         Assert.Equal(3, repeated.PagesGenerated);
 
         Assert.Equal(
             PartCommitOutcome.Committed,
-            (await Store.CommitPartAsync(Commit(acceptance.OutputId, blockIndex: 1) with { PageCount = 2 }, cancellationToken)).Outcome);
+            (await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId, blockIndex: 1) with { PageCount = 2 }, cancellationToken)).Outcome);
         var second = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(2, second!.BlocksCompleted);
         Assert.Equal(5, second.PagesGenerated);
@@ -1555,8 +1569,8 @@ public abstract class JobStoreContract : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
         await Store.AcceptAsync(acceptance, Now, cancellationToken);
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
-        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+        await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.Outputs[0].OutputId), cancellationToken);
         var endedAt = Now.AddMinutes(1);
 
         Assert.Equal(JobFinalizationOutcome.Applied, (await Store.FinalizeJobAsync(acceptance.ReportJobId, endedAt, cancellationToken)).Outcome);
@@ -1590,10 +1604,10 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(0, status.RecordsTotal);
         Assert.Equal(1, status.BlocksTotal);
 
-        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             PartCommitOutcome.Committed,
-            (await Store.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 1 }, cancellationToken)).Outcome);
+            (await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId) with { PageCount = 1 }, cancellationToken)).Outcome);
         var committed = await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken);
         Assert.Equal(1, committed!.BlocksCompleted);
         Assert.Equal(1, committed.PagesGenerated);
@@ -2128,7 +2142,7 @@ public abstract class JobStoreContract : IAsyncLifetime
     {
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             consumerId,
             uploadId,
             "pilot-grouped",

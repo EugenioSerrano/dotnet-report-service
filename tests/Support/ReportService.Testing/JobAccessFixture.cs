@@ -167,7 +167,7 @@ public sealed class JobAccessFixture
         var uploadId = await ReadyUploadAsync(consumerId, cancellationToken);
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             consumerId,
             uploadId,
             "pilot-grouped",
@@ -178,7 +178,7 @@ public sealed class JobAccessFixture
                     System.Text.Encoding.UTF8.GetBytes("job-access-fixture/v1\n" + consumerId + "\n" + uploadId))));
         var accepted = await _jobs.AcceptAsync(acceptance, _now, cancellationToken);
         Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
-        return new SeededJob(acceptance.ReportJobId, acceptance.OutputId, null, null);
+        return new SeededJob(acceptance.ReportJobId, acceptance.Outputs[0].OutputId, null, null);
     }
 
     private async Task<SeededJob> PublishedAsync(

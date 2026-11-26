@@ -25,11 +25,11 @@ public sealed class ExhaustionFinalisationTests
         var cancellationToken = TestContext.Current.CancellationToken;
         Assert.Equal(
             TransitionOutcome.Applied,
-            await stores.Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+            await stores.Jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken));
         Assert.Equal(
             OutputFailureOutcome.Applied,
             await stores.Jobs.FailOutputAsync(
-                acceptance.OutputId,
+                acceptance.Outputs[0].OutputId,
                 "RENDER_TIMEOUT",
                 "exhausted cause=guard-deadline",
                 Now,
@@ -51,11 +51,11 @@ public sealed class ExhaustionFinalisationTests
         var stores = ReportJobFixture.Stores();
         var acceptance = await ReportJobFixture.AcceptedAsync(stores);
         var cancellationToken = TestContext.Current.CancellationToken;
-        await stores.Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await stores.Jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         Assert.Equal(
             OutputFailureOutcome.Applied,
             await stores.Jobs.FailOutputAsync(
-                acceptance.OutputId,
+                acceptance.Outputs[0].OutputId,
                 ReportPdfOutputWorkflow.ExecutionFailed,
                 "exhausted cause=none",
                 Now,
@@ -96,9 +96,9 @@ public sealed class ExhaustionFinalisationTests
                     Now.AddDays(7)),
                 cancellationToken)).Outcome);
 
-        await stores.Jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await stores.Jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         await stores.Jobs.FailOutputAsync(
-            acceptance.OutputId,
+            acceptance.Outputs[0].OutputId,
             "RENDER_TIMEOUT",
             "exhausted cause=watchdog-deadline",
             Now,

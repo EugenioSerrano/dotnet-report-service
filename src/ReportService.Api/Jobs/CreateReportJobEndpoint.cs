@@ -30,12 +30,12 @@ public static class CreateReportJobEndpoint
     /// <summary>The tag a job's identifier is carried on in a span.</summary>
     public const string JobIdTag = "job.id";
 
-    /// <summary>The only output format this increment produces.</summary>
-    public const string SupportedOutput = "pdf";
+    /// <summary>The output formats this increment produces, in the order the capability message names them.</summary>
+    public static readonly IReadOnlyList<string> SupportedOutputs = ["html", "pdf"];
 
     /// <summary>What an answer says when the request asks for an output this increment does not produce.</summary>
-    public const string UnsupportedOutputDetail =
-        "The requested output format is not supported. Supported formats: " + SupportedOutput + ".";
+    public static readonly string UnsupportedOutputDetail =
+        "The requested output format is not supported. Supported formats: " + string.Join(", ", SupportedOutputs) + ".";
 
     /// <summary>What an answer says when the request declares a profile this increment does not admit.</summary>
     public const string UnsupportedProfileDetail =
@@ -309,7 +309,7 @@ public static class CreateReportJobEndpoint
         var now = JobWireValues.TruncateToMillisecond(clock.GetUtcNow());
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            RequestedOutputs(request),
             consumerId,
             request.UploadId,
             request.TemplateId,
@@ -397,10 +397,40 @@ public static class CreateReportJobEndpoint
             ConflictDetail,
             RefusalReasons.KeyReused);
 
+    // The outputs an accepted request materializes: one per distinct requested format, in the order
+    // the request first named it, each with its own freshly allocated identifier. Every token has
+    // already been admitted (it is in the supported set), so the mapping is total; a format named
+    // more than once is produced once (Decision D1, defence in depth — the request reader already
+    // refuses a repeated output token before admission).
+    private static IReadOnlyList<RequestedOutput> RequestedOutputs(CreateReportJobRequest request)
+    {
+        var outputs = new List<RequestedOutput>();
+        var seen = new HashSet<OutputFormat>();
+        foreach (var token in request.Outputs)
+        {
+            var format = ToFormat(token);
+            if (seen.Add(format))
+            {
+                outputs.Add(new RequestedOutput(JobIdentifier.CreateOutput(), format));
+            }
+        }
+
+        return outputs;
+    }
+
+    // The format an admitted output token names. Every token reaching here is in the supported set,
+    // so the mapping is total and an unknown token is an invariant breach, not a request error.
+    private static OutputFormat ToFormat(string output) => output switch
+    {
+        "html" => OutputFormat.Html,
+        "pdf" => OutputFormat.Pdf,
+        _ => throw new InvalidOperationException("an admitted output token has no format mapping"),
+    };
+
     // Null when the request asks for what this increment offers; otherwise the one refusal and its log reason.
     private static (string Detail, string Reason)? UnsupportedDetail(CreateReportJobRequest request)
     {
-        var unsupportedOutput = request.Outputs.Any(output => !string.Equals(output, SupportedOutput, StringComparison.Ordinal));
+        var unsupportedOutput = request.Outputs.Any(output => !SupportedOutputs.Contains(output, StringComparer.Ordinal));
         var unsupportedProfile = !string.Equals(request.Profile, UploadWireValues.HeaderItemsV1, StringComparison.Ordinal);
         return (unsupportedOutput, unsupportedProfile) switch
         {

@@ -169,6 +169,37 @@ public sealed class ArtifactListEndpointTests : IDisposable
         Assert.Equal(512L, artifacts[1].GetProperty("sizeBytes").GetInt64());
     }
 
+    // US-008 AC-8 (ADR-047 HTML-output contract): a succeeded HTML output's artifact is listed with
+    // format "html" and the HTML media type text/html; charset=utf-8 — the same listing projection
+    // the PDF gets. The oracle is AC-8 + ADR-047, not the serve code.
+    [Fact]
+    public async Task AnHtmlArtifactIsListedWithItsFormatAndHtmlMediaType()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string HtmlArtifactId = "artifact-00000000000000000000000000000001";
+        const string HtmlMediaType = "text/html; charset=utf-8";
+        var (jobId, _) = await AcceptedAsync();
+        var htmlOutputId = JobIdentifier.CreateOutput();
+        _host.Jobs.SeedOutput(jobId, htmlOutputId, OutputFormat.Html);
+        await _host.Jobs.PublishAsync(
+            new ArtifactRecord(
+                HtmlArtifactId, jobId, htmlOutputId, OutputFormat.Html, HtmlMediaType,
+                $"outputs/{jobId}/{htmlOutputId}/attempt", Hash, 512, null, Now, Now.AddDays(7)),
+            cancellationToken);
+        await _host.Jobs.FinalizeJobAsync(jobId, Now, cancellationToken);
+
+        using var response = await ListAsync(JobApiHost.Consumer, jobId);
+        var answer = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var artifact = Assert.Single(answer.GetProperty("artifacts").EnumerateArray());
+        AssertExactly(artifact, ArtifactMembers);
+        Assert.Equal(HtmlArtifactId, artifact.GetProperty("artifactId").GetString());
+        Assert.Equal("html", artifact.GetProperty("format").GetString());
+        Assert.Equal(HtmlMediaType, artifact.GetProperty("mimeType").GetString());
+        Assert.Equal(512L, artifact.GetProperty("sizeBytes").GetInt64());
+    }
+
     [Fact]
     public async Task AForeignAnAbsentAndAMalformedIdentifierAnswerTheStatusReadsNotFound()
     {
@@ -276,7 +307,7 @@ public sealed class ArtifactListEndpointTests : IDisposable
         var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready, consumer);
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             consumer,
             uploadId,
             "pilot-grouped",
@@ -284,7 +315,7 @@ public sealed class ArtifactListEndpointTests : IDisposable
             "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, JobApiHost.Now, cancellationToken));
-        return (acceptance.ReportJobId, acceptance.OutputId);
+        return (acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
     }
 
     private Task<HttpResponseMessage> ListAsync(string? consumerId, string jobId) =>

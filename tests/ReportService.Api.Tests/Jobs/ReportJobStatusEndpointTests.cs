@@ -374,7 +374,7 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready, consumer);
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             consumer,
             uploadId,
             "pilot-grouped",
@@ -382,7 +382,7 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
             "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, JobApiHost.Now, cancellationToken));
-        return (acceptance.ReportJobId, acceptance.OutputId);
+        return (acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
     }
 
     private Task<HttpResponseMessage> GetAsync(string? consumerId, string jobId) =>

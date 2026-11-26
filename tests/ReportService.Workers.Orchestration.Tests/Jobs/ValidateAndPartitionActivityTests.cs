@@ -667,7 +667,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         var accepted = await Jobs.AcceptAsync(
             new JobAcceptance(
                 SecondJobId,
-                "output-1123456789abcdef0123456789abcdef",
+                [new RequestedOutput("output-1123456789abcdef0123456789abcdef", OutputFormat.Pdf)],
                 ConsumerId,
                 UploadId,
                 "pilot-simple",
@@ -802,7 +802,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         var accepted = await Jobs.AcceptAsync(
             new JobAcceptance(
                 ReportJobId,
-                "output-0123456789abcdef0123456789abcdef",
+                [new RequestedOutput("output-0123456789abcdef0123456789abcdef", OutputFormat.Pdf)],
                 ConsumerId,
                 uploadId,
                 "pilot-simple",

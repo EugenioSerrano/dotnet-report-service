@@ -39,7 +39,7 @@ public sealed class PdfOutputActivitiesTests
         var found = await new ActivityEnvironment().RunAsync(() => activity.FindPdfOutputAsync(
             new FindPdfOutputInput(acceptance.ReportJobId)));
 
-        Assert.Equal(acceptance.OutputId, found.OutputId);
+        Assert.Equal(acceptance.Outputs[0].OutputId, found.OutputId);
     }
 
     [Fact]
@@ -63,14 +63,14 @@ public sealed class PdfOutputActivitiesTests
         var acceptance = await AcceptedAsync(jobs, uploads);
         Assert.Equal(
             TransitionOutcome.Applied,
-            await jobs.TransitionOutputAsync(acceptance.OutputId, Now, TestContext.Current.CancellationToken));
+            await jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, TestContext.Current.CancellationToken));
         var activity = Activity(jobs);
 
         var published = await new ActivityEnvironment().RunAsync(() => activity.PublishOutputAsync(
             new PublishOutputInput(
                 acceptance.ReportJobId,
-                acceptance.OutputId,
-                $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+                acceptance.Outputs[0].OutputId,
+                $"outputs/{acceptance.ReportJobId}/{acceptance.Outputs[0].OutputId}/attempt",
                 Hash,
                 2_048,
                 3)));
@@ -86,7 +86,7 @@ public sealed class PdfOutputActivitiesTests
 
         // The artifact expires the configured output retention after the instant it was
         // published at, which is the one its creation carries.
-        var artifact = jobs.ArtifactOf(acceptance.OutputId);
+        var artifact = jobs.ArtifactOf(acceptance.Outputs[0].OutputId);
         Assert.NotNull(artifact);
         Assert.Equal(Now, artifact!.CreatedAt);
         Assert.Equal(Now.AddDays(7), artifact.ExpiresAt);
@@ -97,12 +97,12 @@ public sealed class PdfOutputActivitiesTests
     {
         var (jobs, uploads) = Stores();
         var acceptance = await AcceptedAsync(jobs, uploads);
-        await jobs.TransitionOutputAsync(acceptance.OutputId, Now, TestContext.Current.CancellationToken);
+        await jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, TestContext.Current.CancellationToken);
         var activity = Activity(jobs);
         var input = new PublishOutputInput(
             acceptance.ReportJobId,
-            acceptance.OutputId,
-            $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+            acceptance.Outputs[0].OutputId,
+            $"outputs/{acceptance.ReportJobId}/{acceptance.Outputs[0].OutputId}/attempt",
             Hash,
             2_048,
             3);
@@ -126,8 +126,8 @@ public sealed class PdfOutputActivitiesTests
             () => new ActivityEnvironment().RunAsync(() => activity.PublishOutputAsync(
                 new PublishOutputInput(
                     acceptance.ReportJobId,
-                    acceptance.OutputId,
-                    $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+                    acceptance.Outputs[0].OutputId,
+                    $"outputs/{acceptance.ReportJobId}/{acceptance.Outputs[0].OutputId}/attempt",
                     Hash,
                     2_048,
                     3))));
@@ -214,7 +214,7 @@ public sealed class PdfOutputActivitiesTests
 
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             Consumer,
             uploadId,
             "pilot-grouped",

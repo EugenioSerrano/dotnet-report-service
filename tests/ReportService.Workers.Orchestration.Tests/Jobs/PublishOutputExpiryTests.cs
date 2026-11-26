@@ -41,13 +41,13 @@ public sealed class PublishOutputExpiryTests
     {
         var (jobs, uploads) = Stores();
         var acceptance = await AcceptedAsync(jobs, uploads);
-        await jobs.TransitionOutputAsync(acceptance.OutputId, Now, TestContext.Current.CancellationToken);
+        await jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, TestContext.Current.CancellationToken);
 
         var published = await new ActivityEnvironment().RunAsync(() => Activity(jobs, TimeSpan.FromDays(7)).PublishOutputAsync(
             Input(acceptance)));
 
         Assert.Equal(PublishOutputResult.Published, published.Outcome);
-        var artifact = jobs.ArtifactOf(acceptance.OutputId);
+        var artifact = jobs.ArtifactOf(acceptance.Outputs[0].OutputId);
         Assert.NotNull(artifact);
 
         // The instant is whole milliseconds, the precision every answer and every decision uses,
@@ -67,7 +67,7 @@ public sealed class PublishOutputExpiryTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var (jobs, uploads) = Stores();
         var acceptance = await AcceptedAsync(jobs, uploads);
-        await jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        await jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
         var clock = new ManualTimeProvider(Now);
 
         var first = await new ActivityEnvironment().RunAsync(() => Activity(jobs, TimeSpan.FromDays(7), clock).PublishOutputAsync(
@@ -83,7 +83,7 @@ public sealed class PublishOutputExpiryTests
         Assert.Equal(PublishOutputResult.AlreadyPublished, retried.Outcome);
         Assert.Equal(first.ArtifactId, retried.ArtifactId);
 
-        var artifact = jobs.ArtifactOf(acceptance.OutputId);
+        var artifact = jobs.ArtifactOf(acceptance.Outputs[0].OutputId);
         Assert.NotNull(artifact);
         Assert.Equal(JobWireValues.TruncateToMillisecond(Now.AddDays(7)), artifact!.ExpiresAt);
 
@@ -109,8 +109,8 @@ public sealed class PublishOutputExpiryTests
 
     private static PublishOutputInput Input(JobAcceptance acceptance) => new(
         acceptance.ReportJobId,
-        acceptance.OutputId,
-        $"outputs/{acceptance.ReportJobId}/{acceptance.OutputId}/attempt",
+        acceptance.Outputs[0].OutputId,
+        $"outputs/{acceptance.ReportJobId}/{acceptance.Outputs[0].OutputId}/attempt",
         Hash,
         2_048,
         3);
@@ -161,7 +161,7 @@ public sealed class PublishOutputExpiryTests
 
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             Consumer,
             uploadId,
             "pilot-grouped",

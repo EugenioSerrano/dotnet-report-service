@@ -168,7 +168,7 @@ public sealed class DownloadMemoryTests : IDisposable
         var uploadId = await host.UploadAsync(JobApiHost.UploadState.Ready);
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             JobApiHost.Consumer,
             uploadId,
             "pilot-grouped",
@@ -176,7 +176,7 @@ public sealed class DownloadMemoryTests : IDisposable
             "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await host.Jobs.AcceptAsync(acceptance, Now, cancellationToken));
-        return (acceptance.ReportJobId, acceptance.OutputId);
+        return (acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
     }
 
     private static long PeakDiskOf(string root)

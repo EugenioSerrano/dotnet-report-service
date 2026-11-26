@@ -158,13 +158,17 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         Assert.Equal(UploadStatus.Verifying, stored!.Status);
     }
 
+    // US-008 AC-1 (negative): a token outside the supported set { html, pdf } is refused with the
+    // unsupported-capability 422 and stores nothing. "html" and "pdf" were moved to the acceptance
+    // cases below; every other token — an unknown format, a casing variant, the empty string, and
+    // an unsupported profile — stays refused (SPEC §8.1; the refusal set is not weakened).
     [Theory]
-    [InlineData("\"html\"", "header-items-v1")]
     [InlineData("\"xlsx\"", "header-items-v1")]
     [InlineData("\"markdown\"", "header-items-v1")]
     [InlineData("\"PDF\"", "header-items-v1")]
     [InlineData("\"\"", "header-items-v1")]
-    [InlineData("\"pdf\", \"html\"", "header-items-v1")]
+    [InlineData("\"pdf\", \"xlsx\"", "header-items-v1")]
+    [InlineData("\"html\", \"markdown\"", "header-items-v1")]
     [InlineData("\"pdf\"", "header-items-v2")]
     [InlineData("\"Pdf\"", "HEADER_ITEMS_V1")]
     public async Task AnUnsupportedOutputOrProfileIsRefusedSynchronouslyAndNothingIsStored(
@@ -204,6 +208,110 @@ public sealed class CreateReportJobEndpointTests : IDisposable
             CreateReportJobEndpoint.UnsupportedOutputDetail + " " + CreateReportJobEndpoint.UnsupportedProfileDetail,
             problem.GetProperty("detail").GetString());
         Assert.Equal(0, _host.Jobs.AcceptCalls);
+    }
+
+    // US-008 AC-1 (negative): the capability message names the supported set so a client learns
+    // which formats it may ask for. The expected text is derived from the approved intent (AC-1:
+    // "html" and "pdf" are the admitted outputs), never read back from the endpoint constant.
+    [Fact]
+    public async Task AnUnknownFormatIsRefusedWithAMessageNamingTheSupportedSet()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"xlsx\"")),
+            cancellationToken);
+        var problem = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(422, (int)response.StatusCode);
+        Assert.Equal(ErrorCodes.UnsupportedCapability, problem.GetProperty("code").GetString());
+        Assert.Equal(
+            "The requested output format is not supported. Supported formats: html, pdf.",
+            problem.GetProperty("detail").GetString());
+        Assert.Equal(0, _host.Jobs.AcceptCalls);
+        Assert.Empty(_host.Jobs.Jobs);
+    }
+
+    // US-008 AC-1: a request that lists "html" alone is accepted and the stored job has exactly one
+    // output row — of format HTML, in PENDING — and no PDF row (an html-only job starts no PDF
+    // output). The oracle is AC-1 ("each requested output is created as an independent output with
+    // its own status"), not the current single-PDF persistence.
+    [Fact]
+    public async Task AnHtmlOnlyRequestIsAcceptedAndCreatesOneIndependentHtmlOutputRow()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"html\"")),
+            cancellationToken);
+        var answer = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var reportJobId = answer.GetProperty("reportJobId").GetString();
+        var output = Assert.Single(_host.Jobs.OutputsOf(reportJobId!));
+        Assert.Matches("^output-[0-9a-f]{32}$", output.OutputId);
+        Assert.Equal(OutputFormat.Html, output.Format);
+        Assert.Equal(OutputStatus.Pending, output.Status);
+        Assert.DoesNotContain(_host.Jobs.OutputsOf(reportJobId!), row => row.Format == OutputFormat.Pdf);
+    }
+
+    // US-008 AC-1: a request that lists "pdf" and "html" is accepted and the stored job has one
+    // independent output row per requested format — a PDF and an HTML, each with its own identifier
+    // and PENDING. The rows are asserted as a SET (each requested format present exactly once, with
+    // a distinct id), not a specific cross-format sequence: no US-008 AC specifies output-row order
+    // and the real store reads rows back ordered by output_id (SPEC §8.1, Decision D5).
+    [Fact]
+    public async Task APdfAndHtmlRequestIsAcceptedAndCreatesOneIndependentRowPerFormat()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"pdf\", \"html\"")),
+            cancellationToken);
+        var answer = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var reportJobId = answer.GetProperty("reportJobId").GetString();
+        var outputs = _host.Jobs.OutputsOf(reportJobId!);
+
+        Assert.Equal(2, outputs.Count);
+        var formats = outputs.Select(output => output.Format).ToArray();
+        Assert.Contains(OutputFormat.Pdf, formats);
+        Assert.Contains(OutputFormat.Html, formats);
+        Assert.All(outputs, output => Assert.Equal(OutputStatus.Pending, output.Status));
+        Assert.Equal(2, outputs.Select(output => output.OutputId).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // US-008 AC-1 (negative), SPEC §8.1 + Decision D1 (rev 2): a request that repeats an output
+    // TOKEN is refused 400 by CreateReportJobRequestReader BEFORE admission, so it never reaches
+    // acceptance and no row is created. This is the pre-existing, approved duplicate-token contract
+    // (asserted in full by CreateReportJobRequestReaderTests.ARepeatedOutputIsRefusedAndTheValue
+    // IsNotEchoed, which this Bolt keeps intact and un-weakened); here it is pinned end to end
+    // through the endpoint. The repeated value is a planted secret that must not be echoed.
+    [Fact]
+    public async Task ARepeatedOutputTokenIsRefusedBeforeAdmissionAndTheValueIsNotEchoed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready);
+
+        using var response = await _host.Client.SendAsync(
+            JobApiHost.CreateRequest(
+                JobApiHost.Consumer,
+                JobApiHost.Body(uploadId, outputs: $"\"{Planted}\", \"{Planted}\"")),
+            cancellationToken);
+        var problem = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ErrorCodes.RequestInvalid, problem.GetProperty("code").GetString());
+        Assert.Equal("outputs", problem.GetProperty("field").GetString());
+        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.GetProperty("reason").GetString());
+        Assert.Equal(CreateReportJobRequestReader.RepeatedOutputDetail, problem.GetProperty("detail").GetString());
+        Assert.DoesNotContain(Planted, problem.GetRawText(), StringComparison.Ordinal);
+        Assert.Equal(0, _host.Jobs.AcceptCalls);
+        Assert.Empty(_host.Jobs.Jobs);
     }
 
     [Theory]
@@ -598,7 +706,7 @@ public sealed class CreateReportJobEndpointTests : IDisposable
         var jobId = (await JobApiHost.AnswerAsync(accepted)).GetProperty("reportJobId").GetString();
 
         using var unsupported = await _host.Client.SendAsync(
-            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"html\"")), "K1"),
+            WithKey(JobApiHost.CreateRequest(JobApiHost.Consumer, JobApiHost.Body(uploadId, outputs: "\"xlsx\"")), "K1"),
             cancellationToken);
         using var unknownConsumer = await _host.Client.SendAsync(
             WithKey(JobApiHost.CreateRequest("not-registered", JobApiHost.Body(uploadId)), "K1"), cancellationToken);

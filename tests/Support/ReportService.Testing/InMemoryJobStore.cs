@@ -24,6 +24,10 @@ public sealed partial class InMemoryJobStore : IJobStore
     private readonly IUploadStore _uploads;
     private readonly Dictionary<string, ReportJobRecord> _jobs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ReportOutputRecord> _outputs = new(StringComparer.Ordinal);
+    // The order each output was inserted in, so a job's outputs read back in the order the
+    // acceptance named their formats (first-seen order) rather than by their random identifiers.
+    private readonly Dictionary<string, int> _outputOrder = new(StringComparer.Ordinal);
+    private int _outputSequence;
     private readonly Dictionary<string, TemplateReferenceRecord> _references = new(StringComparer.Ordinal);
     private readonly Dictionary<(string ConsumerId, string Key), BoundRequest> _idempotency = [];
     private readonly Dictionary<string, RequestFingerprint> _fingerprints = new(StringComparer.Ordinal);
@@ -173,7 +177,7 @@ public sealed partial class InMemoryJobStore : IJobStore
         {
             return [.. _outputs.Values
                 .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal))
-                .OrderBy(output => output.OutputId, StringComparer.Ordinal)];
+                .OrderBy(output => _outputOrder.GetValueOrDefault(output.OutputId, int.MaxValue))];
         }
     }
 
@@ -259,8 +263,14 @@ public sealed partial class InMemoryJobStore : IJobStore
             {
                 _idempotency.Add((acceptance.ConsumerId, boundKey), new BoundRequest(job.ReportJobId, acceptance.Fingerprint));
             }
-            _outputs.Add(acceptance.OutputId, new ReportOutputRecord(
-                acceptance.OutputId, job.ReportJobId, OutputFormat.Pdf, OutputStatus.Pending));
+            // One independent output row per requested format, each its own identifier and format,
+            // all PENDING — mirroring the real store's per-format insert in one transaction.
+            foreach (var output in acceptance.Outputs)
+            {
+                _outputs.Add(output.OutputId, new ReportOutputRecord(
+                    output.OutputId, job.ReportJobId, output.Format, OutputStatus.Pending));
+                _outputOrder[output.OutputId] = _outputSequence++;
+            }
             _references.Add(job.ReportJobId, new TemplateReferenceRecord(
                 job.ReportJobId, acceptance.TemplateId, acceptance.ReferenceForm)
             {
@@ -289,7 +299,7 @@ public sealed partial class InMemoryJobStore : IJobStore
                 ? []
                 : [.. _outputs.Values
                     .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal))
-                    .OrderBy(output => output.OutputId, StringComparer.Ordinal)];
+                    .OrderBy(output => _outputOrder.GetValueOrDefault(output.OutputId, int.MaxValue))];
         }
 
         if (job is null)

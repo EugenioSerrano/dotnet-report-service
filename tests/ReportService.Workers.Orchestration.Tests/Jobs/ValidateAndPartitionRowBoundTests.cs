@@ -567,7 +567,7 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
                 cancellationToken));
 
         var accepted = await Jobs.AcceptAsync(
-            new JobAcceptance(ReportJobId, OutputId, ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0",
+            new JobAcceptance(ReportJobId, [new RequestedOutput(OutputId, OutputFormat.Pdf)], ConsumerId, UploadId, "pilot-simple", TemplateReferenceForm.Exact, "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(UploadId)),
             Now,
             cancellationToken);

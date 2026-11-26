@@ -78,6 +78,32 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
         Assert.Equal(artifact.Sha256, HashOf(content));
     }
 
+    // US-008 AC-8 (ADR-047 HTML-output contract): a succeeded HTML output's artifact downloads with
+    // Content-Type text/html; charset=utf-8 and filename {jobId}.html — the same serve path the PDF
+    // takes, with the format's own media type and extension. The filename is built from the job's
+    // identifier and the artifact's format, never from anything a caller sent. Oracle: AC-8 + ADR-047.
+    [Fact]
+    public async Task AnHtmlArtifactIsDownloadedAsTextHtmlWithTheJobFilename()
+    {
+        var (jobId, artifact, content) = await PublishedHtmlAsync(Body(12_000));
+
+        using var response = await DownloadAsync(JobApiHost.Consumer, jobId, artifact.ArtifactId);
+        var (received, failure) = await ReadBodyAsync(response);
+
+        Assert.Null(failure);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+        Assert.Equal(artifact.SizeBytes, response.Content.Headers.ContentLength);
+        Assert.Equal(artifact.SizeBytes, received);
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+
+        var disposition = response.Content.Headers.ContentDisposition;
+        Assert.NotNull(disposition);
+        Assert.Equal("attachment", disposition!.DispositionType);
+        Assert.Equal($"{jobId}.html", disposition.FileName?.Trim('"'));
+        Assert.Equal(artifact.Sha256, HashOf(content));
+    }
+
     [Fact]
     public async Task TheBodyIsTheStoredObjectAndItsHashIsTheOneTheListingCarries()
     {
@@ -426,7 +452,7 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
         var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready, consumer);
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             consumer,
             uploadId,
             "pilot-grouped",
@@ -434,7 +460,7 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
             "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, Now, cancellationToken));
-        return (acceptance.ReportJobId, acceptance.OutputId);
+        return (acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
     }
 
     // Publishes the output's one artifact over content written through the storage port, so the
@@ -467,6 +493,38 @@ public sealed class ArtifactDownloadEndpointTests : IDisposable
         Assert.Equal(PublishOutcome.Published, (await _host.Jobs.PublishAsync(artifact, cancellationToken)).Outcome);
         Assert.Equal(JobFinalizationOutcome.Applied, (await _host.Jobs.FinalizeJobAsync(jobId, Now, cancellationToken)).Outcome);
         return (artifact, content);
+    }
+
+    // Publishes a succeeded HTML output's one artifact over content written through the storage
+    // port. The job is accepted (which creates its PDF output), then an independent HTML output is
+    // seeded and its .html published with the HTML media type — so the row the serve path reads
+    // carries OutputFormat.Html and text/html; charset=utf-8, as a produced HTML output would.
+    private async Task<(string JobId, ArtifactRecord Artifact, byte[] Content)> PublishedHtmlAsync(byte[] content)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (jobId, _) = await AcceptedAsync();
+        var htmlOutputId = JobIdentifier.CreateOutput();
+        _host.Jobs.SeedOutput(jobId, htmlOutputId, OutputFormat.Html);
+
+        var objectKey = $"outputs/{jobId}/{htmlOutputId}/{Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)}";
+        using var source = new MemoryStream(content, writable: false);
+        var written = await _host.Objects.WriteAsync(ObjectKey.Create(objectKey), source, cancellationToken);
+        Assert.True(written.Succeeded, $"the case's content had to be stored: {written.Outcome} {written.Error?.Message}");
+
+        var artifact = new ArtifactRecord(
+            ArtifactIdentifier.Create(),
+            jobId,
+            htmlOutputId,
+            OutputFormat.Html,
+            "text/html; charset=utf-8",
+            objectKey,
+            written.Value!.Sha256,
+            written.Value.Size,
+            null,
+            Now,
+            Now.Add(Retention));
+        Assert.Equal(PublishOutcome.Published, (await _host.Jobs.PublishAsync(artifact, cancellationToken)).Outcome);
+        return (jobId, artifact, content);
     }
 
     // Replaces the host with one whose stored objects are counted, or whose reads are answered by

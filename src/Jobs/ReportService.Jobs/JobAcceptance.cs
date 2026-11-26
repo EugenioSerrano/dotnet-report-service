@@ -7,7 +7,8 @@ namespace ReportService.Jobs;
 /// the store is never handed anything that came straight from a caller unchecked.
 /// </summary>
 /// <param name="ReportJobId">The identifier the job will have.</param>
-/// <param name="OutputId">The identifier its PDF output will have.</param>
+/// <param name="Outputs">The outputs the job materializes — one per distinct requested format, in the
+/// order the request first named them, each with its own identifier and format. Non-empty.</param>
 /// <param name="ConsumerId">The declared consumer that owns the job.</param>
 /// <param name="UploadId">The upload whose data the job reports on.</param>
 /// <param name="TemplateId">The template's identifier, as the request wrote it.</param>
@@ -16,7 +17,7 @@ namespace ReportService.Jobs;
 /// <param name="Fingerprint">The identity of the request, computed from what it asked for and never from state.</param>
 public sealed record JobAcceptance(
     string ReportJobId,
-    string OutputId,
+    IReadOnlyList<RequestedOutput> Outputs,
     string ConsumerId,
     string UploadId,
     string TemplateId,

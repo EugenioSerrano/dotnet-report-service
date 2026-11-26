@@ -37,9 +37,9 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
 
-        var refused = await _jobs.PublishAsync(ArtifactOf(acceptance.ReportJobId, acceptance.OutputId, "artifact-1"), cancellationToken);
+        var refused = await _jobs.PublishAsync(ArtifactOf(acceptance.ReportJobId, acceptance.Outputs[0].OutputId, "artifact-1"), cancellationToken);
 
         Assert.Equal(PublishOutcome.GuardRefused, refused.Outcome);
         Assert.Null(await _jobs.FindArtifactAsync(acceptance.ReportJobId, "artifact-1", Consumer, cancellationToken));
@@ -56,12 +56,12 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
 
-        var refused = await _jobs.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        var refused = await _jobs.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId), cancellationToken);
 
         Assert.Equal(PartCommitOutcome.GuardRefused, refused.Outcome);
-        Assert.Null(await _jobs.FindPartAsync(acceptance.OutputId, 0, cancellationToken));
+        Assert.Null(await _jobs.FindPartAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken));
     }
 
     [Fact]
@@ -70,13 +70,13 @@ public sealed class PublishAfterFailureTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = await AcceptedAndStartedAsync(cancellationToken);
 
-        var committed = await _jobs.CommitPartAsync(Commit(acceptance.OutputId), cancellationToken);
+        var committed = await _jobs.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId), cancellationToken);
         Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
 
-        var again = await _jobs.CommitPartAsync(Commit(acceptance.OutputId) with { PageCount = 9 }, cancellationToken);
+        var again = await _jobs.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId) with { PageCount = 9 }, cancellationToken);
         Assert.Equal(PartCommitOutcome.AlreadyCommitted, again.Outcome);
         Assert.Equal(3, again.Existing!.PageCount);
-        var stored = await _jobs.FindPartAsync(acceptance.OutputId, 0, cancellationToken);
+        var stored = await _jobs.FindPartAsync(acceptance.Outputs[0].OutputId, 0, cancellationToken);
         Assert.Equal(3, stored!.PageCount);
     }
 
@@ -88,10 +88,10 @@ public sealed class PublishAfterFailureTests
 
         Assert.Equal(
             OutputFailureOutcome.Applied,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.Outputs[0].OutputId, "PAGINATION_FAILED", reason: null, Now, cancellationToken));
         Assert.Equal(
             OutputFailureOutcome.AlreadyTerminal,
-            await _jobs.FailOutputAsync(acceptance.OutputId, "EXECUTION_FAILED", reason: null, Now.AddMinutes(1), cancellationToken));
+            await _jobs.FailOutputAsync(acceptance.Outputs[0].OutputId, "EXECUTION_FAILED", reason: null, Now.AddMinutes(1), cancellationToken));
 
         var state = await _jobs.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
         Assert.Equal("PAGINATION_FAILED", Assert.Single(state!.Outputs).ErrorCode);
@@ -122,7 +122,7 @@ public sealed class PublishAfterFailureTests
 
         var acceptance = new JobAcceptance(
             JobIdentifier.Create(),
-            JobIdentifier.CreateOutput(),
+            [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
             Consumer,
             uploadId,
             "pilot-grouped",
@@ -130,7 +130,7 @@ public sealed class PublishAfterFailureTests
             "1.0.0",
             AcceptanceIdentity.For(uploadId));
         Assert.IsType<JobAcceptanceResult.Accepted>(await _jobs.AcceptAsync(acceptance, Now, cancellationToken));
-        Assert.Equal(TransitionOutcome.Applied, await _jobs.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken));
+        Assert.Equal(TransitionOutcome.Applied, await _jobs.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken));
         return acceptance;
     }
 

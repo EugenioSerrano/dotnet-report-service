@@ -277,7 +277,7 @@ public sealed class ReportJobActivitiesTests
 
             var acceptance = new JobAcceptance(
                 JobIdentifier.Create(),
-                JobIdentifier.CreateOutput(),
+                [new RequestedOutput(JobIdentifier.CreateOutput(), OutputFormat.Pdf)],
                 Consumer,
                 rig.UploadId,
                 "pilot-grouped",
