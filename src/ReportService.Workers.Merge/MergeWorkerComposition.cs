@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
+using Npgsql;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Merge.Assembly;
@@ -24,6 +26,13 @@ public static class MergeWorkerComposition
         builder.AddServiceDefaults(ServiceNames.MergeWorker, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         builder.AddServiceConfiguration();
         builder.AddMetadataDatabase();
+
+        // The stores the assembly step resolves are built over the pool this process owns,
+        // exactly as the orchestration worker, the API and the PDF worker register it; the
+        // metadata database's settings are the ones the service configuration validated.
+        builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
+            services.GetRequiredService<IOptions<DatabaseOptions>>().Value.ConnectionString));
+
         builder.AddObjectStorage("merge-worker");
 
         // The one queue this process declares; the assembly step is its only work.

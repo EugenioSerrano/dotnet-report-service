@@ -1,3 +1,5 @@
+using ReportService.Jobs;
+
 namespace ReportService.EndToEndTests;
 
 /// <summary>
@@ -27,5 +29,22 @@ public sealed class SingleBlockLimitStillActiveEndToEndTests
         Assert.Null(ended.ArtifactId);
         Assert.NotNull(ended.OutputId);
         Assert.Empty(await stage.ReadPartsAsync(composition, ended.OutputId!, cancellationToken));
+
+        // The late-commit guard, exercised in the covering run: the output has failed,
+        // and a part commit that arrives late is refused and writes no row.
+        var jobs = new PostgresJobStore(composition.DataSource);
+        var refused = await jobs.CommitPartAsync(
+            new PartCommit(
+                ended.OutputId!,
+                0,
+                "parts/" + reportJobId + "/0/000000000000000000000001",
+                new string('a', 64),
+                1,
+                1,
+                new string('b', 64),
+                DateTimeOffset.UtcNow),
+            cancellationToken);
+        Assert.Equal(PartCommitOutcome.GuardRefused, refused.Outcome);
+        Assert.Null(await jobs.FindPartAsync(ended.OutputId!, 0, cancellationToken));
     }
 }

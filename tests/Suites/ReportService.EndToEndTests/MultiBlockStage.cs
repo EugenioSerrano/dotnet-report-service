@@ -76,7 +76,15 @@ internal sealed class MultiBlockStage : IDisposable
     /// <summary>Starts the composition and returns the handles a case reads through.</summary>
     public async Task<Composition> StartAsync(CancellationToken cancellationToken)
     {
-        var builder = await TestComposition.CreateAsync(cancellationToken);
+        // The composition's API serves the consumers its registry file names; every job of
+        // this stage is submitted as consumer-a, so the file is written before the
+        // composition is built and the model is given its path.
+        var registry = Path.Combine(_directory, "consumers.json");
+        await File.WriteAllTextAsync(
+            registry,
+            """{ "consumers": [ { "consumerId": "consumer-a", "displayName": "Consumer A", "active": true } ] }""",
+            cancellationToken);
+        var builder = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
         var app = await builder.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using var api = app.CreateHttpClient("api");
@@ -255,6 +263,20 @@ internal sealed class MultiBlockStage : IDisposable
         var uploadId = await SeedConfirmingUploadAsync(composition, cancellationToken);
         await CompleteUploadAsync(composition, uploadId, cancellationToken);
         return uploadId;
+    }
+
+    /// <summary>Reads the job's PDF output identifier, or <see langword="null"/> while no output is recorded.</summary>
+    public async Task<string?> FindOutputIdAsync(
+        Composition composition,
+        string reportJobId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await composition.DataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT output_id FROM report_service.report_outputs WHERE report_job_id = @id AND format = 'PDF'";
+        command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
+        return (string?)await command.ExecuteScalarAsync(cancellationToken);
     }
 
     /// <summary>Reads the output's part commits, ordered by block index.</summary>

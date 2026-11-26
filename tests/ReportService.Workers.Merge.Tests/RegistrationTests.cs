@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 using ReportService.Jobs;
 using ReportService.Pdf.Assembly;
 using ReportService.ServiceDefaults.Temporal;
@@ -46,6 +48,46 @@ public sealed class RegistrationTests
 
             Assert.Equal(1, options.MaxConcurrentActivities);
             Assert.Contains(options.Activities, activity => activity.Name == AssemblePdfActivity.Name);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void TheCompositionRegistersTheDataSourceTheStoresResolve()
+    {
+        var builder = Host.CreateApplicationBuilder();
+        var root = Path.Combine(Path.GetTempPath(), "merge-composition-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:reportservice"] =
+                    "Host=127.0.0.1;Port=5432;Username=reportservice;Password=secret;Database=reportservice",
+                ["Database:ExpectedSchemaVersion"] = "0020",
+                ["Storage:Provider"] = "filesystem",
+                ["Storage:Filesystem:Root"] = Path.Combine(root, "store"),
+                ["Storage:Filesystem:CreateIfMissing"] = "true",
+                ["Storage:Diagnostics:Enabled"] = "false",
+                ["Telemetry:Diagnostics:Enabled"] = "false",
+            });
+            MergeWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+
+            // The merge worker's stores are built over the process's data source, which
+            // the composition registers exactly as the other processes do. Without it,
+            // both stores fail to resolve and the worker crash-loops at start.
+            Assert.NotNull(host.Services.GetService<NpgsqlDataSource>());
+            Assert.IsType<PostgresJobStore>(host.Services.GetService<IJobStore>());
+            Assert.IsType<PostgresTemplateVersionStore>(host.Services.GetService<ITemplateVersionStore>());
+            Assert.NotNull(host.Services.GetService<TakenTemplatePackageReader>());
         }
         finally
         {

@@ -93,6 +93,9 @@ internal static partial class Program
     /// <summary>The variable that tells each composition the run has prepared the render worker image.</summary>
     private const string ImagePreparedVariable = "REPORTSERVICE_RENDER_WORKER_IMAGE_PREPARED";
 
+    /// <summary>The variable that tells each composition the run has prepared the merge worker image.</summary>
+    private const string MergeImagePreparedVariable = "REPORTSERVICE_MERGE_WORKER_IMAGE_PREPARED";
+
     /// <summary>
     /// The variable that names the run's evidence folder to every test process, so a class
     /// that produces an artefact a person must inspect writes it into the run's own folder
@@ -598,7 +601,7 @@ internal static partial class Program
         var environment = level switch
         {
             "integration" => new Dictionary<string, string> { ["TESTCONTAINERS_RYUK_DISABLED"] = "true" },
-            "e2e" => new Dictionary<string, string> { [ImagePreparedVariable] = "true" },
+            "e2e" => new Dictionary<string, string> { [ImagePreparedVariable] = "true", [MergeImagePreparedVariable] = "true" },
             _ => new Dictionary<string, string>(),
         };
 

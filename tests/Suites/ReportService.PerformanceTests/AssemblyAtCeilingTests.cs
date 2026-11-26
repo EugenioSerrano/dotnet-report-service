@@ -104,7 +104,12 @@ public sealed class AssemblyAtCeilingTests : IDisposable
                 part.SizeBytes,
                 Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(part.Path)))))
             .ToList();
-        var verdict = AssemblyVerifier.Verify(new AssemblyVerificationRequest(output, expectations, frame, Contract()));
+        var verdict = AssemblyVerdict.Good;
+        await metrics.MeasureAsync(AssemblyStage.Verification, () =>
+        {
+            verdict = AssemblyVerifier.Verify(new AssemblyVerificationRequest(output, expectations, frame, Contract()));
+            return Task.CompletedTask;
+        });
         Assert.True(verdict.Passed, verdict.Reason);
 
         return (result.PageCount, result.Metrics);
