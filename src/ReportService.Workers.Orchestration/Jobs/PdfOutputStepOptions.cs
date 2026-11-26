@@ -47,6 +47,8 @@ public static class RenderPdfBlockStepOptions
         "UNSUPPORTED_CAPABILITY",
         "QUOTA_EXCEEDED",
         "EXECUTION_FAILED",
+        "OUTPUT_LIMIT_EXCEEDED",
+        "ARTIFACT_INTEGRITY_FAILED",
     ];
 
     /// <summary>Builds the execution settings of one block render.</summary>

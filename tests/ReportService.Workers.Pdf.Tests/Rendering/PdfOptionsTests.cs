@@ -35,7 +35,7 @@ public sealed class PdfOptionsTests
         Assert.Equal(2f, options.RetryPolicy.BackoffCoefficient);
         Assert.Equal(TimeSpan.FromSeconds(60), options.RetryPolicy.MaximumInterval);
         Assert.Equal(
-            ["PAGINATION_FAILED", "UNSUPPORTED_CAPABILITY", "QUOTA_EXCEEDED", "EXECUTION_FAILED"],
+            ["PAGINATION_FAILED", "UNSUPPORTED_CAPABILITY", "QUOTA_EXCEEDED", "EXECUTION_FAILED", "OUTPUT_LIMIT_EXCEEDED"],
             options.RetryPolicy.NonRetryableErrorTypes);
         Assert.DoesNotContain("RENDER_TIMEOUT", RenderPdfBlockOptions.NonRetryableErrorTypes);
 

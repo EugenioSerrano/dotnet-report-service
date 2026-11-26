@@ -31,6 +31,7 @@ internal static partial class Program
         "tests/Jobs/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj",
         "tests/Support/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj",
         "tests/Jobs/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj",
+        "tests/Pdf/ReportService.Pdf.Assembly.Tests/ReportService.Pdf.Assembly.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj",
         "tests/Rendering/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
@@ -42,6 +43,7 @@ internal static partial class Program
         "tests/Templates/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj",
         "tests/Jobs/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
+        "tests/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj",
         "tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
         // The hermetic PDF structure verification: reads the committed golden PDFs
         // in-process (PdfPig), no container. A no-coverage hermetic project

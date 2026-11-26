@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** — unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly), and `ReportService.PdfStructure.Tests` (the hermetic PDF structure verification over the committed golden PDFs) | nothing outside the test process; files only under a temporary directory unique to each test; the committed golden PDFs read in-process | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
+| **Hermetic** - unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Assembly.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Merge.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly), and `ReportService.PdfStructure.Tests` (the hermetic PDF structure verification over the committed golden PDFs) | nothing outside the test process; files only under a temporary directory unique to each test; the committed golden PDFs read in-process | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
@@ -282,9 +282,10 @@ Every run writes its evidence under `artifacts/test-results/<yyMMdd-HHmm>/`
   `ReportService.Migrations`, `ReportService.Rendering`, `ReportService.Storage`,
   `ReportService.Storage.Filesystem`, `ReportService.TemplatePackages`,
   `ReportService.TemplateSource`, `ReportService.Templates`,
-  `ReportService.Uploads` and `ReportService.Workers.Orchestration`; the data
-  contract's own assembly, `ReportService.Data`, carries **90 % line / 85 %
-  branch**.
+  `ReportService.Uploads`, `ReportService.Workers.Merge` and
+  `ReportService.Workers.Orchestration`; the data contract's own assembly,
+  `ReportService.Data`, and the assembly library, `ReportService.Pdf.Assembly`,
+  carry **90 % line / 85 % branch**.
 - An assembly without a floor is still reported: `ReportService.ServiceDefaults`
   and `ReportService.ServiceDefaults.Temporal` appear with their figures and no
   floor, because they have no unit/component project of their own yet.

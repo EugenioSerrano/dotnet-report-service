@@ -33,6 +33,13 @@
     <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+    <!-- The assembly-at-ceiling case exercises the product's assembly and its reader directly. -->
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Assembly\ReportService.Pdf.Assembly.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Support\ReportService.Testing\Fonts\LiberationSans-Regular.ttf"
+          Link="Fonts\LiberationSans-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

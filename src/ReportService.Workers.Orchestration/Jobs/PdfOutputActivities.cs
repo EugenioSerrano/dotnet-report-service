@@ -130,6 +130,23 @@ public sealed class PdfOutputActivities(
         return new FindPdfOutputResult(pdf[0].OutputId);
     }
 
+    /// <summary>Reads the job's partition facts: the block count and the record count, and nothing of its data.</summary>
+    /// <param name="input">The job whose partition is read.</param>
+    /// <returns>The block and record counts.</returns>
+    [Activity(PdfOutputPartitionFacts.Name)]
+    public async Task<PdfOutputPartitionFactsResult> ReadPartitionFactsAsync(PdfOutputPartitionFactsInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+
+        var partition = await jobs
+            .FindPartitionAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)
+            .ConfigureAwait(false)
+            ?? throw Refuse("the job has no partition");
+
+        return new PdfOutputPartitionFactsResult(partition.BlockCount, partition.RecordCount);
+    }
+
     /// <summary>
     /// Finds the one output of the asked format the job has. Unlike <see cref="FindPdfOutputAsync"/>,
     /// which requires exactly one PDF output, this lookup is nullable and no-throw when the format

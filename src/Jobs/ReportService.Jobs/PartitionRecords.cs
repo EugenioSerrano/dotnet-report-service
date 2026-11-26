@@ -139,12 +139,45 @@ public enum PartCommitOutcome
 
     /// <summary>The job is ending or has ended, or the output is no longer running; nothing was written.</summary>
     GuardRefused,
+
+    /// <summary>The commit would pass the document ceiling; it was rolled back and the output failed.</summary>
+    LimitExceeded,
 }
 
 /// <summary>The result of committing a rendered block.</summary>
 /// <param name="Outcome">Whether this call wrote it, found it, or was refused.</param>
 /// <param name="Existing">The commit as it stands, when one exists.</param>
-public sealed record PartCommitResult(PartCommitOutcome Outcome, PartCommit? Existing);
+public sealed record PartCommitResult(PartCommitOutcome Outcome, PartCommit? Existing)
+{
+    /// <summary>The limit that was passed, when the outcome is <see cref="PartCommitOutcome.LimitExceeded"/>.</summary>
+    public string? Limit { get; init; }
+
+    /// <summary>The limit's value, when the outcome is <see cref="PartCommitOutcome.LimitExceeded"/>.</summary>
+    public long LimitValue { get; init; }
+
+    /// <summary>The value the commit would reach, when the outcome is <see cref="PartCommitOutcome.LimitExceeded"/>.</summary>
+    public long ReachedValue { get; init; }
+}
+
+/// <summary>
+/// The document ceiling of one PDF output, as ADR-007 §3.4 fixes it: 10 000 pages
+/// and 36 MiB (37 748 736 bytes) of committed parts. The store enforces it inside
+/// the commit transaction; nothing here is a new product decision.
+/// </summary>
+public static class DocumentCeiling
+{
+    /// <summary>The largest page count one output may reach.</summary>
+    public const int MaximumPages = 10_000;
+
+    /// <summary>The largest total size one output's parts may reach.</summary>
+    public const long MaximumBytes = 37_748_736L;
+
+    /// <summary>The limit name a pages refusal carries.</summary>
+    public const string PagesLimit = "document-pages";
+
+    /// <summary>The limit name a bytes refusal carries.</summary>
+    public const string BytesLimit = "document-bytes";
+}
 
 /// <summary>What the publication of an output did.</summary>
 public enum PublishOutcome

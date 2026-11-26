@@ -7,20 +7,34 @@ using Temporalio.Workflows;
 
 namespace ReportService.Workers.Orchestration.Jobs;
 
-/// <summary>What one output's execution is asked to produce: the PDF output of one job.</summary>
+/// <summary>
+/// What one output's execution is asked to produce: the PDF output of one job. The
+/// continuation members are optional and default to the start, so every payload
+/// recorded before the multi-block path existed deserializes unchanged.
+/// </summary>
 /// <param name="ReportJobId">The identifier of the job.</param>
 /// <param name="OutputId">The identifier of the job's PDF output.</param>
-public sealed record ReportPdfOutputInput(string ReportJobId, string OutputId);
+/// <param name="NextBlockIndex">The next block a continued run schedules, from zero.</param>
+/// <param name="CompletedBlocks">How many blocks a continued run's predecessor completed.</param>
+public sealed record ReportPdfOutputInput(
+    string ReportJobId,
+    string OutputId,
+    int NextBlockIndex = 0,
+    int CompletedBlocks = 0);
 
 /// <summary>
-/// The one PDF output of a job, as its own execution: it starts the output, has its single
-/// block printed and verified on the PDF worker, and publishes the verified block as the
-/// output's one artifact in the transaction that also marks the output succeeded. A failure
-/// that ends the work ends the output with the code the failure carries - a block that failed
-/// its checks, a package this increment cannot print, a value beyond the render's guards, or,
-/// for anything else, the code that says the step itself could not finish - and the output
-/// is never left running: the job that started it closes from the output's own state.
-/// It holds no clock, no random value and no I/O of its own, so its history replays exactly.
+/// The one PDF output of a job, as its own execution: it starts the output, has its
+/// blocks printed and verified on the PDF worker, assembles the verified parts in
+/// manifest order on the merge worker, and publishes the assembled document as the
+/// output's one artifact in the transaction that also marks the output succeeded. A
+/// single-block output keeps the recorded path exactly: one render and the part
+/// published as the artifact. A multi-block output is gated by its own patch, keeps
+/// at most W renders outstanding, continues as a new run every 1 000 completed
+/// blocks, and assembles only after every block committed. A failure that ends the
+/// work ends the output with the code the failure carries, and the output is never
+/// left running: the job that started it closes from the output's own state. It
+/// holds no clock, no random value and no I/O of its own, so its history replays
+/// exactly.
 /// </summary>
 [Workflow(WorkflowType)]
 public sealed class ReportPdfOutputWorkflow
@@ -35,6 +49,26 @@ public sealed class ReportPdfOutputWorkflow
     public const string ExecutionFailed = "EXECUTION_FAILED";
 
     /// <summary>
+    /// The identifier of the patch that gates the multi-block path: the partition
+    /// facts read, the bounded fan-out and the assembly. A run recorded before it
+    /// carries no marker, so it replays with the patch inactive and keeps its old
+    /// command sequence exactly.
+    /// </summary>
+    public const string MultiBlockRenderPatch = "multi-block-render-v1";
+
+    private static int _window = PdfOutputConcurrencyOptions.DefaultWindow;
+
+    /// <summary>Publishes the configured window to the workflow type, once, while the process plans its workers.</summary>
+    /// <param name="window">The most renders one output may keep outstanding.</param>
+    public static void Configure(int window)
+    {
+        _window = PdfOutputConcurrencyOptions.Resolve(window);
+    }
+
+    /// <summary>The window as this process published it.</summary>
+    public static int CurrentWindow() => _window;
+
+    /// <summary>
     /// The codes a failure of the data or the template carries, and the only ones an output
     /// keeps without reading the cause record: the same data or the same template reported
     /// again reaches the same verdict, so nothing about the cause would change the answer.
@@ -46,6 +80,8 @@ public sealed class ReportPdfOutputWorkflow
         "TEMPLATE_INVALID",
         "UNSUPPORTED_CAPABILITY",
         "QUOTA_EXCEEDED",
+        "OUTPUT_LIMIT_EXCEEDED",
+        "ARTIFACT_INTEGRITY_FAILED",
     ];
 
     /// <summary>The identifier of the one execution that produces <paramref name="reportJobId"/>'s PDF output.</summary>
@@ -71,31 +107,62 @@ public sealed class ReportPdfOutputWorkflow
 
         try
         {
-            var part = await Workflow.ExecuteActivityAsync(
-                (IRenderPdfBlockStep step) => step.RunAsync(new RenderPdfBlockStepInput(
-                    input.ReportJobId,
-                    input.OutputId,
-                    0)),
-                RenderPdfBlockStepOptions.Create()).ConfigureAwait(true);
+            if (!Workflow.Patched(MultiBlockRenderPatch))
+            {
+                await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
+                return;
+            }
+
+            var facts = await Workflow.ExecuteActivityAsync(
+                (PdfOutputActivities activities) => activities.ReadPartitionFactsAsync(
+                    new PdfOutputPartitionFactsInput(input.ReportJobId)),
+                metadata).ConfigureAwait(true);
+
+            if (facts.BlockCount <= 1)
+            {
+                await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
+                return;
+            }
+
+            await RunFanOutAsync(input, facts.BlockCount).ConfigureAwait(true);
+
+            var assembled = await Workflow.ExecuteActivityAsync(
+                (IAssemblePdfStep step) => step.RunAsync(new AssemblePdfStepInput(input.ReportJobId, input.OutputId)),
+                AssemblePdfStepOptions.Create()).ConfigureAwait(true);
 
             await Workflow.ExecuteActivityAsync(
                 (PdfOutputActivities activities) => activities.PublishOutputAsync(new PublishOutputInput(
                     input.ReportJobId,
                     input.OutputId,
-                    part.PartKey,
-                    part.Sha256,
-                    part.SizeBytes,
-                    part.PageCount)),
+                    assembled.ObjectKey,
+                    assembled.Sha256,
+                    assembled.SizeBytes,
+                    assembled.PageCount)),
+                metadata).ConfigureAwait(true);
+        }
+        catch (BlockRenderFailure blockFailure)
+        {
+            var carried = ((blockFailure.InnerException as ActivityFailureException)?.InnerException as ApplicationFailureException)?.ErrorType;
+            var (code, reason) = await ExhaustionAsync(
+                carried,
+                () => Workflow.ExecuteActivityAsync(
+                    (AttemptCauseActivities activities) => activities.FindLastAttemptCauseAsync(
+                        new FindLastAttemptCauseInput(input.OutputId, blockFailure.BlockIndex)),
+                    AttemptCauseActivities.Options())).ConfigureAwait(true);
+
+            await FailTheOutputAsync(
+                input,
+                code,
+                reason,
+                blockFailure.BlockIndex,
+                AttemptsOf(carried),
                 metadata).ConfigureAwait(true);
         }
         catch (ActivityFailureException failure)
         {
-            // The render or the publication could not finish: the output ends with the code
-            // the failure carries, and one that carries none ends with the generic code, so
-            // the job is never left waiting on an output that will not end. The failure is
-            // read as itself, never through CodeOf: a failure with no code of its own is
-            // exactly the shape a worker that stopped produces, and the map below is what
-            // tells it apart from a crash of the step.
+            // The render, the assembly or the publication could not finish: the output ends
+            // with the code the failure carries, and one that carries none ends with the
+            // generic code, so the job is never left waiting on an output that will not end.
             var carried = (failure.InnerException as ApplicationFailureException)?.ErrorType;
             var (code, reason) = await ExhaustionAsync(
                 carried,
@@ -108,8 +175,100 @@ public sealed class ReportPdfOutputWorkflow
                 input,
                 code,
                 reason,
+                blockIndex: null,
                 AttemptsOf(carried),
                 metadata).ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>The recorded single-block path: one render, and the verified part published as the artifact.</summary>
+    private static async Task RunSingleBlockAsync(ReportPdfOutputInput input, ActivityOptions metadata)
+    {
+        var part = await Workflow.ExecuteActivityAsync(
+            (IRenderPdfBlockStep step) => step.RunAsync(new RenderPdfBlockStepInput(
+                input.ReportJobId,
+                input.OutputId,
+                0)),
+            RenderPdfBlockStepOptions.Create()).ConfigureAwait(true);
+
+        await Workflow.ExecuteActivityAsync(
+            (PdfOutputActivities activities) => activities.PublishOutputAsync(new PublishOutputInput(
+                input.ReportJobId,
+                input.OutputId,
+                part.PartKey,
+                part.Sha256,
+                part.SizeBytes,
+                part.PageCount)),
+            metadata).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// The bounded fan-out: at most W renders outstanding, every block index scheduled
+    /// exactly once, completion in any order, and a run that completes its share
+    /// continues as a new one carrying only the next index and the counters.
+    /// </summary>
+    private static async Task RunFanOutAsync(ReportPdfOutputInput input, int blockCount)
+    {
+        var window = PdfOutputConcurrencyOptions.Resolve(_window);
+        var next = input.NextBlockIndex;
+        var completed = input.CompletedBlocks;
+        var outstanding = new SortedDictionary<int, Task<RenderPdfBlockStepResult>>();
+
+        while (true)
+        {
+            var decision = PdfOutputWindow.Decide(blockCount, next, completed, outstanding.Count, window);
+            switch (decision.Action)
+            {
+                case PdfOutputWindowAction.Schedule:
+                    var index = decision.NextIndex!.Value;
+                    outstanding[index] = Workflow.ExecuteActivityAsync(
+                        (IRenderPdfBlockStep step) => step.RunAsync(new RenderPdfBlockStepInput(
+                            input.ReportJobId,
+                            input.OutputId,
+                            index)),
+                        RenderPdfBlockStepOptions.Create());
+                    next = index + 1;
+                    break;
+
+                case PdfOutputWindowAction.Wait:
+                    var finished = await Workflow.WhenAnyAsync(outstanding.Values).ConfigureAwait(true);
+                    var finishedEntry = outstanding.First(entry => ReferenceEquals(entry.Value, finished));
+                    outstanding.Remove(finishedEntry.Key);
+                    try
+                    {
+                        _ = await finished.ConfigureAwait(true);
+                    }
+                    catch (Exception failure) when (failure is ActivityFailureException or ApplicationFailureException)
+                    {
+                        // The block's failure is the output's: the fan-out stops scheduling new
+                        // blocks, and the child ends with the code the failure carries. Pending
+                        // activities are cancelled when this execution closes.
+                        throw new BlockRenderFailure(finishedEntry.Key, failure);
+                    }
+
+                    completed++;
+                    break;
+
+                case PdfOutputWindowAction.ContinueAsNew:
+                    Workflow.Logger.LogInformation(
+                        "Output {OutputId} continued as new after {Completed} blocks, next index {Next}",
+                        input.OutputId,
+                        completed,
+                        next);
+                    var continuation = input with
+                    {
+                        NextBlockIndex = next,
+                        CompletedBlocks = 0,
+                    };
+                    throw Workflow.CreateContinueAsNewException(
+                        (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(continuation));
+
+                case PdfOutputWindowAction.Complete:
+                    return;
+
+                default:
+                    throw new InvalidOperationException("the window decided an action the workflow does not know.");
+            }
         }
     }
 
@@ -144,8 +303,6 @@ public sealed class ReportPdfOutputWorkflow
     {
         ArgumentNullException.ThrowIfNull(read);
 
-        // A refusal of the data or the template is deterministic: the same input reaches the
-        // same verdict, so it keeps its code, records no cause and reads none.
         if (IsDeterministicRefusal(carried))
         {
             return (carried!, null);
@@ -153,10 +310,6 @@ public sealed class ReportPdfOutputWorkflow
 
         var last = await read().ConfigureAwait(true);
 
-        // The carried code is read before the cause: an attempt that raised the timeout keeps
-        // it, and a failure with no code of its own is the timeout only when an attempt of the
-        // block recorded a deadline. Anything else is the generic code - a crash records
-        // nothing, so the absence of a row is the crash arm's whole signal.
         var code = string.Equals(carried, RenderTimeout, StringComparison.Ordinal)
             || AttemptCauseVocabulary.IsDeadline(last?.Cause)
                 ? RenderTimeout
@@ -195,23 +348,23 @@ public sealed class ReportPdfOutputWorkflow
         "DATA_INVALID",
         "TEMPLATE_INVALID",
         "EXECUTION_FAILED",
+        "OUTPUT_LIMIT_EXCEEDED",
+        "ARTIFACT_INTEGRITY_FAILED",
     };
 
     private static async Task FailTheOutputAsync(
         ReportPdfOutputInput input,
         string code,
         string? reason,
+        int? blockIndex,
         int attempts,
         ActivityOptions options)
     {
-        // The exhaustion arm's line: an output that kept a reason exhausted its budget, while a
-        // deterministic refusal keeps its own code, records no reason and is one attempt - the
-        // line says nothing about it. The output has one block, and the child schedules block 0.
-        if (reason is not null)
+        if (reason is not null && blockIndex is { } block)
         {
             Workflow.Logger.LogWarning(
                 "Block {BlockIndex} of output {OutputId} ended after {Attempts} attempts: {Code} ({Reason})",
-                0,
+                block,
                 input.OutputId,
                 attempts,
                 code,
@@ -228,4 +381,12 @@ public sealed class ReportPdfOutputWorkflow
                 new FailOutputInput(input.OutputId, code, reason)),
             options).ConfigureAwait(true);
     }
+}
+
+/// <summary>A block's render failed: the block index is kept so the output's mapping reads the block's own cause.</summary>
+internal sealed class BlockRenderFailure(int blockIndex, Exception innerException)
+    : Exception("a block of the output failed", innerException)
+{
+    /// <summary>The block whose render failed.</summary>
+    public int BlockIndex { get; } = blockIndex;
 }

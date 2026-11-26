@@ -1,0 +1,504 @@
+using System.Globalization;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Aspire.Hosting;
+using Aspire.Hosting.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Npgsql;
+using ReportService.Api.Http;
+using ReportService.Api.Jobs;
+using ReportService.Data;
+using ReportService.Data.Partitioning;
+using ReportService.Jobs;
+using ReportService.Pdf.Verification;
+using ReportService.Storage;
+using ReportService.Storage.Filesystem;
+using ReportService.TemplatePackages.Records;
+using ReportService.TemplateSource;
+using ReportService.TemplateSource.Manifest;
+using ReportService.TemplateSource.Source;
+using ReportService.TemplateSource.Take;
+using ReportService.Templates;
+using ReportService.Testing;
+using ReportService.Testing.TemplateSource;
+using ReportService.Uploads;
+
+namespace ReportService.EndToEndTests;
+
+/// <summary>
+/// The multi-block stage over the whole local composition: a snapshot whose durable
+/// partition is committed for an accepted job while its upload is still confirming,
+/// the upload completed, and the job left to run the live path — the data step
+/// returns the committed partition, the real Chromium worker renders the blocks
+/// within the bounded window, the real merge worker assembles and stamps them, and
+/// the published PDF is read back and checked page by page against the parts' own
+/// commits. The single-block limit is untouched: the retained refusal case proves it
+/// in the same covering run.
+/// </summary>
+internal sealed class MultiBlockStage : IDisposable
+{
+    /// <summary>The consumer every job and template belongs to.</summary>
+    public const string Consumer = "consumer-a";
+
+    /// <summary>The published template identity.</summary>
+    public const string Template = "pilot-multi-block";
+
+    /// <summary>The shipped sample the package is built from.</summary>
+    public const string Sample = "pilot-simple";
+
+    /// <summary>The version every package declares.</summary>
+    public const string Version = "1.0.0";
+
+    private const int SnapshotRecords = 3_000;
+    private static readonly TimeSpan HealthyDeadline = TimeSpan.FromMinutes(6);
+    private static readonly TimeSpan JobDeadline = TimeSpan.FromMinutes(15);
+
+    private readonly string _directory = Path.Combine(
+        Path.GetTempPath(),
+        "report-service-e2e-multi-block",
+        Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]);
+
+    /// <summary>The margins the sample declares, in millimetres.</summary>
+    public static PageMargins Margins => PlacementConvention.FromMillimetres(new PageMarginsMm(15, 12, 18, 12));
+
+    /// <summary>The reserved numbering area, in points.</summary>
+    public static NumberingBounds Area { get; } = NumberingBounds.FromMillimetres(120, 268, 80, 8);
+
+    /// <summary>The directory this stage's evidence and temporary files live under.</summary>
+    public string Directory => _directory;
+
+    /// <summary>Creates the stage's directory.</summary>
+    public MultiBlockStage() => System.IO.Directory.CreateDirectory(_directory);
+
+    /// <summary>Starts the composition and returns the handles a case reads through.</summary>
+    public async Task<Composition> StartAsync(CancellationToken cancellationToken)
+    {
+        var builder = await TestComposition.CreateAsync(cancellationToken);
+        var app = await builder.BuildAsync(cancellationToken);
+        await app.StartAsync(cancellationToken);
+        using var api = app.CreateHttpClient("api");
+        await Wait.UntilAsync(
+            "the API answering /health",
+            async token =>
+            {
+                using var response = await api.GetAsync(new Uri("/health", UriKind.Relative), token);
+                return response.StatusCode == HttpStatusCode.OK;
+            },
+            HealthyDeadline,
+            TimeSpan.FromMilliseconds(500),
+            cancellationToken);
+
+        var connectionString = await app.GetConnectionStringAsync("reportservice", cancellationToken)
+            ?? throw new InvalidOperationException("the composition had no connection string for its metadata database");
+        var dataSource = NpgsqlDataSource.Create(connectionString);
+        var storage = FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = StorageRoot(), CreateIfMissing = true },
+            StorageRoot(),
+            TimeProvider.System,
+            NullLogger<FilesystemObjectStore>.Instance);
+        return new Composition(app, dataSource, storage, new PostgresUploadStore(dataSource), new PostgresTemplateVersionStore(dataSource));
+    }
+
+    /// <summary>Takes the multi-block template with its numbering contract, font and native page counter.</summary>
+    public async Task TakeTemplateAsync(Composition composition, CancellationToken cancellationToken)
+    {
+        var source = TemplateSourceClass.Over(composition.Storage);
+        await source.RemoveAsync(Template, Version);
+        await source.PublishAsync(Template, Version, PackageFiles());
+
+        var options = new TemplateSourceOptions();
+        var take = new TemplateTake(
+            new StorageTemplateSource(
+                composition.Storage,
+                options,
+                new TemplateSourceMetrics(),
+                NullLogger<StorageTemplateSource>.Instance),
+            composition.Versions,
+            composition.Storage,
+            new TemplateManifestReader(),
+            new TemplateVersionConflict(NullLogger<TemplateVersionConflict>.Instance),
+            [],
+            new TemplateTakeMetrics(),
+            TimeProvider.System,
+            Options.Create(options),
+            NullLogger<TemplateTake>.Instance);
+
+        var outcome = await take.TakeAsync(Template, Version, Consumer, reportJobId: null, cancellationToken);
+        if (outcome.Record is null)
+        {
+            throw new InvalidOperationException("the multi-block template was not taken: " + outcome.Name);
+        }
+    }
+
+    /// <summary>Creates a snapshot and an upload left confirming, so the job waits before the data step.</summary>
+    public async Task<string> SeedConfirmingUploadAsync(Composition composition, CancellationToken cancellationToken)
+    {
+        var snapshot = Snapshot(SnapshotRecords);
+        var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
+        var now = DateTimeOffset.UtcNow;
+        var uploads = composition.Uploads;
+        await uploads.CreateAsync(
+            new UploadRecord(
+                uploadId,
+                Consumer,
+                UploadMode.ApiStream,
+                DataProfile.HeaderItemsV1,
+                UploadStatus.Created,
+                ObjectKey.FromSegments("staging", uploadId, "content"),
+                now,
+                now.AddHours(1)),
+            cancellationToken);
+        Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
+        Assert.True(await uploads.RecordTransferAsync(
+            uploadId,
+            UploadContentOutcome.Complete,
+            snapshot.LongLength,
+            snapshot.LongLength,
+            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(snapshot)),
+            now,
+            cancellationToken));
+
+        var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
+        using var content = new MemoryStream(snapshot, writable: false);
+        var written = await composition.Storage.WriteAsync(key, content, cancellationToken);
+        Assert.True(written.Succeeded);
+        Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, now.AddHours(1), cancellationToken));
+
+        // The snapshot is kept beside the upload, so the partition is committed from the
+        // same bytes the job will read.
+        await File.WriteAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), snapshot, cancellationToken);
+        return uploadId;
+    }
+
+    /// <summary>Submits the job for the upload and answers its identifier.</summary>
+    public async Task<string> SubmitAsync(Composition composition, string uploadId, CancellationToken cancellationToken)
+    {
+        using var api = composition.App.CreateHttpClient("api");
+        var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
+        {
+            Content = new StringContent(
+                "{\"template\":{\"id\":\"" + Template + "\",\"version\":\"" + Version + "\"},"
+                + "\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[\"pdf\"]}",
+                Encoding.UTF8,
+                "application/json"),
+        };
+        request.Headers.TryAddWithoutValidation(ConsumerIdentity.HeaderName, Consumer);
+        using var response = await api.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        Assert.True(response.StatusCode == HttpStatusCode.Accepted, $"the job had to be accepted: {(int)response.StatusCode} {body}");
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.GetProperty("reportJobId").GetString()!;
+    }
+
+    /// <summary>
+    /// Commits the job's durable partition while its upload is still confirming: the
+    /// delivered driver writes the blocks and the index page, and the partition record
+    /// is written through the product's own store, so the live data step returns it.
+    /// </summary>
+    public async Task CommitPartitionAsync(Composition composition, string reportJobId, string uploadId, CancellationToken cancellationToken)
+    {
+        var snapshot = await File.ReadAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
+        using var source = new MemoryStream(snapshot, writable: false);
+        var driver = new DurablePartitionDriver(composition.Storage, new PartitionSpec(GroupKeyField: null, "amount", PartitionLimits.Default));
+        var partition = await driver.RunAsync(
+            reportJobId,
+            HeaderItemsReader.ReadAsync(source, cancellationToken),
+            resumeFrom: null,
+            cancellationToken);
+
+        var indexBytes = BlockIndexPage.Serialize(partition.Index);
+        var indexKey = await FindIndexKeyAsync(composition.Storage, reportJobId, cancellationToken);
+        var record = new PartitionRecord(
+            reportJobId,
+            partition.Index.PartitionerVersion,
+            partition.Index.Blocks.Count,
+            partition.Index.Blocks.Sum(block => block.RecordCount),
+            partition.Index.Blocks.Sum(block => block.RecordBytes),
+            indexKey,
+            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(indexBytes)),
+            indexBytes.LongLength,
+            DateTimeOffset.UtcNow);
+        var jobs = new PostgresJobStore(composition.DataSource);
+        var committed = await jobs.CommitPartitionAsync(record, cancellationToken);
+        Assert.Equal(PartitionCommitOutcome.Committed, committed.Outcome);
+    }
+
+    /// <summary>Completes the confirming upload, so the waiting job continues.</summary>
+    public async Task CompleteUploadAsync(Composition composition, string uploadId, CancellationToken cancellationToken)
+    {
+        var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
+        var snapshot = await File.ReadAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
+        var sha = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(snapshot));
+        var ready = await composition.Uploads.CommitReadyAsync(
+            new SnapshotRecord(
+                uploadId,
+                Consumer,
+                key,
+                UploadContentEncoding.None,
+                DataProfile.HeaderItemsV1,
+                sha,
+                snapshot.LongLength,
+                sha,
+                snapshot.LongLength,
+                DateTimeOffset.UtcNow),
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+        Assert.Equal(SnapshotCommitResult.Committed, ready);
+    }
+
+    /// <summary>Creates the snapshot, uploads it and completes it in one act, so the job runs without a pre-committed partition.</summary>
+    public async Task<string> SeedReadyUploadAsync(Composition composition, CancellationToken cancellationToken)
+    {
+        var uploadId = await SeedConfirmingUploadAsync(composition, cancellationToken);
+        await CompleteUploadAsync(composition, uploadId, cancellationToken);
+        return uploadId;
+    }
+
+    /// <summary>Reads the output's part commits, ordered by block index.</summary>
+    public async Task<IReadOnlyList<PartRow>> ReadPartsAsync(
+        Composition composition,
+        string outputId,
+        CancellationToken cancellationToken)
+    {
+        var parts = new List<PartRow>();
+        await using var connection = await composition.DataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT block_index, object_key, sha256, size_bytes, page_count
+              FROM report_service.pdf_part_commits
+             WHERE output_id = @id
+             ORDER BY block_index
+            """;
+        command.Parameters.Add(new NpgsqlParameter("id", outputId));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            parts.Add(new PartRow(
+                reader.GetInt32(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetInt64(3),
+                reader.GetInt32(4)));
+        }
+
+        return parts;
+    }
+
+    /// <summary>Reads one stored object to a file under the stage's directory and answers its path.</summary>
+    public async Task<string> DownloadAsync(
+        Composition composition,
+        string key,
+        long size,
+        string sha,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(_directory, name);
+        var read = await composition.Storage.OpenReadAsync(ObjectKey.Create(key), size, sha, cancellationToken);
+        Assert.True(read.Succeeded, read.Outcome.ToString());
+        await using var content = read.Value!;
+        await using var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        await content.Content.CopyToAsync(file, cancellationToken);
+        return path;
+    }
+
+    /// <summary>Waits for the job to end and answers its record with its one artifact.</summary>
+    public async Task<EndedJob> WaitForEndAsync(Composition composition, string reportJobId, CancellationToken cancellationToken)
+    {
+        EndedJob? ended = null;
+        await Wait.UntilAsync(
+            $"job {reportJobId} to end",
+            async token =>
+            {
+                ended = await ReadJobAsync(composition.DataSource, reportJobId, token);
+                return ended is { Status: "SUCCEEDED" or "FAILED" or "CANCELLED" or "PARTIALLY_SUCCEEDED" };
+            },
+            JobDeadline,
+            TimeSpan.FromMilliseconds(500),
+            cancellationToken);
+        return ended!;
+    }
+
+    /// <summary>Reads one page's outside-area words, in painting order.</summary>
+    public static IReadOnlyList<string> OutsideArea(PrintedPage page)
+    {
+        var area = Area;
+        return [.. page.Words
+            .Where(word => !Inside(word, area))
+            .Select(word => word.Text)];
+    }
+
+    /// <summary>Whether a word's centre falls inside the reserved numbering area.</summary>
+    public static bool Inside(PrintedWord word, NumberingBounds area)
+    {
+        var x = (word.Left + word.Right) / 2d;
+        var y = (word.Top + word.Bottom) / 2d;
+        return x >= area.LeftPt && x <= area.LeftPt + area.WidthPt
+            && y >= area.TopPt && y <= area.TopPt + area.HeightPt;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        try
+        {
+            if (System.IO.Directory.Exists(_directory))
+            {
+                System.IO.Directory.Delete(_directory, recursive: true);
+            }
+        }
+        catch (IOException)
+        {
+        }
+    }
+
+    private static async Task<string> FindIndexKeyAsync(IObjectStore storage, string reportJobId, CancellationToken cancellationToken)
+    {
+        await foreach (var info in storage.ListAsync($"index/{reportJobId}", cancellationToken))
+        {
+            return info.Key.ToString();
+        }
+
+        throw new InvalidOperationException("the durable index page was not written");
+    }
+
+    private static async Task<EndedJob> ReadJobAsync(NpgsqlDataSource dataSource, string reportJobId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT j.status, j.error_code, o.output_id, o.status, o.error_code,
+                   a.artifact_id, a.object_key, a.sha256, a.size_bytes, a.page_count
+              FROM report_service.report_jobs j
+              LEFT JOIN report_service.report_outputs o ON o.report_job_id = j.report_job_id
+              LEFT JOIN report_service.artifacts a ON a.output_id = o.output_id
+             WHERE j.report_job_id = @id
+            """;
+        command.Parameters.Add(new NpgsqlParameter("id", reportJobId));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return new EndedJob("UNKNOWN", null, null, null, null, null, null, null, null);
+        }
+
+        return new EndedJob(
+            reader.GetString(0),
+            reader.IsDBNull(1) ? null : reader.GetString(1),
+            reader.IsDBNull(2) ? null : reader.GetString(2),
+            reader.IsDBNull(3) ? null : reader.GetString(3),
+            reader.IsDBNull(4) ? null : reader.GetString(4),
+            reader.IsDBNull(5) ? null : reader.GetString(5),
+            reader.IsDBNull(6) ? null : reader.GetString(6),
+            reader.IsDBNull(7) ? null : reader.GetString(7),
+            reader.IsDBNull(8) ? null : reader.GetInt64(8));
+    }
+
+    private static Dictionary<string, byte[]> PackageFiles()
+    {
+        var root = System.IO.Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var file in System.IO.Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        {
+            var relative = System.IO.Path.GetRelativePath(root, file).Replace(System.IO.Path.DirectorySeparatorChar, '/');
+            var text = File.ReadAllText(file);
+            if (string.Equals(relative, "template.yaml", StringComparison.Ordinal))
+            {
+                text = text.Replace("owner: dev-consumer", "owner: " + Consumer, StringComparison.Ordinal);
+                text = text.Replace("id: " + Sample, "id: " + Template, StringComparison.Ordinal);
+                text = text.Replace(
+                    "  pdf:" + Environment.NewLine,
+                    "  pdf:" + Environment.NewLine
+                    + "    numbering:" + Environment.NewLine
+                    + "      area: { leftMm: 120, topMm: 268, widthMm: 80, heightMm: 8 }" + Environment.NewLine
+                    + "      font: { family: \"Liberation Sans\", file: \"fonts/LiberationSans-Regular.ttf\", sizePt: 9 }" + Environment.NewLine
+                    + "      format: \"Page {X} of {Y}\"" + Environment.NewLine
+                    + "      culture: \"en-US\"" + Environment.NewLine,
+                    StringComparison.Ordinal);
+            }
+
+            if (string.Equals(relative, "html/styles.css", StringComparison.Ordinal))
+            {
+                text = text.Replace("font-family: sans-serif;", "font-family: \"Liberation Sans\", sans-serif;", StringComparison.Ordinal);
+                text += Environment.NewLine
+                    + "@page { @bottom-center { content: \"PART-COUNTER \" counter(page) \" of \" counter(pages); } @top-center { content: \"Statement\"; } }"
+                    + Environment.NewLine;
+            }
+
+            files[relative] = Encoding.UTF8.GetBytes(text);
+        }
+
+        files["fonts/LiberationSans-Regular.ttf"] = File.ReadAllBytes(
+            System.IO.Path.Combine(RepositoryPaths.Root, "tests", "Support", "ReportService.Testing", "Fonts", "LiberationSans-Regular.ttf"));
+        return files;
+    }
+
+    private static byte[] Snapshot(int records)
+    {
+        var sample = JsonNode.Parse(File.ReadAllText(
+            System.IO.Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample, "sample.json")))!;
+        var items = sample["items"]!.AsArray();
+        var built = new JsonArray();
+        for (var index = 0; index < records; index++)
+        {
+            var item = JsonNode.Parse(items[index % items.Count]!.ToJsonString())!;
+            item["sequence"] = index + 1;
+            built.Add(item);
+        }
+
+        sample["items"] = built;
+        sample["header"]!["totals"]!["recordCount"] = records;
+        return Encoding.UTF8.GetBytes(sample.ToJsonString());
+    }
+
+    private static string StorageRoot() => System.IO.Path.Combine(RepositoryPaths.Root, ".storage");
+
+    /// <summary>The handles one composition exposes to the stage's cases.</summary>
+    public sealed record Composition(
+        DistributedApplication App,
+        NpgsqlDataSource DataSource,
+        IObjectStore Storage,
+        PostgresUploadStore Uploads,
+        PostgresTemplateVersionStore Versions) : IAsyncDisposable
+    {
+        /// <inheritdoc />
+        public async ValueTask DisposeAsync()
+        {
+            await App.DisposeAsync();
+            await DataSource.DisposeAsync();
+        }
+    }
+
+    /// <summary>A job as it ended, with its one artifact's values.</summary>
+    public sealed record EndedJob(
+        string Status,
+        string? ErrorCode,
+        string? OutputId,
+        string? OutputStatus,
+        string? OutputErrorCode,
+        string? ArtifactId,
+        string? ObjectKey,
+        string? Sha256,
+        long? SizeBytes);
+
+    /// <summary>One part commit as the end-to-end check reads it.</summary>
+    public sealed record PartRow(int BlockIndex, string ObjectKey, string Sha256, long SizeBytes, int PageCount);
+}
+
+/// <summary>The reserved numbering rectangle, converted to the points the reader measures in.</summary>
+internal sealed record NumberingBounds(double LeftPt, double TopPt, double WidthPt, double HeightPt)
+{
+    /// <summary>How many points one millimetre is.</summary>
+    public const double PointsPerMillimetre = 72d / 25.4d;
+
+    /// <summary>The rectangle a template declares in millimetres.</summary>
+    public static NumberingBounds FromMillimetres(double left, double top, double width, double height) => new(
+        left * PointsPerMillimetre,
+        top * PointsPerMillimetre,
+        width * PointsPerMillimetre,
+        height * PointsPerMillimetre);
+}

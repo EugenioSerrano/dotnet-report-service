@@ -12,6 +12,8 @@
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
     <Project Path="src/ReportService.Migrations/ReportService.Migrations.csproj" />
     <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
+    <Project Path="src/ReportService.Workers.Merge/ReportService.Workers.Merge.csproj" />
+    <Project Path="src/ReportService.Workers.Merge.Entry/ReportService.Workers.Merge.Entry.csproj" />
     <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
     <Project Path="src/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
   </Folder>
@@ -43,6 +45,7 @@
     <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
     <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
+    <Project Path="tests/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Platform/">

@@ -19,10 +19,12 @@ public sealed record AssemblyPart(int PartIndex, string Path, int PageCount, lon
 /// <param name="TemporaryRoot">The quota-checked folder the staging files live under.</param>
 /// <param name="BatchSize">How many consecutive parts one staging batch imports.</param>
 /// <param name="Metrics">The measurements the assembly records, when the caller supplies one.</param>
+/// <param name="OnBatch">Called after each staging batch was saved, with the number of batches written so far.</param>
 public sealed record AssemblyRequest(
     IReadOnlyList<AssemblyPart> Parts,
     PageNumbering Numbering,
     string OutputPath,
     string TemporaryRoot,
     int BatchSize = AssemblyLimits.BatchSize,
-    AssemblyMetrics? Metrics = null);
+    AssemblyMetrics? Metrics = null,
+    Func<int, ValueTask>? OnBatch = null);

@@ -14,6 +14,7 @@ namespace ReportService.Rendering;
 /// <param name="IsFirstBlock">Whether this is the first block of the job.</param>
 /// <param name="WorkDirectory">The directory the printed file is written into.</param>
 /// <param name="PinEngine">The engine the job's pin recorded, as a manifest name, or <see langword="null"/> when the pin carries none.</param>
+/// <param name="MultiBlock">Whether the output holds more than one block, in which case the part prints no page counter of its own.</param>
 public sealed record BlockRenderRequest(
     RenderManifest Manifest,
     CompositionRequest Composition,
@@ -24,7 +25,8 @@ public sealed record BlockRenderRequest(
     int BlockIndex,
     bool IsFirstBlock,
     string WorkDirectory,
-    string? PinEngine = null);
+    string? PinEngine = null,
+    bool MultiBlock = false);
 
 /// <summary>What one block's render produced, and what the verification said about it.</summary>
 /// <param name="PdfPath">The printed file, or <see langword="null"/> when the block was refused before printing.</param>
@@ -197,8 +199,16 @@ public sealed class BlockRenderer(
         var pdfPath = Path.Combine(request.WorkDirectory, "block-" + blockIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".pdf");
 
         // The page rule is the last element of the document the service serves, so it
-        // follows every package stylesheet in the cascade. The test-only HTML control
-        // acts after it, which is how a known-bad stylesheet can override the page.
+        // follows every package stylesheet in the cascade. A multi-block part also empties
+        // the margin boxes that carry the template's own page counter here: the only
+        // numbering of a multi-block output is the global stamp the assembly adds. The
+        // test-only HTML control acts after it, which is how a known-bad stylesheet can
+        // override the page.
+        if (request.MultiBlock)
+        {
+            pageRule = pageRule.WithAdditionalCss(PageCounterSuppression.OverrideFor(block.Text));
+        }
+
         var html = pageRule.AppendTo(block.Text);
         if (htmlMutation is not null)
         {

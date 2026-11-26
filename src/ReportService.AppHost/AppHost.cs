@@ -17,8 +17,10 @@ if (prepareOnly)
     // The process exits after the preparation; the factory is not disposed.
     var logging = LoggerFactory.Create(options => options.AddSimpleConsole(console => console.SingleLine = true));
     using var services = new ServiceCollection().AddSingleton<ILoggerFactory>(logging).BuildServiceProvider();
-    var image = await RenderWorkerImage.DescribeAsync(builder.AppHostDirectory);
-    await RenderWorkerImage.PrepareAsync(image, services, CancellationToken.None);
+    var renderImage = await RenderWorkerImage.DescribeAsync(builder.AppHostDirectory);
+    await RenderWorkerImage.PrepareAsync(renderImage, services, CancellationToken.None);
+    var mergeImage = await MergeWorkerImage.DescribeAsync(builder.AppHostDirectory);
+    await MergeWorkerImage.PrepareAsync(mergeImage, services, CancellationToken.None);
     return;
 }
 
@@ -68,8 +70,13 @@ var temporalGrpc = temporal.GetEndpoint("grpc");
 // Render worker: the Linux image built by the .NET SDK on the PDF base image.
 // Before any resource starts, the image is prepared (see RenderWorkerImage).
 var renderWorkerImage = await RenderWorkerImage.DescribeAsync(builder.AppHostDirectory);
+var mergeWorkerImage = await MergeWorkerImage.DescribeAsync(builder.AppHostDirectory);
 var imagePrepared = string.Equals(
     Environment.GetEnvironmentVariable(RenderWorkerImage.PreparedVariable),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+var mergeImagePrepared = string.Equals(
+    Environment.GetEnvironmentVariable(MergeWorkerImage.PreparedVariable),
     "true",
     StringComparison.OrdinalIgnoreCase);
 if (builder.ExecutionContext.IsRunMode)
@@ -77,6 +84,9 @@ if (builder.ExecutionContext.IsRunMode)
     builder.OnBeforeStart((@event, cancellationToken) => imagePrepared
         ? RenderWorkerImage.UsePreparedAsync(renderWorkerImage, @event.Services, cancellationToken)
         : RenderWorkerImage.PrepareAsync(renderWorkerImage, @event.Services, cancellationToken));
+    builder.OnBeforeStart((@event, cancellationToken) => mergeImagePrepared
+        ? MergeWorkerImage.UsePreparedAsync(mergeWorkerImage, @event.Services, cancellationToken)
+        : MergeWorkerImage.PrepareAsync(mergeWorkerImage, @event.Services, cancellationToken));
 }
 
 // The engine address as each consumer reaches it: a container resolves it on the
@@ -143,6 +153,40 @@ if (renderWorkerOtlpEndpoint is { Length: > 0 })
 var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
 renderWorker
     .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline);
+
+// Merge worker: the Linux image on the platform's ASP.NET Core runtime image, no browser
+// and no PDF base. It assembles one output at a time on its own queue, mounts the object
+// store read-write (it writes the assembled PDF and reads the parts and the taken package),
+// and runs under the architecture's 512 MiB memory limit. The interruption seam is given
+// only when the run asks for it (the restart case), never in a normal run.
+var mergeWorker = builder.AddContainer("merge-worker", mergeWorkerImage.Repository, mergeWorkerImage.Tag)
+    .WithImagePullPolicy(ImagePullPolicy.Never)
+    .WithContainerRuntimeArgs("--restart=always")
+    .WithContainerRuntimeArgs("--memory=512m")
+    .WithEnvironment("Temporal__Address", temporalAddress)
+    .WithEnvironment("Temporal__Namespace", "default")
+    .WithBindMount(storage.MountSource, SharedStorageRoot.ContainerPath, isReadOnly: false)
+    .WithEnvironment("Storage__Provider", SharedStorageRoot.Provider)
+    .WithEnvironment("Storage__Filesystem__Root", SharedStorageRoot.ContainerPath)
+    .WithEnvironment("Storage__Filesystem__CreateIfMissing", "false")
+    .WithEnvironment("Storage__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__Enabled", "true")
+    .WithEnvironment("Telemetry__Diagnostics__ExportIntervalMilliseconds", "2000")
+    .WithEnvironment("ConnectionStrings__reportservice", metadataConnection)
+    .WithEnvironment("Database__ExpectedSchemaVersion", MigrationCatalog.ExpectedVersion)
+    .WithHttpEndpoint(targetPort: 8080, name: "http")
+    .WithHttpHealthCheck("/health", endpointName: "http")
+    .WaitFor(temporal)
+    .WaitForCompletion(migrations);
+if (renderWorkerOtlpEndpoint is { Length: > 0 })
+{
+    mergeWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
+}
+
+if (Environment.GetEnvironmentVariable("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_BATCH") is { Length: > 0 } interruptAfterBatch)
+{
+    mergeWorker.WithEnvironment("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_BATCH", interruptAfterBatch);
+}
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.

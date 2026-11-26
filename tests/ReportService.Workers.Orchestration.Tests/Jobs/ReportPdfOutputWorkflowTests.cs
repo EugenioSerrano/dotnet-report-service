@@ -33,11 +33,31 @@ public sealed class ReportPdfOutputWorkflowTests
     [InlineData("DATA_INVALID")]
     [InlineData("TEMPLATE_INVALID")]
     [InlineData("EXECUTION_FAILED")]
+    [InlineData("OUTPUT_LIMIT_EXCEEDED")]
+    [InlineData("ARTIFACT_INTEGRITY_FAILED")]
     public void ADomainFailureKeepsTheCodeItCarries(string code)
     {
         var failure = new ApplicationFailureException("the step refused", errorType: code, nonRetryable: true);
 
         Assert.Equal(code, ReportPdfOutputWorkflow.CodeOf(failure));
+    }
+
+    [Theory]
+    [InlineData("PAGINATION_FAILED")]
+    [InlineData("DATA_INVALID")]
+    [InlineData("TEMPLATE_INVALID")]
+    [InlineData("UNSUPPORTED_CAPABILITY")]
+    [InlineData("QUOTA_EXCEEDED")]
+    [InlineData("OUTPUT_LIMIT_EXCEEDED")]
+    [InlineData("ARTIFACT_INTEGRITY_FAILED")]
+    public async Task ADeterministicRefusalKeepsItsCodeWithoutReadingACause(string code)
+    {
+        var (mapped, reason) = await ReportPdfOutputWorkflow.ExhaustionAsync(
+            code,
+            () => throw new InvalidOperationException("a deterministic refusal reads no cause"));
+
+        Assert.Equal(code, mapped);
+        Assert.Null(reason);
     }
 
     [Fact]

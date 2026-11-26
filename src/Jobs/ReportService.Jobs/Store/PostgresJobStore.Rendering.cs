@@ -116,6 +116,34 @@ public sealed partial class PostgresJobStore
         WHERE output_id = @OutputId AND block_index = @BlockIndex
         """;
 
+    private const string ListPartCommitsSql = """
+        SELECT output_id               AS "OutputId",
+               block_index             AS "BlockIndex",
+               object_key              AS "ObjectKey",
+               sha256                  AS "Sha256",
+               size_bytes              AS "SizeBytes",
+               page_count              AS "PageCount",
+               template_package_sha256 AS "TemplatePackageSha256",
+               committed_at            AS "CommittedAt",
+               presentation::text      AS "Presentation"
+        FROM report_service.pdf_part_commits
+        WHERE output_id = @OutputId
+        ORDER BY block_index
+        """;
+
+    private const string SumPartCommitsSql = """
+        SELECT coalesce(sum(page_count), 0)::bigint AS "Pages",
+               coalesce(sum(size_bytes), 0)::bigint AS "Bytes"
+        FROM report_service.pdf_part_commits
+        WHERE output_id = @OutputId AND block_index <> @BlockIndex
+        """;
+
+    private const string FailOutputForLimitSql = """
+        UPDATE report_service.report_outputs
+           SET status = 'FAILED', error_code = @Code, error_reason = @Reason, finished_at = @Now
+         WHERE output_id = @OutputId AND status = 'RUNNING'
+        """;
+
     private const string InsertArtifactSql = """
         INSERT INTO report_service.artifacts
             (artifact_id, report_job_id, output_id, format, media_type, object_key, sha256,
@@ -466,6 +494,53 @@ public sealed partial class PostgresJobStore
                 return new PartCommitResult(PartCommitOutcome.GuardRefused, null);
             }
 
+            // The ceiling is checked inside the commit transaction, from the insert-once
+            // rows: the first commit that would pass it is rolled back and fails the
+            // output, and the refusal names the limit, its value and the reached value -
+            // never a data value. The block's own row is excluded so a repeated commit
+            // cannot count its pages twice.
+            var totals = await connection.QuerySingleAsync<PartsTotalsRow>(new CommandDefinition(
+                SumPartCommitsSql,
+                new { commit.OutputId, commit.BlockIndex },
+                transaction,
+                CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            var reachedPages = totals.Pages + commit.PageCount;
+            var reachedBytes = totals.Bytes + commit.SizeBytes;
+            if (reachedPages > DocumentCeiling.MaximumPages || reachedBytes > DocumentCeiling.MaximumBytes)
+            {
+                var pagesOver = reachedPages > DocumentCeiling.MaximumPages;
+                var limit = pagesOver ? DocumentCeiling.PagesLimit : DocumentCeiling.BytesLimit;
+                var limitValue = pagesOver ? DocumentCeiling.MaximumPages : DocumentCeiling.MaximumBytes;
+                var reached = pagesOver ? reachedPages : reachedBytes;
+                var reason = "limit=" + limit
+                    + " limitValue=" + limitValue.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + " reached=" + reached.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+
+                await using (var failConnection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    await failConnection.ExecuteAsync(new CommandDefinition(
+                        FailOutputForLimitSql,
+                        new
+                        {
+                            commit.OutputId,
+                            Code = "OUTPUT_LIMIT_EXCEEDED",
+                            Reason = reason,
+                            Now = UtcInstant(commit.CommittedAt),
+                        },
+                        commandTimeout: CommandTimeoutSeconds,
+                        cancellationToken: cancellationToken)).ConfigureAwait(false);
+                }
+
+                return new PartCommitResult(PartCommitOutcome.LimitExceeded, null)
+                {
+                    Limit = limit,
+                    LimitValue = limitValue,
+                    ReachedValue = reached,
+                };
+            }
+
             var written = await connection.ExecuteAsync(new CommandDefinition(
                 InsertPartCommitSql, parameters, transaction, CommandTimeoutSeconds, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
@@ -513,6 +588,27 @@ public sealed partial class PostgresJobStore
                 commandTimeout: CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
             return row?.ToRecord();
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw Unavailable(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PartCommit>> ListPartsAsync(string outputId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        try
+        {
+            await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+            var rows = await connection.QueryAsync<PartCommitRow>(new CommandDefinition(
+                ListPartCommitsSql,
+                new { OutputId = outputId },
+                commandTimeout: CommandTimeoutSeconds,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return [.. rows.Select(row => row.ToRecord())];
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -945,6 +1041,14 @@ public sealed partial class PostgresJobStore
             TemplatePackageSha256,
             Utc(CommittedAt),
             PresentationProvenance.Parse(Presentation));
+    }
+
+    // The sums of an output's committed parts, as the ceiling reads them.
+    private sealed class PartsTotalsRow
+    {
+        public long Pages { get; set; }
+
+        public long Bytes { get; set; }
     }
 
     // The artifact row: the join of the job and its artifact, whose artifact columns are all

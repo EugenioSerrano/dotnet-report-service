@@ -71,6 +71,7 @@ internal static partial class CoverageFloors
         new("ReportService.DataContract", Project: "ReportService.DataContract.Tests", LinePercent: 90, BranchPercent: 85, Tier: "integrity"),
         new("ReportService.Jobs", Project: "ReportService.Jobs.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Migrations", Project: "ReportService.Migrations.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Pdf.Assembly", Project: "ReportService.Pdf.Assembly.Tests", LinePercent: 90, BranchPercent: 85, Tier: "integrity"),
         new("ReportService.Storage", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Storage.Filesystem", Project: "ReportService.Storage.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Uploads", Project: "ReportService.Uploads.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
@@ -81,6 +82,7 @@ internal static partial class CoverageFloors
         new("ReportService.TemplateSource", Project: "ReportService.TemplateSource.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Pdf.Verification", Project: "ReportService.Pdf.Verification.Tests", LinePercent: 90, BranchPercent: 85, Tier: "integrity"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Workers.Merge", Project: "ReportService.Workers.Merge.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Pdf", Project: "ReportService.Workers.Pdf.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
 
@@ -97,6 +99,7 @@ internal static partial class CoverageFloors
         ("ReportService.Data.Tests", ["ReportService.Data"]),
         ("ReportService.DataContract.Tests", ["ReportService.DataContract"]),
         ("ReportService.Jobs.Tests", ["ReportService.Jobs"]),
+        ("ReportService.Pdf.Assembly.Tests", ["ReportService.Pdf.Assembly"]),
         ("ReportService.Pdf.Verification.Tests", ["ReportService.Pdf.Verification"]),
         ("ReportService.Migrations.Tests", ["ReportService.Migrations"]),
         ("ReportService.Storage.Tests", ["ReportService.Storage", "ReportService.Storage.Filesystem"]),
@@ -114,6 +117,7 @@ internal static partial class CoverageFloors
         // levels, not a product assembly: it is measured and reported without a floor.
         ("ReportService.PdfOracle.Tests", ["ReportService.PdfOracle"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
+        ("ReportService.Workers.Merge.Tests", ["ReportService.Workers.Merge"]),
         ("ReportService.Workers.Pdf.Tests", ["ReportService.Workers.Pdf"]),
     ];
 

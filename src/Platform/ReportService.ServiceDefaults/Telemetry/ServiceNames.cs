@@ -15,4 +15,7 @@ public static class ServiceNames
 
     /// <summary>The PDF worker.</summary>
     public const string RenderWorker = "report-service-render-worker";
+
+    /// <summary>The merge worker.</summary>
+    public const string MergeWorker = "report-service-merge-worker";
 }

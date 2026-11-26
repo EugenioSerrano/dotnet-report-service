@@ -27,8 +27,24 @@ public sealed record PageRule(string Css, string CspHashSource)
             + "mm !important; margin: " + Number(settings.MarginTopMm) + "mm " + Number(settings.MarginRightMm)
             + "mm " + Number(settings.MarginBottomMm) + "mm " + Number(settings.MarginLeftMm) + "mm !important; }";
 
-        return new PageRule(css, "'sha256-" + Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(css))) + "'");
+        return Of(css);
     }
+
+    /// <summary>
+    /// The rule with <paramref name="css"/> appended and its content-security hash
+    /// recomputed over the combined text: a multi-block part adds its counter
+    /// suppression here, so the one inline style the policy allows still carries the
+    /// exact bytes served.
+    /// </summary>
+    /// <param name="css">The additional CSS, appended after the page rule.</param>
+    public PageRule WithAdditionalCss(string css)
+    {
+        ArgumentNullException.ThrowIfNull(css);
+        return css.Length == 0 ? this : Of(Css + css);
+    }
+
+    private static PageRule Of(string css) =>
+        new(css, "'sha256-" + Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(css))) + "'");
 
     /// <summary>The document as it is served: <paramref name="document"/> with this rule as its last element.</summary>
     /// <param name="document">The composed document.</param>

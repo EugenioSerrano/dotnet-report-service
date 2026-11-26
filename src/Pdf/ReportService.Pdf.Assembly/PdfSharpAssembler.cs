@@ -138,25 +138,37 @@ public sealed class PdfSharpAssembler : IPdfAssembler
                     for (var index = start; index < Math.Min(start + batchSize, request.Parts.Count); index++)
                     {
                         var part = request.Parts[index];
-                        using var source = PdfReader.Open(part.Path, PdfDocumentOpenMode.Import);
-                        if (source.PageCount != part.PageCount)
+                        PdfSharp.Pdf.PdfDocument source;
+                        try
                         {
-                            throw new AssemblyInputException("a part's page count does not match its commit");
+                            source = PdfReader.Open(part.Path, PdfDocumentOpenMode.Import);
+                        }
+                        catch (Exception exception) when (exception is not OperationCanceledException and not OutOfMemoryException)
+                        {
+                            throw new AssemblyInputException("a part cannot be read as a document");
                         }
 
-                        foreach (var sourcePage in source.Pages)
+                        using (source)
                         {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            var page = batch.AddPage(sourcePage);
-                            pages++;
-                            using var graphics = XGraphics.FromPdfPage(page);
-                            var area = request.Numbering.Area;
-                            graphics.DrawString(
-                                request.Numbering.TextFor(pages, TotalOf(request)),
-                                font,
-                                XBrushes.Black,
-                                new XRect(area.LeftPt, area.TopPt, area.WidthPt, area.HeightPt),
-                                XStringFormats.TopLeft);
+                            if (source.PageCount != part.PageCount)
+                            {
+                                throw new AssemblyInputException("a part's page count does not match its commit");
+                            }
+
+                            foreach (var sourcePage in source.Pages)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                var page = batch.AddPage(sourcePage);
+                                pages++;
+                                using var graphics = XGraphics.FromPdfPage(page);
+                                var area = request.Numbering.Area;
+                                graphics.DrawString(
+                                    request.Numbering.TextFor(pages, TotalOf(request)),
+                                    font,
+                                    XBrushes.Black,
+                                    new XRect(area.LeftPt, area.TopPt, area.WidthPt, area.HeightPt),
+                                    XStringFormats.TopLeft);
+                            }
                         }
                     }
 
@@ -165,6 +177,11 @@ public sealed class PdfSharpAssembler : IPdfAssembler
 
                 batches.Add(batchPath);
                 metrics.RecordBatch(TemporaryBytes(staging));
+                if (request.OnBatch is { } onBatch)
+                {
+                    await onBatch(batches.Count).ConfigureAwait(false);
+                }
+
                 await Task.Yield();
             }
         }).ConfigureAwait(false);

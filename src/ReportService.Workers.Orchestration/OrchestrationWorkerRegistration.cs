@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -131,6 +132,12 @@ public static class OrchestrationWorkerRegistration
                 // process plans its workers — the delivered pattern the verification uses.
                 var inputWait = provider.GetRequiredService<IOptions<InputWaitOptions>>().Value;
                 ReportJobWorkflow.Configure(inputWait.Backstop, inputWait.ContinueAsNewAfter);
+
+                // The PDF output's multi-block window is published the same way; a value
+                // below one is a configuration error at start, never a silent default.
+                var window = provider.GetRequiredService<IConfiguration>()
+                    .GetValue<int?>(PdfOutputConcurrencyOptions.SettingPath);
+                ReportPdfOutputWorkflow.Configure(PdfOutputConcurrencyOptions.Resolve(window));
 
                 options.AddWorkflow<ReportJobWorkflow>();
                 options.AddWorkflow<ReportPdfOutputWorkflow>();

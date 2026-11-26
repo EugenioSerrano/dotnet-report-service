@@ -229,6 +229,22 @@ public interface IJobStore
     Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Reads every part commit of an output, ordered by block index: the ordered
+    /// input the assembly reads, independent of the order the renders finished in.
+    /// </summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    /// <returns>The commits, ordered by block index; empty when none exists.</returns>
+    /// <remarks>
+    /// A default implementation is provided so the narrow test doubles of unrelated features —
+    /// which never assemble an output — need not implement it; the two real stores
+    /// (<c>PostgresJobStore</c>, <c>InMemoryJobStore</c>) override it. Calling it on a store that
+    /// did not is a programming error, not a job outcome.
+    /// </remarks>
+    Task<IReadOnlyList<PartCommit>> ListPartsAsync(string outputId, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("this job store does not implement the ordered part read");
+
+    /// <summary>
     /// Publishes an output's artifact in one transaction under the same guard as a block
     /// commit, and marks the output succeeded. An output already published is reported with
     /// the artifact that exists.

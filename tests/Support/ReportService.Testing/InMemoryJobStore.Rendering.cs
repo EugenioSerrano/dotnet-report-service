@@ -27,6 +27,37 @@ public sealed partial class InMemoryJobStore
         }
     }
 
+    /// <summary>
+    /// Seeds an accepted job and one running output with its template reference, so a
+    /// step that reads a job, its output and its pin can run without an upload. The
+    /// records are exactly the ones an acceptance writes; no intent is recorded.
+    /// </summary>
+    /// <param name="reportJobId">The identifier of the job.</param>
+    /// <param name="outputId">The identifier of the running output.</param>
+    /// <param name="reference">The job's template reference.</param>
+    public void SeedAccepted(string reportJobId, string outputId, TemplateReferenceRecord reference)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(outputId);
+        ArgumentNullException.ThrowIfNull(reference);
+
+        lock (_gate)
+        {
+            var now = DateTimeOffset.UnixEpoch;
+            _jobs.Add(reportJobId, new ReportJobRecord(
+                reportJobId,
+                "consumer-a",
+                "upload-1",
+                ReportJobStatus.Running,
+                now,
+                now));
+            _progress.Add(reportJobId, JobProgress.Empty);
+            _outputs.Add(outputId, new ReportOutputRecord(outputId, reportJobId, OutputFormat.Pdf, OutputStatus.Running));
+            _outputOrder[outputId] = _outputSequence++;
+            _references.Add(reportJobId, reference);
+        }
+    }
+
     /// <summary>The artifact published for an output, when one was.</summary>
     /// <param name="outputId">The identifier of the output.</param>
     public ArtifactRecord? ArtifactOf(string outputId)
@@ -34,6 +65,31 @@ public sealed partial class InMemoryJobStore
         lock (_gate)
         {
             return _artifacts.GetValueOrDefault(outputId);
+        }
+    }
+
+    /// <summary>Removes one part commit, so a case can prove a partition with a gap is refused.</summary>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="blockIndex">The block whose commit is removed.</param>
+    public void RemovePart(string outputId, int blockIndex)
+    {
+        lock (_gate)
+        {
+            _parts.Remove(KeyOf(outputId, blockIndex));
+        }
+    }
+
+    /// <summary>
+    /// Seeds a part commit without the ceiling check, so a case can prove the assembly's own
+    /// re-check refuses an over-ceiling commit the way a legacy row would.
+    /// </summary>
+    /// <param name="part">The commit to record.</param>
+    public void SeedPart(PartCommit part)
+    {
+        ArgumentNullException.ThrowIfNull(part);
+        lock (_gate)
+        {
+            _parts[KeyOf(part.OutputId, part.BlockIndex)] = part;
         }
     }
 
@@ -173,6 +229,43 @@ public sealed partial class InMemoryJobStore
                 return Task.FromResult(new PartCommitResult(PartCommitOutcome.AlreadyCommitted, existing));
             }
 
+            // The ceiling is checked from the insert-once rows, as the database does; a commit
+            // that would pass it writes nothing and fails the output with the limit, its value
+            // and the reached value - never a data value.
+            var committedParts = _parts.Values
+                .Where(part => string.Equals(part.OutputId, commit.OutputId, StringComparison.Ordinal)
+                    && part.BlockIndex != commit.BlockIndex)
+                .ToList();
+            var reachedPages = committedParts.Sum(part => (long)part.PageCount) + commit.PageCount;
+            var reachedBytes = committedParts.Sum(part => part.SizeBytes) + commit.SizeBytes;
+            if (reachedPages > DocumentCeiling.MaximumPages || reachedBytes > DocumentCeiling.MaximumBytes)
+            {
+                var pagesOver = reachedPages > DocumentCeiling.MaximumPages;
+                var limit = pagesOver ? DocumentCeiling.PagesLimit : DocumentCeiling.BytesLimit;
+                var limitValue = pagesOver ? DocumentCeiling.MaximumPages : DocumentCeiling.MaximumBytes;
+                var reached = pagesOver ? reachedPages : reachedBytes;
+                var reason = "limit=" + limit
+                    + " limitValue=" + limitValue.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + " reached=" + reached.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (_outputs.TryGetValue(commit.OutputId, out var failedOutput))
+                {
+                    _outputs[commit.OutputId] = failedOutput with
+                    {
+                        Status = OutputStatus.Failed,
+                        ErrorCode = "OUTPUT_LIMIT_EXCEEDED",
+                        ErrorReason = reason,
+                        FinishedAt = commit.CommittedAt.ToUniversalTime(),
+                    };
+                }
+
+                return Task.FromResult(new PartCommitResult(PartCommitOutcome.LimitExceeded, null)
+                {
+                    Limit = limit,
+                    LimitValue = limitValue,
+                    ReachedValue = reached,
+                });
+            }
+
             _parts.Add(key, commit);
 
             // The counters are recomputed from the insert-once commits and applied with the
@@ -205,6 +298,20 @@ public sealed partial class InMemoryJobStore
         lock (_gate)
         {
             return Task.FromResult(_parts.GetValueOrDefault(KeyOf(outputId, blockIndex)));
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<PartCommit>> ListPartsAsync(string outputId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        lock (_gate)
+        {
+            return Task.FromResult<IReadOnlyList<PartCommit>>(
+                [.. _parts.Values
+                    .Where(part => string.Equals(part.OutputId, outputId, StringComparison.Ordinal))
+                    .OrderBy(part => part.BlockIndex)]);
         }
     }
 

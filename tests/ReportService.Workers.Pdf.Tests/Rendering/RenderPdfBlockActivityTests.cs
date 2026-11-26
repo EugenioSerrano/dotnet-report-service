@@ -61,16 +61,17 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.Contains("UNSUPPORTED_CAPABILITY", RenderPdfBlockOptions.NonRetryableErrorTypes);
         Assert.Contains("QUOTA_EXCEEDED", RenderPdfBlockOptions.NonRetryableErrorTypes);
         Assert.Contains("EXECUTION_FAILED", RenderPdfBlockOptions.NonRetryableErrorTypes);
+        Assert.Contains("OUTPUT_LIMIT_EXCEEDED", RenderPdfBlockOptions.NonRetryableErrorTypes);
 
-        // The whole list is asserted, so a fifth entry or a removal is red: this Bolt
-        // neither adds nor removes one - the delivered list already carries every code
-        // its refusals end with.
+        // The whole list is asserted, so a further entry or a removal is red: the commit-time
+        // ceiling adds its own non-retryable code and nothing else.
         string[] delivered =
         [
             "PAGINATION_FAILED",
             "UNSUPPORTED_CAPABILITY",
             "QUOTA_EXCEEDED",
             "EXECUTION_FAILED",
+            "OUTPUT_LIMIT_EXCEEDED",
         ];
         Assert.Equal(delivered, RenderPdfBlockOptions.NonRetryableErrorTypes);
         Assert.Equal(delivered, options.RetryPolicy!.NonRetryableErrorTypes);

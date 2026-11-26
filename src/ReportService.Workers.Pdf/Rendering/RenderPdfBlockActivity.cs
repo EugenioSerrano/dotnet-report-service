@@ -293,7 +293,8 @@ public sealed class RenderPdfBlockActivity(
                 input.BlockIndex,
                 IsFirstBlock: input.BlockIndex == 0,
                 work.Path,
-                PinEngine: adapter.Engine);
+                PinEngine: adapter.Engine,
+                MultiBlock: partition.BlockCount > 1);
 
             BlockRenderOutcome outcome;
             try
@@ -373,7 +374,7 @@ public sealed class RenderPdfBlockActivity(
                 attempt.WorkflowRunId ?? string.Empty,
                 attempt.ActivityId,
                 attempt.Attempt);
-            var key = ObjectKey.FromSegments("outputs", input.ReportJobId, input.OutputId, attemptId);
+            var key = KeyOf(partition, input, attemptId);
 
             ObjectWrite written;
             var storeStarted = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -445,6 +446,22 @@ public sealed class RenderPdfBlockActivity(
                         presentation.Culture,
                         presentation.TimeZone);
                     return ResultOf(commit.Existing!);
+                case PartCommitOutcome.LimitExceeded:
+                    // The commit would pass the document ceiling: the row was rolled back and
+                    // the output is already failed with the limit's own code. The failure is
+                    // non-retryable: the same parts reach the same ceiling on every attempt.
+                    logger.LogWarning(
+                        "Block {BlockIndex} of output {OutputId} not committed: the output passed the {Limit} limit of {LimitValue}",
+                        input.BlockIndex,
+                        input.OutputId,
+                        commit.Limit,
+                        commit.LimitValue);
+                    throw new ApplicationFailureException(
+                        "OUTPUT_LIMIT_EXCEEDED limit=" + commit.Limit
+                        + " limitValue=" + commit.LimitValue.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        + " reached=" + commit.ReachedValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        errorType: "OUTPUT_LIMIT_EXCEEDED",
+                        nonRetryable: true);
                 default:
                     logger.LogWarning(
                         "Block {BlockIndex} of output {OutputId} could not be committed: the output is no longer running",
@@ -647,6 +664,21 @@ public sealed class RenderPdfBlockActivity(
 
     private static RenderPdfBlockResult ResultOf(PartCommit commit) =>
         new(commit.ObjectKey, commit.Sha256, commit.SizeBytes, commit.PageCount);
+
+    /// <summary>
+    /// The key one printed block is written under: a multi-block output's part is a
+    /// <c>parts/…</c> object, so only the assembled PDF is an output-class object; a
+    /// single-block output keeps the recorded exception and writes its part under
+    /// <c>outputs/…</c>.
+    /// </summary>
+    internal static ObjectKey KeyOf(PartitionRecord partition, RenderPdfBlockInput input, string attemptId) =>
+        partition.BlockCount > 1
+            ? ObjectKey.FromSegments(
+                "parts",
+                input.ReportJobId,
+                input.BlockIndex.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                attemptId)
+            : ObjectKey.FromSegments("outputs", input.ReportJobId, input.OutputId, attemptId);
 
     /// <summary>
     /// The one mapping of an engine refusal: the code and the reason D2 gives it, non-retryably,

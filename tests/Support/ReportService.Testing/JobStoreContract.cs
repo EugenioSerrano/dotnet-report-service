@@ -521,6 +521,64 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     /// <summary>
+    /// The ordered read the assembly consumes: every commit of an output, ordered by
+    /// block index whatever order the renders committed them in.
+    /// </summary>
+    [Fact]
+    public async Task TheOrderedPartReadReturnsTheCommitsByBlockIndex()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+
+        foreach (var index in new[] { 2, 0, 1 })
+        {
+            var committed = await Store.CommitPartAsync(Commit(acceptance.Outputs[0].OutputId, blockIndex: index), cancellationToken);
+            Assert.Equal(PartCommitOutcome.Committed, committed.Outcome);
+        }
+
+        var parts = await Store.ListPartsAsync(acceptance.Outputs[0].OutputId, cancellationToken);
+
+        Assert.Equal([0, 1, 2], parts.Select(part => part.BlockIndex));
+    }
+
+    /// <summary>
+    /// The document ceiling at the commit: a commit at the limit succeeds, the first
+    /// commit that would pass it writes no row and fails the output with the limit, its
+    /// value and the reached value - never a data value.
+    /// </summary>
+    [Fact]
+    public async Task ACommitThatWouldPassTheDocumentCeilingIsRefusedAndFailsTheOutput()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
+
+        var atLimit = await Store.CommitPartAsync(
+            Commit(acceptance.Outputs[0].OutputId, blockIndex: 0) with { PageCount = DocumentCeiling.MaximumPages },
+            cancellationToken);
+        Assert.Equal(PartCommitOutcome.Committed, atLimit.Outcome);
+
+        var over = await Store.CommitPartAsync(
+            Commit(acceptance.Outputs[0].OutputId, blockIndex: 1) with { PageCount = 1 },
+            cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.LimitExceeded, over.Outcome);
+        Assert.Equal(DocumentCeiling.PagesLimit, over.Limit);
+        Assert.Equal(DocumentCeiling.MaximumPages, over.LimitValue);
+        Assert.Equal(DocumentCeiling.MaximumPages + 1, over.ReachedValue);
+        Assert.Null(await Store.FindPartAsync(acceptance.Outputs[0].OutputId, 1, cancellationToken));
+
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        var output = Assert.Single(state!.Outputs);
+        Assert.Equal(OutputStatus.Failed, output.Status);
+        Assert.Equal("OUTPUT_LIMIT_EXCEEDED", output.ErrorCode);
+        Assert.Contains("limit=document-pages", output.ErrorReason, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The commit carries what produced the block's presentation, and the store returns it
     /// with the row: the job's fixed settings, the engine the version declares and the
     /// version it runs, and the globalisation data of the process that printed it. A commit

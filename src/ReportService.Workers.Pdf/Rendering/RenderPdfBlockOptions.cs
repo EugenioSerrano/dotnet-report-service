@@ -59,6 +59,7 @@ public static class RenderPdfBlockOptions
         "UNSUPPORTED_CAPABILITY",
         "QUOTA_EXCEEDED",
         "EXECUTION_FAILED",
+        "OUTPUT_LIMIT_EXCEEDED",
     ];
 
     /// <summary>Builds the execution settings of one render.</summary>
