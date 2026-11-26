@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ReportService.Testing.TemplatePackages;
 
 /// <summary>
@@ -22,6 +24,27 @@ public static class NumberedMultiBlockFixture
 
     /// <summary>The culture the contract declares.</summary>
     public const string Culture = "en-US";
+
+    /// <summary>The reserved area's distance from the page's left edge, in millimetres.</summary>
+    public const decimal AreaLeftMm = 120m;
+
+    /// <summary>
+    /// The reserved area's distance from the page's top edge, in millimetres. A4 is
+    /// 297 mm high and the sample's bottom margin is 18 mm, so the shipped layout can
+    /// print rows down to 279 mm; the area starts at 283 mm, inside the bottom margin,
+    /// where no report content is laid out. An area above the content floor carried
+    /// record rows and the merge verifier correctly refused the stamp.
+    /// </summary>
+    public const decimal AreaTopMm = 283m;
+
+    /// <summary>The reserved area's width, in millimetres.</summary>
+    public const decimal AreaWidthMm = 80m;
+
+    /// <summary>The reserved area's height, in millimetres.</summary>
+    public const decimal AreaHeightMm = 8m;
+
+    /// <summary>The height of an A4 page, in millimetres.</summary>
+    public const decimal A4HeightMm = 297m;
 
     /// <summary>
     /// The sample manifest with the numbering contract inserted after its <c>pdf:</c> key.
@@ -48,7 +71,10 @@ public static class NumberedMultiBlockFixture
         lines.InsertRange(pdf + 1, new[]
         {
             child + "numbering:",
-            grandchild + "area: { leftMm: 120, topMm: 268, widthMm: 80, heightMm: 8 }",
+            grandchild + "area: { leftMm: " + AreaLeftMm.ToString(CultureInfo.InvariantCulture)
+                + ", topMm: " + AreaTopMm.ToString(CultureInfo.InvariantCulture)
+                + ", widthMm: " + AreaWidthMm.ToString(CultureInfo.InvariantCulture)
+                + ", heightMm: " + AreaHeightMm.ToString(CultureInfo.InvariantCulture) + " }",
             grandchild + "font: { family: \"Liberation Sans\", file: \"" + FontPath + "\", sizePt: 9 }",
             grandchild + "format: \"" + Format + "\"",
             grandchild + "culture: \"" + Culture + "\"",

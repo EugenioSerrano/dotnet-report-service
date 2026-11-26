@@ -197,6 +197,33 @@ public sealed class BlockRendererTests : IDisposable
     }
 
     [Fact]
+    public async Task AMultiBlockPartEmptiesTheCounterDeclaredInALinkedStylesheet()
+    {
+        var printer = new RecordingPrinter();
+        var request = Request(
+            Manifest(pageTotals: false, anchors: VerificationAnchors.None),
+            """<html><head><link rel="stylesheet" href="html/styles.css"></head><body>"""
+            + ComposedTextOfTheDocument()
+            + "</body></html>") with
+        {
+            MultiBlock = true,
+        };
+        var stylesheet = Path.Combine(work, "package", "html", "styles.css");
+        Directory.CreateDirectory(Path.GetDirectoryName(stylesheet)!);
+        File.WriteAllText(
+            stylesheet,
+            "@page { @bottom-center { content: \"PART-COUNTER \" counter(page) \" of \" counter(pages); } }",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        var outcome = await Renderer(printer).RenderAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.True(printer.Called);
+        Assert.Contains("@bottom-center { content: none !important; }", printer.Rule!.Css, StringComparison.Ordinal);
+        Assert.Contains("href=\"html/styles.css\"", printer.Document, StringComparison.Ordinal);
+        Assert.True(outcome.Passed, outcome.Verification.Reason);
+    }
+
+    [Fact]
     public async Task TheHtmlControlActsAfterThePageRuleWasAppended()
     {
         const string control = "<link rel=\"stylesheet\" href=\"https://report.invalid/html/controls/wrong-size.css\">";

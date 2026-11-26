@@ -200,13 +200,14 @@ public sealed class BlockRenderer(
 
         // The page rule is the last element of the document the service serves, so it
         // follows every package stylesheet in the cascade. A multi-block part also empties
-        // the margin boxes that carry the template's own page counter here: the only
+        // the margin boxes that carry the template's own page counter here - read from the
+        // stylesheets the document links, exactly as the printer serves them: the only
         // numbering of a multi-block output is the global stamp the assembly adds. The
         // test-only HTML control acts after it, which is how a known-bad stylesheet can
         // override the page.
         if (request.MultiBlock)
         {
-            pageRule = pageRule.WithAdditionalCss(PageCounterSuppression.OverrideFor(block.Text));
+            pageRule = pageRule.WithAdditionalCss(PageCounterSuppression.OverrideFor(block.Text, request.Files));
         }
 
         var html = pageRule.AppendTo(block.Text);

@@ -65,8 +65,12 @@ internal sealed class MultiBlockStage : IDisposable
     /// <summary>The margins the sample declares, in millimetres.</summary>
     public static PageMargins Margins => PlacementConvention.FromMillimetres(new PageMarginsMm(15, 12, 18, 12));
 
-    /// <summary>The reserved numbering area, in points.</summary>
-    public static NumberingBounds Area { get; } = NumberingBounds.FromMillimetres(120, 268, 80, 8);
+    /// <summary>The reserved numbering area, in points: the same rectangle the injected contract declares.</summary>
+    public static NumberingBounds Area { get; } = NumberingBounds.FromMillimetres(
+        (double)NumberedMultiBlockFixture.AreaLeftMm,
+        (double)NumberedMultiBlockFixture.AreaTopMm,
+        (double)NumberedMultiBlockFixture.AreaWidthMm,
+        (double)NumberedMultiBlockFixture.AreaHeightMm);
 
     /// <summary>The directory this stage's evidence and temporary files live under.</summary>
     public string Directory => _directory;
