@@ -6,8 +6,10 @@ using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Records;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;
+using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Telemetry;
+using Temporalio.Exceptions;
 using Temporalio.Testing;
 
 namespace ReportService.Workers.Orchestration.Tests.Jobs;
@@ -221,6 +223,89 @@ public sealed class JobTransitionActivitiesTests
 
     private static Task<T> RunAsync<T>(Func<Task<T>> body) => new ActivityEnvironment().RunAsync(body);
 
+    /// <summary>
+    /// AC-7 / ADR-048 R0: the read the failure guard decides on answers the state the job's own
+    /// record carries — never a state an interrupted attempt believed in, and never a value a
+    /// caller sent.
+    /// </summary>
+    [Fact]
+    public async Task ReadingAJobAnswersTheStateItsRecordCarries()
+    {
+        var store = new RecordingJobStore { State = StateOf(ReportJobStatus.Cancelling) };
+        using var metrics = new OrchestrationMetrics(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+
+        var snapshot = await RunAsync(() => activity.ReadJobStateAsync(new ReadJobStateInput(ReportJobId)));
+
+        Assert.Equal(ReportJobStatus.Cancelling, snapshot.Status);
+    }
+
+    /// <summary>
+    /// The read is a read: it reaches the store's one workflow read and none of its write methods,
+    /// so a guard that asks the job how it ends cannot itself change it.
+    /// </summary>
+    [Fact]
+    public async Task ReadingAJobWritesNothing()
+    {
+        var store = new RecordingJobStore { State = StateOf(ReportJobStatus.Running) };
+        using var metrics = new OrchestrationMetrics(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+
+        await RunAsync(() => activity.ReadJobStateAsync(new ReadJobStateInput(ReportJobId)));
+
+        Assert.Equal(1, store.Reads);
+        Assert.Empty(store.Finalizations);
+        Assert.Empty(store.OutputFailures);
+        Assert.Empty(store.Transitions);
+    }
+
+    /// <summary>
+    /// A job the record does not hold is an invariant violation — the execution exists only because
+    /// a durable request started it — and ends the step as a non-retryable failure with the code the
+    /// other metadata steps use, so the run surfaces a defect instead of retrying for ever.
+    /// </summary>
+    [Fact]
+    public async Task ReadingAJobThatIsNotRecordedFailsTheStepWithoutRetrying()
+    {
+        var store = new RecordingJobStore { State = null };
+        using var metrics = new OrchestrationMetrics(Identity);
+        var activity = new JobTransitionActivities(
+            store,
+            new FixedTimeProvider(Now),
+            metrics,
+            NullLoggerFactory.Instance,
+            NullLogger<JobTransitionActivities>.Instance);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
+            () => RunAsync(() => activity.ReadJobStateAsync(new ReadJobStateInput(ReportJobId))));
+
+        Assert.True(failure.NonRetryable);
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.Contains("not recorded", failure.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A job and its record, in the state a case asks for.</summary>
+    /// <param name="status">The state the record carries.</param>
+    private static JobStateRecord StateOf(ReportJobStatus status) =>
+        new(
+            new ReportJobRecord(ReportJobId, "consumer-a", "upload-0123456789abcdef0123456789abcdef", status, Now, Now),
+            [],
+            UploadStatus.Ready,
+            Now.AddHours(1),
+            null,
+            null,
+            null);
+
     // The store the activities call, recording what they asked for and answering what the
     // case set; every member these cases never reach refuses loudly if one is reached.
     private sealed class RecordingJobStore : IJobStore
@@ -235,6 +320,15 @@ public sealed class JobTransitionActivitiesTests
         public JobFinalizationResult Finalization { get; set; } =
             new(JobFinalizationOutcome.Applied, ReportJobStatus.Succeeded);
 
+        /// <summary>The job and its outputs the workflow read answers with; null answers none.</summary>
+        public JobStateRecord? State { get; set; }
+
+        /// <summary>How many times the workflow read was asked.</summary>
+        public int Reads { get; private set; }
+
+        /// <summary>The job transitions the step asked for, in the order it asked.</summary>
+        public List<(string ReportJobId, ReportJobStatus To)> Transitions { get; } = [];
+
         public List<(string ReportJobId, DateTimeOffset Now)> Finalizations { get; } = [];
 
         /// <summary>The output failures the step asked for, in the order it asked.</summary>
@@ -245,8 +339,11 @@ public sealed class JobTransitionActivitiesTests
             IReadOnlyList<ReportJobStatus> from,
             ReportJobStatus to,
             DateTimeOffset now,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(new TransitionJobResult(Outcome, Outcome == TransitionOutcome.Applied ? CreatedAt : null));
+            CancellationToken cancellationToken)
+        {
+            Transitions.Add((reportJobId, to));
+            return Task.FromResult(new TransitionJobResult(Outcome, Outcome == TransitionOutcome.Applied ? CreatedAt : null));
+        }
 
         public Task<JobFinalizationResult> FinalizeJobAsync(string reportJobId, DateTimeOffset now, CancellationToken cancellationToken)
         {
@@ -266,7 +363,11 @@ public sealed class JobTransitionActivitiesTests
         string idempotencyKey,
         RequestFingerprint fingerprint,
         CancellationToken cancellationToken) => throw new NotSupportedException();
-    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<JobStateRecord?> FindForWorkflowAsync(string reportJobId, CancellationToken cancellationToken)
+        {
+            Reads++;
+            return Task.FromResult(State);
+        }
 
         public Task<TemplateReferenceRecord?> FindTemplateReferenceAsync(string reportJobId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

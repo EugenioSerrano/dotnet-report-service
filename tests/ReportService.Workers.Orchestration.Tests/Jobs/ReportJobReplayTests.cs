@@ -112,6 +112,33 @@ public sealed class ReportJobReplayTests
             5,
             declared.Append(ReportJobWorkflow.CancellationWindDownPatch).Distinct(StringComparer.Ordinal).Count());
     }
+
+    /// <summary>
+    /// ADR-012 §2.10 V1 over US-010 AC-7: the failure-path guard that makes a cancellation survive a
+    /// worker restart is the sixth patch the workflow declares, and its identifier is pinned. A run
+    /// recorded before it carries no marker for it and replays with the guard inactive, scheduling
+    /// exactly the failure command it recorded; changing a declared patch's text is a different
+    /// patch, which the engine treats as one it has never seen.
+    /// </summary>
+    [Fact]
+    public void TheRestartCancellationGuardIsGatedByItsOwnPatch()
+    {
+        Assert.Equal("restart-cancel-guard-v1", ReportJobWorkflow.RestartCancellationGuardPatch);
+
+        string[] declared =
+        [
+            ReportJobWorkflow.JobStatusPathPatch,
+            ReportJobWorkflow.TemplateResolvePatch,
+            ReportJobWorkflow.PrintingPathPatch,
+            ReportJobWorkflow.HtmlOutputPathPatch,
+            ReportJobWorkflow.CancellationWindDownPatch,
+        ];
+        Assert.All(declared, patch => Assert.False(string.IsNullOrWhiteSpace(patch)));
+        Assert.DoesNotContain(ReportJobWorkflow.RestartCancellationGuardPatch, declared);
+        Assert.Equal(
+            6,
+            declared.Append(ReportJobWorkflow.RestartCancellationGuardPatch).Distinct(StringComparer.Ordinal).Count());
+    }
 }
 
 /// <summary>

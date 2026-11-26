@@ -3,6 +3,7 @@ using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.Workers.Orchestration.Telemetry;
 using Temporalio.Activities;
+using Temporalio.Exceptions;
 
 namespace ReportService.Workers.Orchestration.Jobs;
 
@@ -10,6 +11,14 @@ namespace ReportService.Workers.Orchestration.Jobs;
 /// <param name="ReportJobId">The identifier of the job.</param>
 /// <param name="To">The state to move it to.</param>
 public sealed record TransitionJobInput(string ReportJobId, ReportJobStatus To);
+
+/// <summary>What reading a job's state is asked to do: look at one job.</summary>
+/// <param name="ReportJobId">The identifier of the job.</param>
+public sealed record ReadJobStateInput(string ReportJobId);
+
+/// <summary>The state a job was in when it was read.</summary>
+/// <param name="Status">The state the job's record carries.</param>
+public sealed record JobStateSnapshot(ReportJobStatus Status);
 
 /// <summary>What starting an output is asked to do.</summary>
 /// <param name="OutputId">The identifier of the output.</param>
@@ -53,6 +62,15 @@ public sealed class JobTransitionActivities(
 
     /// <summary>The name the job's finalisation is registered and scheduled under.</summary>
     public const string FinalizeJobName = "FinalizeJob";
+
+    /// <summary>The name the job's state read is registered and scheduled under.</summary>
+    public const string ReadJobStateName = "ReadJobState";
+
+    /// <summary>
+    /// The code a job that cannot be read ends a step with: the workflow runs for an accepted
+    /// job, so a job its own record cannot answer is a record that no longer exists.
+    /// </summary>
+    private const string ExecutionFailed = "EXECUTION_FAILED";
 
     /// <summary>The states a job is moved forward from, for each state it can be moved to.</summary>
     /// <param name="to">The state to move the job to.</param>
@@ -163,6 +181,38 @@ public sealed class JobTransitionActivities(
             input.OutputId,
             clock.GetUtcNow(),
             ActivityExecutionContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Reads the state a job's own record carries, and nothing else: one read through the store
+    /// method the workflow's other metadata steps already use, no write and no new statement. A
+    /// run that ends by a failure calls it before it decides how the run ends, so the decision is
+    /// made on the durable state and never on the state the interrupted attempt believed in. A job
+    /// the record does not hold is an invariant violation — the execution exists only because a
+    /// durable request started it — and ends the step as a non-retryable failure, exactly as the
+    /// other metadata steps treat a record that cannot answer.
+    /// </summary>
+    /// <param name="input">The job to read.</param>
+    /// <returns>The state the job's record carries.</returns>
+    [Activity(ReadJobStateName)]
+    public async Task<JobStateSnapshot> ReadJobStateAsync(ReadJobStateInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+
+        var state = await jobs
+            .FindForWorkflowAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new ApplicationFailureException(
+                $"{ExecutionFailed}: the job is not recorded",
+                errorType: ExecutionFailed,
+                nonRetryable: true);
+
+        logger.LogInformation(
+            "Job {ReportJobId} reads {Status} when the run ends by a failure",
+            input.ReportJobId,
+            ReportJobMetricsName(state.Job.Status));
+        return new JobStateSnapshot(state.Job.Status);
     }
 
     /// <summary>Ends one output that has not ended yet with the code of the condition.</summary>

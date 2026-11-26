@@ -446,11 +446,66 @@ public sealed class IntentDispatcherTests : IDisposable
         Assert.Equal(2, _store.References.Count);
     }
 
+    /// <summary>
+    /// US-010 AC-7 / ADR-012 §3.2(4): the claim of a poll is one unit of work committed after the
+    /// poll, so a process that dies mid-poll leaves every request it claimed exactly as it was. The
+    /// case models the death by making the claim's commit fail — the one act that would have stored
+    /// the delivery — and asserts the <c>cancel-job</c> row is still <c>PENDING</c>, with its attempt
+    /// count and its next attempt unchanged, and that no execution reference was written.
+    /// </summary>
+    [Fact]
+    public async Task APollThatDiesBeforeItsCommitLeavesTheCancelRequestPending()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-running");
+        var dying = new DyingBeforeCommitIntentStore(_store);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Dispatcher(store: dying).DispatchDueAsync(TestContext.Current.CancellationToken));
+
+        // The delivery was attempted and nothing of it was stored: the row is pending, its attempt
+        // count did not move, and no reference names the execution.
+        Assert.Equal([$"report-job/{ReportJobId}"], _starter.Cancelled);
+        Assert.Equal("PENDING", _store.StatusOf(1));
+        Assert.Equal(0, Assert.Single(_store.Requests).Attempts);
+        Assert.Empty(_store.References);
+    }
+
+    /// <summary>
+    /// US-010 AC-7 / ADR-012 §3.10(2): the request the dying poll left pending is delivered by the
+    /// next poll — of the restart's own process — and the repeat has no second effect: exactly one
+    /// <c>cancel-job</c> row, <c>DISPATCHED</c> once, with exactly one execution reference.
+    /// </summary>
+    [Fact]
+    public async Task TheRequestAPollLeftPendingIsDeliveredOnceByTheNextPoll()
+    {
+        const string ReportJobId = "job-0123456789abcdef0123456789abcdef";
+        _store.Enqueue(IntentKinds.CancelJob, ReportJobId, Now);
+        _starter.Described = new WorkflowStart($"report-job/{ReportJobId}", "run-running");
+        var dying = new DyingBeforeCommitIntentStore(_store);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Dispatcher(store: dying).DispatchDueAsync(TestContext.Current.CancellationToken));
+        await Dispatcher().DispatchDueAsync(TestContext.Current.CancellationToken);
+
+        // The restart's poll delivered the request the dead one could not store, and the row it
+        // wrote is the one and only: the engine was asked to cancel the same execution twice, and
+        // the durable records show a single delivered request with a single reference.
+        Assert.Equal([$"report-job/{ReportJobId}", $"report-job/{ReportJobId}"], _starter.Cancelled);
+        Assert.Single(_store.Requests);
+        Assert.Equal("DISPATCHED", _store.StatusOf(1));
+        var reference = Assert.Single(_store.References);
+        Assert.Equal($"report-job/{ReportJobId}", reference.WorkflowId);
+        Assert.Equal("run-running", reference.RunId);
+    }
+
     private IntentDispatcher Dispatcher(
         int batchSize = 50,
-        TimeSpan? verificationBound = null) =>
+        TimeSpan? verificationBound = null,
+        IIntentStore? store = null) =>
         new(
-            _store,
+            store ?? _store,
             _starter,
             _holder,
             Options.Create(new DispatcherOptions
@@ -520,6 +575,37 @@ public sealed class IntentDispatcherTests : IDisposable
 
         public Task<string> ServerVersionAsync(CancellationToken cancellationToken) => Task.FromResult("test");
     }
+
+    // The process-death model of the store: a poll claims exactly as the real store does, and the
+    // one act that would have stored its decisions fails instead — the process ended before its
+    // commit, so the claim is disposed uncommitted and the requests stay exactly as they were.
+    private sealed class DyingBeforeCommitIntentStore(IIntentStore inner) : IIntentStore
+    {
+        public async Task<IIntentClaim> ClaimDueAsync(DateTimeOffset now, int batchSize, CancellationToken cancellationToken) =>
+            new DyingClaim(await inner.ClaimDueAsync(now, batchSize, cancellationToken).ConfigureAwait(false));
+
+        public Task<TimeSpan?> OldestPendingAgeAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.OldestPendingAgeAsync(now, cancellationToken);
+
+        private sealed class DyingClaim(IIntentClaim inner) : IIntentClaim
+        {
+            public IReadOnlyList<IntentRecord> Intents => inner.Intents;
+
+            public Task MarkDispatchedAsync(long intentId, ExecutionReference reference, DateTimeOffset now, CancellationToken cancellationToken) =>
+                inner.MarkDispatchedAsync(intentId, reference, now, cancellationToken);
+
+            public Task MarkDeliveredAsync(long intentId, DateTimeOffset now, CancellationToken cancellationToken) =>
+                inner.MarkDeliveredAsync(intentId, now, cancellationToken);
+
+            public Task RecordFailureAsync(long intentId, DateTimeOffset now, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken) =>
+                inner.RecordFailureAsync(intentId, now, nextAttemptAt, cancellationToken);
+
+            public Task CommitAsync(CancellationToken cancellationToken) =>
+                throw new InvalidOperationException("the process died before its poll committed");
+
+            public ValueTask DisposeAsync() => inner.DisposeAsync();
+        }
+    }
 }
 
 /// <summary>The intent store contract, run against the in-memory store.</summary>
@@ -562,7 +648,10 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(3, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(4, plan[0].Options.Workflows.Count);
-        Assert.Equal(18, plan[0].Options.Activities.Count);
+        Assert.Equal(19, plan[0].Options.Activities.Count);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == JobTransitionActivities.ReadJobStateName);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == InputWaitActivities.BeginName);

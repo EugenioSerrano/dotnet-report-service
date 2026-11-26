@@ -110,6 +110,15 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string CancellationWindDownPatch = "cancel-wind-down-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the restart-safe end of a run that fails: the read of
+    /// the job's state before the run decides how it ends, and the non-cancellable finalisation a
+    /// job that is being cancelled is closed with instead of a failure. A run recorded before it
+    /// carries no marker for it, so it replays with the patch inactive and schedules exactly the
+    /// failure command it recorded (ADR-012 §2.10 V1).
+    /// </summary>
+    public const string RestartCancellationGuardPatch = "restart-cancel-guard-v1";
+
     /// <summary>Runs one job up to its continuation point, winding it down when it is cancelled.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -188,11 +197,11 @@ public sealed class ReportJobWorkflow
                 return;
 
             case InputOutcome.Rejected:
-                await FailAsync(input.ReportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
+                await EndRunAfterFailureAsync(input.ReportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", null, options).ConfigureAwait(true);
                 return;
 
             case InputOutcome.Expired:
-                await FailAsync(input.ReportJobId, ReportJobActivities.InputNotFound, "input-expired", options).ConfigureAwait(true);
+                await EndRunAfterFailureAsync(input.ReportJobId, ReportJobActivities.InputNotFound, "input-expired", null, options).ConfigureAwait(true);
                 return;
 
             case InputOutcome.Terminal:
@@ -242,10 +251,11 @@ public sealed class ReportJobWorkflow
             // with the code the step named and the diagnostic it carried, through the same
             // helper the wait's own failures use. Any other outcome is left to the engine's
             // own policy, so a transient fault is still retried.
-            await FailAsync(
+            await EndRunAfterFailureAsync(
                 input.ReportJobId,
                 refusal.ErrorType!,
                 refusal.Message,
+                null,
                 ReportJobActivityOptions.Create()).ConfigureAwait(true);
             return;
         }
@@ -306,7 +316,7 @@ public sealed class ReportJobWorkflow
                 }
                 catch (ActivityFailureException failure)
                 {
-                    await FailAsync(
+                    await EndRunAfterFailureAsync(
                         input.ReportJobId,
                         ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
                         "printing-failed",
@@ -316,7 +326,7 @@ public sealed class ReportJobWorkflow
                 }
                 catch (ChildWorkflowFailureException failure)
                 {
-                    await FailAsync(
+                    await EndRunAfterFailureAsync(
                         input.ReportJobId,
                         ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
                         "printing-failed",
@@ -595,14 +605,14 @@ public sealed class ReportJobWorkflow
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input rejected after {Checks} checks", reportJobId, checks);
-                    await FailAsync(reportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", options).ConfigureAwait(true);
+                    await EndRunAfterFailureAsync(reportJobId, UploadWireValues.ToStoredText(resolution.RejectedWith()), "input-rejected", null, options).ConfigureAwait(true);
                     return InputWaitOutcome.Ended;
 
                 case InputOutcome.Expired:
                     performed.Record(checks);
                     await EndInputWaitAsync(reportJobId).ConfigureAwait(true);
                     Workflow.Logger.LogInformation("Job {ReportJobId} input expired after {Checks} checks", reportJobId, checks);
-                    await FailAsync(reportJobId, ReportJobActivities.InputNotFound, "input-expired", options).ConfigureAwait(true);
+                    await EndRunAfterFailureAsync(reportJobId, ReportJobActivities.InputNotFound, "input-expired", null, options).ConfigureAwait(true);
                     return InputWaitOutcome.Ended;
 
                 case InputOutcome.Verifying:
@@ -732,7 +742,7 @@ public sealed class ReportJobWorkflow
                     mapped.Code);
             }
 
-            await FailAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
+            await EndRunAfterFailureAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
             return true;
         }
         catch (ActivityFailureException)
@@ -740,7 +750,7 @@ public sealed class ReportJobWorkflow
             // Attempts exhausted without a code of their own, or a step that did not answer:
             // the job ends with the code that says the step itself could not finish.
             var mapped = TemplateStepFailures.StepFailed();
-            await FailAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
+            await EndRunAfterFailureAsync(reportJobId, mapped.Code, mapped.Reason, mapped.Message, metadata).ConfigureAwait(true);
             return true;
         }
     }
@@ -772,9 +782,6 @@ public sealed class ReportJobWorkflow
             ? application.Message
             : null;
 
-    private static Task FailAsync(string reportJobId, string errorCode, string reason, Temporalio.Workflows.ActivityOptions options) =>
-        FailAsync(reportJobId, errorCode, reason, null, options);
-
     private static Task FailAsync(
         string reportJobId,
         string errorCode,
@@ -784,6 +791,100 @@ public sealed class ReportJobWorkflow
         Workflow.ExecuteActivityAsync(
             (ReportJobActivities activities) => activities.FailJobAsync(new FailJobInput(reportJobId, errorCode, reason, message)),
             options);
+
+    /// <summary>
+    /// Ends a run that failed, after asking the job's own durable record how it ends. A run
+    /// recorded before the guard's patch wrote the failure exactly as it always did, and this
+    /// method writes it exactly as it was recorded. A run recorded after it reads the job's state
+    /// first — in the non-cancellable scope, because on a cancelled workflow the default token
+    /// would cancel the very read that decides the outcome — and then:
+    /// <list type="bullet">
+    /// <item>a job that is being cancelled is closed through the non-cancellable finalisation, the
+    /// one writer of the terminal <c>CANCELLED</c> (ADR-048 R0), and the failure it ended with is
+    /// not written — a cancelled job carries no error code;</item>
+    /// <item>a job that is already terminal is left exactly as it is: there is nothing to write,
+    /// and the run ends;</item>
+    /// <item>any other state is the ordinary failure this run always wrote, with the same code,
+    /// reason, message and command.</item>
+    /// </list>
+    /// Reading first, not after the write, keeps the guarantee independent of the write's own
+    /// guard: the decision is made on the durable state and never on what a guarded update would
+    /// have answered.
+    /// </summary>
+    /// <param name="reportJobId">The job to end.</param>
+    /// <param name="errorCode">The code of the condition that ended it.</param>
+    /// <param name="reason">The fixed reason recorded beside the code.</param>
+    /// <param name="message">The message the job carries, when the failing step has one.</param>
+    /// <param name="options">The activity options of the failure command.</param>
+    private static async Task EndRunAfterFailureAsync(
+        string reportJobId,
+        string errorCode,
+        string reason,
+        string? message,
+        Temporalio.Workflows.ActivityOptions options)
+    {
+        if (!Workflow.Patched(RestartCancellationGuardPatch))
+        {
+            await FailAsync(reportJobId, errorCode, reason, message, options).ConfigureAwait(true);
+            return;
+        }
+
+        var snapshot = await Workflow.ExecuteActivityAsync(
+            (JobTransitionActivities activities) => activities.ReadJobStateAsync(new ReadJobStateInput(reportJobId)),
+            ReportJobActivityOptions.CreateFinalization()).ConfigureAwait(true);
+
+        var decision = DecideEndAfterFailure(snapshot.Status);
+        if (decision == JobEndDecision.CloseAsCancelled)
+        {
+            Workflow.Logger.LogInformation(
+                "Job {ReportJobId} ended {Status}: the run failed while the job was being cancelled",
+                reportJobId,
+                JobWireValues.ToStoredText(ReportJobStatus.Cancelled));
+            await FinalizeAfterCancellationAsync(reportJobId).ConfigureAwait(true);
+            return;
+        }
+
+        if (decision == JobEndDecision.Stop)
+        {
+            return;
+        }
+
+        // The ordinary failure, exactly as a run recorded before this guard wrote it.
+        await FailAsync(reportJobId, errorCode, reason, message, options).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// How a run that failed ends, as a pure function of the job's durable state and nothing else:
+    /// a job that is being cancelled is closed through the non-cancellable finalisation
+    /// (<see cref="JobEndDecision.CloseAsCancelled"/>, ADR-048 R0); a job that already reached a
+    /// terminal state is left untouched (<see cref="JobEndDecision.Stop"/>); every other state is
+    /// the failure this run always wrote (<see cref="JobEndDecision.FailAsToday"/>). Every state
+    /// the enumeration declares is named, and a value it does not declare is refused rather than
+    /// silently failed: the design fails closed. A state added to the enumeration later must be
+    /// decided here — the hermetic table test enumerates the enumeration, so an undecided state
+    /// fails that test instead of taking the ordinary path. It holds no clock, no I/O and no
+    /// workflow call, so a hermetic unit test exercises it.
+    /// </summary>
+    /// <param name="status">The state the job's record carried when the run failed.</param>
+    /// <returns>How the run ends.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The value is not a state the enumeration declares.</exception>
+    public static JobEndDecision DecideEndAfterFailure(ReportJobStatus status) => status switch
+    {
+        ReportJobStatus.Cancelling => JobEndDecision.CloseAsCancelled,
+        ReportJobStatus.Cancelled => JobEndDecision.Stop,
+        ReportJobStatus.Succeeded => JobEndDecision.Stop,
+        ReportJobStatus.Failed => JobEndDecision.Stop,
+        ReportJobStatus.PartiallySucceeded => JobEndDecision.Stop,
+        ReportJobStatus.Queued => JobEndDecision.FailAsToday,
+        ReportJobStatus.Validating => JobEndDecision.FailAsToday,
+        ReportJobStatus.Partitioning => JobEndDecision.FailAsToday,
+        ReportJobStatus.Running => JobEndDecision.FailAsToday,
+        ReportJobStatus.Finalizing => JobEndDecision.FailAsToday,
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(status),
+            status,
+            "the job state is not one the status enumeration declares."),
+    };
 
     /// <summary>
     /// The nudge that the upload of this job changed. It carries nothing: the workflow
@@ -825,3 +926,20 @@ public enum InputWaitOutcome
 /// <param name="OutputId">The output the verdict concerns.</param>
 /// <param name="Code">The code the output is failed with, or <see langword="null"/> when none is.</param>
 public readonly record struct OutputIsolationDecision(bool ShouldFailOutput, string OutputId, string? Code);
+
+/// <summary>
+/// How a run that ended by a failure ends its job, as <see cref="ReportJobWorkflow.DecideEndAfterFailure"/>
+/// answers it: closed as cancelled through the non-cancellable finalisation, stopped because the
+/// job already ended, or failed exactly as the run always failed it.
+/// </summary>
+public enum JobEndDecision
+{
+    /// <summary>The job is being cancelled: the run closes it through the non-cancellable finalisation.</summary>
+    CloseAsCancelled,
+
+    /// <summary>The job already reached a terminal state: nothing is written and the run ends.</summary>
+    Stop,
+
+    /// <summary>The job is neither cancelled nor terminal: the run writes its failure as it always did.</summary>
+    FailAsToday,
+}
