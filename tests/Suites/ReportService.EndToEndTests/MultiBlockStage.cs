@@ -27,6 +27,7 @@ using ReportService.Testing;
 using ReportService.Testing.Fixtures;
 using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
+using ReportService.Testing.Uploads;
 using ReportService.Uploads;
 
 namespace ReportService.EndToEndTests;
@@ -251,40 +252,18 @@ internal sealed class MultiBlockStage : IDisposable
         var recordsInSlice = recordsInSnapshot ?? (_accounted ? AccountingSnapshotRecords : SnapshotRecords);
         var (snapshot, records) = SnapshotForUpload(recordsInSlice);
         AccountingRecords = records;
-        var uploadId = UploadIdentifier.Prefix + Convert.ToHexStringLower(Guid.NewGuid().ToByteArray());
-        var now = DateTimeOffset.UtcNow;
-        var uploads = composition.Uploads;
-        await uploads.CreateAsync(
-            new UploadRecord(
-                uploadId,
-                Consumer,
-                UploadMode.ApiStream,
-                DataProfile.HeaderItemsV1,
-                UploadStatus.Created,
-                ObjectKey.FromSegments("staging", uploadId, "content"),
-                now,
-                now.AddHours(1)),
+        var seed = await ConfirmingUploadSeed.SeedAsync(
+            composition.Uploads,
+            composition.Storage,
+            Consumer,
+            snapshot,
+            DateTimeOffset.UtcNow,
             cancellationToken);
-        Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
-        Assert.True(await uploads.RecordTransferAsync(
-            uploadId,
-            UploadContentOutcome.Complete,
-            snapshot.LongLength,
-            snapshot.LongLength,
-            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(snapshot)),
-            now,
-            cancellationToken));
-
-        var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
-        using var content = new MemoryStream(snapshot, writable: false);
-        var written = await composition.Storage.WriteAsync(key, content, cancellationToken);
-        Assert.True(written.Succeeded);
-        Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, now.AddHours(1), cancellationToken));
 
         // The snapshot is kept beside the upload, so the partition is committed from the
         // same bytes the job will read.
-        await File.WriteAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), snapshot, cancellationToken);
-        return uploadId;
+        await File.WriteAllBytesAsync(Path.Combine(_directory, seed.UploadId + ".snapshot.json"), snapshot, cancellationToken);
+        return seed.UploadId;
     }
 
     /// <summary>Submits the job for the upload and answers its identifier.</summary>
@@ -359,58 +338,24 @@ internal sealed class MultiBlockStage : IDisposable
     /// </summary>
     public async Task CompleteUploadAsync(Composition composition, string uploadId, CancellationToken cancellationToken)
     {
-        var uploads = composition.Uploads;
-        var current = await uploads.FindAsync(uploadId, Consumer, cancellationToken)
-            ?? throw new InvalidOperationException("the upload was not recorded: " + uploadId);
+        var snapshot = await File.ReadAllBytesAsync(
+            Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
+        var seed = SeededUpload.FromSnapshot(uploadId, snapshot);
+        var completed = await ConfirmingUploadSeed.CompleteAsync(
+            composition.Uploads,
+            composition.Storage,
+            seed,
+            Consumer,
+            snapshot,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
 
-        switch (current.Status)
+        if (completed.Status != UploadStatus.Ready)
         {
-            case UploadStatus.Ready:
-                // The composition's verifier finished first; there is nothing left to commit.
-                break;
-
-            case UploadStatus.Verifying:
-                var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
-                var snapshot = await File.ReadAllBytesAsync(
-                    Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
-                var sha = Convert.ToHexStringLower(SHA256.HashData(snapshot));
-                var ready = await uploads.CommitReadyAsync(
-                    new SnapshotRecord(
-                        uploadId,
-                        Consumer,
-                        key,
-                        UploadContentEncoding.None,
-                        DataProfile.HeaderItemsV1,
-                        sha,
-                        snapshot.LongLength,
-                        sha,
-                        snapshot.LongLength,
-                        DateTimeOffset.UtcNow),
-                    DateTimeOffset.UtcNow,
-                    cancellationToken);
-
-                if (ready is not (SnapshotCommitResult.Committed or SnapshotCommitResult.AlreadyCommitted))
-                {
-                    // The verifier may have finished between the read above and this
-                    // commit: what matters is the upload's state, not which call won.
-                    var after = await uploads.FindAsync(uploadId, Consumer, cancellationToken);
-                    if (after?.Status != UploadStatus.Ready)
-                    {
-                        throw new InvalidOperationException(
-                            "the upload could not be completed: " + ready
-                            + ", status " + (after?.Status.ToString() ?? "missing"));
-                    }
-                }
-
-                break;
-
-            default:
-                throw new InvalidOperationException("the upload ended " + current.Status + " instead of ready");
+            throw new InvalidOperationException("the upload ended " + completed.Status + " instead of ready");
         }
 
-        var ended = await uploads.FindAsync(uploadId, Consumer, cancellationToken)
-            ?? throw new InvalidOperationException("the upload disappeared before it became ready: " + uploadId);
-        Assert.Equal(UploadStatus.Ready, ended.Status);
+        Assert.Equal(UploadStatus.Ready, completed.Status);
     }
 
     /// <summary>Creates the snapshot, uploads it and completes it in one act, so the job runs without a pre-committed partition.</summary>
