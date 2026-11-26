@@ -1,7 +1,7 @@
 using ReportService.Pdf.Verification;
+using ReportService.Templates;
 using ReportService.Testing;
 using ReportService.Testing.Fixtures;
-using ReportService.Templates;
 using ReportService.Testing.TemplatePackages;
 
 namespace ReportService.RenderingTests;
@@ -59,10 +59,9 @@ public sealed class PageAccountingRenderingTests(RenderingSuite suite)
         var problems = AccountedDocumentCheck.Verify(reading, declaration, expected, attribution, expectNumbering: false);
         Assert.True(problems.Count == 0, string.Join("; ", problems));
 
-        // The block closes on the source's own total, and at least one row really split.
+        // The block closes on the source's own total, and the chain's last page closes on it.
         Assert.Equal(records.Sum(record => record.Amount), expected.GrandTotal);
         Assert.Equal(expected.GrandTotal, expected.Pages[^1].CarriedForward);
-        Assert.Contains(records, record => attribution.StartPages[record.Ordinal] < attribution.EndPages[record.Ordinal]);
         Assert.True(expected.Groups.Count >= 2, "the fixture begins more than one group");
 
         var evidence = RenderingSuite.CopyToEvidence(render, "page-accounting-ge30.pdf");
@@ -96,6 +95,50 @@ public sealed class PageAccountingRenderingTests(RenderingSuite suite)
         Assert.Null(render.Pdf);
     }
 
+    [Fact]
+    public async Task ABlockWithATallRowIsSplitBeforeLayoutAndMarksItsEarlierParts()
+    {
+        var render = await suite.RenderAsync(TallRowFixture, PageAccountingFixtures.TemplateId);
+
+        Assert.True(render.VerificationPassed, render.VerificationReason);
+        Assert.NotNull(render.Pdf);
+        var reading = PdfWordReader.Read(render.Pdf!, Margins);
+        var declaration = PageAccountingDeclaration.Load();
+        var records = PageAccountingExpectations.ReadRecords(
+            Path.Combine(suite.FixturesDirectory, TallRowFixture + ".json"),
+            declaration.AmountField,
+            declaration.GroupKey);
+
+        var provisional = PageAccountingExpectations.Compute(
+            records,
+            new Dictionary<long, int>(),
+            reading.Pages.Count,
+            0m,
+            declaration.Scale,
+            declaration.Culture);
+        var attribution = PageAccountingExpectations.Attribute(reading, provisional);
+        var expected = PageAccountingExpectations.Compute(
+            records,
+            attribution.EndPages,
+            reading.Pages.Count,
+            0m,
+            declaration.Scale,
+            declaration.Culture);
+
+        // The tall record's row really split, and the earlier part carries the fixed mark in
+        // its own amount cell while the amount prints once, on the last part.
+        Assert.Contains(records, record => attribution.StartPages[record.Ordinal] < attribution.EndPages[record.Ordinal]);
+        Assert.Contains(
+            reading.Pages.SelectMany(page => page.Words),
+            word => string.Equals(word.Text, AccountingReading.ContinuesMark, StringComparison.Ordinal));
+
+        var problems = AccountedDocumentCheck.Verify(reading, declaration, expected, attribution, expectNumbering: false);
+        Assert.True(problems.Count == 0, string.Join("; ", problems));
+    }
+
     /// <summary>The fixture library's group-edge snapshot: 250 records, several groups and a 30-line row.</summary>
     private const string Fixture = "GE30";
+
+    /// <summary>The fixture library's tall-row snapshot: 100 records, the row at sequence 50 nearly a page tall.</summary>
+    private const string TallRowFixture = "T300u";
 }

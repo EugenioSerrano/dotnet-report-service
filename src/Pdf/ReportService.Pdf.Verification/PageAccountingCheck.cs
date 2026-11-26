@@ -39,6 +39,106 @@ public sealed record AccountingVerdict(string? Reason, int? Page = null, long? R
 /// </summary>
 public sealed class PageAccountingCheck
 {
+    /// <summary>
+    /// The expected final group totals as the band prints them, for the order check's
+    /// reference: the layout writes each final group's total into the content after the
+    /// composition is fixed, so the composed-text check must know those tokens as
+    /// accounting text and not as text the document dropped or invented. A group that
+    /// continues into the next block prints no total and contributes none.
+    /// </summary>
+    /// <param name="accounting">The accounting contract of the block.</param>
+    public IReadOnlyList<string> ExpectedGroupTotalTexts(AccountingCheckInput accounting) =>
+        AccountingTexts(accounting, includeRecordAmounts: false);
+
+    /// <summary>
+    /// Every text the layout writes into the content's accounting cells, as the band prints
+    /// it: each record's amount once and each final group's total once. The order check
+    /// removes exactly these tokens from the printed page - the accounting units are
+    /// excluded from the composed-text check and judged by this check instead - and the
+    /// multiset counts duplicates, so two records with the same amount lose both.
+    /// </summary>
+    /// <param name="accounting">The accounting contract of the block.</param>
+    public IReadOnlyList<string> ExpectedAccountingTexts(AccountingCheckInput accounting) =>
+        AccountingTexts(accounting, includeRecordAmounts: true);
+
+    private List<string> AccountingTexts(AccountingCheckInput accounting, bool includeRecordAmounts)
+    {
+        ArgumentNullException.ThrowIfNull(accounting);
+        var texts = new List<string>();
+        if (!TryCulture(accounting.Culture, out var culture))
+        {
+            return texts;
+        }
+
+        var amounts = new Dictionary<long, decimal>();
+        foreach (var record in accounting.Block.Records)
+        {
+            if (!TryReadAmount(record, accounting.AmountField, out var amount))
+            {
+                continue;
+            }
+
+            amounts[record.Ordinal] = amount;
+            if (includeRecordAmounts)
+            {
+                // The row prints the amount as the render context gives it: the invariant
+                // exact decimal at the declared scale. The band's values use the culture.
+                texts.Add(AccountingReading.FormatAmount(amount, accounting.Scale));
+            }
+        }
+
+        if (string.IsNullOrEmpty(accounting.GroupKey) || accounting.Block.Records.Count == 0)
+        {
+            return texts;
+        }
+
+        foreach (var group in Groups(accounting, amounts))
+        {
+            if (group.Continues)
+            {
+                continue;
+            }
+
+            var total = group.Sum;
+            if (group.IsFirst
+                && accounting.Index.ContinuesPreviousGroup
+                && accounting.Index.OpeningGroupAccumulated is { } carried
+                && string.Equals(group.Key, accounting.Index.OpeningGroupKey, StringComparison.Ordinal))
+            {
+                total += carried;
+            }
+
+            if (AccountingReading.TryFormat(total, accounting.Scale, culture, out var text))
+            {
+                texts.Add(text);
+            }
+        }
+
+        return texts;
+    }
+
+    /// <summary>
+    /// The page texts the order check consumes for an accounting block: the page's content
+    /// without the fixed continuation mark and without each accounting token the layout
+    /// writes (each record's amount and each final group total, as the source computes
+    /// them). The accounting check judges those tokens; the order check must neither drop
+    /// nor invent them. A wrong token is not removed and the order check fails closed on it.
+    /// </summary>
+    /// <param name="reading">The printed document as the reader read it.</param>
+    /// <param name="accounting">The accounting contract of the block.</param>
+    public IReadOnlyList<string> PageTexts(PdfReading reading, AccountingCheckInput accounting)
+    {
+        ArgumentNullException.ThrowIfNull(reading);
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var text in ExpectedAccountingTexts(accounting))
+        {
+            var key = Normalisation.Normalise(text);
+            counts[key] = counts.TryGetValue(key, out var current) ? current + 1 : 1;
+        }
+
+        return [.. reading.Pages.Select(page => AccountingReading.ContentTextWithoutAccounting(page, counts))];
+    }
+
     /// <summary>The check's verdict for <paramref name="input"/>.</summary>
     /// <param name="input">The printed document, its alignment and the accounting contract.</param>
     /// <param name="reading">The printed document as the reader read it.</param>
@@ -58,17 +158,17 @@ public sealed class PageAccountingCheck
             return AccountingVerdict.Fail(VerificationReasons.AccountingAmountInvalid);
         }
 
-        // The block's own amounts, read from the source values, in record order.
+        // The block's own amounts, read from the source values, in record order. The row
+        // prints the invariant exact decimal at the declared scale, never the band's format.
         var amounts = new List<(long Ordinal, decimal Amount, string Text)>(accounting.Block.Records.Count);
         foreach (var record in accounting.Block.Records)
         {
-            if (!TryReadAmount(accounting.Block, record, accounting.AmountField, out var amount)
-                || !AccountingReading.TryFormat(amount, accounting.Scale, culture, out var text))
+            if (!TryReadAmount(record, accounting.AmountField, out var amount))
             {
                 return AccountingVerdict.Fail(VerificationReasons.AccountingAmountInvalid, recordOrdinal: record.Ordinal);
             }
 
-            amounts.Add((record.Ordinal, amount, text));
+            amounts.Add((record.Ordinal, amount, AccountingReading.FormatAmount(amount, accounting.Scale)));
         }
 
         // The chain closes on the partition's exact prefix sum: the block's own total is
@@ -306,7 +406,7 @@ public sealed class PageAccountingCheck
         };
     }
 
-    private static bool TryReadAmount(BlockFacts block, BlockRecord record, string amountField, out decimal amount)
+    private static bool TryReadAmount(BlockRecord record, string amountField, out decimal amount)
     {
         amount = 0m;
         if (!record.Values.TryGetValue(amountField, out var value) || value is null)

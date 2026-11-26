@@ -95,6 +95,7 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
 
         var browser = await session.GetBrowserAsync(cancellationToken).ConfigureAwait(false);
         var context = await browser.NewContextAsync(new BrowserNewContextOptions { JavaScriptEnabled = request.IsAccounted }).ConfigureAwait(false);
+        var consoleText = new System.Collections.Concurrent.ConcurrentQueue<string>();
         try
         {
             var page = await context.NewPageAsync().ConfigureAwait(false);
@@ -103,6 +104,14 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
                 if (string.Equals(message.Type, "error", StringComparison.Ordinal))
                 {
                     Interlocked.Increment(ref consoleErrors);
+                }
+
+                // The accounting print's own text is kept for its failure: the layout runs
+                // scripts of the product there, and a failure that cannot say what the page
+                // said is not observable. It is bounded and only ever surfaced on a failure.
+                if (request.IsAccounted && !string.IsNullOrWhiteSpace(message.Text) && consoleText.Count < ConsoleMessagesKept)
+                {
+                    consoleText.Enqueue(message.Type + ": " + Bounded(message.Text));
                 }
             };
             page.Crash += (_, _) => Interlocked.Increment(ref consoleErrors);
@@ -141,6 +150,17 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
                 guard = await WaitForAccountingAsync(page, cancellationToken).ConfigureAwait(false);
                 if (guard.Breached)
                 {
+                    // The script's own failure text is written where the run's artifacts
+                    // collect it - the worker's (or the host's) standard error - and never
+                    // into the reason the block fails with.
+                    if (guard.Error is { Length: > 0 } || guard.AccountingError is { Length: > 0 })
+                    {
+                        Console.Error.WriteLine(
+                            "The accounting layout reported a failure: "
+                            + Bounded(guard.Error ?? string.Empty) + " " + Bounded(guard.AccountingError ?? string.Empty)
+                            + DescribeConsole(consoleText));
+                    }
+
                     return new PrintOutcome(request.PdfPath, aborted, consoleErrors, clock.GetElapsedTime(started), guard);
                 }
             }
@@ -161,13 +181,45 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
         }
         catch (PlaywrightException exception)
         {
-            throw new PrintTemporarilyFailedException($"The document could not be printed: {exception.Message}", exception);
+            // The message names the browser's own failure and, for the accounting print,
+            // what the page said before it: without them a failed layout is unobservable
+            // in the run's artifacts. It carries no value of the report.
+            var detail = request.IsAccounted
+                ? " [" + exception.GetType().Name + "] " + Bounded(exception.Message) + DescribeConsole(consoleText)
+                : string.Empty;
+            if (request.IsAccounted)
+            {
+                Console.Error.WriteLine("The accounting document could not be printed:" + detail);
+            }
+
+            throw new PrintTemporarilyFailedException($"The document could not be printed: {exception.Message}{detail}", exception);
         }
         finally
         {
             await context.CloseAsync().ConfigureAwait(false);
             await context.DisposeAsync().ConfigureAwait(false);
         }
+    }
+
+    /// <summary>How many console messages one accounting print keeps for a failure.</summary>
+    private const int ConsoleMessagesKept = 40;
+
+    /// <summary>The longest text one diagnostic carries; a message that says more says it elsewhere.</summary>
+    private const int DiagnosticCharacters = 600;
+
+    private static string Bounded(string text) =>
+        text.Length <= DiagnosticCharacters ? text : text[..DiagnosticCharacters] + "…";
+
+    /// <summary>The page console's text, bounded, as one diagnostic suffix.</summary>
+    private static string DescribeConsole(System.Collections.Concurrent.ConcurrentQueue<string> messages)
+    {
+        if (messages.IsEmpty)
+        {
+            return " [console: none]";
+        }
+
+        var text = string.Join(" | ", messages);
+        return " [console: " + (text.Length <= 4 * DiagnosticCharacters ? text : text[..(4 * DiagnosticCharacters)] + "…") + "]";
     }
 
     /// <summary>
@@ -194,21 +246,14 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        var dto = await page.EvaluateAsync<GuardDto>("() => window.__layoutGuard || null").ConfigureAwait(false);
+
+        // The report is read as its own JSON text and parsed here: Playwright's serializer
+        // cannot construct a private nested record, and a failure to read the report must
+        // never be mistaken for a layout that reported nothing.
+        var json = await page.EvaluateAsync<string>("() => window.__layoutGuard ? JSON.stringify(window.__layoutGuard) : ''").ConfigureAwait(false);
         var signal = await page.EvaluateAsync<string>("() => document.documentElement.dataset.layout || ''").ConfigureAwait(false);
         var reason = await page.EvaluateAsync<string>("() => document.documentElement.dataset.layoutReason || ''").ConfigureAwait(false);
-        var report = dto is null
-            ? LayoutGuardReport.Missing
-            : new LayoutGuardReport(
-                dto.Phase,
-                dto.Pages,
-                dto.Rows,
-                dto.SplitRows,
-                dto.MaxParts,
-                dto.PartOverLimit,
-                dto.UnfinishedLastPage,
-                dto.AccountingError,
-                dto.Error);
+        var report = ParseGuard(json);
         return string.Equals(signal, "done", StringComparison.Ordinal)
             ? report
             : report with
@@ -217,6 +262,52 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
                 Error = report.Error ?? (reason.Length > 0 ? reason : "layout-not-done"),
             };
     }
+
+    /// <summary>The guard report the page serialised, parsed by its own member names.</summary>
+    private static LayoutGuardReport ParseGuard(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return LayoutGuardReport.Missing;
+        }
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var root = document.RootElement;
+            return new LayoutGuardReport(
+                Text(root, "phase"),
+                Number(root, "pages"),
+                Number(root, "rows"),
+                Number(root, "splitRows"),
+                Number(root, "maxParts"),
+                Number(root, "partOverLimit"),
+                Flag(root, "unfinishedLastPage"),
+                Text(root, "accountingError"),
+                Text(root, "error"));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // A report that does not parse is a report that says nothing: the guard fails
+            // the block on its missing phase, never on a guessed value.
+            return LayoutGuardReport.Missing with { Phase = "unreadable" };
+        }
+    }
+
+    private static string? Text(System.Text.Json.JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == System.Text.Json.JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static int Number(System.Text.Json.JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value)
+        && value.ValueKind == System.Text.Json.JsonValueKind.Number
+        && value.TryGetInt32(out var number)
+            ? number
+            : 0;
+
+    private static bool Flag(System.Text.Json.JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == System.Text.Json.JsonValueKind.True;
 
     private static async Task FulfillPackageFileAsync(IRoute route, ITemplatePackageFiles files, string packagePath)
     {
@@ -271,15 +362,4 @@ public sealed class ChromiumPdfPrinter(BrowserSession session, TimeProvider cloc
         }
     }
 
-    /// <summary>The guard report as the page serialises it.</summary>
-    private sealed record GuardDto(
-        string? Phase,
-        int Pages,
-        int Rows,
-        int SplitRows,
-        int MaxParts,
-        int PartOverLimit,
-        bool UnfinishedLastPage,
-        string? AccountingError,
-        string? Error);
 }

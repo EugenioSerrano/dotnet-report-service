@@ -263,7 +263,7 @@ public static class PageAccountingFixtures
         <html><head><link rel="stylesheet" href="html/styles.css"></head><body>
         <header class="doc">
           <h1>{{ header.reportTitle | html.escape }}</h1>
-          <div class="head-row"><span>Seq</span><span>Group</span><span>Description</span><span>Amount</span></div>
+          <div class="head-row"><span>Seq</span><span>Description</span><span>Amount</span></div>
         </header>
         """;
 
@@ -272,11 +272,11 @@ public static class PageAccountingFixtures
 
     /// <summary>The row: one grid item, the amount cell carrying the literal amount role.</summary>
     public const string Row = """
-        <div class="item"><div class="seq">{{ block.recordOrdinal }}</div><div class="grp">{{ group.key | html.escape }}</div><div class="desc">{{ item.description | html.escape }}</div><div class="amount" data-role="amount">{{ item.amount | html.escape }}</div></div>
+        <div class="item"><div class="seq">{{ block.recordOrdinal }}</div><div class="desc">{{ item.description | html.escape }}</div><div class="amount" data-role="amount">{{ item.amount | html.escape }}</div></div>
         """;
 
-    /// <summary>The group end: the group's key and the cell the layout writes its total into.</summary>
-    public const string GroupEnd = """<div class="group-total"><span class="group-key">{{ group.key | html.escape }}</span><span class="group-sum" data-role="group-total"></span></div></div>""";
+    /// <summary>The group end: the group's key, a separator, and the cell the layout writes its total into.</summary>
+    public const string GroupEnd = """<div class="group-total"><span class="group-key">{{ group.key | html.escape }}</span> <span class="group-sum" data-role="group-total"></span></div></div>""";
 
     /// <summary>The document end.</summary>
     public const string DocumentEnd = """</body></html>""";
@@ -301,7 +301,12 @@ public static class PageAccountingFixtures
 
         .head-row, .item {
           display: grid;
-          grid-template-columns: 12mm 20mm 1fr 30mm;
+          grid-template-columns: 12mm 1fr 30mm;
+        }
+
+        .item {
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
 
         .head-row > span,
@@ -316,7 +321,12 @@ public static class PageAccountingFixtures
         }
 
         .desc {
-          overflow-wrap: anywhere;
+          padding-right: 2mm;
+        }
+
+        .amount {
+          padding-left: 2mm;
+          text-align: right;
         }
 
         .group-key {
@@ -325,6 +335,10 @@ public static class PageAccountingFixtures
 
         .group-total {
           text-align: right;
+        }
+
+        .group-sum {
+          margin-left: 3mm;
         }
         """;
 

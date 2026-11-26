@@ -233,6 +233,56 @@ public sealed class PageAccountingCheckTests
         Assert.Equal(VerificationReasons.AccountingAmountInvalid, verdict.Reason);
     }
 
+    [Fact]
+    public void TheExpectedAccountingTextsAreTheInvariantAmountsAndTheCultureTotals()
+    {
+        var printed = Printed();
+        var texts = new PageAccountingCheck().ExpectedAccountingTexts(printed.Input.Accounting!);
+
+        // The row amounts are the invariant exact decimals; the group totals are the band's
+        // culture format with no group separator.
+        Assert.Contains("10.00", texts);
+        Assert.Contains("5.50", texts);
+        Assert.Contains("4.50", texts);
+        Assert.Contains("10,00", texts);
+        Assert.DoesNotContain("10,00", texts.Where(text => text.Contains('.', StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void AContinuingGroupContributesNoTotalAndTheOpeningIsAdded()
+    {
+        var printed = Printed(continuesPrevious: true, openingGroupAccumulated: 3.00m);
+        var check = new PageAccountingCheck();
+
+        var texts = check.ExpectedGroupTotalTexts(printed.Input.Accounting!);
+
+        // Group A continues from the previous block, so its total is its own rows plus the
+        // recorded opening; group B's is its own rows.
+        Assert.Contains("13,00", texts);
+        Assert.Contains("10,00", texts);
+
+        var continuing = Printed(continuesNext: true);
+        Assert.DoesNotContain("10,00", check.ExpectedGroupTotalTexts(continuing.Input.Accounting!).Skip(1));
+    }
+
+    [Fact]
+    public void TheOrderCheckPageTextRemovesTheMarkAndTheAccountingTokens()
+    {
+        var printed = Printed();
+        var page = new PrintedPage(1, 595, 842, [
+            .. Content("First"),
+            .. Content("10.00"),
+            .. Content("10,00"),
+            .. Content(AccountingReading.ContinuesMark),
+            .. Content("kept"),
+        ]);
+
+        var texts = new PageAccountingCheck().PageTexts(new PdfReading([page]), printed.Input.Accounting!);
+
+        _ = Assert.Single(texts);
+        Assert.Equal("Firstkept", texts[0]);
+    }
+
     private static AccountingVerdict Run(PrintedFixture printed) =>
         new PageAccountingCheck().Check(printed.Input, printed.Reading, printed.Alignment);
 
@@ -389,7 +439,9 @@ public sealed class PageAccountingCheckTests
             string text when decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) => parsed,
             _ => 0m,
         };
-        return AccountingReading.TryFormat(amount, 2, CultureInfo.GetCultureInfo("es-AR"), out var printed) ? printed : "0,00";
+        // The row prints the amount as the render context gives it: the invariant exact
+        // decimal at the declared scale; only the band's values use the culture.
+        return AccountingReading.FormatAmount(amount, 2);
     }
 
     private static TextUnit Unit(string text, int index, long ordinal) =>

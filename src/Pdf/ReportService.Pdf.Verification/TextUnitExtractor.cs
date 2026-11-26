@@ -188,8 +188,14 @@ public sealed class TextUnitExtractor
 
                 if (tag.Value.IsEnd)
                 {
-                    if (accounting.Count > 0 && accounting.Peek() == depth)
+                    // The element that closes sits at depth - 1: the open that carried an
+                    // accounting role pushed the depth its content begins at, so the role
+                    // ends here. The cell's own text is flushed here, before the role closes:
+                    // the element need not be a block boundary, and text flushed later would
+                    // no longer be the accounting cell's.
+                    if (accounting.Count > 0 && accounting.Peek() == depth - 1)
                     {
+                        Flush();
                         _ = accounting.Pop();
                     }
 
@@ -240,6 +246,9 @@ public sealed class TextUnitExtractor
                     {
                         if (CarriesAccountingRole(html, open, tag.Value.End))
                         {
+                            // The cell's own text begins here: what printed before it (the
+                            // group's key, a label) is its own unit, not accounting text.
+                            Flush();
                             accounting.Push(depth);
                         }
 

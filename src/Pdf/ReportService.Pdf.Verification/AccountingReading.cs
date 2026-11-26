@@ -33,14 +33,47 @@ public static class AccountingReading
     /// order check compares the composed text with the page's own content only.
     /// </summary>
     /// <param name="page">The page as it was read.</param>
-    public static string ContentTextWithoutMark(PrintedPage page)
+    public static string ContentTextWithoutMark(PrintedPage page) => ContentTextWithoutAccounting(page, expectedTotals: null);
+
+    /// <summary>
+    /// The normalised content text of a page with the accounting text the layout writes
+    /// removed: the fixed continuation mark, and each expected group total once per
+    /// occurrence it is expected to print (the totals travel as a multiset, so a page
+    /// that ends two groups with the same total loses both). The totals come from the
+    /// block's source records and the partition, never from the layout.
+    /// </summary>
+    /// <param name="page">The page as it was read.</param>
+    /// <param name="expectedTotals">The remaining occurrences of each expected total text, already normalised; decremented as they are met.</param>
+    public static string ContentTextWithoutAccounting(PrintedPage page, IDictionary<string, int>? expectedTotals)
     {
         ArgumentNullException.ThrowIfNull(page);
         var mark = Normalisation.Normalise(ContinuesMark);
-        return string.Concat(page.Words
-            .Where(word => word.Band == ReadingBand.Content)
-            .Select(word => Normalisation.Normalise(word.Text))
-            .Where(text => !string.Equals(text, mark, StringComparison.Ordinal)));
+        var builder = new System.Text.StringBuilder();
+        foreach (var word in page.Words)
+        {
+            if (word.Band != ReadingBand.Content)
+            {
+                continue;
+            }
+
+            var text = Normalisation.Normalise(word.Text);
+            if (string.Equals(text, mark, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (expectedTotals is not null
+                && expectedTotals.TryGetValue(text, out var remaining)
+                && remaining > 0)
+            {
+                expectedTotals[text] = remaining - 1;
+                continue;
+            }
+
+            _ = builder.Append(text);
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>The three labelled values the page's accounting band printed.</summary>
@@ -104,6 +137,12 @@ public static class AccountingReading
 
         return null;
     }
+
+    /// <summary>The exact invariant text of <paramref name="amount"/> with exactly <paramref name="scale"/> fraction digits: the row's own amount.</summary>
+    /// <param name="amount">The amount.</param>
+    /// <param name="scale">The fraction digits the template declares.</param>
+    public static string FormatAmount(decimal amount, int scale) =>
+        amount.ToString("F" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture), System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>Writes <paramref name="value"/> with exactly <paramref name="scale"/> fraction digits and no group separator.</summary>
     /// <param name="value">The value to write.</param>

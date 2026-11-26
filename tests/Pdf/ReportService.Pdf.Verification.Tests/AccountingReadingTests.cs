@@ -126,6 +126,38 @@ public sealed class AccountingReadingTests
         Assert.False(AccountingReading.IsInside(outside, 90, 790, 100, 40));
     }
 
+    [Fact]
+    public void TheRowAmountIsWrittenInTheInvariantForm()
+    {
+        Assert.Equal("1234.56", AccountingReading.FormatAmount(1234.56m, 2));
+        Assert.Equal("10.50", AccountingReading.FormatAmount(10.5m, 2));
+        Assert.Equal("10", AccountingReading.FormatAmount(10m, 0));
+        Assert.Equal("-0.50", AccountingReading.FormatAmount(-0.5m, 2));
+    }
+
+    [Fact]
+    public void TheAccountingTokensAreRemovedOncePerOccurrenceAndTheMarkAlways()
+    {
+        var page = new PrintedPage(1, 595, 842, [
+            .. Content("first"),
+            .. Content("10.00"),
+            .. Content("10.00"),
+            .. Content(AccountingReading.ContinuesMark),
+            .. Content("10,00"),
+            .. Content("last"),
+        ]);
+
+        var once = AccountingReading.ContentTextWithoutAccounting(page, new Dictionary<string, int>(StringComparer.Ordinal) { ["10.00"] = 1, ["10,00"] = 1 });
+
+        Assert.Equal("first10.00last", once);
+
+        var twice = AccountingReading.ContentTextWithoutAccounting(page, new Dictionary<string, int>(StringComparer.Ordinal) { ["10.00"] = 2, ["10,00"] = 1 });
+        Assert.Equal("firstlast", twice);
+    }
+
+    private static IEnumerable<PrintedWord> Content(string text) =>
+        [new PrintedWord(text, 10, 40, 60, 50, 0, ReadingBand.Content)];
+
     private static IEnumerable<PrintedWord> FooterWords(string label, string value)
     {
         var left = 10d;

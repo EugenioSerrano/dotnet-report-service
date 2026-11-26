@@ -19,6 +19,8 @@ namespace ReportService.Rendering.Layout;
 /// <param name="Culture">The BCP 47 culture the values are written in.</param>
 /// <param name="ContentWidthMm">The width of the content area, in millimetres.</param>
 /// <param name="ContentHeightMm">The height of the content area, in millimetres.</param>
+/// <param name="PageWidthMm">The width of the page, in millimetres.</param>
+/// <param name="PageHeightMm">The height of the page, in millimetres.</param>
 public sealed record AccountingLayoutFacts(
     decimal OpeningCarriedForward,
     string? OpenGroupKey,
@@ -27,7 +29,9 @@ public sealed record AccountingLayoutFacts(
     int Scale,
     string Culture,
     double ContentWidthMm,
-    double ContentHeightMm)
+    double ContentHeightMm,
+    double PageWidthMm = 210,
+    double PageHeightMm = 297)
 {
     /// <summary>The attribute that opens the accounting facts the layout script reads.</summary>
     public const string Attribute = "data-accounting";
@@ -45,6 +49,8 @@ public sealed record AccountingLayoutFacts(
             decimalSeparator = CultureInfoOrInvariant(Culture).NumberFormat.NumberDecimalSeparator,
             contentWidthMm = ContentWidthMm,
             contentHeightMm = ContentHeightMm,
+            pageWidthMm = PageWidthMm,
+            pageHeightMm = PageHeightMm,
             footer = new
             {
                 leftMm = Footer.LeftMm,

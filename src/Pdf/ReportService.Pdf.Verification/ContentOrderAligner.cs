@@ -151,6 +151,49 @@ public sealed class ContentOrderAligner
         return search.Failure();
     }
 
+    /// <summary>
+    /// Consumes the accounting units of <paramref name="units"/> in place of an alignment
+    /// that ran over the other units: an accounting unit is printed text the accounting
+    /// check judges, so it counts as fully consumed at the page the unit before it ended on.
+    /// </summary>
+    /// <param name="alignment">The alignment of the units that are not accounting units, in their order.</param>
+    /// <param name="units">Every unit of the block, in document order.</param>
+    public static AlignmentOutcome ConsumeAccountingUnits(AlignmentOutcome alignment, IReadOnlyList<TextUnit> units)
+    {
+        ArgumentNullException.ThrowIfNull(alignment);
+        ArgumentNullException.ThrowIfNull(units);
+        if (!alignment.Passed)
+        {
+            return alignment;
+        }
+
+        var consumed = new int[units.Count];
+        var unitPages = new int[units.Count];
+        var index = 0;
+        var lastPage = 1;
+        for (var unit = 0; unit < units.Count; unit++)
+        {
+            if (units[unit].Accounting)
+            {
+                consumed[unit] = units[unit].Normalised.Length;
+                unitPages[unit] = lastPage;
+                continue;
+            }
+
+            consumed[unit] = index < alignment.ConsumedCharacters.Count ? alignment.ConsumedCharacters[index] : 0;
+            var page = alignment.Pages is { } pagesOfUnits && index < pagesOfUnits.Count ? pagesOfUnits[index] : 0;
+            unitPages[unit] = page;
+            if (page > 0)
+            {
+                lastPage = page;
+            }
+
+            index++;
+        }
+
+        return alignment with { ConsumedCharacters = consumed, Pages = unitPages };
+    }
+
     /// <summary>One unit that was started and not finished, and how much of it was consumed.</summary>
     private readonly record struct OpenUnit(int Unit, int Offset);
 

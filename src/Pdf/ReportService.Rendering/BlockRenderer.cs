@@ -172,7 +172,9 @@ public sealed class BlockRenderer(
                 request.Manifest.Pdf.Scale,
                 presentation.Culture.Name,
                 (double)(settings.WidthMm - settings.MarginLeftMm - settings.MarginRightMm),
-                (double)(settings.HeightMm - settings.MarginTopMm - settings.MarginBottomMm));
+                (double)(settings.HeightMm - settings.MarginTopMm - settings.MarginBottomMm),
+                (double)settings.WidthMm,
+                (double)settings.HeightMm);
 
             var marked = BlockAccountingMarkup.Mark(block, new AccountingMarkupContext(
                 amountField,

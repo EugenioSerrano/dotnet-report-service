@@ -324,6 +324,8 @@
             part.setAttribute("data-accounting-part", (i + 1) + "/" + count);
             if (i > 0) {
                 part.setAttribute("data-accounting-continuation", "true");
+            // The break is inline: the injected stylesheet is not the only carrier of it.
+            part.style.breakBefore = "page";
             }
             for (var c = 0; c < cells.length; c++) {
                 var cell = cells[c];
@@ -494,6 +496,17 @@
     }
 
     function account(options) {
+        // The print-level page is the sheet: Paged.js already owns the layout-time page box
+        // (the template's margins are its content frame), so the physical page must be the
+        // sheet's own size with no margin. The style is added after the layout, once Paged.js
+        // has consumed the page rules it reads, and it never applies on screen.
+        var printStyle = document.createElement("style");
+        printStyle.setAttribute("data-accounting-print", "true");
+        printStyle.appendChild(document.createTextNode(
+            "@media print { @page { size: " + options.pageWidthMm + "mm " + options.pageHeightMm
+            + "mm; margin: 0 !important; } }"));
+        document.head.appendChild(printStyle);
+
         var pages = pageElements();
         guard.pages = pages.length;
         if (pages.length === 0) {
@@ -520,8 +533,6 @@
         var openGroup = document.documentElement.getAttribute("data-open-group");
 
         var brought = opening;
-        var bandLinePx = (options.footer.heightMm * MM) / 3;
-
         pages.forEach(function (pageElement, pageIndex) {
             var subtotal = 0n;
             var fragments = perPage[pageIndex];
@@ -546,7 +557,7 @@
                 format(brought, options),
                 format(subtotal, options),
                 format(carried, options)
-            ], bandLinePx);
+            ]);
             brought = carried;
         });
 
@@ -559,15 +570,20 @@
         }
 
         // Every final group's total, from the group's own rows plus the opening the
-        // service recorded for the group this block continues.
+        // service recorded for the group this block continues. A row is summed once, at its
+        // last fragment: Paged.js may split one row over pages, and every fragment carries
+        // the same attributes.
         var groupCells = Array.prototype.slice.call(document.querySelectorAll('[data-role="group-total"][data-group-final="true"]'));
         for (var g = 0; g < groupCells.length; g++) {
             var cell = groupCells[g];
             var key = cell.getAttribute("data-group");
             var total = 0n;
-            var groupRows = Array.prototype.slice.call(document.querySelectorAll('[data-seq][data-group="' + key + '"]'));
-            for (var gr = 0; gr < groupRows.length; gr++) {
-                total += toUnits(groupRows[gr].getAttribute("data-amount"), options.scale);
+            for (var seqIndex = 0; seqIndex < order.length; seqIndex++) {
+                var fragmentsOfSeq = rows[order[seqIndex]];
+                var lastFragment = fragmentsOfSeq[fragmentsOfSeq.length - 1].element;
+                if (lastFragment.getAttribute("data-group") === key) {
+                    total += toUnits(lastFragment.getAttribute("data-amount"), options.scale);
+                }
             }
             if (openGroup !== null && openedWith !== null && String(key) === String(openGroup)) {
                 total += toUnits(openedWith, options.scale);
@@ -576,16 +592,22 @@
         }
     }
 
-    function writeBand(pageElement, options, labels, values, linePx) {
+    function writeBand(pageElement, options, labels, values) {
         var band = document.createElement("div");
         band.className = "accounting-band";
         band.setAttribute("data-accounting-band", "true");
-        band.style.left = options.footer.leftMm + "mm";
-        band.style.top = options.footer.topMm + "mm";
+
+        // The band positions itself in its own inline declaration: the injected stylesheet
+        // is passed through Paged.js's own stylesheet handling, and a rule that does not
+        // survive it must never turn the band into content-area text.
+        band.style.position = "absolute";
+        band.style.overflow = "hidden";
+        band.style.left = "0";
+        band.style.top = "0";
         band.style.width = options.footer.widthMm + "mm";
         band.style.height = options.footer.heightMm + "mm";
-        band.style.fontSize = (linePx * 0.6) + "px";
-        band.style.lineHeight = linePx + "px";
+        band.style.fontSize = (options.footer.heightMm * 0.2) + "mm";
+        band.style.lineHeight = (options.footer.heightMm / 3) + "mm";
         for (var i = 0; i < labels.length; i++) {
             var line = document.createElement("div");
             line.textContent = labels[i] + " " + values[i];
@@ -595,6 +617,18 @@
         if (band.children.length !== 3) {
             throw new Error("the accounting band does not hold its three lines");
         }
+
+        // The declared rectangle is in the page's own millimetres: the page element may be
+        // laid out at a scale, so the millimetres are converted through its measured box and
+        // the result is expressed in the coordinates of the band's containing block.
+        var pageBox = pageElement.getBoundingClientRect();
+        var host = band.offsetParent ? band.offsetParent.getBoundingClientRect() : pageBox;
+        var perMmX = pageBox.width / options.pageWidthMm;
+        var perMmY = pageBox.height / options.pageHeightMm;
+        band.style.left = (pageBox.left - host.left + options.footer.leftMm * perMmX) + "px";
+        band.style.top = (pageBox.top - host.top + options.footer.topMm * perMmY) + "px";
+        band.style.width = (options.footer.widthMm * perMmX) + "px";
+        band.style.height = (options.footer.heightMm * perMmY) + "px";
     }
 
     // ---- start ------------------------------------------------------------------

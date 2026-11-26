@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Globalization;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using ReportService.Pdf.Verification;
@@ -266,7 +266,9 @@ public sealed class PdfSampleRenderer : ISampleRenderer
                     blockManifest.Pdf.Scale,
                     presentation.Culture.Name,
                     (double)(page.WidthMm - page.MarginLeftMm - page.MarginRightMm),
-                    (double)(page.HeightMm - page.MarginTopMm - page.MarginBottomMm));
+                    (double)(page.HeightMm - page.MarginTopMm - page.MarginBottomMm),
+                    (double)page.WidthMm,
+                    (double)page.HeightMm);
 
                 var marked = BlockAccountingMarkup.Mark(block.Block!, new AccountingMarkupContext(
                     blockManifest.Pdf.AmountField!,

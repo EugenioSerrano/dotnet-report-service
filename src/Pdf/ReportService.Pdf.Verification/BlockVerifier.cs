@@ -143,12 +143,24 @@ public sealed class BlockVerifier
             }
         }
 
-        var pageTexts = reading.Pages
-            .Select(page => input.Accounting is null
-                ? PlacementConvention.ContentText(page)
-                : AccountingReading.ContentTextWithoutMark(page))
-            .ToList();
-        var alignment = aligner.Align(pageTexts, input.Text.Units);
+        // The accounting cells' units are excluded from the composed-text check (their text
+        // is written by the layout and judged by the accounting check): the alignment runs
+        // over the other units, and the accounting units are then consumed at their own
+        // positions so the row-coverage check sees every unit.
+        AlignmentOutcome alignment;
+        if (input.Accounting is { } accountingContract)
+        {
+            var judged = input.Text.Units.Where(unit => !unit.Accounting).ToList();
+            alignment = aligner.Align(accounting.PageTexts(reading, accountingContract), judged);
+            alignment = ContentOrderAligner.ConsumeAccountingUnits(alignment, input.Text.Units);
+        }
+        else
+        {
+            alignment = aligner.Align(
+                reading.Pages.Select(PlacementConvention.ContentText).ToList(),
+                input.Text.Units);
+        }
+
         if (!alignment.Passed)
         {
             return VerificationResult.Failed(
