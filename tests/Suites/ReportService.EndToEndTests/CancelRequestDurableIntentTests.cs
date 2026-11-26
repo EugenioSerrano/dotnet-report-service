@@ -120,12 +120,12 @@ public sealed class CancelRequestDurableIntentTests
         await using var dataSource = await DataSourceAsync(composition, cancellationToken);
         using var api = composition.CreateHttpClient("api");
 
+        // Seeded non-terminal, so there is a running job for the transport event to (not) cancel.
         var reportJobId = await SeedNonTerminalJobAsync(dataSource, cancellationToken);
-        var before = await JobStatusAsync(dataSource, reportJobId, cancellationToken);
 
         // A transport event: the client gives up before its cancel request is delivered and
-        // processed. AC-6/R7 — only an explicit, completed cancel request cancels — so the job
-        // must stay non-terminal and no cancel intent must appear.
+        // processed. AC-6/R7 — only an explicit, completed cancel request cancels — so no cancel
+        // must be recorded for this job.
         using (var aborted = new CancellationTokenSource())
         {
             await aborted.CancelAsync();
@@ -133,11 +133,16 @@ public sealed class CancelRequestDurableIntentTests
                 api.SendAsync(CancelRequest(reportJobId), aborted.Token));
         }
 
-        // Settle, then confirm nothing was cancelled by the transport event.
+        // Settle, then confirm the transport event never cancelled. The oracle is AC-6 / ADR-012
+        // §3.10 — "never cancels" means no cancel-job intent is recorded and the job is not in a
+        // cancel status (CANCELLING/CANCELLED). The seeded job's own lifecycle is unrelated: the
+        // real worker legitimately processes it (e.g. to FAILED) within the settle window, which
+        // is not a cancellation — so this test must NOT assert the status is frozen.
         await Task.Delay(SettleWindow, cancellationToken);
-        Assert.Equal(before, await JobStatusAsync(dataSource, reportJobId, cancellationToken));
-        Assert.NotEqual("CANCELLING", await JobStatusAsync(dataSource, reportJobId, cancellationToken));
         Assert.Equal(0, await CancelIntentCountAsync(dataSource, reportJobId, cancellationToken));
+        var status = await JobStatusAsync(dataSource, reportJobId, cancellationToken);
+        Assert.NotEqual("CANCELLING", status);
+        Assert.NotEqual("CANCELLED", status);
     }
 
     // Starts the composition with a registry carrying the active fixture consumer and waits for health.
@@ -201,7 +206,9 @@ public sealed class CancelRequestDurableIntentTests
         Assert.True(await uploads.TryStartTransferAsync(uploadId, Consumer, UploadContentEncoding.None, now, cancellationToken));
         Assert.True(await uploads.RecordTransferAsync(uploadId, UploadContentOutcome.Complete, 900, 800, Hash, now, cancellationToken));
         // Confirmed but not committed-ready: the upload stays verifying with a far-future deadline,
-        // so the job reliably stays non-terminal while the cancel is requested.
+        // so the job is non-terminal at seed. Note the seed is not isolated from the real worker
+        // (AcceptAsync commits a start-job intent the dispatcher runs), so the job may progress on
+        // its own afterwards; callers that need it to stay non-terminal cancel it immediately.
         Assert.True(await uploads.ConfirmAsync(uploadId, Consumer, null, now, now, now.AddHours(2), cancellationToken));
 
         var acceptance = new JobAcceptance(
