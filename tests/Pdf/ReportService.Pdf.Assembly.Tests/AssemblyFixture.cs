@@ -75,13 +75,15 @@ internal static class AssemblyFixture
     /// <param name="fileName">A suffix that distinguishes parts built in one test.</param>
     /// <param name="widthPt">The page width to print, in points; the frame's width when null.</param>
     /// <param name="heightPt">The page height to print, in points; the frame's height when null.</param>
+    /// <param name="decorate">Adds page-dictionary entries the producer would write, before the part is saved.</param>
     public static AssemblyPart CreatePart(
         string directory,
         int index,
         int pages,
         string fileName = "",
         double? widthPt = null,
-        double? heightPt = null)
+        double? heightPt = null,
+        Action<PdfPage>? decorate = null)
     {
         var path = Path.Combine(directory, $"part-{index}{(fileName.Length == 0 ? string.Empty : "-" + fileName)}.pdf");
         using (var document = new PdfDocument())
@@ -92,6 +94,7 @@ internal static class AssemblyFixture
                 var sheet = document.AddPage();
                 sheet.Width = XUnit.FromPoint(widthPt ?? Frame.WidthPt);
                 sheet.Height = XUnit.FromPoint(heightPt ?? Frame.HeightPt);
+                decorate?.Invoke(sheet);
                 using var graphics = XGraphics.FromPdfPage(sheet);
                 graphics.DrawString(
                     $"part{index}page{page}start part{index}page{page}end",

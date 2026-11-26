@@ -38,25 +38,10 @@ public static class AssemblyVerifier
     // is enough and a misplaced or wrong-area stamp still falls outside.
     private const double StampAreaTolerancePt = 0.05d;
 
-    // The changes a stamped page may carry beside its source: the stamp's content
-    // stream, the resources it needs, the transparency group some writers add, the
-    // page box written to two decimals, and the page tree's own parent reference.
-    private static readonly HashSet<string> AllowedChangedValues = new(StringComparer.Ordinal)
-    {
-        "Contents",
-        "Resources",
-        "Group",
-        "MediaBox",
-        "CropBox",
-        "Parent",
-    };
-
-    private static readonly HashSet<string> AllowedAddedKeys = new(StringComparer.Ordinal)
-    {
-        "Group",
-        "MediaBox",
-        "CropBox",
-    };
+    // The changes a stamped page may carry beside its source are the assembly's
+    // page-dictionary contract: the entries in PageDictionaryPolicy.AllowedChangedValues
+    // and .AllowedAddedKeys. Every other source entry must be present and unchanged,
+    // and PageDictionaryPolicy.Restore is what puts it back when the import drops it.
 
     /// <summary>Verifies one assembled document.</summary>
     /// <param name="request">The document, the parts and the contract.</param>
@@ -231,7 +216,7 @@ public static class AssemblyVerifier
                 return false;
             }
 
-            if (!AllowedChangedValues.Contains(key) && !string.Equals(value, written, StringComparison.Ordinal))
+            if (!PageDictionaryPolicy.AllowedChangedValues.Contains(key) && !string.Equals(value, written, StringComparison.Ordinal))
             {
                 return false;
             }
@@ -239,7 +224,7 @@ public static class AssemblyVerifier
 
         foreach (var key in output.Entries.Keys)
         {
-            if (!source.Entries.ContainsKey(key) && !AllowedAddedKeys.Contains(key))
+            if (!source.Entries.ContainsKey(key) && !PageDictionaryPolicy.AllowedAddedKeys.Contains(key))
             {
                 return false;
             }

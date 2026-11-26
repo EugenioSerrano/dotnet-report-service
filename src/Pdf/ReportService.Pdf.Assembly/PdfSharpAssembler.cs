@@ -79,9 +79,9 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         {
             var total = request.Parts.Sum(part => part.PageCount);
             var batchSize = Math.Clamp(request.BatchSize, 1, AssemblyLimits.BatchSize);
-            var batches = await StageAsync(request, face, staging, batchSize, metrics, cancellationToken)
+            var staged = await StageAsync(request, face, staging, batchSize, metrics, cancellationToken)
                 .ConfigureAwait(false);
-            var pages = await MergeAsync(batches, request.OutputPath, metrics, cancellationToken)
+            var pages = await MergeAsync(staged, request.OutputPath, total, metrics, cancellationToken)
                 .ConfigureAwait(false);
             if (pages != total)
             {
@@ -115,7 +115,7 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         }
     }
 
-    private async Task<List<string>> StageAsync(
+    private async Task<Staged> StageAsync(
         AssemblyRequest request,
         string face,
         string staging,
@@ -124,6 +124,7 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         CancellationToken cancellationToken)
     {
         var batches = new List<string>();
+        var pageEntries = new List<IReadOnlyDictionary<string, PageEntryValue>?>();
         var pages = 0;
         await metrics.MeasureAsync(AssemblyStage.Batches, async () =>
         {
@@ -158,6 +159,7 @@ public sealed class PdfSharpAssembler : IPdfAssembler
                             foreach (var sourcePage in source.Pages)
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
+                                pageEntries.Add(PageDictionaryPolicy.Capture(sourcePage));
                                 var page = batch.AddPage(sourcePage);
                                 pages++;
                                 using var graphics = XGraphics.FromPdfPage(page);
@@ -185,29 +187,41 @@ public sealed class PdfSharpAssembler : IPdfAssembler
                 await Task.Yield();
             }
         }).ConfigureAwait(false);
-        return batches;
+        return new Staged(batches, pageEntries);
     }
 
     private static int TotalOf(AssemblyRequest request) =>
         request.Parts.Sum(part => part.PageCount);
 
     private async Task<int> MergeAsync(
-        IReadOnlyList<string> batches,
+        Staged staged,
         string outputPath,
+        int total,
         AssemblyMetrics metrics,
         CancellationToken cancellationToken)
     {
         var pages = 0;
+        if (staged.PageEntries.Count != total)
+        {
+            throw new AssemblyInputException("the staged pages do not match the parts' pages");
+        }
+
         await metrics.MeasureAsync(AssemblyStage.FinalMerge, () =>
         {
             using var final = new PdfDocument();
-            foreach (var batchPath in batches)
+            foreach (var batchPath in staged.Batches)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 using var batch = PdfReader.Open(batchPath, PdfDocumentOpenMode.Import);
                 foreach (var page in batch.Pages)
                 {
-                    final.AddPage(page);
+                    var added = final.AddPage(page);
+                    if (pages >= staged.PageEntries.Count)
+                    {
+                        throw new AssemblyInputException("the staged pages do not match the parts' pages");
+                    }
+
+                    PageDictionaryPolicy.Restore(final, added, staged.PageEntries[pages]);
                     pages++;
                 }
             }
@@ -217,6 +231,14 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         }).ConfigureAwait(false);
         return pages;
     }
+
+    /// <summary>
+    /// What staging produced: the batch files, and the source page entries the final
+    /// merge puts back after its own import dropped them again.
+    /// </summary>
+    private sealed record Staged(
+        IReadOnlyList<string> Batches,
+        IReadOnlyList<IReadOnlyDictionary<string, PageEntryValue>?> PageEntries);
 
     private static void EnsureResolver()
     {
