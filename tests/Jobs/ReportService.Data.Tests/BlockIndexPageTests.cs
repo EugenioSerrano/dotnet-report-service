@@ -26,6 +26,44 @@ public sealed class BlockIndexPageTests
         Assert.Equal(1, entry.FirstRecordOrdinal);
         Assert.Equal(25, entry.RecordCount);
         Assert.Equal(900, entry.RecordBytes);
+
+        // An entry built without the enriched fields defaults them, so the live single-block
+        // path keeps writing the same shape (SPEC §12 compatibility).
+        Assert.False(entry.ContinuesPreviousGroup);
+        Assert.False(entry.ContinuesNextGroup);
+        Assert.Null(entry.OpeningGroupKey);
+        Assert.Null(entry.OpeningCarriedForward);
+        Assert.Null(entry.BlockAmountTotal);
+    }
+
+    [Fact]
+    public void AnEnrichedEntryRoundTripsEveryNewField()
+    {
+        var page = new BlockIndexPage(
+            SingleBlockPartitioner.PartitionerVersion,
+            [new BlockIndexEntry(
+                0,
+                "block/job-0123456789abcdef0123456789abcdef/0/dd",
+                new string('d', 64),
+                1_024,
+                1,
+                3,
+                900,
+                ContinuesPreviousGroup: false,
+                ContinuesNextGroup: true,
+                OpeningGroupKey: "north",
+                OpeningCarriedForward: 0m,
+                BlockAmountTotal: 42.42m)],
+            "page-boundary");
+
+        var parsed = BlockIndexPage.Parse(BlockIndexPage.Serialize(page));
+        var entry = Assert.Single(parsed.Blocks);
+
+        Assert.Equal("page-boundary", parsed.ChunkLayout);
+        Assert.True(entry.ContinuesNextGroup);
+        Assert.Equal("north", entry.OpeningGroupKey);
+        Assert.Equal(0m, entry.OpeningCarriedForward);
+        Assert.Equal(42.42m, entry.BlockAmountTotal);
     }
 
     [Fact]

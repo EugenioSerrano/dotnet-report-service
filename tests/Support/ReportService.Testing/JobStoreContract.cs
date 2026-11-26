@@ -790,6 +790,165 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.False((await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Job.IsTerminal);
     }
 
+    // ----- US-010 AC-1 / AC-6 + ADR-012 §3.10(1): the cancel-request store operation
+    //       (RequestCancellationAsync). The oracles are the approved AC-1/AC-6 and the ADR-012
+    //       §3.10(1) idempotent-cancel semantics, never the implementation (G06). Both stores
+    //       prove the one guarded transition that moves a non-terminal job to CANCELLING, the
+    //       single durable cancel intent, the idempotent repeat and terminal no-op, the
+    //       owner-scoped not-found, and the two races the SPEC names. The single-intent property
+    //       is expressed through the classification: a first cancel is Transitioned (it writes the
+    //       one intent); a repeat is AlreadyCancelling (ON CONFLICT DO NOTHING — no second intent
+    //       is written). The intent row count itself is asserted where a store exposes it — the
+    //       endpoint hermetic test over the in-memory intents list, and the e2e test over the real
+    //       report_service.intents table.
+
+    [Fact]
+    public async Task RequestingCancellationOfANonTerminalJobMovesItToCancellingAndReturnsTheCurrentState()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        var result = await Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken);
+
+        // AC-1: the request transitions a QUEUED job to CANCELLING and returns its current state.
+        var transitioned = Assert.IsType<CancellationRequestResult.Transitioned>(result);
+        Assert.Equal(acceptance.ReportJobId, transitioned.View.ReportJobId);
+        Assert.Equal(ReportJobStatus.Cancelling, transitioned.View.Status);
+        Assert.False(transitioned.View.FinishedAt.HasValue);
+        // A subsequent read agrees: the transition is durable.
+        Assert.Equal(
+            ReportJobStatus.Cancelling,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Status);
+    }
+
+    [Fact]
+    public async Task RequestingCancellationOfAJobAlreadyRunningMovesItToCancelling()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+        await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Queued], ReportJobStatus.Validating, Now, cancellationToken);
+        await Store.TransitionJobAsync(acceptance.ReportJobId, [ReportJobStatus.Validating], ReportJobStatus.Running, Now, cancellationToken);
+
+        var result = await Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken);
+
+        // AC-1: a job past QUEUED (RUNNING) is cancellable on the same guarded transition.
+        Assert.Equal(ReportJobStatus.Cancelling, Assert.IsType<CancellationRequestResult.Transitioned>(result).View.Status);
+    }
+
+    [Fact]
+    public async Task ASecondCancellationWhileCancellingIsIdempotentAndWritesNoSecondIntent()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        Assert.IsType<CancellationRequestResult.Transitioned>(
+            await Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken));
+
+        var repeat = await Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(2), cancellationToken);
+
+        // AC-1 idempotent repeat (ADR-012 §3.10(1)): the guard excludes CANCELLING, so a repeat is
+        // AlreadyCancelling — no second intent is written — the status does not regress, and the
+        // current state is returned.
+        var already = Assert.IsType<CancellationRequestResult.AlreadyCancelling>(repeat);
+        Assert.Equal(ReportJobStatus.Cancelling, already.View.Status);
+        Assert.Equal(
+            ReportJobStatus.Cancelling,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Status);
+    }
+
+    [Fact]
+    public async Task RequestingCancellationOfATerminalJobIsAnIdempotentNoOp()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // A failed job: the no-op returns the unchanged terminal state, no intent is written.
+        var failed = await AcceptedAsync(cancellationToken);
+        await Store.FailJobAsync(failed.ReportJobId, "QUOTA_EXCEEDED", "block", Now, cancellationToken);
+        var onFailed = await Store.RequestCancellationAsync(failed.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken);
+        var terminalFailed = Assert.IsType<CancellationRequestResult.AlreadyTerminal>(onFailed);
+        Assert.Equal(ReportJobStatus.Failed, terminalFailed.View.Status);
+        Assert.Equal("QUOTA_EXCEEDED", terminalFailed.View.ErrorCode);
+        Assert.Equal(ReportJobStatus.Failed, (await Store.FindStatusAsync(failed.ReportJobId, Consumer, cancellationToken))!.Status);
+
+        // A succeeded job: the same idempotent no-op (AC-6).
+        var (succeeded, _) = await PublishedAsync(live: true, cancellationToken);
+        await Store.FinalizeJobAsync(succeeded.ReportJobId, Now.AddMinutes(1), cancellationToken);
+        var onSucceeded = await Store.RequestCancellationAsync(succeeded.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken);
+        Assert.Equal(
+            ReportJobStatus.Succeeded,
+            Assert.IsType<CancellationRequestResult.AlreadyTerminal>(onSucceeded).View.Status);
+    }
+
+    [Fact]
+    public async Task RequestingCancellationOfAForeignOrAbsentJobIsNotFoundAndChangesNothing()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        // Owner-scoped: a job of another consumer answers the same as a job that does not exist —
+        // no existence leak — and neither call moves the job.
+        Assert.IsType<CancellationRequestResult.NotFound>(
+            await Store.RequestCancellationAsync(acceptance.ReportJobId, "another-consumer", Now.AddSeconds(1), cancellationToken));
+        Assert.IsType<CancellationRequestResult.NotFound>(
+            await Store.RequestCancellationAsync("job-ffffffffffffffffffffffffffffffff", Consumer, Now.AddSeconds(1), cancellationToken));
+        Assert.NotEqual(
+            ReportJobStatus.Cancelling,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Status);
+    }
+
+    [Fact]
+    public async Task AJobThatReachedTerminalBeforeTheCancelIsNotMoved()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        // The cancel/completion race (ADR-012 §3.10(5)): of a cancellation and a completion,
+        // whichever commits first wins. A job that reached terminal before the cancel is not moved
+        // — the guarded UPDATE matches no row — and the cancel is the terminal no-op.
+        await Store.FailJobAsync(acceptance.ReportJobId, "EXECUTION_FAILED", "lost-execution", Now, cancellationToken);
+        var result = await Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken);
+        Assert.Equal(ReportJobStatus.Failed, Assert.IsType<CancellationRequestResult.AlreadyTerminal>(result).View.Status);
+        Assert.Equal(ReportJobStatus.Failed, (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Status);
+    }
+
+    [Fact]
+    public async Task TwoConcurrentFirstCancellationsLetExactlyOneTransitionAndTheLoserIsAlreadyCancelling()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = await AcceptedAsync(cancellationToken);
+
+        // The SPEC-review interleaving case: two (here sixteen) concurrent first cancels. The
+        // conditional UPDATE lets exactly one transition; every loser is classified
+        // AlreadyCancelling and answers the current state (→202 at the endpoint), never a spurious
+        // failure or NotFound. Exactly one intent exists — the single Transitioned — per the
+        // ON CONFLICT DO NOTHING guard (D5).
+        var attempts = Enumerable.Range(0, 16)
+            .Select(_ => Task.Run(
+                () => Store.RequestCancellationAsync(acceptance.ReportJobId, Consumer, Now.AddSeconds(1), cancellationToken),
+                cancellationToken))
+            .ToArray();
+        var results = await Task.WhenAll(attempts);
+
+        Assert.Single(results.OfType<CancellationRequestResult.Transitioned>());
+        Assert.Equal(15, results.OfType<CancellationRequestResult.AlreadyCancelling>().Count());
+        Assert.Empty(results.OfType<CancellationRequestResult.NotFound>());
+        Assert.Empty(results.OfType<CancellationRequestResult.AlreadyTerminal>());
+        foreach (var result in results)
+        {
+            var view = result switch
+            {
+                CancellationRequestResult.Transitioned transitioned => transitioned.View,
+                CancellationRequestResult.AlreadyCancelling already => already.View,
+                _ => throw new InvalidOperationException("a concurrent first cancel answered neither transition nor already-cancelling"),
+            };
+            Assert.Equal(ReportJobStatus.Cancelling, view.Status);
+        }
+
+        Assert.Equal(
+            ReportJobStatus.Cancelling,
+            (await Store.FindStatusAsync(acceptance.ReportJobId, Consumer, cancellationToken))!.Status);
+    }
+
     [Fact]
     public async Task APartitionsRefusalIsRecordedWithItAndAnsweredOnARepeat()
     {
