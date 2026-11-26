@@ -174,7 +174,13 @@ internal sealed class MultiBlockStage : IDisposable
         }
     }
 
-    /// <summary>Creates a snapshot and an upload left confirming, so the job waits before the data step.</summary>
+    /// <summary>
+    /// Creates the snapshot and confirms the upload, so the job is accepted on a
+    /// confirming input. The composition's verifier may complete the upload while the
+    /// case is still committing the partition - it verifies the snapshot this method
+    /// wrote - so the handoff helpers accept either order instead of assuming the
+    /// upload is still verifying.
+    /// </summary>
     public async Task<string> SeedConfirmingUploadAsync(Composition composition, CancellationToken cancellationToken)
     {
         var snapshot = Snapshot(SnapshotRecords);
@@ -264,30 +270,78 @@ internal sealed class MultiBlockStage : IDisposable
             DateTimeOffset.UtcNow);
         var jobs = new PostgresJobStore(composition.DataSource);
         var committed = await jobs.CommitPartitionAsync(record, cancellationToken);
-        Assert.Equal(PartitionCommitOutcome.Committed, committed.Outcome);
+
+        // The job may have committed the same partition from the same snapshot before
+        // the fixture did, because the verifier can make the upload ready first. Either
+        // write is the fixture's partition; the renderer reads that record from the
+        // store, and the following assertions still require the same shape.
+        Assert.True(
+            committed.Outcome is PartitionCommitOutcome.Committed or PartitionCommitOutcome.AlreadyCommitted,
+            committed.Outcome.ToString());
+        Assert.Equal(record.BlockCount, committed.Existing.BlockCount);
+        Assert.Equal(record.RecordCount, committed.Existing.RecordCount);
     }
 
-    /// <summary>Completes the confirming upload, so the waiting job continues.</summary>
+    /// <summary>
+    /// Completes the upload: the verifier may already have made it ready on its own -
+    /// it verifies the snapshot the fixture wrote - so a READY upload is success and a
+    /// VERIFYING one is committed here. Either way the upload must end READY: a
+    /// rejected or expired upload still fails, and its status is named.
+    /// </summary>
     public async Task CompleteUploadAsync(Composition composition, string uploadId, CancellationToken cancellationToken)
     {
-        var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
-        var snapshot = await File.ReadAllBytesAsync(Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
-        var sha = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(snapshot));
-        var ready = await composition.Uploads.CommitReadyAsync(
-            new SnapshotRecord(
-                uploadId,
-                Consumer,
-                key,
-                UploadContentEncoding.None,
-                DataProfile.HeaderItemsV1,
-                sha,
-                snapshot.LongLength,
-                sha,
-                snapshot.LongLength,
-                DateTimeOffset.UtcNow),
-            DateTimeOffset.UtcNow,
-            cancellationToken);
-        Assert.Equal(SnapshotCommitResult.Committed, ready);
+        var uploads = composition.Uploads;
+        var current = await uploads.FindAsync(uploadId, Consumer, cancellationToken)
+            ?? throw new InvalidOperationException("the upload was not recorded: " + uploadId);
+
+        switch (current.Status)
+        {
+            case UploadStatus.Ready:
+                // The composition's verifier finished first; there is nothing left to commit.
+                break;
+
+            case UploadStatus.Verifying:
+                var key = ObjectKey.FromSegments("snapshots", uploadId, "a");
+                var snapshot = await File.ReadAllBytesAsync(
+                    Path.Combine(_directory, uploadId + ".snapshot.json"), cancellationToken);
+                var sha = Convert.ToHexStringLower(SHA256.HashData(snapshot));
+                var ready = await uploads.CommitReadyAsync(
+                    new SnapshotRecord(
+                        uploadId,
+                        Consumer,
+                        key,
+                        UploadContentEncoding.None,
+                        DataProfile.HeaderItemsV1,
+                        sha,
+                        snapshot.LongLength,
+                        sha,
+                        snapshot.LongLength,
+                        DateTimeOffset.UtcNow),
+                    DateTimeOffset.UtcNow,
+                    cancellationToken);
+
+                if (ready is not (SnapshotCommitResult.Committed or SnapshotCommitResult.AlreadyCommitted))
+                {
+                    // The verifier may have finished between the read above and this
+                    // commit: what matters is the upload's state, not which call won.
+                    var after = await uploads.FindAsync(uploadId, Consumer, cancellationToken);
+                    if (after?.Status != UploadStatus.Ready)
+                    {
+                        throw new InvalidOperationException(
+                            "the upload could not be completed: " + ready
+                            + ", status " + (after?.Status.ToString() ?? "missing"));
+                    }
+                }
+
+                break;
+
+            default:
+                throw new InvalidOperationException("the upload ended " + current.Status + " instead of ready");
+        }
+
+        var ended = await uploads.FindAsync(uploadId, Consumer, cancellationToken)
+            ?? throw new InvalidOperationException("the upload disappeared before it became ready: " + uploadId);
+        Assert.Equal(UploadStatus.Ready, ended.Status);
     }
 
     /// <summary>Creates the snapshot, uploads it and completes it in one act, so the job runs without a pre-committed partition.</summary>
