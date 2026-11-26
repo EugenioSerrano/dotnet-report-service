@@ -622,7 +622,13 @@ public sealed class RenderPdfBlockActivity(
                     continue;
                 }
 
-                records.Add(new ComposedRecord(value.Ordinal, RenderContextFactory.Item(value)));
+                // The block document numbers its records from one, locally; the partition's
+                // index page is the only statement of where the block starts. The composed
+                // record carries the snapshot's global ordinal - first + (local - 1) - so the
+                // composition's row fragments and the block facts the verifier reads all
+                // describe the global interval the index declares, never the block-local one.
+                var ordinal = entry.FirstRecordOrdinal + (long)(value.Ordinal - 1);
+                records.Add(new ComposedRecord(ordinal, RenderContextFactory.Item(value)));
             }
 
             return (

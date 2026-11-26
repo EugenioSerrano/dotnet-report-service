@@ -191,6 +191,50 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.True(renderer.Called);
     }
 
+    [Fact]
+    public async Task ASecondBlockReadsItsRecordsWithTheGlobalOrdinalsItsIndexDeclares()
+    {
+        var storage = await TwoBlockStorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(
+                JobId,
+                2,
+                2,
+                6,
+                storage.First.SizeBytes + storage.Second.SizeBytes,
+                storage.Index.Key,
+                storage.Index.Sha256,
+                storage.Index.SizeBytes,
+                DateTimeOffset.UnixEpoch),
+        };
+        var renderer = new CapturingRenderer();
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, renderer, storage.Store);
+
+        var result = await new ActivityEnvironment().RunAsync(() =>
+            activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 1)));
+
+        // The block document numbers its records from one, locally; the block's index
+        // entry declares that the snapshot's first ordinal here is 4. The records the
+        // composition and the block facts carry must be the global interval 4..6, so the
+        // verifier's row coverage sees the interval the index declares.
+        Assert.NotNull(renderer.Request);
+        var request = renderer.Request!;
+        Assert.Equal(1, request.BlockIndex);
+        Assert.Equal([4L, 5L, 6L], request.Composition.Records.Select(item => item.Ordinal));
+        Assert.Equal([4L, 5L, 6L], request.Block.Records.Select(item => item.Ordinal));
+        Assert.Equal(4, request.Block.FirstRecordOrdinal);
+        Assert.Equal(4L, request.Composition.Block.FirstRecordOrdinal);
+        Assert.Equal(
+            6L,
+            request.Composition.Block.FirstRecordOrdinal + request.Composition.Block.RecordCount - 1);
+        Assert.StartsWith("parts/", result.PartKey, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The commit the step records carries what produced the presentation, in the same
     /// transaction: the job's fixed culture, zone and clock, the engine the version declares
@@ -751,6 +795,42 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             new BlockIndexEntry(0, indexKey.ToString(), indexWrite.Value!.Sha256, indexWrite.Value.Size, 1, 1, indexPage.Length));
     }
 
+    /// <summary>A two-block partition: block 0 holds records 1..3 and block 1 holds 4..6.</summary>
+    private async Task<TwoBlockStorage> TwoBlockStorageAsync()
+    {
+        var store = FilesystemObjectStore.Open(
+            new FilesystemStorageOptions { Root = Path.Combine(root, "store"), CreateIfMissing = true },
+            root,
+            TimeProvider.System,
+            NullLogger<FilesystemObjectStore>.Instance);
+
+        var first = Encoding.UTF8.GetBytes(
+            "{\"contractVersion\":\"1.0\",\"header\":{\"reportTitle\":\"Statement\"},\"items\":["
+            + "{\"sequence\":\"1\",\"description\":\"one\",\"amount\":\"10.00\"},"
+            + "{\"sequence\":\"2\",\"description\":\"two\",\"amount\":\"20.00\"},"
+            + "{\"sequence\":\"3\",\"description\":\"three\",\"amount\":\"30.00\"}]}");
+        var second = Encoding.UTF8.GetBytes(
+            "{\"contractVersion\":\"1.0\",\"header\":{\"reportTitle\":\"Statement\"},\"items\":["
+            + "{\"sequence\":\"4\",\"description\":\"four\",\"amount\":\"40.00\"},"
+            + "{\"sequence\":\"5\",\"description\":\"five\",\"amount\":\"50.00\"},"
+            + "{\"sequence\":\"6\",\"description\":\"six\",\"amount\":\"60.00\"}]}");
+        var firstKey = ObjectKey.FromSegments("block", JobId, "0", "a");
+        var secondKey = ObjectKey.FromSegments("block", JobId, "1", "a");
+        var firstWrite = await store.WriteAsync(firstKey, new MemoryStream(first), CancellationToken.None);
+        var secondWrite = await store.WriteAsync(secondKey, new MemoryStream(second), CancellationToken.None);
+        var firstEntry = new BlockIndexEntry(0, firstKey.ToString(), firstWrite.Value!.Sha256, firstWrite.Value.Size, 1, 3, first.Length);
+        var secondEntry = new BlockIndexEntry(1, secondKey.ToString(), secondWrite.Value!.Sha256, secondWrite.Value.Size, 4, 3, second.Length);
+
+        var indexPage = BlockIndexPage.Serialize(new BlockIndexPage(1, [firstEntry, secondEntry]));
+        var indexKey = ObjectKey.FromSegments("index", JobId, "1", "a");
+        var indexWrite = await store.WriteAsync(indexKey, new MemoryStream(indexPage), CancellationToken.None);
+        return new TwoBlockStorage(
+            store,
+            firstEntry,
+            secondEntry,
+            new BlockIndexEntry(0, indexKey.ToString(), indexWrite.Value!.Sha256, indexWrite.Value.Size, 1, 3, indexPage.Length));
+    }
+
     /// <summary>The taken package as a tar, written to the store under a content-addressed key.</summary>
     private static async Task<TakenPackage> PackageAsync(IObjectStore store)
     {
@@ -774,6 +854,12 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
     }
 
     private sealed record Storage(IObjectStore Store, BlockIndexEntry Block, BlockIndexEntry Index);
+
+    private sealed record TwoBlockStorage(
+        IObjectStore Store,
+        BlockIndexEntry First,
+        BlockIndexEntry Second,
+        BlockIndexEntry Index);
 
     private sealed record TakenPackage(ObjectKey Key, string Sha256, long Size);
 }
@@ -888,8 +974,7 @@ internal sealed class FakeVersionStore : ITemplateVersionStore
 }
 
 /// <summary>The renderer as the step calls it: it answers a verified document and writes nothing.</summary>
-internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer
-{
+internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer{
     public bool Called { get; private set; }
 
     public async Task<BlockRenderOutcome> RenderAsync(BlockRenderRequest request, CancellationToken cancellationToken = default)
@@ -905,6 +990,35 @@ internal sealed class FakeRenderer(PrintOutcome? print = null) : IBlockRenderer
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
             Print: print,
             new VerificationResult(true, null, 0, null, null, null, null, null, 2, 10, 1, 1));
+    }
+}
+
+/// <summary>
+/// The renderer that keeps the request the step built for it: the regression that a
+/// second block's records carry the snapshot's global ordinals reads the request
+/// after the step returned, and answers a verified document so the step commits.
+/// </summary>
+internal sealed class CapturingRenderer : IBlockRenderer
+{
+    /// <summary>The request the step built, once it called the renderer.</summary>
+    public BlockRenderRequest? Request { get; private set; }
+
+    /// <inheritdoc />
+    public async Task<BlockRenderOutcome> RenderAsync(
+        BlockRenderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        Request = request;
+        Directory.CreateDirectory(request.WorkDirectory);
+        var path = Path.Combine(request.WorkDirectory, "block-" + request.BlockIndex + ".pdf");
+        await File.WriteAllBytesAsync(path, "%PDF-1.4 printed"u8.ToArray(), cancellationToken).ConfigureAwait(false);
+        var bytes = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+        return new BlockRenderOutcome(
+            path,
+            bytes.LongLength,
+            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)),
+            Print: null,
+            new VerificationResult(true, null, request.BlockIndex, null, null, null, null, null, 2, 10, 1, 1));
     }
 }
 

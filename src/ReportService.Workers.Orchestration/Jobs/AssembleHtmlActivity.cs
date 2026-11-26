@@ -266,7 +266,11 @@ public sealed class AssembleHtmlActivity(
                     continue;
                 }
 
-                records.Add(new ComposedRecord(value.Ordinal, RenderContextFactory.Item(value)));
+                // The block document numbers its records locally; the index entry names the
+                // snapshot's first ordinal. Read them as the global ordinals the entry
+                // declares, exactly as the PDF render step does for its block.
+                var ordinal = entry.FirstRecordOrdinal + (long)(value.Ordinal - 1);
+                records.Add(new ComposedRecord(ordinal, RenderContextFactory.Item(value)));
             }
 
             return (header ?? throw Refuse(ExecutionFailed, "the block holds no header"), records);
