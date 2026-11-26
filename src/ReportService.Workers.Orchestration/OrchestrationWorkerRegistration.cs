@@ -6,7 +6,9 @@ using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
+using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
+using ReportService.Templates;
 using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
 using ReportService.Workers.Orchestration.Uploads;
@@ -110,6 +112,14 @@ public static class OrchestrationWorkerRegistration
         builder.Services.TryAddSingleton<PreparedDataContractCache>();
         builder.Services.AddSingleton<ValidateAndPartitionActivity>();
 
+        // The HTML output's assembly (no Chromium): the composition plumbing it reads — the taken
+        // package reader, the prepared-template cache and the engine registry — and the activity
+        // itself, served on the report-html queue (Phase A).
+        builder.Services.TryAddSingleton<TakenTemplatePackageReader>();
+        builder.Services.TryAddSingleton<PreparedTemplateCache>();
+        builder.Services.TryAddSingleton(static _ => TemplateEngineAdapters.Registry());
+        builder.Services.AddSingleton<AssembleHtmlActivity>();
+
         // The nudge a finished verification sends to the jobs of its upload goes through the
         // engine connection the worker already holds; the seam is what the tests double.
         builder.Services.TryAddSingleton<IWorkflowSignaller, TemporalWorkflowSignaller>();
@@ -124,6 +134,7 @@ public static class OrchestrationWorkerRegistration
 
                 options.AddWorkflow<ReportJobWorkflow>();
                 options.AddWorkflow<ReportPdfOutputWorkflow>();
+                options.AddWorkflow<ReportHtmlOutputWorkflow>();
                 options.AddAllActivities(provider.GetRequiredService<ReportJobActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobTransitionActivities>());
                 options.AddAllActivities(provider.GetRequiredService<PdfOutputActivities>());
@@ -138,6 +149,15 @@ public static class OrchestrationWorkerRegistration
             {
                 options.MaxConcurrentActivities = provider.GetRequiredService<IOptions<WorkerOptions>>().Value.DataActivitySlots;
                 options.AddAllActivities(provider.GetRequiredService<ValidateAndPartitionActivity>());
+            }));
+
+        // The HTML assembly runs on its own queue, in this process (no Chromium reference), so an
+        // HTML-only job schedules no work on the PDF worker's report-pdf-rendering queue (AC-4).
+        builder.Services.AddSingleton(provider => new TaskQueueWork(
+            AssembleHtmlStepOptions.Queue,
+            options =>
+            {
+                options.AddAllActivities(provider.GetRequiredService<AssembleHtmlActivity>());
             }));
         return builder;
     }

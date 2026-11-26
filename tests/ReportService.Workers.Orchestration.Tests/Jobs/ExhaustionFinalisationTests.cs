@@ -7,8 +7,9 @@ namespace ReportService.Workers.Orchestration.Tests.Jobs;
 /// <summary>
 /// What a job ends with when one of its outputs exhausted its attempts: the output's code and
 /// the reason it recorded reach the job through the finalising step, and a job whose other
-/// output finished keeps that output's outcome in its own row - the failed one is the job's
-/// answer, and the output that succeeded is left exactly as it succeeded.
+/// output finished keeps that output's outcome in its own row - when every output failed the
+/// job is failed with that code, and when one output succeeded beside a failure the job rolls
+/// up to partially_succeeded (ADR-048 R2) with no job-level code, each output left as it ended.
 /// </summary>
 public sealed class ExhaustionFinalisationTests
 {
@@ -108,9 +109,13 @@ public sealed class ExhaustionFinalisationTests
         var pdf = Assert.Single(state!.Outputs, output => output.Format == OutputFormat.Pdf);
         var html = Assert.Single(state.Outputs, output => output.Format == OutputFormat.Html);
 
-        Assert.Equal(ReportJobStatus.Failed, state.Job.Status);
-        Assert.Equal("RENDER_TIMEOUT", state.Job.ErrorCode);
-        Assert.Equal("exhausted cause=watchdog-deadline", state.Job.ErrorReason);
+        // ADR-048 R2 (§3.1): one output succeeded (HTML) and one failed (PDF), so S>=1 and
+        // F>=1 rolls the job up to partially_succeeded - not failed. §4 decides a
+        // partially_succeeded job carries no job-level error code or reason (the per-output
+        // failure keeps its own code on its own row). Derived from the ADR, not the FinalizeJob code.
+        Assert.Equal(ReportJobStatus.PartiallySucceeded, state.Job.Status);
+        Assert.Null(state.Job.ErrorCode);
+        Assert.Null(state.Job.ErrorReason);
         Assert.Equal(OutputStatus.Failed, pdf.Status);
         Assert.Equal("RENDER_TIMEOUT", pdf.ErrorCode);
         Assert.Equal(OutputStatus.Succeeded, html.Status);

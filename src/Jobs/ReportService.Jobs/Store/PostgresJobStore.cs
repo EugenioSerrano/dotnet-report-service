@@ -177,7 +177,7 @@ public sealed partial class PostgresJobStore : IJobStore
                AND resolved_at IS NULL
                AND EXISTS (SELECT 1 FROM report_service.report_jobs
                             WHERE report_job_id = @ReportJobId
-                              AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED'))
+                              AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED'))
             RETURNING report_job_id
         )
         UPDATE report_service.report_jobs
@@ -196,7 +196,7 @@ public sealed partial class PostgresJobStore : IJobStore
         UPDATE report_service.report_jobs
            SET status = 'FAILED', error_code = @Code, error_reason = @Reason,
                error_message = @Message, finished_at = @Now
-         WHERE report_job_id = @ReportJobId AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+         WHERE report_job_id = @ReportJobId AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
         """;
 
     private const string BeginInputWaitSql = """

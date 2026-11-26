@@ -27,6 +27,7 @@ public static class JobWireValues
         ReportJobStatus.Failed => "failed",
         ReportJobStatus.Cancelling => "cancelling",
         ReportJobStatus.Cancelled => "cancelled",
+        ReportJobStatus.PartiallySucceeded => "partially-succeeded",
         _ => throw new ArgumentOutOfRangeException(nameof(status), "the job status has no answer text"),
     };
 
@@ -102,6 +103,7 @@ public static class JobWireValues
         ReportJobStatus.Failed => "FAILED",
         ReportJobStatus.Cancelling => "CANCELLING",
         ReportJobStatus.Cancelled => "CANCELLED",
+        ReportJobStatus.PartiallySucceeded => "PARTIALLY_SUCCEEDED",
         _ => throw new ArgumentOutOfRangeException(nameof(status), "the job status has no stored text"),
     };
 
@@ -150,6 +152,7 @@ public static class JobWireValues
         "FAILED" => ReportJobStatus.Failed,
         "CANCELLING" => ReportJobStatus.Cancelling,
         "CANCELLED" => ReportJobStatus.Cancelled,
+        "PARTIALLY_SUCCEEDED" => ReportJobStatus.PartiallySucceeded,
         _ => throw new InvalidOperationException("the stored job status is not a known value"),
     };
 

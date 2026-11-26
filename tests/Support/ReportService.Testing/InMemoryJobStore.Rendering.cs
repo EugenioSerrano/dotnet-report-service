@@ -318,6 +318,71 @@ public sealed partial class InMemoryJobStore
         }
     }
 
+    /// <summary>
+    /// Seeds an output already in the terminal <see cref="OutputStatus.Cancelled"/> state, for the
+    /// ADR-048 rollup cancelled-output cases (SPEC-261125-1224 Phase D.6). The service has no
+    /// output-cancellation path in this Bolt (§4); this seam records the terminal state the rollup
+    /// counts.
+    /// </summary>
+    /// <param name="reportJobId">The job the output belongs to.</param>
+    /// <param name="outputId">The identifier of the output.</param>
+    /// <param name="format">The format the output produces.</param>
+    public void SeedCancelledOutput(string reportJobId, string outputId, OutputFormat format)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        lock (_gate)
+        {
+            _outputs.Add(
+                outputId,
+                new ReportOutputRecord(outputId, reportJobId, format, OutputStatus.Cancelled)
+                {
+                    FinishedAt = DateTimeOffset.UnixEpoch,
+                });
+        }
+    }
+
+    /// <summary>
+    /// Cancels an existing output in place, leaving it terminal (SPEC-261125-1224 Phase D.6, the
+    /// all-cancelled rollup case).
+    /// </summary>
+    /// <param name="outputId">The identifier of the output to cancel.</param>
+    public void CancelOutput(string outputId)
+    {
+        ArgumentNullException.ThrowIfNull(outputId);
+
+        lock (_gate)
+        {
+            if (_outputs.TryGetValue(outputId, out var output))
+            {
+                _outputs[outputId] = output with
+                {
+                    Status = OutputStatus.Cancelled,
+                    FinishedAt = DateTimeOffset.UnixEpoch,
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Puts a job into the non-terminal <see cref="ReportJobStatus.Cancelling"/> state, for the
+    /// R0 override case (SPEC-261125-1224 Phase D.6).
+    /// </summary>
+    /// <param name="reportJobId">The job to put into cancellation.</param>
+    public void SetJobCancelling(string reportJobId)
+    {
+        ArgumentNullException.ThrowIfNull(reportJobId);
+
+        lock (_gate)
+        {
+            if (_jobs.TryGetValue(reportJobId, out var job))
+            {
+                _jobs[reportJobId] = job with { Status = ReportJobStatus.Cancelling };
+            }
+        }
+    }
+
     /// <inheritdoc />
     public Task<OutputFailureOutcome> FailOutputAsync(
         string outputId,
@@ -369,24 +434,46 @@ public sealed partial class InMemoryJobStore
                 .Where(output => string.Equals(output.ReportJobId, reportJobId, StringComparison.Ordinal))
                 .OrderBy(output => output.OutputId, StringComparer.Ordinal)
                 .ToList();
-            var failed = outputs.FirstOrDefault(output => output.Status == OutputStatus.Failed);
-            var allSucceeded = outputs.Count > 0 && outputs.All(output => output.Status == OutputStatus.Succeeded);
-            if (failed is null && !allSucceeded)
+
+            // The ADR-048 R0–R4 rollup (SPEC-261125-1224 Phase D.1/D.3/D.6), mirroring the real
+            // store. The guard split first: the job is finalised only once every requested output
+            // is terminal; while any is still pending/running the job waits, instead of finalising
+            // early on the first failure.
+            if (outputs.Count == 0
+                || outputs.Any(output => output.Status is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled)))
             {
                 return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null));
             }
 
-            var status = failed is null ? ReportJobStatus.Succeeded : ReportJobStatus.Failed;
+            var succeeded = outputs.Count(output => output.Status == OutputStatus.Succeeded);
+            var failedCount = outputs.Count(output => output.Status == OutputStatus.Failed);
+            var failed = outputs.FirstOrDefault(output => output.Status == OutputStatus.Failed);
+
+            // R0 (job being cancelled) overrides R1–R4; then, over terminal outputs: R1 all
+            // succeeded; R2 some succeeded and some not; R3 none succeeded with a failure; R4 the
+            // remaining all-cancelled case.
+            var status =
+                job.Status == ReportJobStatus.Cancelling ? ReportJobStatus.Cancelled
+                : succeeded == outputs.Count ? ReportJobStatus.Succeeded
+                : succeeded >= 1 ? ReportJobStatus.PartiallySucceeded
+                : failedCount >= 1 ? ReportJobStatus.Failed
+                : ReportJobStatus.Cancelled;
+
+            // A job-level error code and reason are carried only for an outright failure (R3);
+            // PartiallySucceeded, Succeeded and Cancelled carry none (ADR-048 §4).
+            var code = status == ReportJobStatus.Failed ? failed?.ErrorCode : null;
+            var reason = status == ReportJobStatus.Failed ? failed?.ErrorReason ?? "output-failed" : null;
+
             _jobs[reportJobId] = job with
             {
                 Status = status,
-                ErrorCode = failed?.ErrorCode,
-                ErrorReason = failed is null ? null : failed.ErrorReason ?? "output-failed",
+                ErrorCode = code,
+                ErrorReason = reason,
                 FinishedAt = now.ToUniversalTime(),
             };
             return Task.FromResult(new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
             {
-                ErrorCode = failed?.ErrorCode,
+                ErrorCode = code,
             });
         }
     }

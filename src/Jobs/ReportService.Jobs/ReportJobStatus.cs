@@ -34,4 +34,11 @@ public enum ReportJobStatus
 
     /// <summary>The job ended cancelled.</summary>
     Cancelled,
+
+    /// <summary>
+    /// The job ended with some requested outputs succeeded and some not (ADR-048 R2): a
+    /// terminal state distinct from <see cref="Succeeded"/> and <see cref="Failed"/>, carrying
+    /// no job-level error code — each failed output keeps its own code on itself.
+    /// </summary>
+    PartiallySucceeded,
 }

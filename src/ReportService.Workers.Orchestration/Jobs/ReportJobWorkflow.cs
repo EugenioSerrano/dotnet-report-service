@@ -92,6 +92,15 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string PrintingPathPatch = "printing-path-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the job's multi-output path: starting an output
+    /// child per requested output (PDF, HTML, or both) independently, isolating each child's
+    /// failure to its own output, and always finalising the job from the per-output states
+    /// (ADR-048). A run recorded before it carries no marker for it, so it replays with the patch
+    /// inactive and keeps the single-PDF path exactly as it was recorded (ADR-012 §3.1).
+    /// </summary>
+    public const string HtmlOutputPathPatch = "html-output-path-v1";
+
     /// <summary>Runs one job up to its continuation point.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -194,57 +203,70 @@ public sealed class ReportJobWorkflow
         // patch, so every recorded run replays unchanged.
         if (Workflow.Patched(PrintingPathPatch))
         {
-            try
+            if (Workflow.Patched(HtmlOutputPathPatch))
             {
-                await Workflow.ExecuteActivityAsync(
-                    (JobTransitionActivities activities) => activities.TransitionJobAsync(
-                        new TransitionJobInput(input.ReportJobId, ReportJobStatus.Running)),
-                    options).ConfigureAwait(true);
-
-                var output = await Workflow.ExecuteActivityAsync(
-                    (PdfOutputActivities activities) => activities.FindPdfOutputAsync(new FindPdfOutputInput(input.ReportJobId)),
-                    options).ConfigureAwait(true);
-
-                if (partition.PdfRefusal is { } refusal)
+                // The multi-output path: an output child per requested output, started in a
+                // fixed order, run concurrently, each child's failure isolated to its own output,
+                // and the job always finalised from the per-output states (ADR-048, Phase D.0).
+                // A whole-job FailJob is never used here — it would mask a sibling's success.
+                await RunRequestedOutputsAsync(input, partition, options).ConfigureAwait(true);
+            }
+            else
+            {
+                // The recorded single-PDF path (runs predating html-output-path-v1): kept
+                // byte-for-byte so their histories replay unchanged.
+                try
                 {
-                    // The data step refused this output: it ends here, with the output's code
-                    // and the reason the pass kept, and no child is started for it.
                     await Workflow.ExecuteActivityAsync(
-                        (JobTransitionActivities activities) => activities.FailOutputAsync(
-                            new FailOutputInput(output.OutputId, refusal.Code, refusal.Reason)),
+                        (JobTransitionActivities activities) => activities.TransitionJobAsync(
+                            new TransitionJobInput(input.ReportJobId, ReportJobStatus.Running)),
                         options).ConfigureAwait(true);
+
+                    var output = await Workflow.ExecuteActivityAsync(
+                        (PdfOutputActivities activities) => activities.FindPdfOutputAsync(new FindPdfOutputInput(input.ReportJobId)),
+                        options).ConfigureAwait(true);
+
+                    if (partition.PdfRefusal is { } refusal)
+                    {
+                        // The data step refused this output: it ends here, with the output's code
+                        // and the reason the pass kept, and no child is started for it.
+                        await Workflow.ExecuteActivityAsync(
+                            (JobTransitionActivities activities) => activities.FailOutputAsync(
+                                new FailOutputInput(output.OutputId, refusal.Code, refusal.Reason)),
+                            options).ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        await Workflow.ExecuteChildWorkflowAsync(
+                            (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                                new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
+                            new ChildWorkflowOptions
+                            {
+                                Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
+                                ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                            }).ConfigureAwait(true);
+                    }
                 }
-                else
+                catch (ActivityFailureException failure)
                 {
-                    await Workflow.ExecuteChildWorkflowAsync(
-                        (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
-                            new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
-                        new ChildWorkflowOptions
-                        {
-                            Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
-                            ParentClosePolicy = ParentClosePolicy.RequestCancel,
-                        }).ConfigureAwait(true);
+                    await FailAsync(
+                        input.ReportJobId,
+                        ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
+                        "printing-failed",
+                        MessageOf(failure.InnerException),
+                        options).ConfigureAwait(true);
+                    return;
                 }
-            }
-            catch (ActivityFailureException failure)
-            {
-                await FailAsync(
-                    input.ReportJobId,
-                    ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
-                    "printing-failed",
-                    MessageOf(failure.InnerException),
-                    options).ConfigureAwait(true);
-                return;
-            }
-            catch (ChildWorkflowFailureException failure)
-            {
-                await FailAsync(
-                    input.ReportJobId,
-                    ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
-                    "printing-failed",
-                    MessageOf(failure.InnerException),
-                    options).ConfigureAwait(true);
-                return;
+                catch (ChildWorkflowFailureException failure)
+                {
+                    await FailAsync(
+                        input.ReportJobId,
+                        ReportPdfOutputWorkflow.CodeOf(failure.InnerException),
+                        "printing-failed",
+                        MessageOf(failure.InnerException),
+                        options).ConfigureAwait(true);
+                    return;
+                }
             }
         }
 
@@ -260,6 +282,162 @@ public sealed class ReportJobWorkflow
         // The point where the steps that follow the data step are added; until they exist
         // the run completes and the job stays as the acceptance left it.
         Workflow.Logger.LogInformation("Job {ReportJobId} input ready", input.ReportJobId);
+    }
+
+    /// <summary>
+    /// Runs the job's requested outputs, each as its own child, under the multi-output path
+    /// (Phase D.0, ADR-048). The children are started in a fixed order — PDF when requested, then
+    /// HTML when requested — captured without awaiting so they run concurrently, and each child's
+    /// failure is isolated to its own output through <c>FailOutput</c>. A whole-job fail is never
+    /// used here: a mixed outcome must reach <c>FinalizeJob</c>, which rolls up the job's terminal
+    /// status from the per-output states. The job's move to running happens once, before any
+    /// child.
+    /// </summary>
+    /// <param name="input">The job to run.</param>
+    /// <param name="partition">The partition result, carrying any row-bound PDF refusal.</param>
+    /// <param name="options">The activity options for the metadata steps.</param>
+    private static async Task RunRequestedOutputsAsync(
+        ReportJobInput input,
+        PartitionResult partition,
+        ActivityOptions options)
+    {
+        await Workflow.ExecuteActivityAsync(
+            (JobTransitionActivities activities) => activities.TransitionJobAsync(
+                new TransitionJobInput(input.ReportJobId, ReportJobStatus.Running)),
+            options).ConfigureAwait(true);
+
+        // A workflow reads nothing itself: the per-format lookup is nullable and never fails when
+        // a format is absent, so a job may request only HTML, only PDF, or both without the other
+        // format's lookup failing it.
+        var pdf = await Workflow.ExecuteActivityAsync(
+            (PdfOutputActivities activities) => activities.FindOutputAsync(
+                new FindOutputInput(input.ReportJobId, OutputFormat.Pdf)),
+            options).ConfigureAwait(true);
+        var html = await Workflow.ExecuteActivityAsync(
+            (PdfOutputActivities activities) => activities.FindOutputAsync(
+                new FindOutputInput(input.ReportJobId, OutputFormat.Html)),
+            options).ConfigureAwait(true);
+
+        var children = new List<Task>();
+
+        // PDF first (fixed, data-independent order for replay determinism, ADR-012 §3.1).
+        if (pdf.OutputId is { } pdfOutputId)
+        {
+            if (partition.PdfRefusal is { } refusal)
+            {
+                // The data step refused the PDF output: it ends here with no child started, as it
+                // did on the single-PDF path.
+                await Workflow.ExecuteActivityAsync(
+                    (JobTransitionActivities activities) => activities.FailOutputAsync(
+                        new FailOutputInput(pdfOutputId, refusal.Code, refusal.Reason)),
+                    options).ConfigureAwait(true);
+            }
+            else
+            {
+                var pdfChild = Workflow.ExecuteChildWorkflowAsync(
+                    (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
+                        new ReportPdfOutputInput(input.ReportJobId, pdfOutputId)),
+                    new ChildWorkflowOptions
+                    {
+                        Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
+                        ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                    });
+                children.Add(IsolateOutputAsync(pdfChild, pdfOutputId, ReportPdfOutputWorkflow.CodeOf, options));
+            }
+        }
+
+        // HTML next. The HTML capability refusal lives in the assembly activity (AC-5), so the
+        // HTML child is always started when the job requests it — there is no partition-time
+        // HTML refusal.
+        if (html.OutputId is { } htmlOutputId)
+        {
+            var htmlChild = Workflow.ExecuteChildWorkflowAsync(
+                (ReportHtmlOutputWorkflow workflow) => workflow.RunAsync(
+                    new ReportHtmlOutputInput(input.ReportJobId, htmlOutputId)),
+                new ChildWorkflowOptions
+                {
+                    Id = ReportHtmlOutputWorkflow.WorkflowIdFor(input.ReportJobId),
+                    ParentClosePolicy = ParentClosePolicy.RequestCancel,
+                });
+            children.Add(IsolateOutputAsync(htmlChild, htmlOutputId, ReportHtmlOutputWorkflow.CodeOf, options));
+        }
+
+        if (children.Count > 0)
+        {
+            await Workflow.WhenAllAsync(children).ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// Awaits one output child, isolating an unexpected fault to that output: a child that faults
+    /// the parent (a <see cref="ChildWorkflowFailureException"/>, or an
+    /// <see cref="ActivityFailureException"/>) ends only its own output through <c>FailOutput</c>;
+    /// the sibling continues and the job is never whole-job-failed, so <c>FinalizeJob</c> rolls up
+    /// from the per-output states (ADR-048). A child that ended its own output normally throws
+    /// nothing, so nothing is done here for it.
+    /// </summary>
+    /// <param name="child">The child execution's task.</param>
+    /// <param name="outputId">The output the child produces.</param>
+    /// <param name="codeOf">The output's own code mapping for an unexpected fault.</param>
+    /// <param name="options">The activity options for the metadata step.</param>
+    private static async Task IsolateOutputAsync(
+        Task child,
+        string outputId,
+        Func<Exception?, string> codeOf,
+        ActivityOptions options)
+    {
+        // The await and the FailOutput command are the only workflow-visible steps; the
+        // isolation verdict itself is the pure DecideOutputIsolation, kept here so a
+        // hermetic unit test can exercise it without a Temporal worker. An unexpected
+        // child fault is captured, the verdict is computed, and only then — never between
+        // two awaits that would reorder commands — is the one output failed. A fault the
+        // filter does not match propagates exactly as before.
+        Exception? childFailure = null;
+        try
+        {
+            await child.ConfigureAwait(true);
+        }
+        catch (Exception failure) when (failure is ChildWorkflowFailureException or ActivityFailureException)
+        {
+            childFailure = failure;
+        }
+
+        var decision = DecideOutputIsolation(outputId, childFailure, codeOf);
+        if (decision.ShouldFailOutput)
+        {
+            // A verdict that fails an output always carries its code (DecideOutputIsolation
+            // maps it through codeOf); only a verdict that fails nothing carries a null code.
+            await Workflow.ExecuteActivityAsync(
+                (JobTransitionActivities activities) => activities.FailOutputAsync(
+                    new FailOutputInput(decision.OutputId, decision.Code!, null)),
+                options).ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// The per-output isolation verdict, as a pure function of the output and the child's
+    /// outcome: an unexpected child fault (a <see cref="ChildWorkflowFailureException"/> or an
+    /// <see cref="ActivityFailureException"/>) fails that one output through <c>FailOutput</c>
+    /// with the output's own code mapping and never fails the whole job, so a sibling's success
+    /// still reaches <c>FinalizeJob</c>; any other outcome (a child that ended its own output
+    /// normally, so no fault) fails nothing. It holds no clock, no I/O and no workflow call, so
+    /// a hermetic unit test exercises the whole decision without a Temporal worker.
+    /// </summary>
+    /// <param name="outputId">The output the child produces.</param>
+    /// <param name="childFailure">The fault the child raised, or <see langword="null"/> when it ended normally.</param>
+    /// <param name="codeOf">The output's own code mapping for an unexpected fault.</param>
+    /// <returns>The verdict: whether to fail the output, which output, and with what code.</returns>
+    public static OutputIsolationDecision DecideOutputIsolation(
+        string outputId,
+        Exception? childFailure,
+        Func<Exception?, string> codeOf)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(outputId);
+        ArgumentNullException.ThrowIfNull(codeOf);
+
+        return childFailure is ChildWorkflowFailureException or ActivityFailureException
+            ? new OutputIsolationDecision(true, outputId, codeOf(childFailure.InnerException))
+            : new OutputIsolationDecision(false, outputId, null);
     }
 
     /// <summary>
@@ -513,3 +691,13 @@ public sealed class ReportJobWorkflow
         return Task.CompletedTask;
     }
 }
+
+/// <summary>
+/// The verdict of <see cref="ReportJobWorkflow.DecideOutputIsolation"/>: whether one output is
+/// failed in isolation, which output, and with what code. A verdict that fails no output carries
+/// a null <see cref="Code"/>; the job is never failed as a whole by this verdict.
+/// </summary>
+/// <param name="ShouldFailOutput">Whether the output is failed through <c>FailOutput</c>.</param>
+/// <param name="OutputId">The output the verdict concerns.</param>
+/// <param name="Code">The code the output is failed with, or <see langword="null"/> when none is.</param>
+public readonly record struct OutputIsolationDecision(bool ShouldFailOutput, string OutputId, string? Code);

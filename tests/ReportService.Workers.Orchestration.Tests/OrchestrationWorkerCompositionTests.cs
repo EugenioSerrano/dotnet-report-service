@@ -72,7 +72,7 @@ public sealed class OrchestrationWorkerCompositionTests
             using var host = builder.Build();
             var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
             var plan = WorkerPlan.Plan(
-                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                [ReportJobWorkflow.OrchestrationQueue, "report-data", "report-html"],
                 registrations);
 
             // One worker per queue, whatever is registered on it: the job's steps and the
@@ -122,7 +122,7 @@ public sealed class OrchestrationWorkerCompositionTests
             using var host = builder.Build();
             var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
             var plan = WorkerPlan.Plan(
-                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                [ReportJobWorkflow.OrchestrationQueue, "report-data", "report-html"],
                 registrations);
 
             // One engine worker still serves the orchestration queue, and the output's own
@@ -166,7 +166,7 @@ public sealed class OrchestrationWorkerCompositionTests
             using var host = builder.Build();
             var registrations = host.Services.GetServices<TaskQueueWork>().ToList();
             var plan = WorkerPlan.Plan(
-                [ReportJobWorkflow.OrchestrationQueue, "report-data"],
+                [ReportJobWorkflow.OrchestrationQueue, "report-data", "report-html"],
                 registrations);
 
             // The read of a block's last recorded cause belongs to the job's own worker, beside

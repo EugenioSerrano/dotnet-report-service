@@ -439,12 +439,12 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
     [Fact]
     public void BothDeclaredQueuesGetExactlyOneWorkerWithItsRegistrations()
     {
-        var plan = Plan(["report-orchestration", "report-data"]);
+        var plan = Plan(["report-orchestration", "report-data", "report-html"]);
 
-        Assert.Equal(2, plan.Count);
+        Assert.Equal(3, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
-        Assert.Equal(3, plan[0].Options.Workflows.Count);
-        Assert.Equal(15, plan[0].Options.Activities.Count);
+        Assert.Equal(4, plan[0].Options.Workflows.Count);
+        Assert.Equal(17, plan[0].Options.Activities.Count);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == InputWaitActivities.BeginName);
@@ -458,6 +458,15 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Empty(plan[1].Options.Workflows);
         Assert.Equal(2, plan[1].Options.Activities.Count);
         Assert.Equal(3, plan[1].Options.MaxConcurrentActivities);
+
+        // The HTML assembly runs on its own queue, in this process: exactly one activity
+        // (AssembleHtml), no workflow — an HTML-only job schedules no PDF-queue work (AC-4).
+        Assert.Equal("report-html", plan[2].Queue);
+        Assert.Empty(plan[2].Options.Workflows);
+        Assert.Single(plan[2].Options.Activities);
+        Assert.Contains(
+            plan[2].Options.Activities,
+            activity => activity.Name == HtmlOutputStepContracts.AssembleHtml);
     }
 
     [Fact]

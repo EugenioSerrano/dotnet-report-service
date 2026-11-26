@@ -53,5 +53,6 @@ public sealed record ReportJobRecord(
     public DateTimeOffset? FinishedAt { get; init; }
 
     /// <summary>Whether the job has ended and can no longer change.</summary>
-    public bool IsTerminal => Status is ReportJobStatus.Succeeded or ReportJobStatus.Failed or ReportJobStatus.Cancelled;
+    public bool IsTerminal => Status is ReportJobStatus.Succeeded or ReportJobStatus.Failed or ReportJobStatus.Cancelled
+        or ReportJobStatus.PartiallySucceeded;
 }

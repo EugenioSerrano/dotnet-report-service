@@ -591,6 +591,191 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal("output-failed", state.Job.ErrorReason);
     }
 
+    // ----- ADR-048 job terminal-status rollup (US-008.BOLT-002, SPEC-261125-1224 §8.1, Phase
+    //       D.1/D.3/D.6). The oracles are the approved ADR-048 rules R0–R4 and the guard split,
+    //       never the implementation (G06). A store that cannot arrange a multi-output or a
+    //       cancelled state answers its seam false and the case asserts nothing it cannot present.
+
+    /// <summary>
+    /// R2 (ADR-048): a job that mixes a succeeded output and a failed output ends
+    /// <c>PartiallySucceeded</c> — the distinct tri-state terminal value — and carries no
+    /// job-level error code or reason (each failed output keeps its own code on itself, ADR-048 §4).
+    /// This is the former contested html+pdf case: a succeeded PDF stays published while the HTML
+    /// output failed.
+    /// </summary>
+    [Fact]
+    public async Task AMixedJobWhereSomeOutputsSucceededAndSomeFailedEndsPartiallySucceeded()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PublishOutcome.Published,
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.PartiallySucceeded, closed.Status);
+        Assert.Null(closed.ErrorCode);
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(ReportJobStatus.PartiallySucceeded, state!.Job.Status);
+        Assert.True(state.Job.IsTerminal);
+        Assert.Null(state.Job.ErrorCode);
+        Assert.Null(state.Job.ErrorReason);
+        // The succeeded output stays succeeded and downloadable; the failed one keeps its code.
+        Assert.Equal(
+            OutputStatus.Succeeded,
+            Assert.Single(state.Outputs, output => output.OutputId == acceptance.OutputId).Status);
+        Assert.Equal(OutputStatus.Failed, Assert.Single(state.Outputs, output => output.OutputId == html).Status);
+    }
+
+    /// <summary>R1 (ADR-048): a multi-output job whose every output succeeded ends <c>Succeeded</c> with no code.</summary>
+    [Fact]
+    public async Task AMultiOutputJobWhereEveryOutputSucceededEndsSucceeded()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PublishOutcome.Published,
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Succeeded, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Succeeded, closed.Status);
+        Assert.Null(closed.ErrorCode);
+        Assert.Null((await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Job.ErrorCode);
+    }
+
+    /// <summary>R3 (ADR-048): a multi-output job where no output succeeded ends <c>Failed</c> with a failed output's code.</summary>
+    [Fact]
+    public async Task AMultiOutputJobWhereNoOutputSucceededEndsFailed()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            OutputFailureOutcome.Applied,
+            await Store.FailOutputAsync(acceptance.OutputId, "PAGINATION_FAILED", null, Now, cancellationToken));
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Failed, closed.Status);
+        Assert.NotNull(closed.ErrorCode);
+        var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
+        Assert.Equal(ReportJobStatus.Failed, state!.Job.Status);
+        Assert.NotNull(state.Job.ErrorCode);
+    }
+
+    /// <summary>
+    /// R0 (ADR-048): a job being cancelled (status <c>Cancelling</c>) whose outputs are all
+    /// terminal and mixed ends <c>Cancelled</c> — R0 overrides R2. Evaluated after the
+    /// already-terminal guard, so the only non-terminal status it fires under is <c>Cancelling</c>.
+    /// </summary>
+    [Fact]
+    public async Task ACancellingJobWithMixedTerminalOutputsEndsCancelledOverridingPartiallySucceeded()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PublishOutcome.Published,
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Failed, cancellationToken)
+            || !await TrySeedCancellingJobAsync(acceptance.ReportJobId, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Cancelled, closed.Status);
+        Assert.Null(closed.ErrorCode);
+        Assert.Equal(
+            ReportJobStatus.Cancelled,
+            (await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Job.Status);
+    }
+
+    /// <summary>R4 (ADR-048): a job whose every requested output was cancelled ends <c>Cancelled</c>.</summary>
+    [Fact]
+    public async Task AJobWhoseEveryOutputWasCancelledEndsCancelled()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TryCancelExistingOutputAsync(acceptance.OutputId, cancellationToken)
+            || !await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Cancelled, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.Applied, closed.Outcome);
+        Assert.Equal(ReportJobStatus.Cancelled, closed.Status);
+        Assert.Null(closed.ErrorCode);
+    }
+
+    /// <summary>
+    /// The guard split (ADR-048 §3.4, Phase D.3): while any requested output is still non-terminal
+    /// the job is not finalised — the rollup waits for every output to be terminal, instead of
+    /// finalising early to Failed on the first failure. A succeeded output beside a still-running
+    /// one leaves the job in flight.
+    /// </summary>
+    [Fact]
+    public async Task AJobWithAnOutputStillRunningIsNotFinalisedUntilEveryOutputIsTerminal()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await Store.AcceptAsync(acceptance, Now, cancellationToken);
+        await Store.TransitionOutputAsync(acceptance.OutputId, Now, cancellationToken);
+        Assert.Equal(
+            PublishOutcome.Published,
+            (await Store.PublishAsync(Artifact(acceptance.ReportJobId, acceptance.OutputId), cancellationToken)).Outcome);
+
+        var html = JobIdentifier.CreateOutput();
+        if (!await TrySeedOutputAsync(acceptance.ReportJobId, html, OutputFormat.Html, OutputStatus.Running, cancellationToken))
+        {
+            return;
+        }
+
+        var closed = await Store.FinalizeJobAsync(acceptance.ReportJobId, Now.AddMinutes(1), cancellationToken);
+
+        Assert.Equal(JobFinalizationOutcome.AlreadyTerminal, closed.Outcome);
+        Assert.Null(closed.Status);
+        Assert.False((await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Job.IsTerminal);
+    }
+
     [Fact]
     public async Task APartitionsRefusalIsRecordedWithItAndAnsweredOnARepeat()
     {
@@ -1890,6 +2075,42 @@ public abstract class JobStoreContract : IAsyncLifetime
     protected virtual Task<bool> TryPublishArtifactOfAnotherOutputAsync(
         ArtifactRecord artifact,
         CancellationToken cancellationToken) =>
+        Task.FromResult(false);
+
+    /// <summary>
+    /// Seeds an additional output of a job in the given state, for the ADR-048 rollup cases
+    /// (SPEC-261125-1224 Phase D.6). A store that cannot arrange one answers <see langword="false"/>
+    /// and the case asserts nothing it cannot present.
+    /// </summary>
+    /// <param name="reportJobId">The job the output belongs to.</param>
+    /// <param name="outputId">The identifier of the new output.</param>
+    /// <param name="format">The format the output produces.</param>
+    /// <param name="status">The state to leave the output in.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected virtual Task<bool> TrySeedOutputAsync(
+        string reportJobId,
+        string outputId,
+        OutputFormat format,
+        OutputStatus status,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(false);
+
+    /// <summary>
+    /// Cancels an existing output of a job in place, for the all-cancelled rollup case
+    /// (ADR-048 R4, SPEC-261125-1224 Phase D.6). A store that cannot answers <see langword="false"/>.
+    /// </summary>
+    /// <param name="outputId">The identifier of the existing output.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected virtual Task<bool> TryCancelExistingOutputAsync(string outputId, CancellationToken cancellationToken) =>
+        Task.FromResult(false);
+
+    /// <summary>
+    /// Puts a job into the non-terminal <c>Cancelling</c> state, for the R0 override case
+    /// (ADR-048, SPEC-261125-1224 Phase D.6). A store that cannot answers <see langword="false"/>.
+    /// </summary>
+    /// <param name="reportJobId">The job to put into cancellation.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    protected virtual Task<bool> TrySeedCancellingJobAsync(string reportJobId, CancellationToken cancellationToken) =>
         Task.FromResult(false);
 
     /// <summary>An acceptance of a job over <paramref name="uploadId"/>, with identifiers of their own.</summary>

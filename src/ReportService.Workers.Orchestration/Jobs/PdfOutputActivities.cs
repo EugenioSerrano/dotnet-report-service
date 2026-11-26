@@ -18,6 +18,15 @@ public sealed record FindPdfOutputInput(string ReportJobId);
 /// <param name="OutputId">The identifier of the output.</param>
 public sealed record FindPdfOutputResult(string OutputId);
 
+/// <summary>What looking up a job's output of a given format is asked to do.</summary>
+/// <param name="ReportJobId">The identifier of the job.</param>
+/// <param name="Format">The format the output produces.</param>
+public sealed record FindOutputInput(string ReportJobId, OutputFormat Format);
+
+/// <summary>The one output of the asked format a job has, or none when it asked for none.</summary>
+/// <param name="OutputId">The identifier of the output, or <see langword="null"/> when the job has no output of that format.</param>
+public sealed record FindOutputResult(string? OutputId);
+
 /// <summary>What publishing an output is asked to do: the object its block was printed into.</summary>
 /// <param name="ReportJobId">The identifier of the job.</param>
 /// <param name="OutputId">The identifier of the output.</param>
@@ -32,6 +41,19 @@ public sealed record PublishOutputInput(
     string Sha256,
     long SizeBytes,
     int PageCount);
+
+/// <summary>What publishing an HTML output is asked to do: the object its <c>.html</c> was assembled into.</summary>
+/// <param name="ReportJobId">The identifier of the job.</param>
+/// <param name="OutputId">The identifier of the output.</param>
+/// <param name="ObjectKey">The key the assembled file was written under.</param>
+/// <param name="Sha256">The SHA-256 of the stored object, lower-case hexadecimal.</param>
+/// <param name="SizeBytes">The size of the stored object.</param>
+public sealed record PublishHtmlOutputInput(
+    string ReportJobId,
+    string OutputId,
+    string ObjectKey,
+    string Sha256,
+    long SizeBytes);
 
 /// <summary>What the publication did, with the artifact that now exists.</summary>
 /// <param name="Outcome">Either <c>PUBLISHED</c> or <c>ALREADY_PUBLISHED</c>.</param>
@@ -67,8 +89,17 @@ public sealed class PdfOutputActivities(
     /// <summary>The name the publication is registered and scheduled under.</summary>
     public const string PublishOutputName = "PublishOutput";
 
+    /// <summary>The name the per-format output lookup is registered and scheduled under.</summary>
+    public const string FindOutputName = "FindOutput";
+
     /// <summary>The media type a PDF artifact is served as.</summary>
     public const string PdfMediaType = "application/pdf";
+
+    /// <summary>The media type an HTML artifact is served as.</summary>
+    public const string HtmlMediaType = "text/html; charset=utf-8";
+
+    /// <summary>The name the HTML publication is registered and scheduled under.</summary>
+    public const string PublishHtmlOutputName = "PublishHtmlOutput";
 
     /// <summary>The prefix of every artifact identifier.</summary>
     public const string ArtifactPrefix = "artifact-";
@@ -97,6 +128,36 @@ public sealed class PdfOutputActivities(
         }
 
         return new FindPdfOutputResult(pdf[0].OutputId);
+    }
+
+    /// <summary>
+    /// Finds the one output of the asked format the job has. Unlike <see cref="FindPdfOutputAsync"/>,
+    /// which requires exactly one PDF output, this lookup is nullable and no-throw when the format
+    /// is absent (zero outputs of that format → no output), so a job may request only HTML, only
+    /// PDF, or both without the other format's lookup failing it. It is fail-closed on ambiguity:
+    /// more than one output of the requested format refuses, so a malformed job never silently
+    /// produces one of several.
+    /// </summary>
+    /// <param name="input">The job and the format whose output is looked up.</param>
+    /// <returns>The output's identifier, or <see langword="null"/> when the job has none of that format.</returns>
+    [Activity(FindOutputName)]
+    public async Task<FindOutputResult> FindOutputAsync(FindOutputInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+
+        var state = await jobs
+            .FindForWorkflowAsync(input.ReportJobId, ActivityExecutionContext.Current.CancellationToken)
+            .ConfigureAwait(false)
+            ?? throw Refuse("the job is not recorded");
+
+        var matching = state.Outputs.Where(output => output.Format == input.Format).ToList();
+        if (matching.Count > 1)
+        {
+            throw Refuse($"the job asks for more than one {JobWireValues.ToStoredText(input.Format)} output");
+        }
+
+        return new FindOutputResult(matching.Count == 1 ? matching[0].OutputId : null);
     }
 
     /// <summary>
@@ -152,6 +213,63 @@ public sealed class PdfOutputActivities(
             default:
                 logger.LogWarning(
                     "Output {OutputId} could not be published: the output is no longer running",
+                    input.OutputId);
+                throw Refuse("the output is no longer running");
+        }
+    }
+
+    /// <summary>
+    /// Publishes one HTML output's assembled <c>.html</c> as its one artifact, the same publication
+    /// transaction the PDF output uses (guard + insert-once + mark succeeded), parameterised to the
+    /// HTML media type and no page count. An artifact that exists already answers the one that
+    /// exists and writes nothing; a guard refusal ends the step without writing anything.
+    /// </summary>
+    /// <param name="input">The output and the object its <c>.html</c> was assembled into.</param>
+    /// <returns>The outcome and the identifier of the artifact that exists.</returns>
+    [Activity(PublishHtmlOutputName)]
+    public async Task<PublishOutputResult> PublishHtmlOutputAsync(PublishHtmlOutputInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+        System.Diagnostics.Activity.Current?.SetTag("output.id", input.OutputId);
+
+        var now = JobWireValues.TruncateToMillisecond(clock.GetUtcNow());
+        var artifact = new ArtifactRecord(
+            NewArtifactId(),
+            input.ReportJobId,
+            input.OutputId,
+            OutputFormat.Html,
+            HtmlMediaType,
+            input.ObjectKey,
+            input.Sha256,
+            input.SizeBytes,
+            null,
+            now,
+            now + retention.Value.Outputs);
+
+        var published = await jobs
+            .PublishAsync(artifact, ActivityExecutionContext.Current.CancellationToken)
+            .ConfigureAwait(false);
+
+        switch (published.Outcome)
+        {
+            case PublishOutcome.Published:
+                logger.LogInformation(
+                    "HTML output {OutputId} published as {ArtifactId}",
+                    input.OutputId,
+                    published.ArtifactId);
+                return new PublishOutputResult(PublishOutputResult.Published, published.ArtifactId!);
+
+            case PublishOutcome.AlreadyPublished when published.ArtifactId is not null:
+                logger.LogInformation(
+                    "HTML output {OutputId} was published already as {ArtifactId}",
+                    input.OutputId,
+                    published.ArtifactId);
+                return new PublishOutputResult(PublishOutputResult.AlreadyPublished, published.ArtifactId);
+
+            default:
+                logger.LogWarning(
+                    "HTML output {OutputId} could not be published: the output is no longer running",
                     input.OutputId);
                 throw Refuse("the output is no longer running");
         }

@@ -114,6 +114,21 @@ public sealed class JobWireValuesTests
         Assert.Throws<InvalidOperationException>(() => JobWireValues.ParseStoredForm("exact"));
     }
 
+    /// <summary>
+    /// The tri-state terminal status ADR-048 adds (US-008.BOLT-002, SPEC-261125-1224 §8.1,
+    /// Phase D.2): the wire form is the hyphenated multi-word word and the stored form is the
+    /// UPPER_SNAKE word, both SPEC-fixed; the stored form round-trips, and a partially-succeeded
+    /// job is the mixed-outcome state, never failed or succeeded. The spellings are the approved
+    /// intent (SPEC §6 D.2), never the implementation (G06).
+    /// </summary>
+    [Fact]
+    public void ThePartiallySucceededStatusCarriesItsSpecFixedWireAndStoredForms()
+    {
+        Assert.Equal("partially-succeeded", JobWireValues.ToWire(ReportJobStatus.PartiallySucceeded));
+        Assert.Equal("PARTIALLY_SUCCEEDED", JobWireValues.ToStoredText(ReportJobStatus.PartiallySucceeded));
+        Assert.Equal(ReportJobStatus.PartiallySucceeded, JobWireValues.ParseStoredStatus("PARTIALLY_SUCCEEDED"));
+    }
+
     [Fact]
     public void AnInstantIsTruncatedToWholeMillisecondsInUtc()
     {

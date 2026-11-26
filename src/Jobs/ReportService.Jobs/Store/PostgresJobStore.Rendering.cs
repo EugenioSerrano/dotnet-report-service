@@ -151,7 +151,7 @@ public sealed partial class PostgresJobStore
         UPDATE report_service.report_jobs
            SET status = @Status, error_code = @Code, error_reason = @Reason, finished_at = @Now
          WHERE report_job_id = @ReportJobId
-           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
         """;
 
     private const string InsertAttemptCauseSql = """
@@ -180,7 +180,7 @@ public sealed partial class PostgresJobStore
                records_total = COALESCE(records_total, @RecordCount),
                blocks_total  = COALESCE(blocks_total, @BlockCount)
          WHERE report_job_id = @ReportJobId
-           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
         """;
 
     private const string RaisePartProgressSql = """
@@ -192,7 +192,7 @@ public sealed partial class PostgresJobStore
                   JOIN report_service.report_outputs o ON o.output_id = pc.output_id
                  WHERE o.report_job_id = @ReportJobId AND o.format = 'PDF') c
          WHERE j.report_job_id = @ReportJobId
-           AND j.status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+           AND j.status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
         """;
 
     /// <inheritdoc />
@@ -613,11 +613,14 @@ public sealed partial class PostgresJobStore
                 CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
             if (jobStatus is null
-                || JobWireValues.ParseStoredStatus(jobStatus) is ReportJobStatus.Succeeded or ReportJobStatus.Failed or ReportJobStatus.Cancelled)
+                || JobWireValues.ParseStoredStatus(jobStatus) is ReportJobStatus.Succeeded or ReportJobStatus.Failed
+                    or ReportJobStatus.Cancelled or ReportJobStatus.PartiallySucceeded)
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null);
             }
+
+            var jobBeingCancelled = JobWireValues.ParseStoredStatus(jobStatus) == ReportJobStatus.Cancelling;
 
             var outputs = (await connection.QueryAsync<OutputStatusRow>(new CommandDefinition(
                 SelectOutputsForFinalizationSql,
@@ -626,24 +629,44 @@ public sealed partial class PostgresJobStore
                 CommandTimeoutSeconds,
                 cancellationToken: cancellationToken)).ConfigureAwait(false)).ToList();
 
-            var failed = outputs.FirstOrDefault(output => JobWireValues.ParseStoredOutputStatus(output.Status) == OutputStatus.Failed);
-            var allSucceeded = outputs.Count > 0
-                && outputs.All(output => JobWireValues.ParseStoredOutputStatus(output.Status) == OutputStatus.Succeeded);
-            if (failed is null && !allSucceeded)
+            // The ADR-048 R0–R4 rollup (SPEC-261125-1224 Phase D.1/D.3). The guard split first:
+            // the job is finalised only once every requested output is terminal; while any is
+            // still pending/running the job waits (AlreadyTerminal no-op), instead of finalising
+            // early on the first failure.
+            var states = outputs.Select(output => JobWireValues.ParseStoredOutputStatus(output.Status)).ToList();
+            if (states.Count == 0 || states.Any(state => state is not (OutputStatus.Succeeded or OutputStatus.Failed or OutputStatus.Cancelled)))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return new JobFinalizationResult(JobFinalizationOutcome.AlreadyTerminal, null);
             }
 
-            var status = failed is null ? ReportJobStatus.Succeeded : ReportJobStatus.Failed;
+            var succeeded = states.Count(state => state == OutputStatus.Succeeded);
+            var failedCount = states.Count(state => state == OutputStatus.Failed);
+            var failed = outputs.FirstOrDefault(output => JobWireValues.ParseStoredOutputStatus(output.Status) == OutputStatus.Failed);
+
+            // R0 (job being cancelled) overrides R1–R4; then, over terminal outputs: R1 all
+            // succeeded; R2 some succeeded and some not; R3 none succeeded with a failure; R4 the
+            // remaining all-cancelled case.
+            var status =
+                jobBeingCancelled ? ReportJobStatus.Cancelled
+                : succeeded == states.Count ? ReportJobStatus.Succeeded
+                : succeeded >= 1 ? ReportJobStatus.PartiallySucceeded
+                : failedCount >= 1 ? ReportJobStatus.Failed
+                : ReportJobStatus.Cancelled;
+
+            // A job-level error code and reason are carried only for an outright failure (R3);
+            // PartiallySucceeded, Succeeded and Cancelled carry none (ADR-048 §4).
+            var code = status == ReportJobStatus.Failed ? failed?.ErrorCode : null;
+            var reason = status == ReportJobStatus.Failed ? failed?.ErrorReason ?? "output-failed" : null;
+
             await connection.ExecuteAsync(new CommandDefinition(
                 FinalizeJobSql,
                 new
                 {
                     ReportJobId = reportJobId,
                     Status = JobWireValues.ToStoredText(status),
-                    Code = failed?.ErrorCode,
-                    Reason = failed is null ? null : failed.ErrorReason ?? "output-failed",
+                    Code = code,
+                    Reason = reason,
                     Now = UtcInstant(now),
                 },
                 transaction,
@@ -652,7 +675,7 @@ public sealed partial class PostgresJobStore
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return new JobFinalizationResult(JobFinalizationOutcome.Applied, status)
             {
-                ErrorCode = failed?.ErrorCode,
+                ErrorCode = code,
             };
         }
         catch (Exception exception) when (IsUnavailable(exception))

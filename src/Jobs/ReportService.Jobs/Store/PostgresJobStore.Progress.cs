@@ -42,7 +42,7 @@ public sealed partial class PostgresJobStore
         UPDATE report_service.report_jobs
            SET records_read = GREATEST(records_read, @RecordsRead)
          WHERE report_job_id = @ReportJobId
-           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+           AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_SUCCEEDED')
            AND records_read < @RecordsRead
            AND (records_total IS NULL OR @RecordsRead <= records_total)
         """;
@@ -75,6 +75,7 @@ public sealed partial class PostgresJobStore
                 first.ReportJobId,
                 status,
                 status is ReportJobStatus.Succeeded or ReportJobStatus.Failed or ReportJobStatus.Cancelled
+                    or ReportJobStatus.PartiallySucceeded
                     ? null
                     : first.Stage is { } stage ? JobWireValues.ParseStoredStage(stage) : null,
                 first.RecordsRead,
