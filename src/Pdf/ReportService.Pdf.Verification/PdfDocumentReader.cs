@@ -29,7 +29,8 @@ public sealed record PageDictionary(IReadOnlyDictionary<string, string> Entries)
 /// <param name="Page">The page as the word reader returns it.</param>
 /// <param name="Box">The page's media box.</param>
 /// <param name="Dictionary">The page's own dictionary.</param>
-public sealed record DocumentPage(int Number, PrintedPage Page, PageBox Box, PageDictionary Dictionary);
+/// <param name="Graphics">What the page draws beside its text: its resource names, form objects and named-object drawings.</param>
+public sealed record DocumentPage(int Number, PrintedPage Page, PageBox Box, PageDictionary Dictionary, PageCodes.PageGraphics? Graphics = null);
 
 /// <summary>A whole printed document read with its pages' boxes and dictionaries.</summary>
 /// <param name="Pages">The pages, in order.</param>
@@ -64,7 +65,8 @@ public static class PdfDocumentReader
                     number,
                     PdfWordReader.ReadPage(page, number, margins),
                     BoxOf(page),
-                    DictionaryOf(page)));
+                    DictionaryOf(page),
+                    PageCodes.PageGraphicsReader.Read(document, page)));
             }
 
             return new PdfDocumentReading(pages);

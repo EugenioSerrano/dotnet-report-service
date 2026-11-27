@@ -260,6 +260,46 @@ public sealed class TemplateResolutionActivitiesTests
         Assert.Null(rig.Jobs.ReferenceOf(rig.ReportJobId)!.Pin);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ThePageCodeDeclarationIsReadFromThePinnedVersionsManifest(bool declared)
+    {
+        using var rig = await Rig.CreateAsync("1.1.0");
+        var record = TemplateVersionRecords.Sample(templateId: Template, version: "1.1.0", owner: Rig.Consumer);
+        rig.Versions.Seed(record with
+        {
+            Manifest = record.Manifest with
+            {
+                Outputs = new TemplateOutputs
+                {
+                    Pdf = new TemplatePdfOutput
+                    {
+                        PageCode = declared ? new TemplatePageCode { Generator = "reference-grid" } : null,
+                    },
+                },
+            },
+        });
+        await rig.PrepareAsync();
+
+        var result = await new ActivityEnvironment().RunAsync(() =>
+            rig.Activities.ReadPageCodeDeclarationAsync(new PageCodeDeclarationInput(rig.ReportJobId)));
+
+        Assert.Equal(declared, result.DeclaresPageCode);
+    }
+
+    [Fact]
+    public async Task AnUnpinnedJobHasNoPageCodeDeclarationToRead()
+    {
+        using var rig = await Rig.CreateAsync("1.1.0");
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(() => new ActivityEnvironment().RunAsync(() =>
+            rig.Activities.ReadPageCodeDeclarationAsync(new PageCodeDeclarationInput(rig.ReportJobId))));
+
+        Assert.Equal("EXECUTION_FAILED", failure.ErrorType);
+        Assert.True(failure.NonRetryable);
+    }
+
     /// <summary>
     /// One job over one upload, the record stores the steps read and write, the clock the
     /// test moves, and the engine's host around the activity one case runs.

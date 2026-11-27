@@ -31,6 +31,31 @@ template corrupts consistently in the composition and in the print is caught by
 the declared fields, because their expected values come from the block's own
 records.
 
+## The per-page code of an assembled document
+
+A template may declare a code on every page ([the authoring guide](template-authoring.md#a-code-on-every-page)).
+The code is drawn by the assembly — on a document of several blocks beside the
+page number, on a document of one block alone (its block already printed its own
+page counter). The checks above are unchanged: the code adds no text, and the
+declared fields stay the only check of a code's *data*. The assembly adds these
+checks of the assembled document, against values that never come from the
+assembler's output:
+
+| Check | What it asserts |
+|-------|-----------------|
+| **Placement** | the code's area lies inside the page and clear of the page-number area |
+| **One code, in its place** | the page carries exactly one form object the assembly added whose bounding box is the declared area, drawn once and moved onto the area; its drawing is clipped by that box; nothing else is added to the page's objects |
+| **No text added** | the text inside the code's area is the text the block printed there, unchanged |
+| **The expected code** | the form's content, decoded, is byte for byte what the **declared generator** draws for the value the declared source yields on this page as the page's text is read |
+| **No added font** | a one-block document gains no font: no number was stamped |
+
+The code is **never decoded**: no symbol is read, no image analysed. The check
+proves that the code the generator draws for this page is on this page; whether
+that code means the right thing for your business is the adopter's to review.
+A failure is `ARTIFACT_INTEGRITY_FAILED` with one of the reasons `code-missing`,
+`code-placement`, `code-unexpected`, `code-object`, `code-value`, `code-text` or
+`resources`, and the document is never published.
+
 ## The reader
 
 The reader is **PdfPig 0.1.16**, used in one fixed configuration:

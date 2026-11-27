@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the page-code registration: what each setting registers, and the
+    loading of a generator assembly with its own private dependency in its own load
+    context. The fixture generator and its dependency are built with this project
+    but never referenced as assemblies (ReferenceOutputAssembly=false): the build
+    copies their output into a folder of their own, and each test copies that folder
+    to its temporary directory and loads the generator from there only - so the test
+    process's default context can never supply the dependency. Hermetic.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.PageCodes.Hosting\ReportService.Pdf.PageCodes.Hosting.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing.PageCodeFixture\ReportService.Testing.PageCodeFixture.csproj"
+                      ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CopyPageCodeFixture" AfterTargets="Build">
+    <MSBuild Projects="..\..\Support\ReportService.Testing.PageCodeFixture\ReportService.Testing.PageCodeFixture.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PageCodeFixtureTarget" />
+    </MSBuild>
+    <PropertyGroup>
+      <_PageCodeFixtureDirectory>@(_PageCodeFixtureTarget->'%(RootDir)%(Directory)')</_PageCodeFixtureDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PageCodeFixtureFiles Include="$(_PageCodeFixtureDirectory)ReportService.Testing.PageCodeFixture.dll;$(_PageCodeFixtureDirectory)ReportService.Testing.PageCodeFixture.deps.json;$(_PageCodeFixtureDirectory)ReportService.Testing.PageCodeFixtureDependency.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PageCodeFixtureFiles)" DestinationFolder="$(OutDir)page-code-fixture" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

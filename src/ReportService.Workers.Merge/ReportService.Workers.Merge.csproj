@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
     <ProjectReference Include="..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
     <ProjectReference Include="..\Pdf\ReportService.Pdf.Assembly\ReportService.Pdf.Assembly.csproj" />
+    <ProjectReference Include="..\Pdf\ReportService.Pdf.PageCodes.Hosting\ReportService.Pdf.PageCodes.Hosting.csproj" />
     <ProjectReference Include="..\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
   </ItemGroup>
 

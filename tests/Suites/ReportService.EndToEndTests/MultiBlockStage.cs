@@ -76,6 +76,10 @@ internal sealed class MultiBlockStage : IDisposable
 
     private readonly Func<string, string, Dictionary<string, byte[]>>? _packageFactory;
 
+    private readonly Func<Dictionary<string, byte[]>, Dictionary<string, byte[]>>? _packageTransform;
+
+    private readonly IReadOnlyList<string> _compositionArguments;
+
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "report-service-e2e-multi-block",
@@ -119,13 +123,19 @@ internal sealed class MultiBlockStage : IDisposable
     /// <param name="amountField">The amount field the accounted fixture declares, or its own; a non-numeric field is the known-bad control.</param>
     /// <param name="snapshotFactory">The snapshot a case supplies instead of the stage's own, with its oracle.</param>
     /// <param name="packageFactory">The package a case supplies instead of the stage's own.</param>
+    /// <param name="packageTransform">A change a case applies to the stage's own package.</param>
+    /// <param name="compositionArguments">Settings a case gives the composition beside the stage's own.</param>
     public MultiBlockStage(
         bool accounted = false,
         string? templateId = null,
         string? amountField = null,
         Func<int, (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records)>? snapshotFactory = null,
-        Func<string, string, Dictionary<string, byte[]>>? packageFactory = null)
+        Func<string, string, Dictionary<string, byte[]>>? packageFactory = null,
+        Func<Dictionary<string, byte[]>, Dictionary<string, byte[]>>? packageTransform = null,
+        IReadOnlyList<string>? compositionArguments = null)
     {
+        _packageTransform = packageTransform;
+        _compositionArguments = compositionArguments ?? [];
         _accounted = accounted;
         _templateId = templateId;
         _amountField = amountField;
@@ -145,7 +155,7 @@ internal sealed class MultiBlockStage : IDisposable
             registry,
             """{ "consumers": [ { "consumerId": "consumer-a", "displayName": "Consumer A", "active": true } ] }""",
             cancellationToken);
-        var builder = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
+        var builder = await TestComposition.CreateAsync(cancellationToken, [$"--Consumers:File={registry}", .. _compositionArguments]);
         var mergeWorkerContainerName = TestComposition.DeclaredMergeWorkerContainerName(builder);
         var app = await builder.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
@@ -617,7 +627,10 @@ internal sealed class MultiBlockStage : IDisposable
             reader.IsDBNull(9) ? null : reader.GetInt64(9));
     }
 
-    private Dictionary<string, byte[]> PackageFiles()
+    private Dictionary<string, byte[]> PackageFiles() =>
+        _packageTransform is null ? OwnPackageFiles() : _packageTransform(OwnPackageFiles());
+
+    private Dictionary<string, byte[]> OwnPackageFiles()
     {
         if (_packageFactory is not null)
         {

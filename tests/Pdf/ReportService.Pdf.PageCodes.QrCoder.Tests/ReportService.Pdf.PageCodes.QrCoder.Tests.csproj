@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests of the opt-in QR example generator: determinism, the fixed version,
+    the refusals, the content rules and the worst-case size bound measured through
+    the assembly's own form writer. The only project besides the example itself
+    that touches QRCoder. Hermetic.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.PageCodes.QrCoder\ReportService.Pdf.PageCodes.QrCoder.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Assembly\ReportService.Pdf.Assembly.csproj" />
+  </ItemGroup>
+
+</Project>

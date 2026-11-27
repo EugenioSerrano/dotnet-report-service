@@ -4,7 +4,9 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ReportService.Jobs;
 using ReportService.Pdf.Assembly;
+using ReportService.Pdf.Assembly.PageCodes;
 using ReportService.Pdf.Verification;
+using ReportService.Pdf.Verification.PageCodes;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
 using ReportService.TemplatePackages.Manifest;
@@ -36,8 +38,11 @@ public sealed class AssemblePdfActivity(
     AssemblyJobMetrics metrics,
     ILoggerFactory loggers,
     ILogger<AssemblePdfActivity> logger,
-    string? scratchRoot = null)
+    string? scratchRoot = null,
+    PageCodeGeneratorRegistry? pageCodes = null)
 {
+    private readonly PageCodeGeneratorRegistry _pageCodes = pageCodes ?? new PageCodeGeneratorRegistry([]);
+
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "AssemblePdf";
 
@@ -133,8 +138,21 @@ public sealed class AssemblePdfActivity(
 
         Directory.CreateDirectory(ScratchRoot);
         await using var package = await packages.OpenAsync(record, ScratchRoot, cancellationToken).ConfigureAwait(false);
-        var contract = NumberingContract(record.Manifest, package.Root)
-            ?? throw Refuse(TemplateInvalid, "the package declares no usable numbering contract");
+        var contract = NumberingContract(record.Manifest, package.Root);
+        var pageCode = PageCodeOf(record.Manifest, frame, contract);
+
+        // A numbering contract is required to assemble, except for a one-part output
+        // whose template declares a per-page code: that output is assembled to draw
+        // the code only, and its one part already printed its own page counter.
+        if (contract is null && (ordered.Count != 1 || pageCode is null))
+        {
+            throw Refuse(TemplateInvalid, "the package declares no usable numbering contract");
+        }
+
+        if (ordered.Count == 1 && pageCode is not null)
+        {
+            contract = null;
+        }
 
         using var work = new AssemblyTemporaryDirectory(ScratchRoot, totalBytes);
         using var beatEnds = new CancellationTokenSource();
@@ -150,7 +168,8 @@ public sealed class AssemblePdfActivity(
                 work.Root,
                 AssemblyLimits.BatchSize,
                 Metrics: null,
-                OnBatch: batch => BatchWrittenAsync(work, batch, interruption, input.OutputId));
+                OnBatch: batch => BatchWrittenAsync(work, batch, interruption, input.OutputId),
+                PageCode: pageCode);
 
             AssemblyResult assembled;
             try
@@ -185,7 +204,8 @@ public sealed class AssemblePdfActivity(
                     assembled.OutputPath,
                     Expectations(ordered, parts),
                     frame,
-                    contract));
+                    contract,
+                    pageCode));
                 return Task.CompletedTask;
             }).ConfigureAwait(false);
             if (!verdict.Passed)
@@ -379,6 +399,45 @@ public sealed class AssemblePdfActivity(
         {
             return null;
         }
+    }
+
+    private AssemblyPageCode? PageCodeOf(TemplateManifest manifest, PageFrame frame, PageNumbering? contract)
+    {
+        var declared = manifest.Outputs?.Pdf?.PageCode;
+        if (declared is null)
+        {
+            return null;
+        }
+
+        var problems = new List<PageCodeProblem>();
+        var declaration = PageCodeDeclaration.Create(
+            new PageCodeDeclaration.Raw(
+                declared.Generator,
+                declared.Options,
+                (double?)declared.Area?.LeftMm,
+                (double?)declared.Area?.TopMm,
+                (double?)declared.Area?.WidthMm,
+                (double?)declared.Area?.HeightMm,
+                declared.Source?.Value,
+                declared.Source?.Match?.Pattern,
+                declared.Source?.Match?.MaxLength),
+            problems)
+            ?? throw Refuse(TemplateInvalid, "the package declares no usable page code");
+
+        // The deployment changed after the version was taken: the generator it names
+        // is no longer registered. The output cannot be drawn with these settings.
+        if (!_pageCodes.TryResolve(declaration.Generator, out var generator))
+        {
+            throw Refuse(TemplateInvalid, "the page code's generator is not registered in this deployment");
+        }
+
+        return new AssemblyPageCode(
+            declaration,
+            generator,
+            manifest.Id ?? string.Empty,
+            manifest.Version ?? string.Empty,
+            frame.Margins,
+            contract?.Area);
     }
 
     private PageNumbering? NumberingContract(TemplateManifest manifest, string packageRoot)

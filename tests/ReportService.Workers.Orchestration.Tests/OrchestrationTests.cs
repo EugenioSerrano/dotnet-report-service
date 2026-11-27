@@ -648,7 +648,10 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(3, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(4, plan[0].Options.Workflows.Count);
-        Assert.Equal(19, plan[0].Options.Activities.Count);
+        Assert.Equal(20, plan[0].Options.Activities.Count);
+        Assert.Contains(
+            plan[0].Options.Activities,
+            activity => activity.Name == TemplateResolutionActivities.ReadPageCodeDeclarationName);
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == JobTransitionActivities.ReadJobStateName);

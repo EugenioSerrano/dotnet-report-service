@@ -14,17 +14,26 @@ public sealed record AssemblyPart(int PartIndex, string Path, int PageCount, lon
 
 /// <summary>What one assembly is asked to do: the ordered parts, the numbering contract and where to write.</summary>
 /// <param name="Parts">The parts, in manifest order.</param>
-/// <param name="Numbering">The template's numbering contract.</param>
+/// <param name="Numbering">The template's numbering contract; absent only for a one-part assembly that draws a page code and no number.</param>
 /// <param name="OutputPath">The file the assembled document is saved to; the caller owns it.</param>
 /// <param name="TemporaryRoot">The quota-checked folder the staging files live under.</param>
 /// <param name="BatchSize">How many consecutive parts one staging batch imports.</param>
 /// <param name="Metrics">The measurements the assembly records, when the caller supplies one.</param>
 /// <param name="OnBatch">Called after each staging batch was saved, with the number of batches written so far.</param>
+/// <param name="PageCode">The per-page code drawn in the same pass as the number, when the template declares one.</param>
 public sealed record AssemblyRequest(
     IReadOnlyList<AssemblyPart> Parts,
-    PageNumbering Numbering,
+    PageNumbering? Numbering,
     string OutputPath,
     string TemporaryRoot,
     int BatchSize = AssemblyLimits.BatchSize,
     AssemblyMetrics? Metrics = null,
-    Func<int, ValueTask>? OnBatch = null);
+    Func<int, ValueTask>? OnBatch = null,
+    PageCodes.AssemblyPageCode? PageCode = null)
+{
+    /// <summary>
+    /// Whether the request's shape is one the assembly accepts: a numbering contract,
+    /// or no numbering with exactly one part and a page code.
+    /// </summary>
+    public bool IsWellFormed => Numbering is not null || (Parts?.Count == 1 && PageCode is not null);
+}

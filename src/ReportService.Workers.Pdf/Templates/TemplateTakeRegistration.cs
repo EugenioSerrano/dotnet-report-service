@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ReportService.Pdf.PageCodes.Hosting;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
@@ -66,6 +67,7 @@ public static class TemplateTakeRegistration
             services.GetRequiredService<ILogger<StorageTemplateSource>>()));
         builder.Services.AddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
         builder.Services.AddSingleton<TemplateTake>();
+        builder.Services.AddPageCodeGenerators(builder.Configuration);
         builder.Services.AddTemplateVersionChecks();
         builder.Services.AddSingleton<TakeTemplateVersionActivity>();
 

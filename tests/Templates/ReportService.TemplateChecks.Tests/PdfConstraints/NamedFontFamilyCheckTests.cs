@@ -649,10 +649,11 @@ public sealed class NamedFontFamilyCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("AccountedDetailMarkupCheck", order[^6]);
-        Assert.Equal("AccountingFooterCheck", order[^5]);
-        Assert.Equal("NamedFontFamilyCheck", order[^4]);
-        Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
+        Assert.Equal("AccountedDetailMarkupCheck", order[^7]);
+        Assert.Equal("AccountingFooterCheck", order[^6]);
+        Assert.Equal("NamedFontFamilyCheck", order[^5]);
+        Assert.Equal("BottomAlignedGridCellCheck", order[^4]);
+        Assert.Equal("PageCodeDeclarationCheck", order[^3]);
         Assert.Equal("sample-render", order[^2]);
         Assert.Equal("at-bound-sample", order[^1]);
     }

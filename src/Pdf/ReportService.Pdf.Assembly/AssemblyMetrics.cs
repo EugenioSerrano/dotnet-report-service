@@ -54,16 +54,31 @@ public sealed class AssemblyMetrics
     /// <summary>The SHA-256 of the packaged stamp font, lower-case hexadecimal.</summary>
     public string StampFontSha256 { get; private set; } = string.Empty;
 
+    /// <summary>The generator that drew the document's codes, when the template declares one.</summary>
+    public ReportService.Pdf.Verification.PageCodes.PageCodeGeneratorDescriptor? CodeGenerator { get; private set; }
+
+    /// <summary>How many pages carry a code.</summary>
+    public int CodePages { get; private set; }
+
+    /// <summary>The codes' stored bytes, summed.</summary>
+    public long CodeBytes { get; private set; }
+
+    /// <summary>The time evaluating the sources and generating the codes took, summed.</summary>
+    public TimeSpan CodeGeneration { get; private set; }
+
+    /// <summary>How many pages' codes could not be drawn.</summary>
+    public int CodeFailures { get; private set; }
+
     /// <summary>Records the figures of the parts and the font.</summary>
     /// <param name="parts">The parts, in manifest order.</param>
     /// <param name="numbering">The numbering contract.</param>
-    public void Begin(IReadOnlyList<AssemblyPart> parts, PageNumbering numbering)
+    public void Begin(IReadOnlyList<AssemblyPart> parts, PageNumbering? numbering, PageCodes.AssemblyPageCode? pageCode = null)
     {
         ArgumentNullException.ThrowIfNull(parts);
-        ArgumentNullException.ThrowIfNull(numbering);
         Parts = parts.Count;
         PartBytes = parts.Sum(part => part.SizeBytes);
-        StampFontSha256 = numbering.Font.Sha256;
+        StampFontSha256 = numbering?.Font.Sha256 ?? string.Empty;
+        CodeGenerator = pageCode?.Generator.Descriptor;
         PdfLibraryVersion = typeof(PdfSharp.Pdf.PdfDocument).Assembly
             .GetName().Version?.ToString() ?? "unknown";
         Observe();
@@ -106,6 +121,19 @@ public sealed class AssemblyMetrics
     /// <summary>Records how many pages the assembled document holds.</summary>
     /// <param name="pages">The assembled document's page count.</param>
     public void RecordPages(int pages) => Pages = pages;
+
+    /// <summary>Records one page code drawn: its stored size and the time its content took.</summary>
+    /// <param name="storedBytes">The form's stored size.</param>
+    /// <param name="generation">How long the source evaluation and the generation took.</param>
+    public void RecordCode(long storedBytes, TimeSpan generation)
+    {
+        CodePages++;
+        CodeBytes += storedBytes;
+        CodeGeneration += generation;
+    }
+
+    /// <summary>Records a page whose code could not be drawn.</summary>
+    public void RecordCodeFailure() => CodeFailures++;
 
     /// <summary>Records one written batch and the temporary bytes it reached.</summary>
     /// <param name="temporaryBytes">The bytes the assembly's folder holds now.</param>

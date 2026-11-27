@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using ReportService.Pdf.Verification;
+using ReportService.Pdf.Verification.PageCodes;
 using ReportService.Rendering;
 using ReportService.Rendering.Accounting;
 using ReportService.Rendering.Layout;
@@ -55,6 +56,7 @@ public sealed class PdfSampleRenderer : ISampleRenderer
     private readonly TimeProvider _clock;
     private readonly SampleRenderOptions _options;
     private readonly string _scratchRoot;
+    private readonly PageCodeGeneratorRegistry? _pageCodes;
 
     /// <summary>Creates the renderer over the capability the worker already runs.</summary>
     /// <param name="composer">The product's block composer.</param>
@@ -66,6 +68,7 @@ public sealed class PdfSampleRenderer : ISampleRenderer
     /// <param name="clock">The clock the sample's start instant is read from.</param>
     /// <param name="options">The deadline of one render call.</param>
     /// <param name="scratchRoot">The directory work areas are made in, or <see langword="null"/> for the default.</param>
+    /// <param name="pageCodes">The deployment's page-code generators, when the process registered them.</param>
     public PdfSampleRenderer(
         BlockComposer composer,
         IPdfPrinter printer,
@@ -75,7 +78,8 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         SampleRenderMetrics metrics,
         TimeProvider clock,
         IOptions<SampleRenderOptions> options,
-        string? scratchRoot = null)
+        string? scratchRoot = null,
+        PageCodeGeneratorRegistry? pageCodes = null)
     {
         ArgumentNullException.ThrowIfNull(composer);
         ArgumentNullException.ThrowIfNull(printer);
@@ -95,6 +99,7 @@ public sealed class PdfSampleRenderer : ISampleRenderer
         _clock = clock;
         _options = options.Value;
         _scratchRoot = scratchRoot ?? Path.Combine(Path.GetTempPath(), DefaultScratchRootName);
+        _pageCodes = pageCodes;
     }
 
     /// <inheritdoc />
@@ -412,17 +417,28 @@ public sealed class PdfSampleRenderer : ISampleRenderer
                     block.Block!, html.Block!, htmlManifest ?? blockManifest, blockManifest, verification.BlockIndex));
             }
 
-            Keep(request, pdfPath);
-            var pdfBytes = new FileInfo(pdfPath).Length;
-            return new SampleAttempt.Rendered(new SampleFacts(
-                verification.Pages,
-                html.Block!.Html.LongLength,
-                pdfBytes,
-                verification.Words,
-                composeMs,
-                print.Duration.TotalMilliseconds,
-                verification.ReadAndAlignMs + verification.SourceChecksMs,
-                Convert.ToHexStringLower(SHA256.HashData(html.Block!.Html))));
+            // The declared per-page code, on the populated sample only (the helper decides).
+            var (codeFailure, codePages) = await PageCodeSample
+                .AfterPrintAsync(request, _pageCodes, pdfPath, frame, Path.Combine(work, "page-code"), takeToken)
+                .ConfigureAwait(false);
+            return PageCodeSample.Outcome(
+                codeFailure,
+                () => Delete(pdfPath),
+                () =>
+                {
+                    Keep(request, pdfPath);
+                    var pdfBytes = new FileInfo(pdfPath).Length;
+                    return new SampleAttempt.Rendered(new SampleFacts(
+                        verification.Pages,
+                        html.Block!.Html.LongLength,
+                        pdfBytes,
+                        verification.Words,
+                        composeMs,
+                        print.Duration.TotalMilliseconds,
+                        verification.ReadAndAlignMs + verification.SourceChecksMs,
+                        Convert.ToHexStringLower(SHA256.HashData(html.Block!.Html)),
+                        codePages));
+                });
         }
         finally
         {

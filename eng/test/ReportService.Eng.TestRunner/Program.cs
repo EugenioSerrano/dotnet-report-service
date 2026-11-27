@@ -34,6 +34,8 @@ internal static partial class Program
         "tests/Pdf/ReportService.Pdf.Assembly.Tests/ReportService.Pdf.Assembly.Tests.csproj",
         "tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj",
         "tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj",
+        "tests/Pdf/ReportService.Pdf.PageCodes.Hosting.Tests/ReportService.Pdf.PageCodes.Hosting.Tests.csproj",
+        "tests/Pdf/ReportService.Pdf.PageCodes.QrCoder.Tests/ReportService.Pdf.PageCodes.QrCoder.Tests.csproj",
         "tests/Rendering/ReportService.PdfOracle.Tests/ReportService.PdfOracle.Tests.csproj",
         "tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj",
         "tests/Platform/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj",

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The host side of per-page codes: registers, from the worker's configuration,
+    the page-code generators the deployment uses - the product's reference
+    generator, the opt-in example, and the generators an adopter's assemblies
+    provide, each loaded in its own load context with its own dependencies. It uses
+    the shared framework's dependency injection and configuration (the framework
+    reference the workers already carry), so it adds no package.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.PageCodes.QrCoder\ReportService.Pdf.PageCodes.QrCoder.csproj" />
+  </ItemGroup>
+
+</Project>

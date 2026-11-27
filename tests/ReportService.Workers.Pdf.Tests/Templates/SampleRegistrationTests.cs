@@ -26,7 +26,7 @@ public sealed class SampleRegistrationTests
     private static readonly string Root = FindRoot();
 
     [Fact]
-    public void TheWorkerResolvesTheSampleRendererAndTheFifteenChecksInOrder()
+    public void TheWorkerResolvesTheSampleRendererAndTheSixteenChecksInOrder()
     {
         using var host = Build();
 
@@ -34,7 +34,7 @@ public sealed class SampleRegistrationTests
         Assert.IsType<PdfSampleRenderer>(renderer);
 
         var checks = host.Services.GetServices<ITemplateVersionCheck>().ToArray();
-        Assert.Equal(15, checks.Length);
+        Assert.Equal(16, checks.Length);
         Assert.Equal(TemplateChecksRegistration.Order, checks.Select(check => check.Name));
         Assert.Equal(AtBoundSampleCheck.CheckName, checks[^1].Name);
         Assert.Equal(SampleRenderCheck.CheckName, checks[^2].Name);

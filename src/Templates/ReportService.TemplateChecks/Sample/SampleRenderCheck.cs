@@ -220,9 +220,26 @@ public sealed class SampleRenderCheck(ISampleRenderer renderer, ILogger<SampleRe
                 "the sample cannot print a report with no records (" + (failure.Reason ?? "no-page") + ").",
                 "Make the document parts render their header for zero records."),
 
+            SampleFailureKind.PageCode => TemplateRefusal.Refuse(
+                TemplateCheckCodes.TemplateInvalid,
+                PackagePath.ManifestFileName,
+                "outputs.pdf.pageCode cannot be drawn on page " + Number(failure.PageNumber ?? 0)
+                    + " of the sample (" + (failure.Reason ?? "page-code") + ").",
+                PageCodeFix(failure.Reason)),
+
             _ => VerificationRefusal(failure, file),
         };
     }
+
+    private static string PageCodeFix(string? reason) => reason switch
+    {
+        "text-in-code-area" => "Keep the page-code area free of template text: move the text or the area.",
+        "no-value" => "Make the source's pattern match text that every page prints, or use only the page and template tokens.",
+        "generator-refused" => "Shorten the value template or change the generator's options.",
+        "content-not-allowed" => "Use a generator that draws only paths and fills.",
+        "too-large" => "Use a smaller code or other generator options.",
+        _ => "Correct outputs.pdf.pageCode so that every page of the sample carries the code.",
+    };
 
     private static TemplateCheckResult VerificationRefusal(SampleFailure failure, string file)
     {

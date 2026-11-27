@@ -37,6 +37,9 @@ public sealed class TemplateResolutionActivities(
     /// <summary>The name the baseline write is registered and scheduled under.</summary>
     public const string PinBaselineName = "PinBaseline";
 
+    /// <summary>The name the page-code declaration read is registered and scheduled under.</summary>
+    public const string ReadPageCodeDeclarationName = "ReadPageCodeDeclaration";
+
     private static readonly ActivitySource Source = new(TelemetryDefaults.ActivitySourceName);
 
     /// <summary>
@@ -47,6 +50,36 @@ public sealed class TemplateResolutionActivities(
     /// existed.
     /// </summary>
     /// <param name="input">The job to prepare.</param>
+    /// <summary>
+    /// Reads whether the job's taken template version declares a per-page code - the
+    /// fact that sends a one-block output through the assembly. It reads the version's
+    /// manifest only, never the job's data.
+    /// </summary>
+    /// <param name="input">The job.</param>
+    /// <returns>Whether the version declares a per-page code.</returns>
+    [Activity(ReadPageCodeDeclarationName)]
+    public async Task<PageCodeDeclarationResult> ReadPageCodeDeclarationAsync(PageCodeDeclarationInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        using var context = JobContext.Begin(input.ReportJobId, loggers);
+        var cancellationToken = ActivityExecutionContext.Current.CancellationToken;
+        var reference = await jobs.FindTemplateReferenceAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false);
+        if (reference?.Pin is not { } pin)
+        {
+            throw new ApplicationFailureException(
+                "the job's template version was never resolved",
+                errorType: "EXECUTION_FAILED",
+                nonRetryable: true);
+        }
+
+        var record = await versions.FindAsync(pin.TemplateId, pin.ResolvedVersion, cancellationToken).ConfigureAwait(false)
+            ?? throw new ApplicationFailureException(
+                "the job's template version was never taken",
+                errorType: "EXECUTION_FAILED",
+                nonRetryable: true);
+        return new PageCodeDeclarationResult(record.Manifest.Outputs?.Pdf?.PageCode is not null);
+    }
+
     [Activity(PrepareTemplateName)]
     public async Task<PrepareTemplateResult> PrepareTemplateAsync(PrepareTemplateInput input)
     {

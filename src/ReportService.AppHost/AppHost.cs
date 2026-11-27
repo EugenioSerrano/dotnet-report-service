@@ -188,6 +188,17 @@ if (Environment.GetEnvironmentVariable("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_B
     mergeWorker.WithEnvironment("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_BATCH", interruptAfterBatch);
 }
 
+// The page-code generators are one setting for the two workers that use them: the render
+// worker takes a template that declares a code and the merge worker draws it, so a
+// generator registered in one and not the other would be a defect of the composition. The
+// composition registers none by default; it enables the product's library-free reference
+// generator only when its own configuration asks for it (the end-to-end page-code case).
+if (bool.TryParse(builder.Configuration["PageCodes:ReferenceGrid:Enabled"], out var referenceGrid) && referenceGrid)
+{
+    renderWorker.WithEnvironment("PageCodes__ReferenceGrid__Enabled", "true");
+    mergeWorker.WithEnvironment("PageCodes__ReferenceGrid__Enabled", "true");
+}
+
 // Orchestration worker: a host process on the orchestration and data queues; ready once
 // the engine answers and the metadata database is at the version the code expects.
 // One stored-size limit is given to both the API and this worker: a body accepted by

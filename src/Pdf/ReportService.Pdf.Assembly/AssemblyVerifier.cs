@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
+using ReportService.Pdf.Assembly.PageCodes;
 using ReportService.Pdf.Verification;
+using ReportService.Pdf.Verification.PageCodes;
 
 namespace ReportService.Pdf.Assembly;
 
@@ -7,12 +9,14 @@ namespace ReportService.Pdf.Assembly;
 /// <param name="OutputPath">The assembled document's temporary file.</param>
 /// <param name="Parts">The parts, in manifest order, with what their commits recorded.</param>
 /// <param name="Frame">The template's page frame, in points.</param>
-/// <param name="Numbering">The numbering contract the pages were stamped with.</param>
+/// <param name="Numbering">The numbering contract the pages were stamped with; absent only for a one-part code-only assembly.</param>
+/// <param name="PageCode">The per-page code the pages carry, when the template declares one.</param>
 public sealed record AssemblyVerificationRequest(
     string OutputPath,
     IReadOnlyList<AssemblyPartExpectation> Parts,
     PageFrame Frame,
-    PageNumbering Numbering);
+    PageNumbering? Numbering,
+    AssemblyPageCode? PageCode = null);
 
 /// <summary>
 /// The structural verification of an assembled document, against values that come
@@ -50,7 +54,13 @@ public static class AssemblyVerifier
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Parts);
-        ArgumentNullException.ThrowIfNull(request.Numbering);
+        if (request.Numbering is null && (request.Parts.Count != 1 || request.PageCode is null))
+        {
+            throw new ArgumentException(
+                "a verification without numbering is only for a one-part assembly that draws a page code",
+                nameof(request));
+        }
+
         if (request.Parts.Count == 0)
         {
             return AssemblyVerdict.Failed(AssemblyFailureReasons.PartBytes);
@@ -125,14 +135,30 @@ public static class AssemblyVerifier
                 var sourcePage = source.Pages[offset];
                 var pageNumber = start + offset + 1;
 
-                if (!SameTextOutsideArea(outputPage, sourcePage, request.Numbering.Area))
+                var numberingRegion = request.Numbering is { } numbering
+                    ? new PageCodeText.Region(numbering.Area.LeftPt, numbering.Area.TopPt, numbering.Area.WidthPt, numbering.Area.HeightPt)
+                    : null;
+                var codeRegion = request.PageCode?.CodeRegion;
+                if (!SameTextOutside(outputPage, sourcePage, numberingRegion, codeRegion))
                 {
                     return AssemblyVerdict.Failed(AssemblyFailureReasons.Order, part.PartIndex, pageNumber);
                 }
 
-                if (StampVerdict(outputPage, request.Numbering, pageNumber, total, part.PartIndex) is { Passed: false } stamp)
+                if (request.Numbering is { } stamped
+                    && StampVerdict(outputPage, stamped, pageNumber, total, part.PartIndex) is { Passed: false } stamp)
                 {
                     return stamp;
+                }
+
+                if (request.Numbering is null && !SameNames(outputPage, sourcePage, "Font"))
+                {
+                    return AssemblyVerdict.Failed(AssemblyFailureReasons.Resources, part.PartIndex, pageNumber);
+                }
+
+                if (request.PageCode is { } code
+                    && CodeVerdict(outputPage, sourcePage, code, pageNumber, total, part.PartIndex) is { Passed: false } coded)
+                {
+                    return coded;
                 }
 
                 if (!SameDictionary(outputPage.Dictionary, sourcePage.Dictionary))
@@ -205,6 +231,109 @@ public static class AssemblyVerifier
             .Select(word => word.Text)
             .ToList();
         return written.SequenceEqual(composed, StringComparer.Ordinal);
+    }
+
+    private static bool SameTextOutside(
+        DocumentPage output,
+        DocumentPage source,
+        PageCodeText.Region? numbering,
+        PageCodeText.Region? code)
+    {
+        static IEnumerable<string> Outside(DocumentPage page, PageCodeText.Region? first, PageCodeText.Region? second) =>
+            page.Page.Words
+                .Where(word => !(first?.Contains(word) ?? false) && !(second?.Contains(word) ?? false))
+                .Select(word => word.Text);
+        return Outside(output, numbering, code).SequenceEqual(Outside(source, numbering, code), StringComparer.Ordinal);
+    }
+
+    private static bool SameNames(DocumentPage output, DocumentPage source, string category)
+    {
+        var written = output.Graphics?.ResourceNames.GetValueOrDefault(category) ?? [];
+        var composed = source.Graphics?.ResourceNames.GetValueOrDefault(category) ?? [];
+        return written.SequenceEqual(composed, StringComparer.Ordinal);
+    }
+
+    // The code row: the code is the one form the assembly added to the page whose
+    // bounding box is the declared area, drawn once with a translation onto the
+    // area; nothing else is added to the page's objects; the text inside the area
+    // is unchanged; and the form's decoded content is, byte for byte, what the
+    // declared generator draws for the value the declared source yields on the
+    // assembled page. The code is never decoded.
+    private static AssemblyVerdict? CodeVerdict(
+        DocumentPage output,
+        DocumentPage source,
+        AssemblyPageCode code,
+        int pageNumber,
+        int total,
+        int partIndex)
+    {
+        const double tolerance = 0.05d;
+        var region = code.CodeRegion;
+        if (region.LeftPt + region.WidthPt > output.Page.Width + tolerance
+            || region.TopPt + region.HeightPt > output.Page.Height + tolerance
+            || (code.NumberingRegion is { } numbering && region.Overlaps(numbering)))
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodePlacement, partIndex, pageNumber);
+        }
+
+        if (!PageCodeText.Inside(output.Page, region).SequenceEqual(PageCodeText.Inside(source.Page, region), StringComparer.Ordinal))
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodeText, partIndex, pageNumber);
+        }
+
+        var outputGraphics = output.Graphics ?? PageGraphics.Empty;
+        var sourceGraphics = source.Graphics ?? PageGraphics.Empty;
+        var sourceObjects = sourceGraphics.ResourceNames.GetValueOrDefault("XObject") ?? [];
+        var added = (outputGraphics.ResourceNames.GetValueOrDefault("XObject") ?? [])
+            .Where(name => !sourceObjects.Contains(name, StringComparer.Ordinal))
+            .ToList();
+        var candidates = outputGraphics.Forms
+            .Where(form => added.Contains(form.Name, StringComparer.Ordinal)
+                && form.BoundingBox is { Count: 4 } box
+                && Math.Abs(box[0]) <= tolerance
+                && Math.Abs(box[1]) <= tolerance
+                && Math.Abs(box[2] - region.WidthPt) <= tolerance
+                && Math.Abs(box[3] - region.HeightPt) <= tolerance)
+            .ToList();
+        if (candidates.Count == 0)
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodeMissing, partIndex, pageNumber);
+        }
+
+        if (candidates.Count > 1 || added.Count != 1)
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodeUnexpected, partIndex, pageNumber);
+        }
+
+        var form = candidates[0];
+        var drawings = outputGraphics.Drawings.Where(drawing => drawing.Name == form.Name).ToList();
+        if (drawings.Count != 1)
+        {
+            return AssemblyVerdict.Failed(
+                drawings.Count == 0 ? AssemblyFailureReasons.CodeMissing : AssemblyFailureReasons.CodeUnexpected,
+                partIndex,
+                pageNumber);
+        }
+
+        var matrix = drawings[0].Matrix;
+        var expectedBottom = output.Page.Height - region.TopPt - region.HeightPt;
+        if (Math.Abs(matrix[0] - 1) > 1e-6 || Math.Abs(matrix[1]) > 1e-6 || Math.Abs(matrix[2]) > 1e-6
+            || Math.Abs(matrix[3] - 1) > 1e-6
+            || Math.Abs(matrix[4] - region.LeftPt) > tolerance
+            || Math.Abs(matrix[5] - expectedBottom) > tolerance)
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodePlacement, partIndex, pageNumber);
+        }
+
+        var expected = code.ContentFor(output.Page, pageNumber, total, out _);
+        if (expected is null)
+        {
+            return AssemblyVerdict.Failed(AssemblyFailureReasons.CodeValue, partIndex, pageNumber);
+        }
+
+        return form.Content.AsSpan().SequenceEqual(expected)
+            ? null
+            : AssemblyVerdict.Failed(AssemblyFailureReasons.CodeObject, partIndex, pageNumber);
     }
 
     private static bool SameDictionary(PageDictionary output, PageDictionary source)

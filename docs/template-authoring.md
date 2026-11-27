@@ -345,6 +345,116 @@ package's `localeDefaults` apply only when a job was accepted without a culture
 or a zone; they are never re-read at render, so a newer version of a package
 cannot change the presentation of a job already accepted.
 
+## A code on every page
+
+A template can ask the service to draw **one code on every page** of its PDF — a
+code whose value depends on what landed on that page, which only the service
+knows once the pages are fixed. The service draws it after printing, in the same
+step that stamps the page number, and never runs template code to do it.
+
+**Two kinds of code, two owners.**
+
+- A code or graphic that depends **only on one record** — an invoice's own QR, a
+  chart of its lines — is computed **by you, before the job**, and travels in the
+  record's data (for example a precomputed SVG or PNG data URI). The template
+  prints it like any other value. The service never generates, draws or checks it.
+- A code that depends on **the page** — the page's position, or what the page
+  prints — is **declared** in the manifest, and the service draws it.
+
+**The declaration.**
+
+```yaml
+outputs:
+  pdf:
+    pageCode:
+      generator: acme-invoice-qr          # a generator registered in the deployment
+      options: { errorCorrection: "M" }   # passed to that generator unchanged
+      area: { leftMm: 170, topMm: 20, widthMm: 25, heightMm: 25 }
+      source:
+        value: "{template.id}|{page.number}/{page.total}|{match}"
+        match: { pattern: "INV-[0-9]{8}", maxLength: 12 }
+```
+
+- `generator` names a **page-code generator registered in the deployment** (see
+  *Supplying a generator* below). The product defines no code type of its own: a
+  QR, a barcode or any other symbol is whatever the named generator draws.
+- `area` is where the code is drawn, in millimetres from the page's top-left
+  corner, 5 to 100 mm a side. It must lie inside the margins and clear of the
+  page-number area and the accounting footer, and **your template must print no
+  text under it**: the sample is refused if it does. Text that lands there from
+  the data at run time is drawn over by the code and left out of the value — the
+  layout is yours.
+- `source.value` is the code's value: literal text plus these tokens, and
+  nothing else (`{{` and `}}` write a literal brace):
+
+  | Token | Value |
+  |-------|-------|
+  | `{page.number}` | the page's number in the document (in a one-block document, its page in that block) |
+  | `{page.total}` | the document's page count |
+  | `{template.id}`, `{template.version}` | the taken template's identity |
+  | `{match}` | the first match of `source.match.pattern` in the page's own text (the named group `value` when the pattern has one) |
+
+  The page's text is what the page prints outside the page-number area and the
+  code's area. The pattern is matched in linear time (no back-references or
+  look-arounds), at most 256 characters, with 100 ms per page.
+
+**The value's size.** A value holds at most **128 bytes** of UTF-8. The take
+checks the largest value the declaration can produce, never a sample of it, and
+nothing is ever truncated:
+
+- `{page.number}` and `{page.total}` count 7 bytes each, so the bound holds up to
+  **9 999 999 pages**; a larger document fails rather than truncating.
+- `{match}` counts **4 bytes per character of `maxLength`**, because a match may be
+  any UTF-8 text. So `maxLength` can be at most
+  `(128 − literal bytes − 7 × page tokens − template id − template version) / 4`:
+  about **32** when the value is `{match}` alone, about **20** in the example above
+  (an 8-byte id, a 5-byte version, the four literal characters and two page
+  tokens). The take tells you the largest `maxLength` your declaration admits.
+- Declare `maxLength` as the real width of the field. A longer match on a page
+  is treated as **no value**.
+
+**Every page must yield a value.** A page whose source yields no value fails the
+whole document (`ARTIFACT_INTEGRITY_FAILED`) and nothing is published — a blank
+code is never drawn. The take proves your declaration on **your sample only**,
+so make the pattern match text that **every** page prints (a running header, a
+page heading), not text that only some pages print (a record that may start on
+the previous page, a group footer). **A report with no records** is still
+assembled to draw its code, and has no record text: a template whose value uses
+`{match}` therefore fails every job with zero records. A value made of
+`{page.*}` and `{template.*}` tokens only always prints.
+
+**Supplying a generator.** A generator is deployment code, never template code.
+It implements `IPageCodeGenerator` (`ReportService.Pdf.Verification.PageCodes`):
+
+- `Name` — the name templates declare.
+- `Validate(options, area, maxValueBytes)` — at take: accept the options and the
+  area and return the **largest content** the generator can draw for any value of
+  up to `maxValueBytes` bytes, or refuse with a problem and a fix. A generator
+  that cannot bound its output must refuse. The take refuses a worst case over
+  **64 KiB** of content or over **16 KiB** as stored.
+- `Generate(value, options, area)` — draw the code as a PDF content stream in the
+  area's own coordinates (origin at the lower-left corner, the area's size in
+  points). Allowed: paths, fills, strokes, clipping, colours and `q`/`Q`/`cm`;
+  not allowed: text, images, named resources, other objects. `ModuleMatrixContent`
+  draws a module grid for you.
+- It must be **deterministic** and free of side effects: to verify a page, the
+  service asks the same generator for the same value again and compares the bytes.
+
+Register generators with these settings, given **identically to the render
+worker and the merge worker** (the first takes templates, the second draws):
+
+| Setting | Effect |
+|---------|--------|
+| `PageCodes__Assemblies__0`, `__1`, … | load the generators of an assembly at that path. Ship the generator's publish output — the assembly, its own dependencies and its `.deps.json` — in one directory of your image or a mount: the assembly loads in its own context and its dependencies resolve from beside it. The product's own assemblies (the one that defines `IPageCodeGenerator` and any the worker already loaded) are shared with the worker, never loaded from your directory; do not rely on a different version of them. A missing file, a missing dependency or an assembly with no generator stops the worker naming it |
+| `PageCodes__ReferenceGrid__Enabled` | `true` registers `reference-grid`, the product's library-free **reference** generator: a grid derived from the value's hash. It shows what a generator returns; it is not a scannable code |
+| `PageCodes__Examples__QrCoder__Enabled` | `true` registers `qrcoder-qr`, an **example** QR generator built on QRCoder 1.8.0 (MIT). Option `errorCorrection`: `L`, `M` (default), `Q` or `H`; the area must be square |
+| `PageCodes__Disabled__0`, … | remove a registered generator by name |
+
+Nothing is registered by default. The library a generator uses, its licence,
+and whether the code it draws means the right thing for your business are yours:
+the service checks that the code is there, in its place, and is the one your
+generator draws for the page's value — it never reads or decodes it.
+
 ## What the service checks when it takes a version
 
 A version is read, checked and kept the first time a job references it — never
@@ -367,8 +477,9 @@ again; the fix is a new version.
 | 9 | the printed page totals | a version that turns `outputs.pdf.pageTotals.enabled` on: this build prints no totals, and a report with silently missing numbers is worse than a refusal. The message names the declaration, never its value; the fix is to print the totals in the template or turn them off |
 | 10 | the font family of the detail text | detail text whose text-bearing cells name no font family, or that no declaration reaches at all. The message names the part and the stylesheet and line of the declaration that sets only a generic keyword; the fix is to name the family the report is measured with, `"Liberation Sans", sans-serif`, on a rule that applies to the detail text |
 | 11 | the grid cell that may split | a row laid out as a grid whose direct child is aligned to the bottom by `align-self: end`, `align-items: end`, `place-self` or `place-items`, while nothing forbids that cell to break across pages. The message names the part, the cell and the rule that aligns it; the fix is to align the cell to the top |
-| 12 | the sample render | a sample that cannot render, print or verify with the engine the version declares, or a report with zero records that prints nothing. What it refuses, and the sentence an author reads, are in the section below |
-| 13 | the record at the row bound | a version whose record at 256 KiB does not print every character on the page. The message names the file, the field's path and the cause; the fix is to print the field as it is. What it refuses is in the section below |
+| 12 | the page code | an `outputs.pdf.pageCode` that breaks a rule of [A code on every page](#a-code-on-every-page): the generator name, the options, the area (its size, inside the margins, clear of the page number and the footer), the value template and pattern, a value that can pass 128 bytes (the message gives the largest `maxLength`), a generator this deployment does not register (the message names the ones it does), a generator that refuses the declaration, or a worst case over the content or stored bound. The message names `template.yaml` and the field |
+| 13 | the sample render | a sample that cannot render, print or verify with the engine the version declares, or a report with zero records that prints nothing; and, for a version that declares a page code, a sample page that prints text under the code's area, yields no value, or whose code does not draw or verify (the message names the page). What it refuses, and the sentence an author reads, are in the section below |
+| 14 | the record at the row bound | a version whose record at 256 KiB does not print every character on the page. The message names the file, the field's path and the cause; the fix is to print the field as it is. What it refuses is in the section below |
 
 **The three PDF rules in product words.**
 

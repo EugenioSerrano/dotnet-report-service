@@ -294,6 +294,38 @@ product ships it as the package bundles it:
 - The licence text is reproduced in [MIT](#mit) below. The exact pin is the
   transitive signature patch the PDF writing library requires.
 
+## QRCoder 1.8.0
+
+- Licence: MIT - declared by the package's own metadata
+  (`<license type="expression">MIT</license>`) and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `Copyright © 2013-2025 Raffael Herrmann. Copyright © 2024-2025 Shane
+  Krueger. All rights reserved.` - from the package's own `.nuspec`.
+- Project: https://github.com/Shane32/QRCoder.
+- The licence text is reproduced in [MIT](#mit) below. It backs the opt-in example
+  page-code generator (`qrcoder-qr`); only its QR module matrix is used, never its
+  image renderers.
+
+## System.Drawing.Common 6.0.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `© Microsoft Corporation. All rights reserved.` - from the package's
+  own `.nuspec`.
+- Project: https://github.com/dotnet/runtime.
+- The licence text is reproduced in [MIT](#mit) below. A dependency of QRCoder's
+  .NET target that the example generator never calls.
+
+## Microsoft.Win32.SystemEvents 6.0.0
+
+- Licence: MIT - declared by the package's own metadata and published at
+  https://licenses.nuget.org/MIT.
+- Copyright: `© Microsoft Corporation. All rights reserved.` - from the package's
+  own `.nuspec`.
+- Project: https://github.com/dotnet/runtime.
+- The licence text is reproduced in [MIT](#mit) below. A dependency of
+  System.Drawing.Common.
+
 ## Paged.js 0.4.3
 
 - Licence: MIT - Copyright (c) 2018 Adam Hyde; the licence text ships beside the

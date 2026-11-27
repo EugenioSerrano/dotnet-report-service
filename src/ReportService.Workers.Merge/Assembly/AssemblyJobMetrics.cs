@@ -39,6 +39,18 @@ public sealed class AssemblyJobMetrics : IDisposable
     /// <summary>The counter of assembly verification verdicts, by result and reason.</summary>
     public const string VerificationInstrumentName = "reportservice.pdf.assembly.verification";
 
+    /// <summary>The pages of one assembly that carry a per-page code.</summary>
+    public const string CodePagesInstrumentName = "reportservice.pdf.assembly.code_pages";
+
+    /// <summary>The stored bytes of one assembly's per-page codes.</summary>
+    public const string CodeBytesInstrumentName = "reportservice.pdf.assembly.code_bytes";
+
+    /// <summary>How long evaluating the sources and generating one assembly's codes took.</summary>
+    public const string CodeGenerationInstrumentName = "reportservice.pdf.assembly.code_generation";
+
+    /// <summary>Pages whose per-page code could not be drawn.</summary>
+    public const string CodeFailuresInstrumentName = "reportservice.pdf.assembly.code_failures";
+
     /// <summary>The stage tag of checking the inputs.</summary>
     public const string InputsStage = "inputs";
 
@@ -70,6 +82,10 @@ public sealed class AssemblyJobMetrics : IDisposable
     private readonly Histogram<long> _heap;
     private readonly Histogram<long> _workingSet;
     private readonly Counter<long> _verification;
+    private readonly Histogram<long> _codePages;
+    private readonly Histogram<long> _codeBytes;
+    private readonly Histogram<double> _codeGeneration;
+    private readonly Counter<long> _codeFailures;
 
     /// <summary>Creates the host's instruments on the identity it carries.</summary>
     /// <param name="identity">The identity of the host that owns the instruments.</param>
@@ -104,6 +120,22 @@ public sealed class AssemblyJobMetrics : IDisposable
             VerificationInstrumentName,
             unit: "{verification}",
             description: "Assembled documents verified, by result and reason.");
+        _codePages = _meter.CreateHistogram<long>(
+            CodePagesInstrumentName,
+            unit: "{page}",
+            description: "Pages of one assembly that carry a per-page code, by generator.");
+        _codeBytes = _meter.CreateHistogram<long>(
+            CodeBytesInstrumentName,
+            unit: "By",
+            description: "The stored bytes of one assembly's per-page codes, by generator.");
+        _codeGeneration = _meter.CreateHistogram<double>(
+            CodeGenerationInstrumentName,
+            unit: "s",
+            description: "How long evaluating the sources and generating one assembly's codes took, by generator.");
+        _codeFailures = _meter.CreateCounter<long>(
+            CodeFailuresInstrumentName,
+            unit: "{page}",
+            description: "Pages whose per-page code could not be drawn, by generator.");
     }
 
     /// <summary>Records the measurements and verdict of one assembly.</summary>
@@ -123,6 +155,24 @@ public sealed class AssemblyJobMetrics : IDisposable
         _outputBytes.Record(metrics.OutputBytes);
         _heap.Record(metrics.PeakManagedBytes);
         _workingSet.Record(metrics.PeakWorkingSetBytes);
+        if (metrics.CodeGenerator is { } generator)
+        {
+            KeyValuePair<string, object?>[] tags =
+            [
+                new("generator", generator.Name),
+                new("generator.assembly", generator.AssemblyName),
+                new("generator.version", generator.AssemblyVersion),
+                new("generator.origin", generator.Origin),
+            ];
+            _codePages.Record(metrics.CodePages, tags);
+            _codeBytes.Record(metrics.CodeBytes, tags);
+            _codeGeneration.Record(metrics.CodeGeneration.TotalSeconds, tags);
+            if (metrics.CodeFailures > 0)
+            {
+                _codeFailures.Add(metrics.CodeFailures, tags);
+            }
+        }
+
         if (verdict is not null)
         {
             _verification.Add(

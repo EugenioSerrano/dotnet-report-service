@@ -48,6 +48,7 @@ internal sealed class MergeStepHarness : IDisposable
     /// <param name="manifestJson">The manifest document the package and record carry, when the case needs an unusable one.</param>
     /// <param name="numbering">A transformation of the typed numbering contract, when the case needs an unusable one.</param>
     /// <param name="includeFont">Whether the package carries the font file the contract names.</param>
+    /// <param name="pageCode">The per-page code the taken version declares, when the case needs one.</param>
     public MergeStepHarness(
         int blocks = 2,
         int pagesEach = 2,
@@ -55,7 +56,8 @@ internal sealed class MergeStepHarness : IDisposable
         int? declaredPages = null,
         string? manifestJson = null,
         Func<TemplatePdfNumbering, TemplatePdfNumbering>? numbering = null,
-        bool includeFont = true)
+        bool includeFont = true,
+        TemplatePageCode? pageCode = null)
     {
         Directory.CreateDirectory(_root);
         _store = FilesystemObjectStore.Open(
@@ -89,6 +91,7 @@ internal sealed class MergeStepHarness : IDisposable
                     Orientation = "portrait",
                     MarginMm = new TemplateMargins { Top = 12, Right = 10, Bottom = 12, Left = 10 },
                     Numbering = withNumbering ? (numbering is null ? Numbering() : numbering(Numbering())) : null,
+                    PageCode = pageCode,
                 },
             },
         };
@@ -151,7 +154,9 @@ internal sealed class MergeStepHarness : IDisposable
     public TemplateVersionRecord Record => _record;
 
     /// <summary>The step over the harness's stores and a real assembler.</summary>
-    public AssemblePdfActivity Activity(AssemblyInterruption? interruption = null)
+    public AssemblePdfActivity Activity(
+        AssemblyInterruption? interruption = null,
+        ReportService.Pdf.Verification.PageCodes.PageCodeGeneratorRegistry? pageCodes = null)
     {
         var activity = new AssemblePdfActivity(
             _jobs,
@@ -162,7 +167,8 @@ internal sealed class MergeStepHarness : IDisposable
             new AssemblyJobMetrics(MeterIdentity.ForHost(TelemetryDefaults.MeterName)),
             NullLoggerFactory.Instance,
             NullLogger<AssemblePdfActivity>.Instance,
-            Path.Combine(_root, "scratch"))
+            Path.Combine(_root, "scratch"),
+            pageCodes)
         {
             Interruption = interruption,
         };

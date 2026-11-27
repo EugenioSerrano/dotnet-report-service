@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A page-code generator assembly built the way an adopter builds one: it
+    implements the product's generator interface (shared with the worker, so it is
+    not copied beside the generator) and calls a private dependency of its own. It is
+    never referenced by a test process; the page-code loading tests copy its output
+    to a temporary directory and load it from there only.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj"
+                      Private="false" />
+    <ProjectReference Include="..\ReportService.Testing.PageCodeFixtureDependency\ReportService.Testing.PageCodeFixtureDependency.csproj" />
+  </ItemGroup>
+
+</Project>

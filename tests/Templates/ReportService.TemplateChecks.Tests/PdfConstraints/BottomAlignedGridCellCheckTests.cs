@@ -521,9 +521,10 @@ public sealed class BottomAlignedGridCellCheckTests
     {
         var order = TemplateChecksRegistration.Order;
 
-        Assert.Equal("AccountingFooterCheck", order[^5]);
-        Assert.Equal("NamedFontFamilyCheck", order[^4]);
-        Assert.Equal("BottomAlignedGridCellCheck", order[^3]);
+        Assert.Equal("AccountingFooterCheck", order[^6]);
+        Assert.Equal("NamedFontFamilyCheck", order[^5]);
+        Assert.Equal("BottomAlignedGridCellCheck", order[^4]);
+        Assert.Equal("PageCodeDeclarationCheck", order[^3]);
         Assert.Equal("sample-render", order[^2]);
         Assert.Equal("at-bound-sample", order[^1]);
 
@@ -532,9 +533,10 @@ public sealed class BottomAlignedGridCellCheckTests
             .AddTemplateVersionChecks()
             .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();
-        Assert.Equal("AccountingFooterCheck", names[^5]);
-        Assert.Equal("NamedFontFamilyCheck", names[^4]);
-        Assert.Equal("BottomAlignedGridCellCheck", names[^3]);
+        Assert.Equal("AccountingFooterCheck", names[^6]);
+        Assert.Equal("NamedFontFamilyCheck", names[^5]);
+        Assert.Equal("BottomAlignedGridCellCheck", names[^4]);
+        Assert.Equal("PageCodeDeclarationCheck", names[^3]);
         Assert.Equal("sample-render", names[^2]);
         Assert.Equal("at-bound-sample", names[^1]);
     }

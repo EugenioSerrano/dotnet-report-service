@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    An example page-code generator: QR codes through QRCoder (MIT, exact pin). It is
+    opt-in - a deployment enables it by configuration - and it is an example, not a
+    product code type: a deployment may use it, replace it or register its own. This
+    is the only project that references the library; only the QR module matrix is
+    used, never its image renderers.
+  -->
+  <ItemGroup>
+    <PackageReference Include="QRCoder" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+  </ItemGroup>
+
+</Project>

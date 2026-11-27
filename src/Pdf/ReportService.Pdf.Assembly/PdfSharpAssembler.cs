@@ -2,6 +2,9 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using ReportService.Pdf.Assembly.PageCodes;
+using ReportService.Pdf.Verification;
+using ReportService.Pdf.Verification.PageCodes;
 
 namespace ReportService.Pdf.Assembly;
 
@@ -60,7 +63,6 @@ public sealed class PdfSharpAssembler : IPdfAssembler
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Parts);
-        ArgumentNullException.ThrowIfNull(request.Numbering);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.OutputPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.TemporaryRoot);
         if (request.Parts.Count == 0)
@@ -68,11 +70,18 @@ public sealed class PdfSharpAssembler : IPdfAssembler
             throw new AssemblyInputException("the output has no parts to assemble");
         }
 
+        if (!request.IsWellFormed)
+        {
+            throw new ArgumentException(
+                "an assembly needs a numbering contract, unless it is a one-part assembly that draws a page code",
+                nameof(request));
+        }
+
         var metrics = request.Metrics ?? new AssemblyMetrics();
-        metrics.Begin(request.Parts, request.Numbering);
+        metrics.Begin(request.Parts, request.Numbering, request.PageCode);
         RefuseOverCeiling(request.Parts);
         EnsureResolver();
-        var face = PackagedFontResolver.Instance.Register(request.Numbering.Font);
+        var face = request.Numbering is { } numbering ? PackagedFontResolver.Instance.Register(numbering.Font) : null;
         var staging = Path.Combine(request.TemporaryRoot, "staging");
         Directory.CreateDirectory(staging);
         try
@@ -117,7 +126,7 @@ public sealed class PdfSharpAssembler : IPdfAssembler
 
     private async Task<Staged> StageAsync(
         AssemblyRequest request,
-        string face,
+        string? face,
         string staging,
         int batchSize,
         AssemblyMetrics metrics,
@@ -128,8 +137,10 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         var pages = 0;
         await metrics.MeasureAsync(AssemblyStage.Batches, async () =>
         {
-            var font = new XFont(face, request.Numbering.Font.SizePt, XFontStyleEx.Regular,
-                new XPdfFontOptions(PdfFontEncoding.Unicode));
+            var font = request.Numbering is { } numbering && face is not null
+                ? new XFont(face, numbering.Font.SizePt, XFontStyleEx.Regular, new XPdfFontOptions(PdfFontEncoding.Unicode))
+                : null;
+            var total = TotalOf(request);
             for (var start = 0; start < request.Parts.Count; start += batchSize)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -156,20 +167,40 @@ public sealed class PdfSharpAssembler : IPdfAssembler
                                 throw new AssemblyInputException("a part's page count does not match its commit");
                             }
 
+                            var words = request.PageCode is { } code ? ReadWords(part, code) : null;
+                            var pageInPart = 0;
                             foreach (var sourcePage in source.Pages)
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
                                 pageEntries.Add(PageDictionaryPolicy.Capture(sourcePage));
                                 var page = batch.AddPage(sourcePage);
                                 pages++;
-                                using var graphics = XGraphics.FromPdfPage(page);
-                                var area = request.Numbering.Area;
-                                graphics.DrawString(
-                                    request.Numbering.TextFor(pages, TotalOf(request)),
-                                    font,
-                                    XBrushes.Black,
-                                    new XRect(area.LeftPt, area.TopPt, area.WidthPt, area.HeightPt),
-                                    XStringFormats.TopLeft);
+                                byte[]? content = null;
+                                if (request.PageCode is { } pageCode)
+                                {
+                                    content = CodeContent(pageCode, words![pageInPart], pages, total, metrics);
+                                }
+
+                                using (var graphics = XGraphics.FromPdfPage(page))
+                                {
+                                    if (request.Numbering is { } stamp)
+                                    {
+                                        var area = stamp.Area;
+                                        graphics.DrawString(
+                                            stamp.TextFor(pages, total),
+                                            font!,
+                                            XBrushes.Black,
+                                            new XRect(area.LeftPt, area.TopPt, area.WidthPt, area.HeightPt),
+                                            XStringFormats.TopLeft);
+                                    }
+                                }
+
+                                if (content is not null)
+                                {
+                                    PageCodeFormWriter.Draw(batch, page, content, request.PageCode!.CodeRegion);
+                                }
+
+                                pageInPart++;
                             }
                         }
                     }
@@ -188,6 +219,47 @@ public sealed class PdfSharpAssembler : IPdfAssembler
             }
         }).ConfigureAwait(false);
         return new Staged(batches, pageEntries);
+    }
+
+    private static IReadOnlyList<PrintedPage> ReadWords(AssemblyPart part, AssemblyPageCode code)
+    {
+        PdfReading reading;
+        try
+        {
+            reading = PdfWordReader.Read(part.Path, code.Margins);
+        }
+        catch (PdfUnreadableException)
+        {
+            throw new AssemblyInputException("a part cannot be read as a document");
+        }
+
+        if (reading.Pages.Count != part.PageCount)
+        {
+            throw new AssemblyInputException("a part's page count does not match its commit");
+        }
+
+        return reading.Pages;
+    }
+
+    private static byte[] CodeContent(AssemblyPageCode code, PrintedPage page, int pageNumber, int total, AssemblyMetrics metrics)
+    {
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        var content = code.ContentFor(page, pageNumber, total, out var reason);
+        if (content is null)
+        {
+            metrics.RecordCodeFailure();
+            throw new AssemblyInputException(reason!);
+        }
+
+        var stored = PageCodeFormWriter.StoredSize(content, code.Declaration.Area.Size);
+        if (stored > PageCodeContentValidator.MaximumStoredBytes)
+        {
+            metrics.RecordCodeFailure();
+            throw new AssemblyInputException("a page code's form is larger than the stored bound");
+        }
+
+        metrics.RecordCode(stored, System.Diagnostics.Stopwatch.GetElapsedTime(started));
+        return content;
     }
 
     private static int TotalOf(AssemblyRequest request) =>

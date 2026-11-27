@@ -56,6 +56,14 @@ public sealed class ReportPdfOutputWorkflow
     /// </summary>
     public const string MultiBlockRenderPatch = "multi-block-render-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the one-part assembly of a one-block
+    /// output whose template declares a per-page code: the declaration read, the
+    /// one-block fan-out and the assembly that draws the code. A run recorded before it
+    /// carries no marker and keeps the single-block path exactly.
+    /// </summary>
+    public const string PageCodeOnePartPatch = "page-code-one-part-v1";
+
     private static int _window = PdfOutputConcurrencyOptions.DefaultWindow;
 
     /// <summary>Publishes the configured window to the workflow type, once, while the process plans its workers.</summary>
@@ -120,11 +128,27 @@ public sealed class ReportPdfOutputWorkflow
 
             if (facts.BlockCount <= 1)
             {
-                await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
-                return;
+                // A one-block output is published as printed - unless its template
+                // declares a per-page code: then its one part is committed and assembled
+                // to draw the code, with no number stamp (the part printed its own).
+                var declaresCode = false;
+                if (Workflow.Patched(PageCodeOnePartPatch))
+                {
+                    var declaration = await Workflow.ExecuteActivityAsync(
+                        (TemplateResolutionActivities activities) => activities.ReadPageCodeDeclarationAsync(
+                            new PageCodeDeclarationInput(input.ReportJobId)),
+                        metadata).ConfigureAwait(true);
+                    declaresCode = declaration.DeclaresPageCode;
+                }
+
+                if (!declaresCode)
+                {
+                    await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
+                    return;
+                }
             }
 
-            await RunFanOutAsync(input, facts.BlockCount).ConfigureAwait(true);
+            await RunFanOutAsync(input, Math.Max(1, facts.BlockCount)).ConfigureAwait(true);
 
             var assembled = await Workflow.ExecuteActivityAsync(
                 (IAssemblePdfStep step) => step.RunAsync(new AssemblePdfStepInput(input.ReportJobId, input.OutputId)),

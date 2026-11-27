@@ -26,6 +26,27 @@ public static class AssemblyFailureReasons
 
     /// <summary>The assembled document cannot be read.</summary>
     public const string Unreadable = "unreadable";
+
+    /// <summary>A page carries no page code, or its code's form is not drawn.</summary>
+    public const string CodeMissing = "code-missing";
+
+    /// <summary>A page code is drawn outside its declared area, or its area is misplaced.</summary>
+    public const string CodePlacement = "code-placement";
+
+    /// <summary>A page carries an object beside its code that the assembly may not add.</summary>
+    public const string CodeUnexpected = "code-unexpected";
+
+    /// <summary>A page's code object is not the one its declared source and generator give.</summary>
+    public const string CodeObject = "code-object";
+
+    /// <summary>A page's source yields no value on the assembled page.</summary>
+    public const string CodeValue = "code-value";
+
+    /// <summary>The text inside a page code's area changed.</summary>
+    public const string CodeText = "code-text";
+
+    /// <summary>A one-part assembly added a font resource it may not add.</summary>
+    public const string Resources = "resources";
 }
 
 /// <summary>

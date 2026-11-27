@@ -13,6 +13,7 @@ namespace ReportService.TemplateChecks.Sample;
 /// <param name="PrintMs">How long printing the sample took.</param>
 /// <param name="VerifyMs">How long verifying the printed sample took.</param>
 /// <param name="HtmlSha256">The SHA-256 of the composed HTML, lower-case hexadecimal: the demo's identity of the three engines' report.</param>
+/// <param name="CodePages">How many pages carried the declared per-page code, when the package declares one.</param>
 public sealed record SampleFacts(
     int Pages,
     long HtmlBytes,
@@ -21,7 +22,8 @@ public sealed record SampleFacts(
     double ComposeMs,
     double PrintMs,
     double VerifyMs,
-    string? HtmlSha256 = null);
+    string? HtmlSha256 = null,
+    int? CodePages = null);
 
 /// <summary>The deterministic properties of a version that a sample render refuses it for.</summary>
 public enum SampleFailureKind
@@ -46,6 +48,13 @@ public enum SampleFailureKind
 
     /// <summary>The sample does not follow the data format the delivered reader reads.</summary>
     Unreadable,
+
+    /// <summary>
+    /// The printed sample cannot carry the declared per-page code: a page prints text
+    /// inside the code's area, a page's source yields no value, the generator refuses
+    /// a value or returns content that is not allowed, or the code does not verify.
+    /// </summary>
+    PageCode,
 }
 
 /// <summary>
@@ -64,6 +73,7 @@ public enum SampleFailureKind
 /// <param name="Records">How many records an over-bound sample holds.</param>
 /// <param name="RecordBytes">How many bytes of record content an over-bound sample holds.</param>
 /// <param name="Bound">The bound an over-bound sample crossed.</param>
+/// <param name="PageNumber">The printed page the failure was found on, when one applies.</param>
 public sealed record SampleFailure(
     SampleFailureKind Kind,
     string? Part = null,
@@ -74,7 +84,8 @@ public sealed record SampleFailure(
     string? Reason = null,
     int? Records = null,
     long? RecordBytes = null,
-    ReportService.Templates.SampleBound? Bound = null);
+    ReportService.Templates.SampleBound? Bound = null,
+    int? PageNumber = null);
 
 /// <summary>Why a render could not complete, and so why nothing is said about the version.</summary>
 public enum SampleUnavailableCause

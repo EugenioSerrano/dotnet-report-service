@@ -38,6 +38,8 @@
   </Folder>
   <Folder Name="/src/Pdf/">
     <Project Path="src/Pdf/ReportService.Pdf.Assembly/ReportService.Pdf.Assembly.csproj" />
+    <Project Path="src/Pdf/ReportService.Pdf.PageCodes.Hosting/ReportService.Pdf.PageCodes.Hosting.csproj" />
+    <Project Path="src/Pdf/ReportService.Pdf.PageCodes.QrCoder/ReportService.Pdf.PageCodes.QrCoder.csproj" />
     <Project Path="src/Pdf/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
     <Project Path="src/Pdf/ReportService.Rendering/ReportService.Rendering.csproj" />
   </Folder>
@@ -66,6 +68,8 @@
   </Folder>
   <Folder Name="/tests/Pdf/">
     <Project Path="tests/Pdf/ReportService.Pdf.Assembly.Tests/ReportService.Pdf.Assembly.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Pdf.PageCodes.Hosting.Tests/ReportService.Pdf.PageCodes.Hosting.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Pdf.PageCodes.QrCoder.Tests/ReportService.Pdf.PageCodes.QrCoder.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
@@ -85,6 +89,8 @@
   </Folder>
   <Folder Name="/tests/Support/">
     <Project Path="tests/Support/ReportService.Testing/ReportService.Testing.csproj" />
+    <Project Path="tests/Support/ReportService.Testing.PageCodeFixture/ReportService.Testing.PageCodeFixture.csproj" />
+    <Project Path="tests/Support/ReportService.Testing.PageCodeFixtureDependency/ReportService.Testing.PageCodeFixtureDependency.csproj" />
     <Project Path="tests/Support/ReportService.Testing.StreamFlooder/ReportService.Testing.StreamFlooder.csproj" />
     <Project Path="tests/Support/ReportService.Fixtures.Tests/ReportService.Fixtures.Tests.csproj" />
   </Folder>

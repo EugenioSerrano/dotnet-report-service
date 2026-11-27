@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ReportService.Jobs;
 using ReportService.Pdf.Assembly;
+using ReportService.Pdf.PageCodes.Hosting;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.TemplatePackages.Packages;
@@ -30,6 +31,7 @@ public static class MergeWorkerRegistration
         services.TryAddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
         services.TryAddSingleton<TakenTemplatePackageReader>();
         services.TryAddSingleton<IPdfAssembler, PdfSharpAssembler>();
+        services.AddPageCodeGenerators(builder.Configuration);
         services.TryAddSingleton(services => new AssemblyJobMetrics(
             MeterIdentity.ForHost(TelemetryDefaults.MeterName)));
 

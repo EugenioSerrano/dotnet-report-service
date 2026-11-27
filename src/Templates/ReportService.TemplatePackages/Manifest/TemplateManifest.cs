@@ -187,6 +187,57 @@ public sealed record TemplatePdfOutput
     /// <summary>The verification the printed document must pass.</summary>
     [JsonPropertyName("verification")]
     public TemplatePdfVerification? Verification { get; init; }
+
+    /// <summary>The per-page code the assembly draws on every page, when the package declares one.</summary>
+    [JsonPropertyName("pageCode")]
+    public TemplatePageCode? PageCode { get; init; }
+}
+
+/// <summary>
+/// A per-page code: the deployment's generator it names, the options passed to that
+/// generator unchanged, the area it is drawn in and the source of its value.
+/// </summary>
+public sealed record TemplatePageCode
+{
+    /// <summary>The name of a page-code generator registered in the deployment.</summary>
+    [JsonPropertyName("generator")]
+    public string? Generator { get; init; }
+
+    /// <summary>The generator's options, passed to it unchanged.</summary>
+    [JsonPropertyName("options")]
+    public IReadOnlyDictionary<string, string>? Options { get; init; }
+
+    /// <summary>The area, in millimetres in the page's displayed frame.</summary>
+    [JsonPropertyName("area")]
+    public TemplateNumberingArea? Area { get; init; }
+
+    /// <summary>The source of the code's value.</summary>
+    [JsonPropertyName("source")]
+    public TemplatePageCodeSource? Source { get; init; }
+}
+
+/// <summary>The source of a per-page code's value.</summary>
+public sealed record TemplatePageCodeSource
+{
+    /// <summary>The value template: literals and the closed tokens.</summary>
+    [JsonPropertyName("value")]
+    public string? Value { get; init; }
+
+    /// <summary>The bounded match over the page's text, when the value uses <c>{match}</c>.</summary>
+    [JsonPropertyName("match")]
+    public TemplatePageCodeMatch? Match { get; init; }
+}
+
+/// <summary>A bounded match over a page's text.</summary>
+public sealed record TemplatePageCodeMatch
+{
+    /// <summary>The pattern.</summary>
+    [JsonPropertyName("pattern")]
+    public string? Pattern { get; init; }
+
+    /// <summary>The longest match, in characters.</summary>
+    [JsonPropertyName("maxLength")]
+    public int? MaxLength { get; init; }
 }
 
 /// <summary>The page margins of a PDF document, in millimetres.</summary>
