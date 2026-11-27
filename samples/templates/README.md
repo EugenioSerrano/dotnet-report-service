@@ -10,6 +10,8 @@ One sample template package per pilot dataset (see
 | [`pilot-liquid/`](pilot-liquid/) | the simple dataset, rendered by Liquid | A4 portrait | off | — |
 | [`pilot-grouped/`](pilot-grouped/) | the grouped dataset | A4 portrait | on (`amount`, 2 decimals) | by `groupId`, cut at group boundaries |
 | [`pilot-volume/`](pilot-volume/) | the volume dataset | A4 landscape | on (`amount`, 2 decimals) | by `groupId`, cut at group boundaries |
+| [`invoice-batch/`](invoice-batch/) | a batch of six invoices, one per page, rendered by Liquid | A4 portrait | off | — |
+| [`invoice-batch-two-up/`](invoice-batch-two-up/) | the same batch, two invoices per page, rendered by Liquid | A4 portrait | off | — |
 
 Each package contains:
 
@@ -33,6 +35,14 @@ engine; the three pilot packages (`pilot-simple`, `pilot-grouped`,
 engine of the service — a package always names its engine. `pilot-handlebars`
 and `pilot-liquid` are the same simple report in Handlebars 2.4.3 and
 Liquid/Fluid 2.40.0.
+
+**The invoice batch.** `invoice-batch` and `invoice-batch-two-up` are one
+Liquid report in two layouts: each record is an invoice with its nested lines,
+its precomputed totals, its flags and the precomputed bars of a Code 128 barcode
+of its number, printed as inline SVG. Their `sample.json` is written by hand
+(six fictitious invoices), not by the dataset generator. The pattern is
+explained in
+[Printing a batch of invoices](../../docs/template-authoring.md#printing-a-batch-of-invoices).
 
 
 **The takeable fixture family is test data, not a shipped sample.** The test
