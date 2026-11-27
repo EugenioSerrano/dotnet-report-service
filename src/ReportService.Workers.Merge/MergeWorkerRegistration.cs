@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using ReportService.Jobs;
 using ReportService.Pdf.Assembly;
 using ReportService.Pdf.PageCodes.Hosting;
@@ -27,6 +28,12 @@ public static class MergeWorkerRegistration
         var services = builder.Services;
 
         services.TryAddSingleton(TimeProvider.System);
+        builder.AddValidatedConfiguration<DocumentCapacitySettings>(DocumentCapacitySettings.SectionPath);
+        services.TryAddSingleton(static provider =>
+        {
+            var settings = provider.GetRequiredService<IOptions<DocumentCapacitySettings>>().Value;
+            return DocumentCapacity.From(settings.MaximumPages, settings.MaximumPartBytes, settings.ProfileName);
+        });
         services.TryAddSingleton<IJobStore, PostgresJobStore>();
         services.TryAddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
         services.TryAddSingleton<TakenTemplatePackageReader>();

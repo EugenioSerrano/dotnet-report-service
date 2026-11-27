@@ -21,13 +21,14 @@ namespace ReportService.Workers.Merge.Assembly;
 /// Assembles one output from its committed parts: it reads the partition and the
 /// part commits ordered by block index, refuses a partition with a missing commit,
 /// copies every part through a verifying read against its recorded size and hash,
-/// re-checks the document ceiling, resolves the job's pinned package and its
-/// numbering contract, assembles and structurally verifies the document, and only
-/// then streams the verified file to the object store under the attempt's own
-/// output key. It beats while it works, honours cancellation, removes everything it
-/// wrote on temporary disk, and observes the temporary-disk quota of three times
-/// the parts' bytes. A test-only seam can make the process exit after a chosen
-/// batch; no normal composition installs it.
+/// re-checks the deployment's configured document capacity, resolves the job's
+/// pinned package and its numbering contract, assembles and structurally verifies
+/// the document, and only then streams the verified file to the object store under
+/// the attempt's own output key. It beats while it works, honours cancellation,
+/// removes everything it wrote on temporary disk, and observes the temporary-disk
+/// quota of three times the parts' bytes plus the per-page code allowance. A
+/// test-only seam can make the process exit after a chosen batch; no normal
+/// composition installs it.
 /// </summary>
 public sealed class AssemblePdfActivity(
     IJobStore jobs,
@@ -39,9 +40,13 @@ public sealed class AssemblePdfActivity(
     ILoggerFactory loggers,
     ILogger<AssemblePdfActivity> logger,
     string? scratchRoot = null,
-    PageCodeGeneratorRegistry? pageCodes = null)
+    PageCodeGeneratorRegistry? pageCodes = null,
+    DocumentCapacity? capacity = null)
 {
     private readonly PageCodeGeneratorRegistry _pageCodes = pageCodes ?? new PageCodeGeneratorRegistry([]);
+
+    /// <summary>The deployment's document capacity this step re-checks; the example profile when none is configured.</summary>
+    public DocumentCapacity Capacity { get; } = capacity ?? DocumentCapacity.Example;
 
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "AssemblePdf";
@@ -49,7 +54,7 @@ public sealed class AssemblePdfActivity(
     /// <summary>The code a document that failed its structural verification ends with.</summary>
     public const string ArtifactIntegrityFailed = "ARTIFACT_INTEGRITY_FAILED";
 
-    /// <summary>The code an assembly over the document ceiling ends with.</summary>
+    /// <summary>The code an assembly over the configured document capacity ends with.</summary>
     public const string OutputLimitExceeded = "OUTPUT_LIMIT_EXCEEDED";
 
     /// <summary>The code a package that cannot be stamped ends with.</summary>
@@ -120,20 +125,10 @@ public sealed class AssemblePdfActivity(
 
         var totalPages = ordered.Sum(part => (long)part.PageCount);
         var totalBytes = ordered.Sum(part => part.SizeBytes);
-        if (totalPages > AssemblyLimits.MaximumPages)
+        if (Capacity.Judge(totalPages, totalBytes) is { } capacityRefusal)
         {
-            throw Refuse(
-                OutputLimitExceeded,
-                "limit=document-pages limitValue=" + AssemblyLimits.MaximumPages.ToString(CultureInfo.InvariantCulture)
-                + " reached=" + totalPages.ToString(CultureInfo.InvariantCulture));
-        }
-
-        if (totalBytes > AssemblyLimits.MaximumPartBytes)
-        {
-            throw Refuse(
-                OutputLimitExceeded,
-                "limit=document-bytes limitValue=" + AssemblyLimits.MaximumPartBytes.ToString(CultureInfo.InvariantCulture)
-                + " reached=" + totalBytes.ToString(CultureInfo.InvariantCulture));
+            LogRefusal(input.OutputId, capacityRefusal);
+            throw Refuse(OutputLimitExceeded, capacityRefusal.Reason);
         }
 
         Directory.CreateDirectory(ScratchRoot);
@@ -154,7 +149,7 @@ public sealed class AssemblePdfActivity(
             contract = null;
         }
 
-        using var work = new AssemblyTemporaryDirectory(ScratchRoot, totalBytes);
+        using var work = new AssemblyTemporaryDirectory(ScratchRoot, totalBytes, totalPages, pageCode is not null);
         using var beatEnds = new CancellationTokenSource();
         var beat = BeatAsync(beatEnds.Token);
         try
@@ -169,7 +164,9 @@ public sealed class AssemblePdfActivity(
                 AssemblyLimits.BatchSize,
                 Metrics: null,
                 OnBatch: batch => BatchWrittenAsync(work, batch, interruption, input.OutputId),
-                PageCode: pageCode);
+                PageCode: pageCode,
+                MaximumPages: Capacity.MaximumPages,
+                MaximumPartBytes: Capacity.MaximumPartBytes);
 
             AssemblyResult assembled;
             try
@@ -178,11 +175,9 @@ public sealed class AssemblePdfActivity(
             }
             catch (AssemblyLimitExceededException limit)
             {
-                throw Refuse(
-                    OutputLimitExceeded,
-                    "limit=" + limit.Limit
-                    + " limitValue=" + limit.LimitValue.ToString(CultureInfo.InvariantCulture)
-                    + " reached=" + limit.ReachedValue.ToString(CultureInfo.InvariantCulture));
+                var refused = new CapacityRefusal(limit.Limit, limit.LimitValue, limit.ReachedValue);
+                LogRefusal(input.OutputId, refused);
+                throw Refuse(OutputLimitExceeded, refused.Reason);
             }
             catch (AssemblyQuotaExceededException quota)
             {
@@ -254,12 +249,15 @@ public sealed class AssemblePdfActivity(
             assembled.Metrics.RecordOutput(written.Size);
             metrics.Record(assembled.Metrics, verdict);
             logger.LogInformation(
-                "Output {OutputId} assembled: {Pages} pages from {Parts} parts in {Batches} batches, {Bytes} bytes",
+                "Output {OutputId} assembled: {Pages} pages from {Parts} parts in {Batches} batches, {Bytes} bytes; capacity profile={CapacityProfile} pages={CapacityPages} partBytes={CapacityPartBytes}",
                 input.OutputId,
                 assembled.PageCount,
                 assembled.Metrics.Parts,
                 assembled.Metrics.Batches,
-                written.Size);
+                written.Size,
+                Capacity.ProfileName,
+                Capacity.MaximumPages,
+                Capacity.MaximumPartBytes);
             if (assembled.Metrics.CodeGenerator is { } generator)
             {
                 // The same figures the code instruments record, in one line a run can read.
@@ -284,6 +282,18 @@ public sealed class AssemblePdfActivity(
             await beat.ConfigureAwait(false);
         }
     }
+
+    /// <summary>Logs a capacity refusal with the profile in force - the profile is a log field, never a metric tag.</summary>
+    private void LogRefusal(string outputId, CapacityRefusal refusal) =>
+        logger.LogWarning(
+            "Output {OutputId} refused for capacity: limit={Limit} configured={LimitValue} reached={ReachedValue}; capacity profile={CapacityProfile} pages={CapacityPages} partBytes={CapacityPartBytes}",
+            outputId,
+            refusal.Limit,
+            refusal.LimitValue,
+            refusal.ReachedValue,
+            Capacity.ProfileName,
+            Capacity.MaximumPages,
+            Capacity.MaximumPartBytes);
 
     /// <summary>Orders the commits by block index and refuses a partition with a gap, a duplicate or a foreign block.</summary>
     /// <param name="commits">The output's part commits, in any order.</param>

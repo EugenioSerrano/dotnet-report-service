@@ -96,6 +96,12 @@ public static class OrchestrationWorkerRegistration
     public static IHostApplicationBuilder AddReportJobWork(this IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        builder.AddValidatedConfiguration<DocumentCapacitySettings>(DocumentCapacitySettings.SectionPath);
+        builder.Services.TryAddSingleton(static provider =>
+        {
+            var settings = provider.GetRequiredService<IOptions<DocumentCapacitySettings>>().Value;
+            return DocumentCapacity.From(settings.MaximumPages, settings.MaximumPartBytes, settings.ProfileName);
+        });
         builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
         builder.AddValidatedConfiguration<InputWaitOptions>(InputWaitOptions.SectionPath);
         builder.Services.AddSingleton<ReportJobActivities>();

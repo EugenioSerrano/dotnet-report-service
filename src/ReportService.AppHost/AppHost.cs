@@ -254,6 +254,23 @@ var api = builder.AddProject<Projects.ReportService_Api>("api")
     .WithHttpHealthCheck("/health")
     .WithReference(orchestrationWorker);
 
+// The single-document capacity is one profile for every process that judges a document's
+// size: the render worker's part commits, the merge worker's re-check, and the two processes
+// that build the same job store. A value given to one and not the others would be a defect of
+// the composition. The composition configures none by default - every process then runs the
+// example profile - and forwards a capacity only when its own configuration states one (a run
+// that sizes a document against a capacity of its own).
+foreach (var setting in new[] { "MaximumPages", "MaximumPartBytes", "ProfileName" })
+{
+    if (builder.Configuration["DocumentCapacity:" + setting] is { Length: > 0 } capacityValue)
+    {
+        renderWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+        mergeWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+        orchestrationWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+        api.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+    }
+}
+
 // A consumer registry file other than the API's own (for example, one a test writes).
 if (builder.Configuration["Consumers:File"] is { Length: > 0 } registryFile)
 {

@@ -54,6 +54,13 @@ public abstract class JobStoreContract : IAsyncLifetime
     /// <param name="cancellationToken">The test's cancellation token.</param>
     protected abstract Task<(IJobStore Jobs, IUploadStore Uploads)> CreateStoresAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Creates a job store over the same upload records as <see cref="Store"/>, judging part
+    /// commits against <paramref name="capacity"/> instead of the example profile.
+    /// </summary>
+    /// <param name="capacity">The document capacity the store is configured with.</param>
+    protected abstract IJobStore CreateStoreAtCapacity(DocumentCapacity capacity);
+
     /// <summary>Releases what <see cref="CreateStoresAsync"/> created, when the stores hold anything.</summary>
     /// <param name="jobs">The job records.</param>
     /// <param name="uploads">The upload records.</param>
@@ -544,12 +551,12 @@ public abstract class JobStoreContract : IAsyncLifetime
     }
 
     /// <summary>
-    /// The document ceiling at the commit: a commit at the limit succeeds, the first
-    /// commit that would pass it writes no row and fails the output with the limit, its
-    /// value and the reached value - never a data value.
+    /// The example capacity at the commit, when the deployment configures none: a commit at
+    /// the example's pages succeeds, the first commit that would pass it writes no row and
+    /// fails the output with the limit, its value and the reached value - never a data value.
     /// </summary>
     [Fact]
-    public async Task ACommitThatWouldPassTheDocumentCeilingIsRefusedAndFailsTheOutput()
+    public async Task WithNoConfiguredCapacityACommitThatWouldPassTheExampleIsRefusedAndFailsTheOutput()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
@@ -557,7 +564,7 @@ public abstract class JobStoreContract : IAsyncLifetime
         await Store.TransitionOutputAsync(acceptance.Outputs[0].OutputId, Now, cancellationToken);
 
         var atLimit = await Store.CommitPartAsync(
-            Commit(acceptance.Outputs[0].OutputId, blockIndex: 0) with { PageCount = DocumentCeiling.MaximumPages },
+            Commit(acceptance.Outputs[0].OutputId, blockIndex: 0) with { PageCount = DocumentCapacity.ExamplePages },
             cancellationToken);
         Assert.Equal(PartCommitOutcome.Committed, atLimit.Outcome);
 
@@ -566,9 +573,9 @@ public abstract class JobStoreContract : IAsyncLifetime
             cancellationToken);
 
         Assert.Equal(PartCommitOutcome.LimitExceeded, over.Outcome);
-        Assert.Equal(DocumentCeiling.PagesLimit, over.Limit);
-        Assert.Equal(DocumentCeiling.MaximumPages, over.LimitValue);
-        Assert.Equal(DocumentCeiling.MaximumPages + 1, over.ReachedValue);
+        Assert.Equal(DocumentCapacity.PagesLimit, over.Limit);
+        Assert.Equal(DocumentCapacity.ExamplePages, over.LimitValue);
+        Assert.Equal(DocumentCapacity.ExamplePages + 1, over.ReachedValue);
         Assert.Null(await Store.FindPartAsync(acceptance.Outputs[0].OutputId, 1, cancellationToken));
 
         var state = await Store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken);
@@ -576,6 +583,83 @@ public abstract class JobStoreContract : IAsyncLifetime
         Assert.Equal(OutputStatus.Failed, output.Status);
         Assert.Equal("OUTPUT_LIMIT_EXCEEDED", output.ErrorCode);
         Assert.Contains("limit=document-pages", output.ErrorReason, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A configured page capacity at the commit: commits that reach exactly the configured
+    /// pages succeed, and the first commit that would pass them is refused with the
+    /// configured value - not the example's - and fails the output.
+    /// </summary>
+    [Fact]
+    public async Task ACommitAtTheConfiguredPagesSucceedsAndOnePageMoreIsRefused()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = CreateStoreAtCapacity(new DocumentCapacity(5, long.MaxValue, "contract-pages"));
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await store.AcceptAsync(acceptance, Now, cancellationToken);
+        var outputId = acceptance.Outputs[0].OutputId;
+        await store.TransitionOutputAsync(outputId, Now, cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.Committed, (await store.CommitPartAsync(Commit(outputId, 0) with { PageCount = 3 }, cancellationToken)).Outcome);
+        Assert.Equal(PartCommitOutcome.Committed, (await store.CommitPartAsync(Commit(outputId, 1) with { PageCount = 2 }, cancellationToken)).Outcome);
+        var over = await store.CommitPartAsync(Commit(outputId, 2) with { PageCount = 1 }, cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.LimitExceeded, over.Outcome);
+        Assert.Equal(DocumentCapacity.PagesLimit, over.Limit);
+        Assert.Equal(5, over.LimitValue);
+        Assert.Equal(6, over.ReachedValue);
+        Assert.Null(await store.FindPartAsync(outputId, 2, cancellationToken));
+        var output = Assert.Single((await store.FindForWorkflowAsync(acceptance.ReportJobId, cancellationToken))!.Outputs);
+        Assert.Equal(OutputStatus.Failed, output.Status);
+        Assert.Equal("OUTPUT_LIMIT_EXCEEDED", output.ErrorCode);
+        Assert.Equal("limit=document-pages limitValue=5 reached=6", output.ErrorReason);
+    }
+
+    /// <summary>
+    /// A configured parts-bytes capacity at the commit: commits that reach exactly the
+    /// configured bytes succeed, and one byte more is refused with the configured value.
+    /// </summary>
+    [Fact]
+    public async Task ACommitAtTheConfiguredBytesSucceedsAndOneByteMoreIsRefused()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var store = CreateStoreAtCapacity(new DocumentCapacity(int.MaxValue, 2_048, "contract-bytes"));
+        var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+        await store.AcceptAsync(acceptance, Now, cancellationToken);
+        var outputId = acceptance.Outputs[0].OutputId;
+        await store.TransitionOutputAsync(outputId, Now, cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.Committed, (await store.CommitPartAsync(Commit(outputId, 0) with { SizeBytes = 1_024 }, cancellationToken)).Outcome);
+        Assert.Equal(PartCommitOutcome.Committed, (await store.CommitPartAsync(Commit(outputId, 1) with { SizeBytes = 1_024 }, cancellationToken)).Outcome);
+        var over = await store.CommitPartAsync(Commit(outputId, 2) with { SizeBytes = 1 }, cancellationToken);
+
+        Assert.Equal(PartCommitOutcome.LimitExceeded, over.Outcome);
+        Assert.Equal(DocumentCapacity.BytesLimit, over.Limit);
+        Assert.Equal(2_048, over.LimitValue);
+        Assert.Equal(2_049, over.ReachedValue);
+    }
+
+    /// <summary>
+    /// The capacity is the configuration, not a constant: the same commits pass under one
+    /// configured value and are refused under another.
+    /// </summary>
+    [Fact]
+    public async Task TheSameCommitsPassOneConfiguredCapacityAndAreRefusedByAnother()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var outcomes = new List<PartCommitOutcome>();
+        foreach (var pages in new[] { 4, 3 })
+        {
+            var store = CreateStoreAtCapacity(new DocumentCapacity(pages, long.MaxValue, "contract-" + pages));
+            var acceptance = Acceptance(await SeedAsync(UploadState.Ready, cancellationToken: cancellationToken));
+            await store.AcceptAsync(acceptance, Now, cancellationToken);
+            var outputId = acceptance.Outputs[0].OutputId;
+            await store.TransitionOutputAsync(outputId, Now, cancellationToken);
+            await store.CommitPartAsync(Commit(outputId, 0) with { PageCount = 2 }, cancellationToken);
+            outcomes.Add((await store.CommitPartAsync(Commit(outputId, 1) with { PageCount = 2 }, cancellationToken)).Outcome);
+        }
+
+        Assert.Equal([PartCommitOutcome.Committed, PartCommitOutcome.LimitExceeded], outcomes);
     }
 
     /// <summary>

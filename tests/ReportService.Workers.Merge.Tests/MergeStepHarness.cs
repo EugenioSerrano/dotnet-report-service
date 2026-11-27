@@ -156,7 +156,8 @@ internal sealed class MergeStepHarness : IDisposable
     /// <summary>The step over the harness's stores and a real assembler.</summary>
     public AssemblePdfActivity Activity(
         AssemblyInterruption? interruption = null,
-        ReportService.Pdf.Verification.PageCodes.PageCodeGeneratorRegistry? pageCodes = null)
+        ReportService.Pdf.Verification.PageCodes.PageCodeGeneratorRegistry? pageCodes = null,
+        DocumentCapacity? capacity = null)
     {
         var activity = new AssemblePdfActivity(
             _jobs,
@@ -168,7 +169,8 @@ internal sealed class MergeStepHarness : IDisposable
             NullLoggerFactory.Instance,
             NullLogger<AssemblePdfActivity>.Instance,
             Path.Combine(_root, "scratch"),
-            pageCodes)
+            pageCodes,
+            capacity)
         {
             Interruption = interruption,
         };

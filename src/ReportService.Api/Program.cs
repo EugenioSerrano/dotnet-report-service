@@ -42,6 +42,12 @@ builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();
 
 // Report jobs: acceptance stores the job, its output, its template reference and its start
 // request in one transaction of the same database, and answers only after that commit.
+builder.AddValidatedConfiguration<DocumentCapacitySettings>(DocumentCapacitySettings.SectionPath);
+builder.Services.TryAddSingleton(static provider =>
+{
+    var settings = provider.GetRequiredService<IOptions<DocumentCapacitySettings>>().Value;
+    return DocumentCapacity.From(settings.MaximumPages, settings.MaximumPartBytes, settings.ProfileName);
+});
 builder.Services.AddSingleton<IJobStore, PostgresJobStore>();
 builder.Services.AddSingleton<JobAcceptanceMetrics>();
 

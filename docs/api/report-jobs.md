@@ -102,13 +102,15 @@ the stage never move back either. A job that ends `failed` carries the stable
 code of the condition on itself, and its PDF output carries the same code; the
 answer itself still succeeds with `200`.
 
-### A report beyond the document limits
+### A report beyond the document capacity
 
-A PDF report whose assembled document would exceed the published document limits -
-**10 000 pages**, or **37 748 736 bytes** of rendered parts, whichever is reached
-first - ends `failed` with `OUTPUT_LIMIT_EXCEEDED`, on the job and on its PDF output,
-before anything is published: no artifact, no partial file, nothing to download. The
-stored diagnostic names the limit, the limit's value and the value the report reached:
+A PDF report whose assembled document would exceed the deployment's configured document
+capacity - pages or bytes of rendered parts, whichever is reached first; **10 000 pages**
+or **37 748 736 bytes** when the deployment configures none (see
+[document capacity](../document-capacity.md)) - ends `failed` with
+`OUTPUT_LIMIT_EXCEEDED`, on the job and on its PDF output, before anything is published:
+no artifact, no partial file, nothing to download. The stored diagnostic names the
+limit, its configured value and the value the report reached:
 
 ```text
 limit=document-pages limitValue=10000 reached=10183
@@ -117,7 +119,7 @@ limit=document-pages limitValue=10000 reached=10183
 The same diagnostic names `document-bytes` when the byte total was what crossed the
 bound. In this version `errorMessage` is `null` for that code; the diagnostic is kept
 with the failure and the code is the stable value a client branches on. A report within
-the limits is printed from one or more blocks.
+the configured capacity is printed from one or more blocks.
 
 ### The message of a report refused by the row bound
 

@@ -22,6 +22,7 @@ public sealed partial class InMemoryJobStore : IJobStore
 
     private readonly Lock _gate = new();
     private readonly IUploadStore _uploads;
+    private readonly DocumentCapacity _capacity;
     private readonly Dictionary<string, ReportJobRecord> _jobs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ReportOutputRecord> _outputs = new(StringComparer.Ordinal);
     // The order each output was inserted in, so a job's outputs read back in the order the
@@ -43,10 +44,12 @@ public sealed partial class InMemoryJobStore : IJobStore
 
     /// <summary>Creates the store over the upload records it checks an acceptance against.</summary>
     /// <param name="uploads">The upload records, as the service holds them.</param>
-    public InMemoryJobStore(IUploadStore uploads)
+    /// <param name="capacity">The document capacity a part commit is judged against; the example profile when none is given.</param>
+    public InMemoryJobStore(IUploadStore uploads, DocumentCapacity? capacity = null)
     {
         ArgumentNullException.ThrowIfNull(uploads);
         _uploads = uploads;
+        _capacity = capacity ?? DocumentCapacity.Example;
     }
 
     /// <summary>A start request the store recorded when a job was accepted.</summary>

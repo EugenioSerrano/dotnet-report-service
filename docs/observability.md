@@ -205,3 +205,24 @@ with no destination still has points to show.
 5. Add the assertion to the matching test project: the hermetic suite for what
    can be checked in-process, the end-to-end suite for what needs the running
    composition.
+
+## PDF assembly
+
+The merge worker records, for every assembled PDF document, the figures of its
+assembly as metrics on its own meter (`reportservice.pdf.assembly.*`): the time of
+each stage (`duration`, tagged `stage` = `inputs`, `batches`, `final-merge`,
+`verification`), the parts, pages and staging batches, the temporary-disk peak, the
+output's size, the peak managed heap and working set, the verification verdict, the
+per-page code figures when the template declares one, and the document capacity the
+assembly was admitted against:
+
+| Instrument | Unit | Meaning |
+|------------|------|---------|
+| `reportservice.pdf.assembly.capacity_pages` | `{page}` | The configured page capacity |
+| `reportservice.pdf.assembly.capacity_part_bytes` | `By` | The configured parts-bytes capacity |
+
+Every tag is a fixed word. The deployment's capacity profile name is free text, so it
+is never a tag: it is written to the merge worker's log on every assembly
+(`capacity profile=… pages=… partBytes=…`) and on every refusal for capacity, beside
+the limit, its configured value and the value reached. See
+[document capacity](document-capacity.md).

@@ -79,7 +79,8 @@ public sealed class PdfSharpAssembler : IPdfAssembler
 
         var metrics = request.Metrics ?? new AssemblyMetrics();
         metrics.Begin(request.Parts, request.Numbering, request.PageCode);
-        RefuseOverCeiling(request.Parts);
+        metrics.RecordCapacity(request.MaximumPages, request.MaximumPartBytes);
+        RefuseOverCapacity(request);
         EnsureResolver();
         var face = request.Numbering is { } numbering ? PackagedFontResolver.Instance.Register(numbering.Font) : null;
         var staging = Path.Combine(request.TemporaryRoot, "staging");
@@ -107,20 +108,23 @@ public sealed class PdfSharpAssembler : IPdfAssembler
         }
     }
 
-    /// <summary>Refuses a part set that could only produce a document over the ceiling.</summary>
-    /// <param name="parts">The parts.</param>
-    private static void RefuseOverCeiling(IReadOnlyList<AssemblyPart> parts)
+    /// <summary>
+    /// Refuses a part set that could only produce a document over the capacity the caller
+    /// configured; a request that names no capacity is not checked here.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    private static void RefuseOverCapacity(AssemblyRequest request)
     {
-        var pages = parts.Sum(part => (long)part.PageCount);
-        if (pages > AssemblyLimits.MaximumPages)
+        var pages = request.Parts.Sum(part => (long)part.PageCount);
+        if (request.MaximumPages is { } maximumPages && pages > maximumPages)
         {
-            throw new AssemblyLimitExceededException("document-pages", AssemblyLimits.MaximumPages, pages);
+            throw new AssemblyLimitExceededException("document-pages", maximumPages, pages);
         }
 
-        var bytes = parts.Sum(part => part.SizeBytes);
-        if (bytes > AssemblyLimits.MaximumPartBytes)
+        var bytes = request.Parts.Sum(part => part.SizeBytes);
+        if (request.MaximumPartBytes is { } maximumBytes && bytes > maximumBytes)
         {
-            throw new AssemblyLimitExceededException("document-bytes", AssemblyLimits.MaximumPartBytes, bytes);
+            throw new AssemblyLimitExceededException("document-bytes", maximumBytes, bytes);
         }
     }
 

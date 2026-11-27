@@ -229,7 +229,7 @@ public sealed partial class InMemoryJobStore
                 return Task.FromResult(new PartCommitResult(PartCommitOutcome.AlreadyCommitted, existing));
             }
 
-            // The ceiling is checked from the insert-once rows, as the database does; a commit
+            // The capacity is checked from the insert-once rows, as the database does; a commit
             // that would pass it writes nothing and fails the output with the limit, its value
             // and the reached value - never a data value.
             var committedParts = _parts.Values
@@ -238,15 +238,9 @@ public sealed partial class InMemoryJobStore
                 .ToList();
             var reachedPages = committedParts.Sum(part => (long)part.PageCount) + commit.PageCount;
             var reachedBytes = committedParts.Sum(part => part.SizeBytes) + commit.SizeBytes;
-            if (reachedPages > DocumentCeiling.MaximumPages || reachedBytes > DocumentCeiling.MaximumBytes)
+            if (_capacity.Judge(reachedPages, reachedBytes) is { } refusal)
             {
-                var pagesOver = reachedPages > DocumentCeiling.MaximumPages;
-                var limit = pagesOver ? DocumentCeiling.PagesLimit : DocumentCeiling.BytesLimit;
-                var limitValue = pagesOver ? DocumentCeiling.MaximumPages : DocumentCeiling.MaximumBytes;
-                var reached = pagesOver ? reachedPages : reachedBytes;
-                var reason = "limit=" + limit
-                    + " limitValue=" + limitValue.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " reached=" + reached.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var reason = refusal.Reason;
                 if (_outputs.TryGetValue(commit.OutputId, out var failedOutput))
                 {
                     _outputs[commit.OutputId] = failedOutput with
@@ -260,9 +254,9 @@ public sealed partial class InMemoryJobStore
 
                 return Task.FromResult(new PartCommitResult(PartCommitOutcome.LimitExceeded, null)
                 {
-                    Limit = limit,
-                    LimitValue = limitValue,
-                    ReachedValue = reached,
+                    Limit = refusal.Limit,
+                    LimitValue = refusal.LimitValue,
+                    ReachedValue = refusal.ReachedValue,
                 });
             }
 

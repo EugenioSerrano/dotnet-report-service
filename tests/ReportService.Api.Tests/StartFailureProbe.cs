@@ -75,6 +75,7 @@ internal sealed class StartFailureProbe : IDisposable
         builder.AddConsumerRegistry();
         builder.AddObjectStorage("api");
         builder.AddValidatedConfiguration<UploadOptions>(UploadOptions.SectionPath);
+        builder.AddValidatedConfiguration<DocumentCapacitySettings>(DocumentCapacitySettings.SectionPath);
         builder.AddHighPriorityPolicy();
 
         replacements?.Invoke(builder.Services);

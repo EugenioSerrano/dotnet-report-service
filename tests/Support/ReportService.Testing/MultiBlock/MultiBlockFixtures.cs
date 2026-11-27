@@ -22,17 +22,30 @@ public static class MultiBlockFixtures
     /// <summary>The record field the page totals sum.</summary>
     public const string AmountField = PageAccountingFixtures.AmountField;
 
-    /// <summary>The groups the over-ceiling snapshot holds: enough blocks to cross the page limit.</summary>
-    public const int OverCeilingGroups = 47;
+    /// <summary>
+    /// The records one capacity group holds: above the governed soft target, so under the
+    /// group-boundary cut one group is one block, and below the hard maximum.
+    /// </summary>
+    public const int CapacityGroupSize = 1_100;
 
-    /// <summary>The records one over-ceiling group holds: one block at the governed limits.</summary>
-    public const int OverCeilingGroupSize = 1_300;
+    /// <summary>The groups the over-capacity snapshot holds: three blocks, so the crossing comes after a committed block.</summary>
+    public const int OverCapacityGroups = 3;
 
-    /// <summary>The records the over-ceiling snapshot holds.</summary>
-    public const int OverCeilingRecords = OverCeilingGroups * OverCeilingGroupSize;
+    /// <summary>The records the over-capacity snapshot holds.</summary>
+    public const int OverCapacityRecords = OverCapacityGroups * CapacityGroupSize;
 
-    /// <summary>The published page limit the over-ceiling fixture is derived to cross.</summary>
-    public const int OverCeilingPageLimit = 10_000;
+    /// <summary>
+    /// The page capacity the over-capacity case configures: above one block of
+    /// <see cref="CapacityPackage"/> (about 184 pages) and below two, so the second
+    /// block's commit is the one that crosses it.
+    /// </summary>
+    public const int OverCapacityPageLimit = 300;
+
+    /// <summary>The groups the exact-capacity snapshot holds: two blocks, so the document is assembled.</summary>
+    public const int ExactCapacityGroups = 2;
+
+    /// <summary>The records the exact-capacity snapshot holds.</summary>
+    public const int ExactCapacityRecords = ExactCapacityGroups * CapacityGroupSize;
 
     /// <summary>
     /// A grouped snapshot of <paramref name="records"/> records and the records' own amount
@@ -55,24 +68,23 @@ public static class MultiBlockFixtures
         PageAccountingFixtures.Files(owner, templateId, amountField ?? AmountField);
 
     /// <summary>
-    /// The over-ceiling snapshot, derived from the published page limit, never guessed:
-    /// <see cref="OverCeilingGroups"/> groups of <see cref="OverCeilingGroupSize"/> records
-    /// each. Under the governed soft target the cut waits for a group boundary, so one
-    /// group is one block, and <see cref="OverCeilingPackage"/> prints six rows to a page:
-    /// 1 300 records give about 217 pages a block - inside the block's 224-page envelope -
-    /// and 47 blocks cross the 10 000-page limit before their part bytes cross the byte
-    /// limit (the pages carry six short rows, well under the ceiling's own relation of
-    /// 37 748 736 bytes to 10 001 pages). The oracle is empty: the case asserts the
-    /// refusal, not the totals of a document that is never published.
+    /// A capacity snapshot: <paramref name="groups"/> groups of <see cref="CapacityGroupSize"/>
+    /// records each. Under the governed soft target the cut waits for a group boundary, so
+    /// one group is one block, and <see cref="CapacityPackage"/> prints six rows to a page:
+    /// 1 100 records give about 184 pages a block, inside the block's page envelope, and the
+    /// page dimension is reached long before the bytes one. The page count a case relies on
+    /// is read from the run, never assumed from this estimate. The oracle is empty: the
+    /// cases assert the capacity outcome, not the totals.
     /// </summary>
-    public static (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) OverCeilingSnapshot()
+    /// <param name="groups">How many groups, and so blocks, the snapshot holds.</param>
+    public static (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) CapacitySnapshot(int groups)
     {
         var items = new JsonArray();
         long sequence = 0;
-        for (var group = 1; group <= OverCeilingGroups; group++)
+        for (var group = 1; group <= groups; group++)
         {
             var groupId = "G" + group.ToString("D4", CultureInfo.InvariantCulture);
-            for (var index = 0; index < OverCeilingGroupSize; index++)
+            for (var index = 0; index < CapacityGroupSize; index++)
             {
                 sequence++;
                 items.Add(new JsonObject
@@ -89,9 +101,9 @@ public static class MultiBlockFixtures
 
         var header = new JsonObject
         {
-            ["reportTitle"] = "Over-ceiling statement",
+            ["reportTitle"] = "Capacity statement",
             ["currency"] = "ARS",
-            ["totals"] = new JsonObject { ["recordCount"] = OverCeilingRecords },
+            ["totals"] = new JsonObject { ["recordCount"] = groups * CapacityGroupSize },
         };
         var snapshot = new JsonObject
         {
@@ -103,13 +115,13 @@ public static class MultiBlockFixtures
     }
 
     /// <summary>
-    /// The over-ceiling package: the same accounting package with rows tall enough to print
-    /// six to a page, so the page limit is the one the fixture crosses. The row keeps its
+    /// The capacity package: the same accounting package with rows tall enough to print
+    /// six to a page, so the page dimension is the one the capacity cases reach. The row keeps its
     /// accounting marks and its no-split rule; only its height changes.
     /// </summary>
     /// <param name="owner">The consumer that owns the version.</param>
     /// <param name="templateId">The template identity the fixture publishes.</param>
-    public static Dictionary<string, byte[]> OverCeilingPackage(string owner, string templateId)
+    public static Dictionary<string, byte[]> CapacityPackage(string owner, string templateId)
     {
         var files = PageAccountingFixtures.Files(owner, templateId, AmountField);
         files["html/styles.css"] = Encoding.UTF8.GetBytes(

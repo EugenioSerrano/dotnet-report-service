@@ -40,6 +40,9 @@ described in full, and the README links to it rather than repeating it.
   process reports, and where they go.
 - [`limitations.md`](limitations.md) — what this version does not do, and what
   removes each limitation.
+- [`document-capacity.md`](document-capacity.md) — how large one PDF document may
+  be: the deployment's configured capacity, the measured figures, and what to do
+  above it.
 
 ### Operations runbooks
 

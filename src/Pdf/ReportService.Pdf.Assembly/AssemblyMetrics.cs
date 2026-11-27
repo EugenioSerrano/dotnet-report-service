@@ -69,6 +69,21 @@ public sealed class AssemblyMetrics
     /// <summary>How many pages' codes could not be drawn.</summary>
     public int CodeFailures { get; private set; }
 
+    /// <summary>The page capacity the assembly was admitted against, when the caller configured one.</summary>
+    public int? CapacityPages { get; private set; }
+
+    /// <summary>The parts-bytes capacity the assembly was admitted against, when the caller configured one.</summary>
+    public long? CapacityPartBytes { get; private set; }
+
+    /// <summary>Records the capacity the assembly was admitted against.</summary>
+    /// <param name="pages">The configured page capacity, if any.</param>
+    /// <param name="partBytes">The configured parts-bytes capacity, if any.</param>
+    public void RecordCapacity(int? pages, long? partBytes)
+    {
+        CapacityPages = pages;
+        CapacityPartBytes = partBytes;
+    }
+
     /// <summary>Records the figures of the parts and the font.</summary>
     /// <param name="parts">The parts, in manifest order.</param>
     /// <param name="numbering">The numbering contract.</param>

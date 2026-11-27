@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The size of one PDF document is now the deployment's configured capacity,
+  `DocumentCapacity:MaximumPages`, `DocumentCapacity:MaximumPartBytes` and
+  `DocumentCapacity:ProfileName`, instead of a value compiled into the service. A
+  deployment that configures none runs the example values, which equal the former
+  bound (10 000 pages or 37 748 736 bytes of rendered parts), so behaviour is unchanged
+  until a deployment states its own. `OUTPUT_LIMIT_EXCEEDED` keeps its code and its
+  diagnostic, which now names the configured value. The assembly's temporary-disk quota
+  adds 16 KiB per page when the template declares a per-page code. Every assembly
+  records the capacity it was admitted against. A new page, `docs/document-capacity.md`,
+  describes the settings, the answer above a deployment's capacity and the separation of
+  document size from concurrency, and holds the figures of one document's assembly at
+  10 000 and 50 000 pages with per-page codes - a lower bound, measured on synthetic
+  pages. A job of about 50 000 pages does not yet complete end to end (see
+  `docs/limitations.md`).
 - A job request may declare a `priority` of `low`, `normal` or `high`; a request that
   declares none is created at `normal`, and any other value is refused with
   `400 REQUEST_INVALID` naming the field. The priority is fixed when the job is accepted,
