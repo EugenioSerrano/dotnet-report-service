@@ -45,8 +45,9 @@ public static class TemplateResolutionRegistration
 
         // The second registration on the queue: the same engine worker serves it,
         // with the one concurrency the PDF queue runs at.
+        var queue = TemplateResolutionActivityOptions.ServedQueue(ServedClassOptions.Read(builder));
         builder.Services.AddSingleton(services => new TaskQueueWork(
-            TemplateResolutionActivityOptions.Queue,
+            queue,
             options =>
             {
                 options.MaxConcurrentActivities = 1;

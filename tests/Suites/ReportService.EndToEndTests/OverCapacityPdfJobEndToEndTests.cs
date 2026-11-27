@@ -34,8 +34,59 @@ public sealed class OverCapacityPdfJobEndToEndTests : IDisposable
             "--DocumentCapacity:ProfileName=e2e-over-capacity",
         ]);
 
+    // The same capacity, with one render and one merge worker per priority class.
+    private readonly MultiBlockStage _priorityStage = new(
+        accounted: true,
+        templateId: "over-capacity",
+        snapshotFactory: _ => MultiBlockFixtures.CapacitySnapshot(MultiBlockFixtures.OverCapacityGroups),
+        packageFactory: MultiBlockFixtures.CapacityPackage,
+        compositionArguments:
+        [
+            "--DocumentCapacity:MaximumPages=" + MultiBlockFixtures.OverCapacityPageLimit.ToString(CultureInfo.InvariantCulture),
+            "--DocumentCapacity:ProfileName=e2e-over-capacity",
+            "--Composition:PriorityClassWorkers=true",
+        ]);
+
     /// <inheritdoc />
-    public void Dispose() => _stage.Dispose();
+    public void Dispose()
+    {
+        _stage.Dispose();
+        _priorityStage.Dispose();
+    }
+
+    /// <summary>
+    /// Priority never changes the document-size capacity: the same document beyond the configured
+    /// pages, submitted at low and at high, fails with the same limit error and publishes nothing.
+    /// </summary>
+    [Fact]
+    public async Task TheSameDocumentBeyondTheCapacityFailsTheSameWayAtLowAndAtHigh()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var composition = await _priorityStage.StartAsync(cancellationToken);
+        await _priorityStage.TakeTemplateAsync(composition, cancellationToken);
+
+        var jobs = new List<string>();
+        foreach (var priority in new[] { "low", "high" })
+        {
+            var uploadId = await _priorityStage.SeedConfirmingUploadAsync(composition, cancellationToken, MultiBlockFixtures.OverCapacityRecords);
+            jobs.Add(await _priorityStage.SubmitAsync(composition, uploadId, cancellationToken, priority: priority));
+            await _priorityStage.CompleteUploadAsync(composition, uploadId, cancellationToken);
+        }
+
+        var ended = new List<MultiBlockStage.EndedJob>();
+        foreach (var job in jobs)
+        {
+            ended.Add(await _priorityStage.WaitForEndAsync(composition, job, cancellationToken, OverCapacityDeadline));
+        }
+
+        Assert.All(ended, job =>
+        {
+            Assert.Equal("FAILED", job.Status);
+            Assert.Equal(AssemblePdfActivity.OutputLimitExceeded, job.OutputErrorCode);
+            Assert.Null(job.ArtifactId);
+        });
+        Assert.Equal(ended[0].OutputErrorCode, ended[1].OutputErrorCode);
+    }
 
     [Fact]
     public async Task ADocumentBeyondTheConfiguredPagesFailsWithTheLimitErrorNamingTheConfiguredValueAndPublishesNothing()

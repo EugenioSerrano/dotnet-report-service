@@ -648,7 +648,12 @@ public sealed class OrchestrationWorkerEngineWorkerTests : IDisposable
         Assert.Equal(3, plan.Count);
         Assert.Equal("report-orchestration", plan[0].Queue);
         Assert.Equal(4, plan[0].Options.Workflows.Count);
-        Assert.Equal(20, plan[0].Options.Activities.Count);
+        // Twenty activities before priority dispatch, and the three dispatch steps: reading the
+        // job's class and aging wait, sampling an output's pending work, and the promotion.
+        Assert.Equal(23, plan[0].Options.Activities.Count);
+        Assert.Contains(plan[0].Options.Activities, activity => activity.Name == "ReadJobDispatch");
+        Assert.Contains(plan[0].Options.Activities, activity => activity.Name == "ReadPendingDispatch");
+        Assert.Contains(plan[0].Options.Activities, activity => activity.Name == "PromoteToNormal");
         Assert.Contains(
             plan[0].Options.Activities,
             activity => activity.Name == TemplateResolutionActivities.ReadPageCodeDeclarationName);

@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A job's PDF work is now dispatched by its priority class. Each class has its own
+  render queue and its own merge queue (`report-pdf-rendering-high`,
+  `report-pdf-rendering`, `report-pdf-rendering-low`, and the same for merge); the
+  normal class keeps the existing names, so a deployment that sets no priority runs
+  as before. A render or merge worker serves the one class `Priority:ServedClass`
+  names (`normal` when absent); capacity per class is dedicated and its amount is
+  the deployment's. A `low` job whose work has waited `Priority:Aging:Wait` (default
+  10 minutes) is promoted to `normal` for the work it sends afterwards; work already
+  sent completes where it is. Three instruments are added:
+  `reportservice.taskqueue.pending`, `reportservice.taskqueue.schedule_to_start.duration`
+  and `reportservice.job.priority.promotions`. See
+  `docs/operations/priority-and-per-class-capacity.md`.
+
 - The size of one PDF document is now the deployment's configured capacity,
   `DocumentCapacity:MaximumPages`, `DocumentCapacity:MaximumPartBytes` and
   `DocumentCapacity:ProfileName`, instead of a value compiled into the service. A

@@ -343,6 +343,10 @@ by name, though a pre-release named exactly is used if the take accepts it.
 
 ### The priority and the deployment's restriction of `high`
 
+How a priority orders the job's work, how a waiting `low` job is promoted to `normal`
+for its later work, and how a deployment provides capacity per class are described in
+[`../operations/priority-and-per-class-capacity.md`](../operations/priority-and-per-class-capacity.md).
+
 Any declared consumer may ask for any of the three levels. A deployment **may** restrict
 `high` with the setting `Jobs:Priority:High:Restriction`:
 

@@ -55,12 +55,20 @@ public static class MergeWorkerRegistration
             return activity;
         });
 
+        var queue = AssemblyStepOptions.ServedQueue(ServedClassOptions.Read(builder));
+
+        // The schedule-to-start latency of every assembly attempt, recorded once per attempt.
+        services.TryAddSingleton(static _ => new ScheduleToStartRecorder(
+            MeterIdentity.ForHost(TelemetryDefaults.MeterName),
+            "merge",
+            static taskQueue => JobWireValues.ToWire(PriorityTaskQueues.ClassOf(taskQueue))));
         services.AddSingleton(provider => new TaskQueueWork(
-            AssemblyStepOptions.Queue,
+            queue,
             options =>
             {
                 options.MaxConcurrentActivities = 1;
                 options.AddAllActivities(provider.GetRequiredService<AssemblePdfActivity>());
+                options.Interceptors = [.. options.Interceptors ?? [], new ScheduleToStartInterceptor(provider.GetRequiredService<ScheduleToStartRecorder>())];
             }));
 
         return builder;

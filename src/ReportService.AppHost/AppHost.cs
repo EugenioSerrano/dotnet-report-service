@@ -118,7 +118,7 @@ var renderWorkerOtlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"]
 // PDF worker: connects to the engine on the PDF rendering queue; ready once Chromium
 // launched and the engine answers. It uses no metadata record yet, so it has no
 // database setting and no database check.
-var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repository, renderWorkerImage.Tag)
+IResourceBuilder<ContainerResource> AddRenderWorker(string name) => builder.AddContainer(name, renderWorkerImage.Repository, renderWorkerImage.Tag)
     .WithImagePullPolicy(ImagePullPolicy.Never)
     // The watchdog's remedy: a worker it stopped is replaced by the runtime. The policy is
     // expressed here as a container runtime argument (still supported on Aspire 17.0.0); a
@@ -142,24 +142,24 @@ var renderWorker = builder.AddContainer("render-worker", renderWorkerImage.Repos
     .WithHttpHealthCheck("/health", endpointName: "http")
     .WaitFor(temporal)
     .WaitForCompletion(migrations);
-if (renderWorkerOtlpEndpoint is { Length: > 0 })
-{
-    renderWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
-}
+
+// The render worker of the normal class - the composition's one render worker by default. A
+// run that exercises priority classes asks for one more per class (below): capacity per class is
+// dedicated, so every class needs a process serving it.
+var renderWorker = AddRenderWorker("render-worker");
+var renderWorkers = new List<IResourceBuilder<ContainerResource>> { renderWorker };
 
 // The template source the worker reads is its own root of the composition, mounted into the
 // worker read-only; the one other setting it takes from here is the bound of a by-name
 // resolution, which the composition documents and gives the process the same value of.
 var templateSourceResolveDeadline = builder.Configuration["TemplateSource:ResolveDeadline"] ?? "00:04:00";
-renderWorker
-    .WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline);
 
 // Merge worker: the Linux image on the platform's ASP.NET Core runtime image, no browser
 // and no PDF base. It assembles one output at a time on its own queue, mounts the object
 // store read-write (it writes the assembled PDF and reads the parts and the taken package),
 // and runs under the architecture's 512 MiB memory limit. The interruption seam is given
 // only when the run asks for it (the restart case), never in a normal run.
-var mergeWorker = builder.AddContainer("merge-worker", mergeWorkerImage.Repository, mergeWorkerImage.Tag)
+IResourceBuilder<ContainerResource> AddMergeWorker(string name) => builder.AddContainer(name, mergeWorkerImage.Repository, mergeWorkerImage.Tag)
     .WithImagePullPolicy(ImagePullPolicy.Never)
     .WithContainerRuntimeArgs("--restart=always")
     .WithContainerRuntimeArgs("--memory=512m")
@@ -178,9 +178,32 @@ var mergeWorker = builder.AddContainer("merge-worker", mergeWorkerImage.Reposito
     .WithHttpHealthCheck("/health", endpointName: "http")
     .WaitFor(temporal)
     .WaitForCompletion(migrations);
+var mergeWorker = AddMergeWorker("merge-worker");
+var mergeWorkers = new List<IResourceBuilder<ContainerResource>> { mergeWorker };
+
+// The high and low classes' render and merge workers, only when the run asks for them: every
+// other run keeps the composition's one render and one merge worker, which serve the normal
+// class - the queue every job without a priority uses.
+if (bool.TryParse(builder.Configuration["Composition:PriorityClassWorkers"], out var priorityClassWorkers) && priorityClassWorkers)
+{
+    foreach (var servedClass in new[] { "high", "low" })
+    {
+        renderWorkers.Add(AddRenderWorker("render-worker-" + servedClass).WithEnvironment("Priority__ServedClass", servedClass));
+        mergeWorkers.Add(AddMergeWorker("merge-worker-" + servedClass).WithEnvironment("Priority__ServedClass", servedClass));
+    }
+}
+
+foreach (var worker in renderWorkers)
+{
+    worker.WithEnvironment("TemplateSource__ResolveDeadline", templateSourceResolveDeadline);
+}
+
 if (renderWorkerOtlpEndpoint is { Length: > 0 })
 {
-    mergeWorker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
+    foreach (var worker in renderWorkers.Concat(mergeWorkers))
+    {
+        worker.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", renderWorkerOtlpEndpoint);
+    }
 }
 
 if (Environment.GetEnvironmentVariable("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_BATCH") is { Length: > 0 } interruptAfterBatch)
@@ -195,8 +218,10 @@ if (Environment.GetEnvironmentVariable("REPORTSERVICE_ASSEMBLY_INTERRUPT_AFTER_B
 // generator only when its own configuration asks for it (the end-to-end page-code case).
 if (bool.TryParse(builder.Configuration["PageCodes:ReferenceGrid:Enabled"], out var referenceGrid) && referenceGrid)
 {
-    renderWorker.WithEnvironment("PageCodes__ReferenceGrid__Enabled", "true");
-    mergeWorker.WithEnvironment("PageCodes__ReferenceGrid__Enabled", "true");
+    foreach (var worker in renderWorkers.Concat(mergeWorkers))
+    {
+        worker.WithEnvironment("PageCodes__ReferenceGrid__Enabled", "true");
+    }
 }
 
 // Orchestration worker: a host process on the orchestration and data queues; ready once
@@ -264,11 +289,26 @@ foreach (var setting in new[] { "MaximumPages", "MaximumPartBytes", "ProfileName
 {
     if (builder.Configuration["DocumentCapacity:" + setting] is { Length: > 0 } capacityValue)
     {
-        renderWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
-        mergeWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+        foreach (var worker in renderWorkers.Concat(mergeWorkers))
+        {
+            worker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
+        }
+
         orchestrationWorker.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
         api.WithEnvironment("DocumentCapacity__" + setting, capacityValue);
     }
+}
+
+// The aging wait and the pending-work sample interval, when the run states its own (the aging
+// cases set a short wait); otherwise the orchestration worker's defaults apply.
+if (builder.Configuration["Priority:Aging:Wait"] is { Length: > 0 } agingWait)
+{
+    orchestrationWorker.WithEnvironment("Priority__Aging__Wait", agingWait);
+}
+
+if (builder.Configuration["Telemetry:PendingWork:SampleInterval"] is { Length: > 0 } pendingWorkInterval)
+{
+    orchestrationWorker.WithEnvironment("Telemetry__PendingWork__SampleInterval", pendingWorkInterval);
 }
 
 // A consumer registry file other than the API's own (for example, one a test writes).

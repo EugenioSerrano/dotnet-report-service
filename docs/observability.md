@@ -72,6 +72,19 @@ of those fixed values: a declared identity, a job's identifier and an artifact's
 identifier never appear on a metric. A job or file that was not found is not a
 consumer refusal and is not counted there.
 
+The priority classes add three instruments, described with their settings in
+[`operations/priority-and-per-class-capacity.md`](operations/priority-and-per-class-capacity.md):
+`reportservice.taskqueue.pending` (orchestration worker, observable gauge, unit
+`{task}`) - the work waiting on each class's render and merge queue, read from the
+engine, with the tags `task_queue`, `kind` (`render` or `merge`) and
+`priority_class`; `reportservice.taskqueue.schedule_to_start.duration` (render and
+merge workers, histogram, seconds) - how long each attempt waited before a process
+took it, with the same three tags; and `reportservice.job.priority.promotions`
+(orchestration worker, counter, unit `{job}`) - jobs promoted by aging, with the
+tags `from` and `to`. None of them carries a job identifier. Every orchestration
+replica reports the same pending value, so a reader aggregates replicas with the
+maximum.
+
 ## The block that was printed, and what produced its presentation
 
 The render worker writes one line for each block it commits, and one for each block

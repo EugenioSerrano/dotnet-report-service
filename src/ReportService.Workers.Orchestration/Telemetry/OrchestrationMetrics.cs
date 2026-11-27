@@ -46,6 +46,12 @@ public sealed class OrchestrationMetrics : IDisposable
     /// <summary>The counter of a job's template resolutions, by form, path and code.</summary>
     public const string TemplateResolutionsInstrumentName = "reportservice.template.resolutions";
 
+    /// <summary>The counter of jobs promoted by aging, by the class they left and the class they reached.</summary>
+    public const string PriorityPromotionsInstrumentName = "reportservice.job.priority.promotions";
+
+    /// <summary>The level of work waiting on each priority class's render and merge queue.</summary>
+    public const string TaskQueuePendingInstrumentName = "reportservice.taskqueue.pending";
+
     /// <summary>The status tag of a job that ended failed.</summary>
     public const string FailedJobStatus = "FAILED";
 
@@ -95,7 +101,9 @@ public sealed class OrchestrationMetrics : IDisposable
     private readonly Histogram<double> _queueToFirstStageDuration;
     private readonly Histogram<double> _cancellationDuration;
     private readonly Counter<long> _templateResolutions;
+    private readonly Counter<long> _priorityPromotions;
     private readonly Dictionary<string, double> _pendingAge = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PendingWork> _pendingWork = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
 
     /// <summary>Creates the host's instruments on the identity it carries.</summary>
@@ -140,6 +148,15 @@ public sealed class OrchestrationMetrics : IDisposable
             TemplateResolutionsInstrumentName,
             unit: "{resolution}",
             description: "Resolutions of a job's template, by form, path and code.");
+        _priorityPromotions = _meter.CreateCounter<long>(
+            PriorityPromotionsInstrumentName,
+            unit: "{job}",
+            description: "Jobs promoted by aging, by the class they left and the class they reached.");
+        _meter.CreateObservableGauge(
+            TaskQueuePendingInstrumentName,
+            ObservePendingWork,
+            unit: "{task}",
+            description: "Work waiting on each priority class's render and merge queue, as the engine counts it.");
         _meter.CreateObservableGauge(
             PendingAgeInstrumentName,
             ObservePendingAge,
@@ -233,8 +250,61 @@ public sealed class OrchestrationMetrics : IDisposable
         }
     }
 
+    /// <summary>Records that one job was promoted from <paramref name="from"/> to <paramref name="to"/>.</summary>
+    /// <param name="from">The class it left; a fixed value.</param>
+    /// <param name="to">The class it reached; a fixed value.</param>
+    public void PriorityPromotion(string from, string to) =>
+        _priorityPromotions.Add(
+            1,
+            new KeyValuePair<string, object?>("from", from),
+            new KeyValuePair<string, object?>("to", to));
+
+    /// <summary>
+    /// Keeps the latest reading of the work waiting on <paramref name="queue"/>; a reading of none
+    /// (the engine could not be read) removes the queue's value, so no stale value is reported.
+    /// </summary>
+    /// <param name="queue">The task queue.</param>
+    /// <param name="kind">The kind of work: render or merge.</param>
+    /// <param name="priorityClass">The class the queue serves: high, normal or low.</param>
+    /// <param name="pending">The waiting work, or none.</param>
+    public void ObservePendingWork(string queue, string kind, string priorityClass, long? pending)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(queue);
+        lock (_gate)
+        {
+            if (pending is { } value)
+            {
+                _pendingWork[queue] = new PendingWork(kind, priorityClass, value);
+            }
+            else
+            {
+                _pendingWork.Remove(queue);
+            }
+        }
+    }
+
     /// <inheritdoc />
     public void Dispose() => _meter.Dispose();
+
+    private IEnumerable<Measurement<long>> ObservePendingWork()
+    {
+        KeyValuePair<string, PendingWork>[] snapshot;
+        lock (_gate)
+        {
+            snapshot = [.. _pendingWork];
+        }
+
+        foreach (var (queue, work) in snapshot)
+        {
+            yield return new Measurement<long>(
+                work.Pending,
+                new KeyValuePair<string, object?>("task_queue", queue),
+                new KeyValuePair<string, object?>("kind", work.Kind),
+                new KeyValuePair<string, object?>("priority_class", work.PriorityClass));
+        }
+    }
+
+    private sealed record PendingWork(string Kind, string PriorityClass, long Pending);
 
     private IEnumerable<Measurement<double>> ObservePendingAge()
     {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.TemplateChecks.Sample;
@@ -44,9 +45,11 @@ public sealed class PdfWorkerProgram
         builder.AddServiceDefaults(ServiceNames.RenderWorker, MeterIdentity.ForHost(TelemetryDefaults.MeterName));
         builder.AddServiceConfiguration();
 
-        // The PDF rendering task queue; the take and the by-name resolution are its
-        // registrations.
-        builder.AddWorkflowEngine("pdf-worker", [TakeTemplateVersionActivityOptions.Queue]);
+        // The PDF rendering task queue of the one priority class this process serves; the
+        // take and the by-name resolution are its registrations. A served class the setting
+        // does not name stops the process at start.
+        builder.AddServedClassCheck(static value => PriorityTaskQueues.TryParseServedClass(value, out _));
+        builder.AddWorkflowEngine("pdf-worker", [TakeTemplateVersionActivityOptions.ServedQueue(ServedClassOptions.Read(builder))]);
         builder.Services.AddSingleton<BrowserProbe>();
         builder.Services.AddHostedService(static services => services.GetRequiredService<BrowserProbe>());
 

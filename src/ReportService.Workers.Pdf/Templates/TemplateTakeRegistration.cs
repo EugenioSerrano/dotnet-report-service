@@ -79,8 +79,9 @@ public static class TemplateTakeRegistration
 
         // One registration on the queue, resolved from the container so the activity
         // holds its settings, with the one concurrency the PDF queue runs at.
+        var queue = TakeTemplateVersionActivityOptions.ServedQueue(ServedClassOptions.Read(builder));
         builder.Services.AddSingleton(services => new TaskQueueWork(
-            TakeTemplateVersionActivityOptions.Queue,
+            queue,
             options =>
             {
                 options.MaxConcurrentActivities = 1;

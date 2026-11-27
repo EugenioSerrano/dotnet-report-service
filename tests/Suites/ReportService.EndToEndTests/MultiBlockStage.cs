@@ -294,14 +294,15 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     /// <summary>Submits the job for the upload and answers its identifier.</summary>
-    public async Task<string> SubmitAsync(Composition composition, string uploadId, CancellationToken cancellationToken, string outputs = "\"pdf\"")
+    public async Task<string> SubmitAsync(Composition composition, string uploadId, CancellationToken cancellationToken, string outputs = "\"pdf\"", string? priority = null)
     {
         using var api = composition.App.CreateHttpClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, new Uri(CreateReportJobEndpoint.RoutePrefix, UriKind.Relative))
         {
             Content = new StringContent(
                 "{\"template\":{\"id\":\"" + TemplateId + "\",\"version\":\"" + Version + "\"},"
-                + "\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[" + outputs + "]}",
+                + "\"data\":{\"uploadId\":\"" + uploadId + "\",\"profile\":\"header-items-v1\"},\"outputs\":[" + outputs + "]"
+                + (priority is null ? string.Empty : ",\"priority\":\"" + priority + "\"") + "}",
                 Encoding.UTF8,
                 "application/json"),
         };

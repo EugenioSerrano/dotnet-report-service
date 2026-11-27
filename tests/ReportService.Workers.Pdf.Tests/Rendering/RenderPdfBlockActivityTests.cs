@@ -226,6 +226,46 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
         Assert.Null(jobs.Committed);
     }
 
+    /// <summary>
+    /// A retried attempt counts its retry with the cause its previous attempt recorded: a
+    /// deadline when that attempt hit one, and a crash otherwise - also when nothing was recorded
+    /// or the record cannot be read.
+    /// </summary>
+    [Theory]
+    [InlineData(AttemptCauseVocabulary.WatchdogDeadline, false, PdfRenderingMetrics.DeadlineCause)]
+    [InlineData(AttemptCauseVocabulary.GuardDeadline, false, PdfRenderingMetrics.DeadlineCause)]
+    [InlineData(AttemptCauseVocabulary.None, false, PdfRenderingMetrics.CrashCause)]
+    [InlineData(null, false, PdfRenderingMetrics.CrashCause)]
+    [InlineData(null, true, PdfRenderingMetrics.CrashCause)]
+    public async Task ARetriedAttemptCountsItsRetryWithThePreviousAttemptsCause(string? previous, bool readFails, string expected)
+    {
+        var storage = await StorageAsync();
+        var package = await PackageAsync(storage.Store);
+        var pin = Pin(package.Sha256);
+        var record = Record(pin.PackageSha256, package.Key, package.Size);
+        var jobs = new FakeJobStore
+        {
+            Reference = ReferenceOf(pin),
+            Partition = new PartitionRecord(JobId, 1, 1, 1, storage.Block.SizeBytes, storage.Index.Key, storage.Index.Sha256, storage.Index.SizeBytes, DateTimeOffset.UnixEpoch),
+            FailCauseRead = readFails,
+        };
+        if (previous is not null)
+        {
+            jobs.Causes.Add(new AttemptCause(OutputId, 0, 1, previous, DateTimeOffset.UnixEpoch));
+        }
+
+        var identity = MeterIdentity.ForHost("ReportService.Tests.RetryCause." + expected + "." + (previous ?? "none") + "." + readFails);
+        using var metrics = new PdfRenderingMetrics(identity);
+        using var recorded = new RecordedMeasurements(identity);
+        var activity = Activity(jobs, new FakeVersionStore { Record = record }, new FakeRenderer(), storage.Store, metrics);
+
+        var environment = new ActivityEnvironment { Info = ActivityEnvironment.DefaultInfo with { Attempt = 2 } };
+        await environment.RunAsync(() => activity.RunAsync(new RenderPdfBlockInput(JobId, OutputId, 0)));
+
+        var retry = Assert.Single(recorded.Of(PdfRenderingMetrics.ActivityRetriesInstrumentName));
+        Assert.Equal(expected, retry.Tag("cause"));
+    }
+
     [Fact]
     public async Task ASecondBlockReadsItsRecordsWithTheGlobalOrdinalsItsIndexDeclares()
     {
@@ -916,6 +956,9 @@ internal sealed class FakeJobStore : IJobStore
 
     public Action? OnRecordCause { get; set; }
 
+    /// <summary>Whether reading the last attempt's cause fails.</summary>
+    public bool FailCauseRead { get; set; }
+
     public Task<PartCommit?> FindPartAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
         Task.FromResult(Part);
 
@@ -990,7 +1033,9 @@ internal sealed class FakeJobStore : IJobStore
     }
 
     public Task<AttemptCause?> FindLastAttemptCauseAsync(string outputId, int blockIndex, CancellationToken cancellationToken) =>
-        Task.FromResult(Causes
+        FailCauseRead
+            ? Task.FromException<AttemptCause?>(new InvalidOperationException("the cause could not be read"))
+            : Task.FromResult(Causes
             .Where(cause => string.Equals(cause.OutputId, outputId, StringComparison.Ordinal) && cause.BlockIndex == blockIndex)
             .OrderByDescending(cause => cause.Attempt)
             .FirstOrDefault());
