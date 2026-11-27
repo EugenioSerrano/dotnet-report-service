@@ -255,6 +255,11 @@ public static partial class TemplateSourceScan
                 calls.Add(new ScannedCall(offset, position.Line, position.Column, call));
             }
 
+            if (IsScribanControlFlow(text, assignedData))
+            {
+                return;
+            }
+
             var escaped = EndsWithHtmlEscape(text);
             outputs.Add(new ScannedOutput(offset, position.Line, position.Column, text, IsData(text, assignedData), escaped, false));
             return;
@@ -469,12 +474,49 @@ public static partial class TemplateSourceScan
         return text[..end];
     }
 
+    /// <summary>
+    /// Whether a Scriban code block is a single <c>if</c>, <c>else if</c>, <c>else</c>,
+    /// <c>for</c> or <c>end</c> statement, which writes nothing. A loop over a value
+    /// derived from the records makes its variable one too, so its outputs stay checked.
+    /// A block holding more than one statement is never read as one.
+    /// </summary>
+    private static bool IsScribanControlFlow(string text, HashSet<string> assignedData)
+    {
+        if (text.Contains(';', StringComparison.Ordinal) || text.Contains('\n', StringComparison.Ordinal) || text.Contains('\r', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (text is "end" or "else" || ScribanCondition().IsMatch(text))
+        {
+            return true;
+        }
+
+        if (ScribanLoop().Match(text) is { Success: true } loop)
+        {
+            if (IsData(loop.Groups[2].Value, assignedData))
+            {
+                _ = assignedData.Add(loop.Groups[1].Value);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool StartsWith(string text, int index, string value) =>
         index + value.Length <= text.Length
         && string.CompareOrdinal(text, index, value, 0, value.Length) == 0;
 
     [GeneratedRegex("^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex Assignment();
+
+    [GeneratedRegex("^(?:if|else\\s+if)\\s+\\S", RegexOptions.CultureInvariant)]
+    private static partial Regex ScribanCondition();
+
+    [GeneratedRegex("^for\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+in\\s+(\\S.*)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ScribanLoop();
 
     [GeneratedRegex("^[0-9]+$", RegexOptions.CultureInvariant)]
     private static partial Regex IntegerLiteral();
