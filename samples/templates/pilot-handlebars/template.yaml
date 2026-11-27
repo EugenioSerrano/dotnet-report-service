@@ -1,0 +1,53 @@
+manifestVersion: "1.0"
+id: pilot-handlebars
+version: "1.0.0"
+owner: dev-consumer
+shared: false
+engine: handlebars
+engineVersion: "2.4.3"
+dataContract:
+  version: "1.0"
+  profile: header-items-v1
+  schema: schema.json
+outputs:
+  html:
+    parts:
+      documentStart: html/document-start.html.hbs
+      row: html/row.html.hbs
+      documentEnd: html/document-end.html.hbs
+    styles: [html/styles.css]
+  pdf:
+    paper: A4
+    orientation: portrait
+    marginMm: { top: 15, right: 12, bottom: 18, left: 12 }
+    chunkLayout: page-boundary
+    pageNumbering: global
+    pageTotals:
+      enabled: false
+    verification:
+      anchors:
+        header:
+          - "$.reportTitle"
+          - "$.customer.name"
+          - "$.customer.id"
+          - "$.currency"
+          - "$.generatedAt"
+          - "$.totals.recordCount"
+          - "$.totals.amount"
+        item:
+          - "$.sequence"
+          - "$.description"
+          - "$.quantity"
+          - "$.unitPrice"
+          - "$.amount"
+  xlsx:
+    fallback: raw
+    columns:
+      - { path: sequence, type: integer }
+      - { path: description, type: string }
+      - { path: quantity, type: integer }
+      - { path: unitPrice, type: decimal }
+      - { path: amount, type: decimal }
+localeDefaults:
+  culture: es-AR
+  timeZone: America/Argentina/Buenos_Aires

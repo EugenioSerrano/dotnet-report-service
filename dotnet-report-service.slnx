@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/datasets/ReportService.Samples.DatasetGenerator/ReportService.Samples.DatasetGenerator.csproj" />
+    <Project Path="samples/template-authoring/ReportService.Samples.TemplateAuthoring/ReportService.Samples.TemplateAuthoring.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/ReportService.Api/ReportService.Api.csproj" />
@@ -72,6 +73,9 @@
   <Folder Name="/tests/Suites/">
     <Project Path="tests/Suites/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />
     <Project Path="tests/Suites/ReportService.PerformanceTests/ReportService.PerformanceTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Samples/">
+    <Project Path="tests/Samples/ReportService.Samples.TemplateAuthoring.Tests/ReportService.Samples.TemplateAuthoring.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Rendering/">
     <Project Path="tests/Rendering/ReportService.RenderingHost/ReportService.RenderingHost.csproj" />

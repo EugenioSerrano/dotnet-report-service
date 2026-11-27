@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The local authoring loop: scaffold a template package for one of the three
+    engines, then render a package's own sample through the product's checks and
+    sample renderer. It is an adopter-facing developer tool: it changes no product
+    behaviour and every step it takes is a public product type.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The scaffold set is embedded so the tool runs from any working directory. -->
+    <EmbeddedResource Include="Scaffolds\template.yaml" LogicalName="Scaffolds/template.yaml" />
+    <EmbeddedResource Include="Scaffolds\schema.json" LogicalName="Scaffolds/schema.json" />
+    <EmbeddedResource Include="Scaffolds\sample.json" LogicalName="Scaffolds/sample.json" />
+    <EmbeddedResource Include="Scaffolds\styles.css" LogicalName="Scaffolds/styles.css" />
+    <EmbeddedResource Include="Scaffolds\parts\scriban\document-start.sbn" LogicalName="Scaffolds/parts/scriban/document-start.sbn" />
+    <EmbeddedResource Include="Scaffolds\parts\scriban\row.sbn" LogicalName="Scaffolds/parts/scriban/row.sbn" />
+    <EmbeddedResource Include="Scaffolds\parts\scriban\document-end.sbn" LogicalName="Scaffolds/parts/scriban/document-end.sbn" />
+    <EmbeddedResource Include="Scaffolds\parts\handlebars\document-start.hbs" LogicalName="Scaffolds/parts/handlebars/document-start.hbs" />
+    <EmbeddedResource Include="Scaffolds\parts\handlebars\row.hbs" LogicalName="Scaffolds/parts/handlebars/row.hbs" />
+    <EmbeddedResource Include="Scaffolds\parts\handlebars\document-end.hbs" LogicalName="Scaffolds/parts/handlebars/document-end.hbs" />
+    <EmbeddedResource Include="Scaffolds\parts\liquid\document-start.liquid" LogicalName="Scaffolds/parts/liquid/document-start.liquid" />
+    <EmbeddedResource Include="Scaffolds\parts\liquid\row.liquid" LogicalName="Scaffolds/parts/liquid/row.liquid" />
+    <EmbeddedResource Include="Scaffolds\parts\liquid\document-end.liquid" LogicalName="Scaffolds/parts/liquid/document-end.liquid" />
+    <None Remove="Scaffolds\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The take's sample renderer, its checks and the seams they are built on. -->
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

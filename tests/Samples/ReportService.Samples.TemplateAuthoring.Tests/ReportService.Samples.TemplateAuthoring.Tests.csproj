@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The authoring tool's hermetic cases: scaffold each engine, render each example
+    through the tool with a replaying printer, and hold the three refusals and the
+    unavailable case to the take's own sentences. No browser, no container, no
+    network: the three golden PDFs are committed and read in-process, and every
+    file the cases write goes under a temporary directory of their own.
+
+    It owns no product assembly (the tool assembly is excluded by the existing
+    ReportService.Samples.* coverage filter), so it is a no-coverage hermetic
+    project (CoverageFloors.NoCoverageProjects).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\samples\template-authoring\ReportService.Samples.TemplateAuthoring\ReportService.Samples.TemplateAuthoring.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Rendering\ReportService.Rendering.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Goldens\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Goldens" />
+  </ItemGroup>
+
+</Project>

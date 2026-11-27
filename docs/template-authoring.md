@@ -20,6 +20,119 @@ of the schema. A version is taken once: the service reads the package at one
 commit, keeps it as one write-once object and records what it fixed. A job is
 then pinned to the version it named and reads only that stored copy.
 
+## The local loop: scaffold, preview, then publish
+
+A version is taken the first time a job references it — that is when the
+service checks the package and renders its sample. The local loop shows you the
+same composed HTML and the same printed, verified PDF before that
+publish-and-wait cycle, using the service's own checks and renderer: nothing
+here is a second implementation of what the take does.
+
+### Prerequisites
+
+The .NET 11 SDK. The scaffold and the static checks need nothing else; to print
+the PDF you also need the Chromium build Playwright 1.63.0 downloads — the same
+build the PDF base image installs. Install it once from the tool's build
+output, from the repository root:
+
+```text
+pwsh samples/template-authoring/ReportService.Samples.TemplateAuthoring/bin/Release/net11.0/playwright.ps1 install chromium
+```
+
+### Scaffold
+
+```text
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <version>] [--out <directory>]
+```
+
+`--engine` names one of the three engines (case-insensitive) and is written to
+the manifest; `--id` follows the template identifier rule (lower-case letters,
+digits, `.`, `_` and `-`, beginning and ending with a letter or a digit, at most
+128 characters); `--version` defaults to `1.0.0`.
+
+`--out` names the package directory itself. Use
+`--out samples/templates/<template-id>` for a package that lives in this
+repository, or `--out artifacts/<template-id>` for a scratch one. Without it the
+tool writes `<current directory>/<template-id>`; it refuses a directory that
+already holds files.
+
+The scaffold writes `template.yaml`, `schema.json`, a deterministic
+`sample.json`, the three HTML parts in the engine's syntax
+(`html/document-start.html.<ext>`, `html/row.html.<ext>`,
+`html/document-end.html.<ext>`) and `html/styles.css`. The manifest names the
+engine you chose, its part extension and the engine version this build actually
+runs — never a constant — and the package already passes the take's static
+checks: the command prints
+`scaffolded <engine> <id> <version> at <path> checks=pass` and exits `0`.
+
+### Render
+
+```text
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render <package-folder> [--out <directory>]
+```
+
+`render` runs the take's thirteen static checks on the package, in the take's
+order, then renders the package's own `sample.json` once through the product's
+sample renderer: the same engine adapter, fragment composition, Chromium print
+and post-render verification a job uses. It writes two files into
+`artifacts/template-preview/<id>/<version>/` by default (git-ignored), or into
+`--out`:
+
+- `<id>-<version>.html` — the document that was printed, with the page rule
+  appended;
+- `<id>-<version>.pdf` — the printed document, after the product's verification
+  accepted it.
+
+The two files are regenerated on every run; no other file is touched.
+
+### Reading a refusal
+
+A package the checks refuse prints the take's own sentence and exits `1`:
+
+```text
+<code>: <package file>: <what is wrong> <what to fix>
+```
+
+For example, a field declared as an anchor that the row does not print:
+
+```text
+TEMPLATE_INVALID: template.yaml: $.customer.id is declared as an anchor but the template does not print it as it is. Print the field as it is, or remove it from the anchor list.
+```
+
+The sentence names the package-relative file, what is wrong and what to fix; it
+never prints template text or a data value, and neither does any other line the
+tool writes. The exit codes are `0` for a package that rendered and verified,
+`1` for a package the checks or the sample render refused, `2` for an invalid
+command line (an unknown engine, an invalid identifier or version, a missing
+package, or a target that already holds files) and `3` when the render could not
+run — no browser, a timeout, a crash. A `3` says nothing about the package:
+install or repair the browser and retry.
+
+### The limits
+
+The local loop runs the thirteen static checks and the ordinary sample render.
+It does not run the zero-record sample render or the at-bound record check;
+those run at publish time, in the take. A local green is necessary, not
+sufficient.
+
+The printed page comes from the Chromium installed on your machine. The
+service's image is the reference: a different browser build or other fonts can
+print differently, which is why the package's fonts and page settings are the
+contract, and why `"Liberation Sans", sans-serif` with the page size and
+margins `html/styles.css` declares is what the measurements cover.
+
+### The examples
+
+`pilot-simple` (Scriban), `pilot-handlebars` (Handlebars) and `pilot-liquid`
+(Liquid/Fluid) under `samples/templates/` are the same report in the three
+engines: copy the one written in the engine you want and change it.
+
+### Then publish
+
+Nothing is uploaded through the tool. A version is taken by the service the
+first time a job references it; the take and its checks are documented in the
+sections of this page around this one.
+
 ## The data schema (the data-contract section)
 
 `schema.json` is one JSON Schema document. It is the **envelope** schema of the

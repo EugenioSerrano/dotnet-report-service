@@ -9,8 +9,15 @@ and that anyone can run against a local instance.
 
 - `templates/<template-id>/` — sample template packages (manifest, schema,
   sample data, template parts, styles, assets), one per template. The three
-  pilot packages `pilot-simple`, `pilot-grouped` and `pilot-volume` render
-  the three pilot datasets — see [`templates/README.md`](templates/README.md).
+  pilot packages `pilot-simple`, `pilot-grouped` and `pilot-volume` render the
+  three pilot datasets, and `pilot-handlebars` and `pilot-liquid` are the same
+  simple report in the two other engines — see
+  [`templates/README.md`](templates/README.md).
+- `template-authoring/` — the local authoring tool: it scaffolds a template
+  package for any of the three engines and renders a package's own sample to a
+  preview HTML and a verified PDF, with the same checks and renderer the
+  service takes a version with — see
+  [`../docs/template-authoring.md`](../docs/template-authoring.md).
 - `datasets/` — the seeded synthetic pilot datasets (simple; grouped with
   subtotals; high volume) and the generator that produces them
   reproducibly. The dataset files are generated, not committed;

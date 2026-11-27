@@ -1,0 +1,41 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "datasetId": "__TEMPLATE_ID__",
+    "reportTitle": "Sample report",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "seed": 0,
+    "currency": "ARS",
+    "customer": {
+      "id": "C000001",
+      "name": "Sample customer"
+    },
+    "totals": {
+      "recordCount": 3,
+      "amount": 600.00
+    }
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "description": "Annual inspection",
+      "quantity": 1,
+      "unitPrice": 100.00,
+      "amount": 100.00
+    },
+    {
+      "sequence": 2,
+      "description": "Valve replacement",
+      "quantity": 2,
+      "unitPrice": 100.00,
+      "amount": 200.00
+    },
+    {
+      "sequence": 3,
+      "description": "Monthly maintenance",
+      "quantity": 3,
+      "unitPrice": 100.00,
+      "amount": 300.00
+    }
+  ]
+}

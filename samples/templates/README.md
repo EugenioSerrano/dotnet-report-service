@@ -6,6 +6,8 @@ One sample template package per pilot dataset (see
 | Package | Renders | Page | Page totals | Partitioning |
 |---------|---------|------|-------------|--------------|
 | [`pilot-simple/`](pilot-simple/) | the simple dataset | A4 portrait | off | — |
+| [`pilot-handlebars/`](pilot-handlebars/) | the simple dataset, rendered by Handlebars | A4 portrait | off | — |
+| [`pilot-liquid/`](pilot-liquid/) | the simple dataset, rendered by Liquid | A4 portrait | off | — |
 | [`pilot-grouped/`](pilot-grouped/) | the grouped dataset | A4 portrait | on (`amount`, 2 decimals) | by `groupId`, cut at group boundaries |
 | [`pilot-volume/`](pilot-volume/) | the volume dataset | A4 landscape | on (`amount`, 2 decimals) | by `groupId`, cut at group boundaries |
 
@@ -26,10 +28,11 @@ Each package contains:
   `styles.css` with the page size and margins of the manifest.
 
 **One engine per package.** Every package declares exactly one template
-engine; these three are written for Scriban 7.5.1. Scriban is **not** a
-default engine of the service — a package always names its engine. Handlebars
-and Liquid variants of the same templates are added by the template-engine
-measurements.
+engine; the three pilot packages (`pilot-simple`, `pilot-grouped`,
+`pilot-volume`) are written for Scriban 7.5.1. Scriban is **not** a default
+engine of the service — a package always names its engine. `pilot-handlebars`
+and `pilot-liquid` are the same simple report in Handlebars 2.4.3 and
+Liquid/Fluid 2.40.0.
 
 
 **The takeable fixture family is test data, not a shipped sample.** The test

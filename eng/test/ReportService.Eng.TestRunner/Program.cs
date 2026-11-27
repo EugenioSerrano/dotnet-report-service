@@ -49,6 +49,10 @@ internal static partial class Program
         // in-process (PdfPig), no container. A no-coverage hermetic project
         // (CoverageFloors.NoCoverageProjects): it owns no product assembly.
         "tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj",
+        // The authoring tool's cases: scaffold, the golden-replayed renders and the
+        // take's refusals, in-process with no browser. A no-coverage hermetic project:
+        // the tool is a ReportService.Samples.* assembly the coverlet filter excludes.
+        "tests/Samples/ReportService.Samples.TemplateAuthoring.Tests/ReportService.Samples.TemplateAuthoring.Tests.csproj",
     ];
 
     /// <summary>The rendering regression suite: the printed core tier and the independent judge, in their own images.</summary>
