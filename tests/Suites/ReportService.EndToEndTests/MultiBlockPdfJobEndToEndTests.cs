@@ -124,8 +124,11 @@ public sealed class MultiBlockPdfJobEndToEndTests : IDisposable
         Assert.Equal(records.Sum(record => record.Amount), expected.GrandTotal);
         Assert.Equal(expected.GrandTotal, expected.Pages[^1].CarriedForward);
 
-        // The orchestration worker's log: no single-block refusal and no start-up line.
+        // The orchestration worker's log: it is read (it holds this output's publication
+        // line), and it carries no single-block refusal and no start-up line.
         var log = await MultiBlockStage.ReadWorkerLogAsync(composition.App, "orchestration-worker", cancellationToken);
+        Assert.Contains(log, line =>
+            line.Contains("Output " + ended.OutputId + " published as " + ended.ArtifactId, StringComparison.Ordinal));
         Assert.DoesNotContain(log, line => line.Contains("single-block", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(log, line => line.Contains("QUOTA_EXCEEDED", StringComparison.Ordinal));
 

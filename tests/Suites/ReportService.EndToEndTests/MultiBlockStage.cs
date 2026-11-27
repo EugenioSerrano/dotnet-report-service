@@ -517,38 +517,125 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     /// <summary>
-    /// The console lines a composition resource wrote, backlog and lines still arriving,
-    /// collected for a short window and returned. It is how a case reads the orchestration
-    /// worker's own log without touching the process.
+    /// The console lines a composition resource wrote. The resource is found in the
+    /// application model by its model name, and its log is read under every name the
+    /// orchestrator resolved for it: a resource the orchestrator runs is given a unique
+    /// suffix (and one name per replica), and its log stream is kept under that resolved
+    /// name, never under the bare model name. Each stream's backlog is read whole; when
+    /// it is empty the stream is watched for a short window for lines still arriving. A
+    /// resource the model does not hold, or - when lines are expected - a read that finds
+    /// none, fails the case loudly: an empty read must never make a "does not contain"
+    /// assertion pass.
     /// </summary>
     /// <param name="app">The running composition.</param>
-    /// <param name="resourceName">The resource whose log is read.</param>
+    /// <param name="resourceName">The resource's model name.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <param name="expectLines">Whether the resource is known to have written lines by now.</param>
     public static async Task<IReadOnlyList<string>> ReadWorkerLogAsync(
         DistributedApplication app,
         string resourceName,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool expectLines = true)
     {
+        var resource = ResourceOf(app, resourceName);
         var loggers = app.Services.GetRequiredService<ResourceLoggerService>();
         var lines = new List<string>();
+
+        // The resource's own overload resolves its orchestrator instances.
+        await foreach (var batch in loggers.GetAllAsync(resource).WithCancellation(cancellationToken))
+        {
+            lines.AddRange(batch.Select(line => line.Content));
+        }
+
+        // The resolved names, as the orchestrator's own state events report them, each read
+        // by name: the same streams, reached without relying on the overload alone.
+        var names = await ResolvedNamesAsync(app, resource, cancellationToken);
+        if (lines.Count == 0)
+        {
+            foreach (var name in names)
+            {
+                await foreach (var batch in loggers.GetAllAsync(name).WithCancellation(cancellationToken))
+                {
+                    lines.AddRange(batch.Select(line => line.Content));
+                }
+            }
+        }
+
+        if (lines.Count == 0)
+        {
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            stop.CancelAfter(TimeSpan.FromSeconds(5));
+            try
+            {
+                await foreach (var batch in loggers.WatchAsync(resource).WithCancellation(stop.Token))
+                {
+                    lines.AddRange(batch.Select(line => line.Content));
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // The lines that arrived within the window are the evidence.
+            }
+        }
+
+        if (expectLines && lines.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"the log of '{resourceName}' read empty under its resolved names ({string.Join(", ", names)}), "
+                + "though the case expects lines by now: the read cannot be evidence of anything");
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// The names the orchestrator resolved for a resource - the model name with the unique
+    /// suffix it gives every instance it runs - read from the resource's state events: the
+    /// notification stream replays every resource's current state to a new subscriber, and
+    /// each event carries the resolved identifier of the instance it is about. The stream
+    /// is watched for a short window; the bare model name is included as well.
+    /// </summary>
+    /// <param name="app">The running composition.</param>
+    /// <param name="resource">The resource.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>The names, model name first.</returns>
+    public static async Task<IReadOnlyList<string>> ResolvedNamesAsync(
+        DistributedApplication app,
+        IResource resource,
+        CancellationToken cancellationToken)
+    {
+        var notifications = app.Services.GetRequiredService<ResourceNotificationService>();
+        var names = new List<string> { resource.Name };
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        stop.CancelAfter(TimeSpan.FromSeconds(5));
+        stop.CancelAfter(TimeSpan.FromSeconds(2));
         try
         {
-            await foreach (var batch in loggers.WatchAsync(resourceName).WithCancellation(stop.Token))
+            await foreach (var update in notifications.WatchAsync(stop.Token).WithCancellation(stop.Token))
             {
-                foreach (var line in batch)
+                if (ReferenceEquals(update.Resource, resource) && !names.Contains(update.ResourceId, StringComparer.Ordinal))
                 {
-                    lines.Add(line.Content);
+                    names.Add(update.ResourceId);
                 }
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // The backlog and the lines written so far are the evidence.
+            // The window closed; the identifiers seen so far are the resolved names.
         }
 
-        return lines;
+        return names;
+    }
+
+    /// <summary>The application model's resource of a model name; fails when the model holds none.</summary>
+    /// <param name="app">The running composition.</param>
+    /// <param name="resourceName">The model name.</param>
+    /// <returns>The resource.</returns>
+    public static IResource ResourceOf(DistributedApplication app, string resourceName)
+    {
+        var model = app.Services.GetRequiredService<DistributedApplicationModel>();
+        return model.Resources.SingleOrDefault(resource => string.Equals(resource.Name, resourceName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"the composition has no resource named '{resourceName}' (it has: {string.Join(", ", model.Resources.Select(resource => resource.Name))})");
     }
 
     /// <summary>Reads one page's outside-area words, in painting order.</summary>
