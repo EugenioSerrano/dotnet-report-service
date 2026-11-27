@@ -69,13 +69,24 @@ public sealed class TaskQueuePriorityProbeEndToEndTests(TaskQueuePriorityProbeEn
             await engine.ScheduleAsync(probe, queues[0], "high", LoadedActivity, token);
             var high = await probe.WaitForStartAsync(r => r.Name == "high", token);
 
-            var ok = high.Started < firstLow.Started + LoadedActivity;
+            // The order, not a wall-clock bound: the low worker runs one activity at a time, so its
+            // second activity starts only after its first ends; the high activity, on its own
+            // queue and worker, must start before that. The latency is recorded as information.
+            await Wait.UntilAsync(
+                $"a second low start in {probe.Prefix}",
+                _ => Task.FromResult(probe.Records.Count(r => r.Queue == queues[2]) >= 2),
+                TimeSpan.FromMinutes(2),
+                TimeSpan.FromMilliseconds(50),
+                token);
+            var secondLow = probe.Records.Where(r => r.Queue == queues[2]).OrderBy(r => r.Started).Skip(1).First();
+
+            var ok = high.Started < secondLow.Started;
             var wrong = probe.Records.Count(r => !string.Equals(r.Queue, r.ScheduledOn, StringComparison.Ordinal));
             lock (lines)
             {
                 passed += ok ? 1 : 0;
                 misrouted += wrong;
-                lines.AppendLine(CultureInfo.InvariantCulture, $"trial={trial} high_started_after_first_low_ms={(high.Started - firstLow.Started).TotalMilliseconds:0} ok={ok} misrouted={wrong}");
+                lines.AppendLine(CultureInfo.InvariantCulture, $"trial={trial} high_started_after_first_low_ms={(high.Started - firstLow.Started).TotalMilliseconds:0} high_before_second_low={ok} second_low_after_first_low_ms={(secondLow.Started - firstLow.Started).TotalMilliseconds:0} misrouted={wrong}");
             }
 
             await engine.TerminateAsync(probe, token);
