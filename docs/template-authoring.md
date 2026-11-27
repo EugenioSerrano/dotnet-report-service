@@ -75,8 +75,8 @@ dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAu
 order, then renders the package's own `sample.json` once through the product's
 sample renderer: the same engine adapter, fragment composition, Chromium print
 and post-render verification a job uses. It writes two files into
-`artifacts/template-preview/<id>/<version>/` by default (git-ignored), or into
-`--out`:
+`artifacts/template-preview/<id>/<version>/` under the current directory by
+default (git-ignored when that is the repository root), or into `--out`:
 
 - `<id>-<version>.html` — the document that was printed, with the page rule
   appended;

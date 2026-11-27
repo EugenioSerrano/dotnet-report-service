@@ -13,6 +13,7 @@ configured, and how a later change adds a signal.
 | API | `report-service-api` | logs, traces, metrics |
 | Orchestration worker | `report-service-orchestration-worker` | logs, traces, metrics |
 | PDF worker | `report-service-render-worker` | logs, traces, metrics |
+| Merge worker | `report-service-merge-worker` | logs, traces, metrics |
 
 Every signal of a process carries the same resource attributes:
 
@@ -161,9 +162,9 @@ With neither address set, a process adds **no destination exporter**: it starts,
 logs and measures, and attempts no export at all. With an address set, all three
 signals are exported over OTLP to it.
 
-The local composition points the three processes at its own telemetry dashboard.
+The local composition points the four processes at its own telemetry dashboard.
 A container does not inherit the AppHost's telemetry address, so the composition
-gives the PDF worker an address a container can reach — this machine, not its
+gives the PDF worker and the merge worker an address a container can reach — this machine, not its
 loopback — and sets it before the container is created.
 
 ## Development-only diagnostics
