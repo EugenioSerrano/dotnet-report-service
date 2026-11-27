@@ -68,7 +68,7 @@ checks: the command prints
 ### Render
 
 ```text
-dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render <package-folder> [--out <directory>]
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render <package-folder> [--out <directory>] [--page-capacity <pages>]
 ```
 
 `render` runs the take's thirteen static checks on the package, in the take's
@@ -84,6 +84,12 @@ default (git-ignored when that is the repository root), or into `--out`:
   accepted it.
 
 The two files are regenerated on every run; no other file is touched.
+
+The page-number check measures the stamp at a page capacity: `--page-capacity`
+when you pass it (digits only, greater than zero), else the shipped example
+profile's 10 000 pages - the capacity a deployment that configures none runs.
+Pass the target deployment's configured `DocumentCapacity:MaximumPages` to check
+the numbering area against it.
 
 ### Reading a refusal
 

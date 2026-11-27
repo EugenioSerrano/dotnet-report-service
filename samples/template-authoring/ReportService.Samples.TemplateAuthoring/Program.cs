@@ -1,4 +1,5 @@
 using System.Globalization;
+using ReportService.TemplateChecks.PdfConstraints;
 
 namespace ReportService.Samples.TemplateAuthoring;
 
@@ -19,10 +20,12 @@ internal static class Program
 
         Usage:
           ReportService.Samples.TemplateAuthoring scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <semver>] [--out <dir>]
-          ReportService.Samples.TemplateAuthoring render <package-folder> [--out <dir>]
+          ReportService.Samples.TemplateAuthoring render <package-folder> [--out <dir>] [--page-capacity <pages>]
 
         Defaults: --version 1.0.0, --out <current directory>/<id> for scaffold and
-        <current directory>/artifacts/template-preview/<id>/<version> for render.
+        <current directory>/artifacts/template-preview/<id>/<version> for render;
+        --page-capacity the shipped example profile's page capacity - pass the target
+        deployment's configured DocumentCapacity:MaximumPages to check against it.
 
         Exit codes: 0 success, 1 refused by a product check or the sample render,
         2 invalid command line, 3 the render could not run.
@@ -40,7 +43,7 @@ internal static class Program
             code = command switch
             {
                 "scaffold" => Scaffold(tool, args, output),
-                "render" => await RenderAsync(tool, args, output).ConfigureAwait(false),
+                "render" => await RenderAsync(args, output).ConfigureAwait(false),
                 _ => Fail(output, args.Length == 0
                     ? "error: a command is required."
                     : "error: the command '" + args[0] + "' is not one this tool knows."),
@@ -81,9 +84,20 @@ internal static class Program
         return tool.Scaffold(new ScaffoldRequest(engine, id, target, line.Get("--version") ?? "1.0.0"), output);
     }
 
-    private static Task<int> RenderAsync(TemplateAuthoringTool tool, string[] args, TextWriter output)
+    private static Task<int> RenderAsync(string[] args, TextWriter output)
     {
-        var line = CommandLine.Parse(args, ["--out"], positionalCount: 1);
+        var line = CommandLine.Parse(args, ["--out", PageCapacityOption.Name], positionalCount: 1);
+        NumberingCapacity? capacity;
+        try
+        {
+            capacity = PageCapacityOption.Parse(line.Get(PageCapacityOption.Name));
+        }
+        catch (ArgumentException exception)
+        {
+            throw new UsageException(exception.Message);
+        }
+
+        var tool = new TemplateAuthoringTool(capacity: capacity);
         return tool.RenderAsync(new RenderRequest(line.Positional[0], line.Get("--out")), output);
     }
 

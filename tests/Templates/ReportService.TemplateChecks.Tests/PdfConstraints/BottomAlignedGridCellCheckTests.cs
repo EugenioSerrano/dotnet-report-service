@@ -530,6 +530,7 @@ public sealed class BottomAlignedGridCellCheckTests
 
         using var provider = new ServiceCollection()
             .AddSingleton<ReportService.TemplateChecks.Sample.ISampleRenderer>(new ReportService.Testing.TemplateChecks.InMemorySampleRenderer().AlwaysRendered())
+            .AddSingleton(new NumberingCapacity(10_000))
             .AddTemplateVersionChecks()
             .BuildServiceProvider();
         var names = provider.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToList();

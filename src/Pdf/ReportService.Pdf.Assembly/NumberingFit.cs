@@ -22,21 +22,25 @@ public sealed record NumberingFitResult(
 /// Measures the stamp at the full width of a document's page count against the
 /// reserved area at the declared font and size. The measurement reads the advance
 /// widths of the packaged font file itself — the same bytes the stamp is drawn
-/// with — so a wording that would overflow the area at the largest page count this
-/// service admits is refused before a document is ever printed.
+/// with — so a wording that would overflow the area at the page capacity the caller
+/// states, the deployment's configured one, is refused before a document is ever
+/// printed. The product compiles no page count of its own into this measurement.
 /// </summary>
 public static class NumberingFit
 {
-    /// <summary>The page count whose digits a stamp must fit: the document ceiling.</summary>
-    public const int MaximumPageCount = 10_000;
-
-    /// <summary>Measures the widest stamp of the contract against its area.</summary>
+    /// <summary>
+    /// Measures the widest stamp a document of <paramref name="pageCapacity"/> pages
+    /// prints — page <paramref name="pageCapacity"/> of <paramref name="pageCapacity"/> —
+    /// against the contract's area.
+    /// </summary>
     /// <param name="numbering">The contract to measure.</param>
+    /// <param name="pageCapacity">The most pages a document may reach: the deployment's configured capacity.</param>
     /// <returns>The measurement and whether it fits.</returns>
-    public static NumberingFitResult Measure(PageNumbering numbering)
+    public static NumberingFitResult Measure(PageNumbering numbering, int pageCapacity)
     {
         ArgumentNullException.ThrowIfNull(numbering);
-        return Measure(numbering, numbering.TextFor(MaximumPageCount, MaximumPageCount));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageCapacity);
+        return Measure(numbering, numbering.TextFor(pageCapacity, pageCapacity));
     }
 
     /// <summary>Measures one stamp text against the contract's area and font.</summary>

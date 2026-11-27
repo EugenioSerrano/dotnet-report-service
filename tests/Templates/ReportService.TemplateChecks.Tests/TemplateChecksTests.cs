@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ReportService.Rendering;
 using ReportService.TemplateChecks;
 using ReportService.TemplateChecks.Checks;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateChecks.Scanning;
 using ReportService.TemplateSource.Checks;
@@ -18,6 +19,7 @@ public sealed class TemplateChecksTests
     {
         var services = new ServiceCollection()
             .AddSingleton<ISampleRenderer>(new InMemorySampleRenderer().AlwaysRendered())
+            .AddSingleton(new NumberingCapacity(10_000))
             .AddTemplateVersionChecks()
             .BuildServiceProvider();
         var names = services.GetServices<ITemplateVersionCheck>().Select(check => check.Name).ToArray();

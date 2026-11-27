@@ -3,7 +3,9 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ReportService.Pdf.Assembly;
 using ReportService.Rendering;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplateSource.Manifest;
 using ReportService.Templates;
@@ -450,6 +452,105 @@ public sealed class AuthoringToolTests
                 .Select(path => Path.GetFileName(path))
                 .Order(StringComparer.Ordinal)
                 .ToArray());
+    }
+
+    /// <summary>A stated capacity of 100 000 pages refuses a numbering area that fits only 10 000.</summary>
+    [Fact]
+    public async Task AStatedPageCapacityIsTheOneTheNumberingCheckMeasuresAt()
+    {
+        var root = TestPaths.Temp();
+        var package = WithNumbering(CopyPackage("pilot-liquid", root), MidpointMm("Page 10000 of 10000", "Page 100000 of 100000"));
+        var printer = new ReplayPrinter(Path.Combine(TestPaths.Goldens, "pilot-liquid.pdf"));
+        var writer = new StringWriter(CultureInfo.InvariantCulture);
+
+        var code = await new TemplateAuthoringTool(new FixedTimeProvider(FixedInstant), () => printer, new NumberingCapacity(100_000))
+            .RenderAsync(new RenderRequest(package, Path.Combine(root, "out")), writer, TestContext.Current.CancellationToken)
+            .ConfigureAwait(true);
+
+        Assert.Equal(1, code);
+        Assert.Contains("outputs.pdf.numbering.format does not fit", writer.ToString(), StringComparison.Ordinal);
+        Assert.Contains("at the deployment's document capacity of 100000 pages.", writer.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Without a stated capacity the tool measures at the shipped example profile's.</summary>
+    [Fact]
+    public async Task WithoutAStatedCapacityTheNumberingCheckMeasuresAtTheExampleProfile()
+    {
+        var root = TestPaths.Temp();
+        var package = WithNumbering(CopyPackage("pilot-liquid", root), MidpointMm("Page 10000 of 10000", "Page 100000 of 100000"));
+        var printer = new ReplayPrinter(Path.Combine(TestPaths.Goldens, "pilot-liquid.pdf"));
+        var writer = new StringWriter(CultureInfo.InvariantCulture);
+
+        await Tool(printer)
+            .RenderAsync(new RenderRequest(package, Path.Combine(root, "out")), writer, TestContext.Current.CancellationToken)
+            .ConfigureAwait(true);
+
+        Assert.DoesNotContain("outputs.pdf.numbering", writer.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("100000", 100_000)]
+    [InlineData("0100", 100)]
+    [InlineData("1", 1)]
+    public void APageCapacityOfDigitsIsRead(string value, int expected) =>
+        Assert.Equal(expected, PageCapacityOption.Parse(value)!.MaximumPages);
+
+    [Fact]
+    public void AnAbsentPageCapacityIsNoCapacity() => Assert.Null(PageCapacityOption.Parse(null));
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("000")]
+    [InlineData("-1")]
+    [InlineData("+100")]
+    [InlineData(" 100")]
+    [InlineData("100 ")]
+    [InlineData("1,000")]
+    [InlineData("")]
+    [InlineData("abc")]
+    [InlineData("99999999999")]
+    public void AnythingButAPositivePageCountIsRefusedNamingTheOption(string value)
+    {
+        var exception = Assert.Throws<ArgumentException>(() => PageCapacityOption.Parse(value));
+
+        Assert.Contains(PageCapacityOption.Name, exception.Message, StringComparison.Ordinal);
+        Assert.Null(exception.ParamName);
+    }
+
+    private static string WithNumbering(string package, double widthMm)
+    {
+        var fonts = Path.Combine(package, "fonts");
+        Directory.CreateDirectory(fonts);
+        File.Copy(PackagedFont, Path.Combine(fonts, "LiberationSans-Regular.ttf"), overwrite: true);
+        var manifestPath = Path.Combine(package, "template.yaml");
+        var manifest = File.ReadAllText(manifestPath);
+        var newline = manifest.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        var numbered = manifest.Replace(
+            "    pageNumbering: global" + newline,
+            "    pageNumbering: global" + newline
+            + "    numbering:" + newline
+            + "      area: { leftMm: 120, topMm: 268, widthMm: " + widthMm.ToString("0.###", CultureInfo.InvariantCulture) + ", heightMm: 8 }" + newline
+            + "      font: { family: \"Liberation Sans\", file: fonts/LiberationSans-Regular.ttf, sizePt: 9 }" + newline
+            + "      format: \"Page {X} of {Y}\"" + newline
+            + "      culture: en-US" + newline,
+            StringComparison.Ordinal);
+        Assert.NotEqual(manifest, numbered);
+        File.WriteAllText(manifestPath, numbered, Utf8NoBom);
+        return package;
+    }
+
+    private static string PackagedFont =>
+        Path.Combine(TestPaths.RepositoryRoot, "tests", "Support", "ReportService.Testing", "Fonts", "LiberationSans-Regular.ttf");
+
+    /// <summary>The area width, in millimetres, halfway between two stamps' measured widths.</summary>
+    private static double MidpointMm(string narrower, string wider)
+    {
+        var font = new NumberingFont("Liberation Sans", "fonts/LiberationSans-Regular.ttf", 9, File.ReadAllBytes(PackagedFont));
+        var probe = new PageNumbering(new NumberingArea(120, 268, 80, 8), font, "Page {X} of {Y}", "en-US");
+        var low = NumberingFit.Measure(probe, narrower).WidthPt;
+        var high = NumberingFit.Measure(probe, wider).WidthPt;
+        Assert.True(low < high);
+        return Math.Round((low + high) / 2 / NumberingArea.PointsPerMillimetre, 3);
     }
 
     private static TemplateAuthoringTool Tool(IPdfPrinter printer) =>

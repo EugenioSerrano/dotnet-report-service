@@ -52,6 +52,12 @@ the three settings to all four when its own configuration states them, and gives
 none by default. A value that is not valid stops the process at start, naming the
 setting and never its value.
 
+The take measures a template's page-number stamp at the configured
+`DocumentCapacity:MaximumPages` (at the example's 10 000 when none is configured): the
+stamp of the last page of the largest document the deployment admits must fit the
+template's numbering area. A deployment that raises the capacity to a value with more
+digits takes its templates again, or widens their numbering area.
+
 **The values the service ships are an example, not a rule.** They carry the last
 published reference measurement (10 000 pages of ordinary rows, without per-page
 codes). A deployment replaces them with what it has

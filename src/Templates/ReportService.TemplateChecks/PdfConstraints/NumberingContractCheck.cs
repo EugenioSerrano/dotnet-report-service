@@ -13,13 +13,13 @@ namespace ReportService.TemplateChecks.PdfConstraints;
 /// font must be a package-relative file the package holds, the family must be
 /// named, the size must be a positive number of points no larger than 72, the
 /// wording must carry exactly one <c>{X}</c> and one <c>{Y}</c> and no other
-/// placeholder, the culture must be a BCP 47 tag, and the stamp at the document
-/// ceiling's page count must fit the area at the declared font and size. A package
+/// placeholder, the culture must be a BCP 47 tag, and the stamp at the deployment's
+/// configured page capacity must fit the area at the declared font and size. A package
 /// that declares page totals must keep the numbering area out of the accounting
 /// footer's band. A package that declares no contract passes: it is still taken,
 /// and it is not assemblable.
 /// </summary>
-public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemplateVersionCheck
+public sealed class NumberingContractCheck(TemplateCheckSession session, NumberingCapacity capacity) : ITemplateVersionCheck
 {
     /// <summary>The rule identifier this refusal is counted under.</summary>
     public const string RuleId = TemplateRefusal.Rules.NumberingContract;
@@ -28,6 +28,7 @@ public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemp
     public const decimal MaximumFontSizePt = 72m;
 
     private readonly TemplateCheckSession _session = session ?? throw new ArgumentNullException(nameof(session));
+    private readonly NumberingCapacity _capacity = capacity ?? throw new ArgumentNullException(nameof(capacity));
 
     /// <inheritdoc />
     public string Name => "NumberingContractCheck";
@@ -56,7 +57,7 @@ public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemp
             ?? Font(numbering, view)
             ?? Wording(numbering)
             ?? Culture(numbering)
-            ?? Fit(numbering, view)
+            ?? Fit(numbering, view, _capacity.MaximumPages)
             ?? FooterBand(numbering, page, candidate)
             ?? TemplateCheckResult.Pass());
     }
@@ -173,7 +174,7 @@ public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemp
         }
     }
 
-    private static TemplateCheckResult? Fit(TemplatePdfNumbering numbering, PackageView view)
+    private static TemplateCheckResult? Fit(TemplatePdfNumbering numbering, PackageView view, int pageCapacity)
     {
         var area = new NumberingArea(
             (double)numbering.Area!.LeftMm!.Value,
@@ -198,7 +199,7 @@ public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemp
             (double)numbering.Font.SizePt!.Value,
             bytes);
         var contract = new PageNumbering(area, font, numbering.Format!, numbering.Culture!);
-        var fit = NumberingFit.Measure(contract);
+        var fit = NumberingFit.Measure(contract, pageCapacity);
         if (fit.Fits)
         {
             return null;
@@ -207,7 +208,8 @@ public sealed class NumberingContractCheck(TemplateCheckSession session) : ITemp
         return Refuse(
             fit.Reason == "font-unreadable"
                 ? "outputs.pdf.numbering.font.file is not a readable TrueType font."
-                : "outputs.pdf.numbering.format does not fit outputs.pdf.numbering.area at the declared font and size at 10000 pages.",
+                : "outputs.pdf.numbering.format does not fit outputs.pdf.numbering.area at the declared font and size at the deployment's document capacity of "
+                    + pageCapacity.ToString(CultureInfo.InvariantCulture) + " pages.",
             fit.Reason == "font-unreadable"
                 ? "Store a readable TrueType font file."
                 : "Enlarge the area, reduce the size or shorten the wording.");

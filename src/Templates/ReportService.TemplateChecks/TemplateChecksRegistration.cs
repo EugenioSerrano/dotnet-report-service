@@ -27,7 +27,8 @@ public static class TemplateDocumentBase
 /// render and the record at the row bound last: the sample render needs the process to
 /// have registered the <c>ISampleRenderer</c> of the renderer it runs on, and the
 /// at-bound record is the most expensive render and the last thing between a well-formed
-/// package and its being kept.
+/// package and its being kept. The process also supplies the <c>NumberingCapacity</c> the
+/// numbering check measures at - its configured document capacity; nothing here supplies one.
 /// </summary>
 public static class TemplateChecksRegistration
 {

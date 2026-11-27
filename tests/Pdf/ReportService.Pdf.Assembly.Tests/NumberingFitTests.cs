@@ -4,7 +4,7 @@ using ReportService.Pdf.Assembly;
 namespace ReportService.Pdf.Assembly.Tests;
 
 /// <summary>
-/// The fit measurement: the stamp at the document ceiling's page count must fit the
+/// The fit measurement: the stamp at the page capacity the caller states must fit the
 /// reserved area at the declared font and size, and a wording that would overflow
 /// it is refused before anything is printed.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class NumberingFitTests
     {
         var numbering = AssemblyFixture.Contract();
 
-        var fit = NumberingFit.Measure(numbering);
+        var fit = NumberingFit.Measure(numbering, 10_000);
 
         Assert.True(fit.Fits);
         Assert.True(fit.WidthPt <= fit.AreaWidthPt);
@@ -28,7 +28,7 @@ public sealed class NumberingFitTests
     {
         var numbering = AssemblyFixture.Contract(new NumberingArea(120, 268, 12, 8));
 
-        var fit = NumberingFit.Measure(numbering);
+        var fit = NumberingFit.Measure(numbering, 10_000);
 
         Assert.False(fit.Fits);
         Assert.Equal("stamp-overflows-area", fit.Reason);
@@ -44,7 +44,7 @@ public sealed class NumberingFitTests
         var widthMm = (tenThousand + hundredThousand) / 2 / NumberingArea.PointsPerMillimetre;
         var numbering = AssemblyFixture.Contract(new NumberingArea(120, 268, widthMm, 8));
 
-        var fit = NumberingFit.Measure(numbering);
+        var fit = NumberingFit.Measure(numbering, 100_000);
 
         TestContext.Current.TestOutputHelper?.WriteLine(
             "reason=" + (fit.Reason ?? "null")
@@ -61,7 +61,7 @@ public sealed class NumberingFitTests
     {
         var numbering = AssemblyFixture.Contract(new NumberingArea(120, 268, 80, 1));
 
-        var fit = NumberingFit.Measure(numbering);
+        var fit = NumberingFit.Measure(numbering, 10_000);
 
         Assert.False(fit.Fits);
     }
@@ -72,11 +72,17 @@ public sealed class NumberingFitTests
         var font = new NumberingFont("broken", "fonts/broken.ttf", 9, Encoding.ASCII.GetBytes("not a font"));
         var numbering = new PageNumbering(AssemblyFixture.Area, font, "Page {X} of {Y}", "en-US");
 
-        var fit = NumberingFit.Measure(numbering);
+        var fit = NumberingFit.Measure(numbering, 10_000);
 
         Assert.False(fit.Fits);
         Assert.Equal("font-unreadable", fit.Reason);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void A_capacity_that_is_not_positive_is_rejected(int pageCapacity) =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => NumberingFit.Measure(AssemblyFixture.Contract(), pageCapacity));
 
     [Theory]
     [InlineData("Page {X} of {Y}", true)]

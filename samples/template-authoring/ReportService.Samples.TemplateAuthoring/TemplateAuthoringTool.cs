@@ -2,10 +2,12 @@ using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
 using ReportService.ServiceDefaults;
 using ReportService.TemplateChecks;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Versioning;
@@ -47,7 +49,7 @@ public sealed record RenderRequest(string PackageDirectory, string? OutputDirect
 /// </summary>
 /// <param name="clock">The clock the presenter reads, or <see langword="null"/> for the system clock.</param>
 /// <param name="printer">A printer for a caller that runs without a browser, or <see langword="null"/> for the product's Chromium printer.</param>
-public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfPrinter>? printer = null)
+public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfPrinter>? printer = null, NumberingCapacity? capacity = null)
 {
     private const string TypedMemberSentence =
         "template.yaml: the manifest declares a member with a type this service does not read.";
@@ -59,6 +61,10 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
 
     private readonly Func<IPdfPrinter>? _printer = printer;
+
+    // The page capacity the numbering check measures at: the one the author states, else
+    // the shipped example profile's - the capacity a deployment that configures none runs.
+    private readonly NumberingCapacity _capacity = capacity ?? new NumberingCapacity(DocumentCapacity.Example.MaximumPages);
 
     /// <summary>Writes a complete package for the requested engine and checks it with the take's checks.</summary>
     /// <param name="request">The engine, the identifier, the version and the target directory.</param>
@@ -446,6 +452,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
     {
         var services = new ServiceCollection();
         services.AddSingleton(_clock);
+        services.AddSingleton(_capacity);
         services.AddTemplateVersionChecks();
         services.AddSingleton(renderer);
         using var provider = services.BuildServiceProvider();
