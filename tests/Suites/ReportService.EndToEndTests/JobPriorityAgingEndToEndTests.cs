@@ -17,6 +17,7 @@ namespace ReportService.EndToEndTests;
 /// orchestration worker restarted during the accumulation still promotes the job, and the
 /// recorded output history replays without a non-determinism error.
 /// </summary>
+[Collection(PriorityCompositionCollection.Name)]
 public sealed class JobPriorityAgingEndToEndTests : IDisposable
 {
     private static readonly TimeSpan JobDeadline = TimeSpan.FromMinutes(20);
@@ -31,17 +32,25 @@ public sealed class JobPriorityAgingEndToEndTests : IDisposable
     [Fact]
     public async Task AStarvedLowJobIsPromotedAndOnlyItsLaterWorkMovesToNormal()
     {
+        // The page-accounting fixture's job holds more blocks than the window, so blocks remain
+        // to be sent after the promotion; the case asserts it before anything else.
+        using var accounted = new PriorityComposition(accounted: true);
+        var stage = accounted.Stage;
         var cancellationToken = TestContext.Current.CancellationToken;
-        await using var composition = await _priority.Stage.StartAsync(cancellationToken);
-        await _priority.Stage.TakeTemplateAsync(composition, cancellationToken);
+        await using var composition = await stage.StartAsync(cancellationToken);
+        await stage.TakeTemplateAsync(composition, cancellationToken);
         var engine = await PriorityComposition.EngineAsync(composition.App);
         await RestartHarness.StopAsync(composition.App, PriorityComposition.LowRenderWorker, cancellationToken);
 
-        var low = await _priority.SubmitAsync(composition, "low", records: null, cancellationToken);
+        var low = await accounted.SubmitAsync(composition, "low", records: null, cancellationToken);
         await PriorityComposition.WaitForEffectiveAsync(composition, low, "normal", PromotionDeadline, cancellationToken);
+        var partition = await stage.ReadPartitionAsync(composition, low, cancellationToken);
+        Assert.True(
+            partition.BlockCount > PdfOutputConcurrencyOptions.DefaultWindow,
+            $"the job had to hold more blocks ({partition.BlockCount}) than the window ({PdfOutputConcurrencyOptions.DefaultWindow})");
         await RestartHarness.StartAsync(composition.App, PriorityComposition.LowRenderWorker, cancellationToken);
 
-        var ended = await _priority.Stage.WaitForEndAsync(composition, low, cancellationToken, JobDeadline);
+        var ended = await stage.WaitForEndAsync(composition, low, cancellationToken, JobDeadline);
         Assert.Equal("SUCCEEDED", ended.Status);
         Assert.Equal(("low", "normal"), await PriorityComposition.PriorityOfAsync(composition, low, cancellationToken));
 
@@ -59,13 +68,13 @@ public sealed class JobPriorityAgingEndToEndTests : IDisposable
         Assert.Equal("report-pdf-merge", Assert.Single(output, activity => activity.Type == AssemblePdfStepContracts.AssemblePdf).Queue);
 
         var promotions = await PriorityComposition.CaptureAsync(composition, RestartHarness.OrchestrationWorkerName, OrchestrationMetrics.PriorityPromotionsInstrumentName, cancellationToken);
-        Assert.Equal(1, promotions.Sum(point => point.Value));
+        Assert.Equal(1, PriorityComposition.Cumulative(promotions));
         Assert.All(promotions, point => Assert.Equal(["from", "to"], point.Tags.Keys.Order(StringComparer.Ordinal)));
 
         await ReplayAsync(engine, low, cancellationToken);
         PriorityComposition.Evidence(
             "priority-aging-multi-block.txt",
-            string.Create(CultureInfo.InvariantCulture, $"blocks_on_low={onLow.Count} blocks_on_normal={onNormal.Count} promotions={promotions.Sum(point => point.Value)}{Environment.NewLine}"));
+            string.Create(CultureInfo.InvariantCulture, $"blocks={partition.BlockCount} blocks_on_low={onLow.Count} blocks_on_normal={onNormal.Count} promotions={PriorityComposition.Cumulative(promotions)}{Environment.NewLine}"));
     }
 
     [Fact]
@@ -91,7 +100,7 @@ public sealed class JobPriorityAgingEndToEndTests : IDisposable
         Assert.DoesNotContain(output, activity => activity.Type == AssemblePdfStepContracts.AssemblePdf);
 
         var promotions = await PriorityComposition.CaptureAsync(composition, RestartHarness.OrchestrationWorkerName, OrchestrationMetrics.PriorityPromotionsInstrumentName, cancellationToken);
-        Assert.Equal(1, promotions.Sum(point => point.Value));
+        Assert.Equal(1, PriorityComposition.Cumulative(promotions));
         await ReplayAsync(engine, low, cancellationToken);
     }
 
@@ -117,7 +126,7 @@ public sealed class JobPriorityAgingEndToEndTests : IDisposable
         Assert.Equal(("normal", "normal"), await PriorityComposition.PriorityOfAsync(composition, normal, cancellationToken));
         Assert.Equal(("high", "high"), await PriorityComposition.PriorityOfAsync(composition, high, cancellationToken));
         var promotions = await PriorityComposition.CaptureAsync(composition, RestartHarness.OrchestrationWorkerName, OrchestrationMetrics.PriorityPromotionsInstrumentName, cancellationToken);
-        Assert.Equal(1, promotions.Sum(point => point.Value));
+        Assert.Equal(1, PriorityComposition.Cumulative(promotions));
     }
 
     [Fact]

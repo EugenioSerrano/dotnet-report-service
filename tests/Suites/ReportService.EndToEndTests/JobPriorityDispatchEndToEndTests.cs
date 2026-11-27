@@ -13,6 +13,7 @@ namespace ReportService.EndToEndTests;
 /// a job runs on the queue it always ran on; and nothing running is cancelled or retried by the
 /// high work. Everything asserted is read from the engine's recorded histories.
 /// </summary>
+[Collection(PriorityCompositionCollection.Name)]
 public sealed class JobPriorityDispatchEndToEndTests : IDisposable
 {
     private static readonly TimeSpan JobDeadline = TimeSpan.FromMinutes(20);

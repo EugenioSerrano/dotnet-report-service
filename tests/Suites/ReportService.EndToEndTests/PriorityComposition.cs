@@ -16,6 +16,18 @@ using Temporalio.Client;
 namespace ReportService.EndToEndTests;
 
 /// <summary>
+/// The priority classes: each starts a composition with one render and one merge worker per
+/// class, so they run one at a time and never beside each other, to keep the host's memory and
+/// the container runtime's load within what one composition needs.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class PriorityCompositionCollection
+{
+    /// <summary>The collection's name.</summary>
+    public const string Name = "priority-composition";
+}
+
+/// <summary>
 /// The composition the priority cases start: the multi-block stage with one render and one merge
 /// worker per class (the normal ones are the composition's own), a short aging wait and a short
 /// pending-work sample interval. Every other end-to-end class keeps its own composition. The
@@ -37,10 +49,11 @@ internal sealed class PriorityComposition : IDisposable
     public const string LowMergeWorker = "merge-worker-low";
 
     /// <summary>Starts a stage whose composition carries the per-class workers.</summary>
+    /// <param name="accounted">Whether the stage prints the page-accounting fixture, whose job holds more blocks than the window.</param>
     /// <param name="extraArguments">Settings a case adds.</param>
-    public PriorityComposition(params string[] extraArguments)
+    public PriorityComposition(bool accounted = false, params string[] extraArguments)
     {
-        Stage = new MultiBlockStage(compositionArguments:
+        Stage = new MultiBlockStage(accounted: accounted, compositionArguments:
         [
             "--Composition:PriorityClassWorkers=true",
             "--Priority:Aging:Wait=" + AgingWait.ToString("c", CultureInfo.InvariantCulture),
@@ -191,6 +204,17 @@ internal sealed class PriorityComposition : IDisposable
 
         return points;
     }
+
+    /// <summary>
+    /// The current total of a cumulative counter in the capture. The capture keeps every periodic
+    /// export, and each export repeats the series' running total, so the total is the latest -
+    /// the largest - value of each series, summed over the series; never the sum of the points.
+    /// </summary>
+    /// <param name="points">The captured points of one counter.</param>
+    public static double Cumulative(IEnumerable<CapturedPoint> points) =>
+        points
+            .GroupBy(point => string.Join('|', point.Tags.OrderBy(tag => tag.Key, StringComparer.Ordinal).Select(tag => tag.Key + "=" + tag.Value)), StringComparer.Ordinal)
+            .Sum(series => series.Max(point => point.Value));
 
     /// <summary>Writes a case's figures to the run's evidence.</summary>
     public static void Evidence(string fileName, string text)
