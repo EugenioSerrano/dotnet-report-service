@@ -81,6 +81,22 @@ public sealed class PdfOutputWindowTests
         Assert.Null(decision.NextIndex);
     }
 
+    /// <summary>
+    /// The loop the workflow runs, not one decision: with two renders in flight, a run that
+    /// has completed its share continues as a new run with exactly one thousand blocks done,
+    /// nothing outstanding and the next index carried.
+    /// </summary>
+    [Fact]
+    public void AFullWindowRunContinuesAsNewAfterExactlyOneThousandBlocks()
+    {
+        var segment = PdfOutputWindowLoop.RunSegment(PdfOutputWindow.Decide, 2_500, 0, 2);
+
+        Assert.Equal(PdfOutputWindowAction.ContinueAsNew, segment.End);
+        Assert.Equal(1_000, segment.Completed);
+        Assert.Equal(0, segment.Outstanding);
+        Assert.Equal(1_000, segment.NextIndex);
+    }
+
     [Fact]
     public void TheThresholdIsOneThousandBlocks()
     {
