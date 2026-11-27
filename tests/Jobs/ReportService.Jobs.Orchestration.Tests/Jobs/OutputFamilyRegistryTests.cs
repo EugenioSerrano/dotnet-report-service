@@ -64,19 +64,6 @@ public sealed class OutputFamilyRegistryTests
         Assert.Equal(OrchestrationWorkerRegistration.Families(), holder.Current);
     }
 
-    [Fact]
-    public void OnlyThePdfFamilyCarriesARefusalTheDataStepRecorded()
-    {
-        var refused = Partition() with { PdfRefusal = new PdfOutputRefusal("ROW_BOUND_EXCEEDED", "a record is larger than the bound") };
-
-        Assert.Equal(new OutputRefusal("ROW_BOUND_EXCEEDED", "a record is larger than the bound"), new PdfOutputFamily().RefusalAtPartition(refused));
-        Assert.Null(new HtmlOutputFamily().RefusalAtPartition(refused));
-        Assert.Null(new PdfOutputFamily().RefusalAtPartition(Partition()));
-    }
-
-    private static PartitionResult Partition() =>
-        new(1, 1, 1, 24, 1, "block/job/0/attempt", 1, new string('a', 64), "index/job/0/attempt", 1, new string('b', 64));
-
     // A family the job core has never seen: it starts nothing here, because only the registry's
     // order and refusals are under test.
     private sealed class SiblingFamily(OutputFormat format, int order, bool ownsSingleOutputPath = false) : IOutputFamily

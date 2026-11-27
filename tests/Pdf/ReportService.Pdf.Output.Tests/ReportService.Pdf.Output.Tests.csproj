@@ -32,6 +32,13 @@
   <ItemGroup>
     <!-- The recorded histories the replay cases replay, beside the suite that consumes them. -->
     <Content Include="Histories\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The job recordings that reach the PDF family, read from the job core's suite (one copy of each file). -->
+    <Content Include="..\..\Jobs\ReportService.Jobs.Orchestration.Tests\Histories\Jobs\*.json" Link="Histories\Jobs\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The template-resolution rig the page-code cases run in, shared as source with the job core's suite. -->
+    <Compile Include="..\..\Jobs\ReportService.Jobs.Orchestration.Tests\Jobs\TemplateResolutionRig.cs" Link="Shared\TemplateResolutionRig.cs" />
   </ItemGroup>
 
 </Project>
