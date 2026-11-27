@@ -84,6 +84,9 @@ internal static partial class CoverageFloors
         new("ReportService.Pdf.PageCodes.Hosting", Project: "ReportService.Pdf.PageCodes.Hosting.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Pdf.PageCodes.QrCoder", Project: "ReportService.Pdf.PageCodes.QrCoder.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Orchestration", Project: "ReportService.Workers.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Jobs.Orchestration", Project: "ReportService.Jobs.Orchestration.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Pdf.Output", Project: "ReportService.Pdf.Output.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
+        new("ReportService.Html", Project: "ReportService.Html.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Merge", Project: "ReportService.Workers.Merge.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
         new("ReportService.Workers.Pdf", Project: "ReportService.Workers.Pdf.Tests", LinePercent: 80, BranchPercent: 70, Tier: "standard"),
     ];
@@ -121,6 +124,9 @@ internal static partial class CoverageFloors
         // levels, not a product assembly: it is measured and reported without a floor.
         ("ReportService.PdfOracle.Tests", ["ReportService.PdfOracle"]),
         ("ReportService.Workers.Orchestration.Tests", ["ReportService.Workers.Orchestration"]),
+        ("ReportService.Jobs.Orchestration.Tests", ["ReportService.Jobs.Orchestration"]),
+        ("ReportService.Pdf.Output.Tests", ["ReportService.Pdf.Output"]),
+        ("ReportService.Html.Tests", ["ReportService.Html"]),
         ("ReportService.Workers.Merge.Tests", ["ReportService.Workers.Merge"]),
         ("ReportService.Workers.Pdf.Tests", ["ReportService.Workers.Pdf"]),
     ];

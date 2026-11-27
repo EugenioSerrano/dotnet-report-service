@@ -25,20 +25,6 @@ public sealed class JobDispatchActivitiesTests
     private const string OutputId = "output-priority";
 
     [Fact]
-    public void WaitingRenderOrAssemblyWorkIsPendingAndStartedOrOtherWorkIsNot()
-    {
-        Assert.True(PendingDispatchMapper.AnyWaiting(Describe((PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Scheduled))));
-        Assert.True(PendingDispatchMapper.AnyWaiting(Describe((AssemblePdfStepContracts.AssemblePdf, PendingActivityState.Scheduled))));
-        Assert.False(PendingDispatchMapper.AnyWaiting(Describe((PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Started))));
-        Assert.False(PendingDispatchMapper.AnyWaiting(Describe(("PublishOutput", PendingActivityState.Scheduled))));
-        Assert.False(PendingDispatchMapper.AnyWaiting(Describe()));
-        Assert.True(PendingDispatchMapper.AnyWaiting(Describe(
-            (PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Started),
-            (PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Scheduled))));
-        Assert.Throws<ArgumentNullException>(() => PendingDispatchMapper.AnyWaiting(null!));
-    }
-
-    [Fact]
     public async Task TheDispatchReadsTheJobsClassAndTheDeploymentsWait()
     {
         var (store, activities, _) = Create(JobPriority.Low);
@@ -49,23 +35,6 @@ public sealed class JobDispatchActivitiesTests
         Assert.Equal(20, dispatch.AgingWaitSeconds);
         Assert.Equal(JobPriority.Normal, (await activities.ReadJobDispatchAsync(new ReadJobDispatchInput("job-missing"))).PriorityClass);
         Assert.Equal(0, store.Promotions);
-    }
-
-    [Fact]
-    public async Task ASampleSeesTheOutputsWaitingWorkAndTheJobsClass()
-    {
-        string? described = null;
-        var (_, activities, _) = Create(JobPriority.Low, (id, _) =>
-        {
-            described = id;
-            return Task.FromResult(Describe((PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Scheduled)));
-        });
-
-        var sample = await activities.ReadPendingDispatchAsync(new ReadPendingDispatchInput(JobId, "the-output-execution"));
-
-        Assert.True(sample.Pending);
-        Assert.Equal(JobPriority.Low, sample.JobClass);
-        Assert.Equal("the-output-execution", described);
     }
 
     [Fact]
@@ -108,28 +77,11 @@ public sealed class JobDispatchActivitiesTests
     {
         var (_, activities, _) = Create(JobPriority.Low);
         await Assert.ThrowsAsync<ArgumentNullException>(() => activities.ReadJobDispatchAsync(null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => activities.ReadPendingDispatchAsync(null!));
         await Assert.ThrowsAsync<ArgumentNullException>(() => activities.PromoteToNormalAsync(null!));
     }
 
-    private static DescribeWorkflowExecutionResponse Describe(params (string Type, PendingActivityState State)[] activities)
-    {
-        var response = new DescribeWorkflowExecutionResponse();
-        foreach (var (type, state) in activities)
-        {
-            response.PendingActivities.Add(new PendingActivityInfo
-            {
-                ActivityType = new Temporalio.Api.Common.V1.ActivityType { Name = type },
-                State = state,
-            });
-        }
-
-        return response;
-    }
-
     private static (InMemoryJobStore Store, JobDispatchActivities Activities, List<(long Value, KeyValuePair<string, object?>[] Tags)> Promotions) Create(
-        JobPriority priority,
-        Func<string, CancellationToken, Task<DescribeWorkflowExecutionResponse>>? describe = null)
+        JobPriority priority)
     {
         var store = new InMemoryJobStore(new InMemoryUploadStore());
         store.SeedAccepted(JobId, OutputId, new TemplateReferenceRecord(JobId, "template", TemplateReferenceForm.Exact));
@@ -151,7 +103,6 @@ public sealed class JobDispatchActivitiesTests
         var activities = new JobDispatchActivities(
             store,
             Options.Create(new PriorityAgingOptions { Wait = TimeSpan.FromSeconds(20) }),
-            describe ?? ((_, _) => Task.FromResult(new DescribeWorkflowExecutionResponse())),
             new OrchestrationMetrics(identity),
             NullLogger<JobDispatchActivities>.Instance);
         return (store, activities, promotions);

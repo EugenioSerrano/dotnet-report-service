@@ -28,7 +28,7 @@
     <ProjectReference Include="..\..\src\Platform\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
     <ProjectReference Include="..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
     <ProjectReference Include="..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
-    <ProjectReference Include="..\..\src\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
+    <ProjectReference Include="..\..\src\Pdf\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
     <ProjectReference Include="..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 

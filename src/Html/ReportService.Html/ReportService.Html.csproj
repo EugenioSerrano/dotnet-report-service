@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The HTML output family: assembling one self-contained HTML document from the
+    composed blocks and the template's assets, the execution that assembles and
+    publishes one HTML output, and the family it registers with the job core. It
+    depends on the job core and the template engine, never on another output family.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jobs\ReportService.Jobs.Orchestration\ReportService.Jobs.Orchestration.csproj" />
+    <ProjectReference Include="..\..\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.Html.Tests" />
+  </ItemGroup>
+
+</Project>

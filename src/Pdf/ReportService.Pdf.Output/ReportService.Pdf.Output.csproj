@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The PDF output step: the execution that prints, assembles and publishes one PDF
+    output, its render window and its continuation, the steps only it calls, and the
+    family it registers with the job core. It depends on the job core and never on
+    another output family.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jobs\ReportService.Jobs.Orchestration\ReportService.Jobs.Orchestration.csproj" />
+  </ItemGroup>
+
+</Project>

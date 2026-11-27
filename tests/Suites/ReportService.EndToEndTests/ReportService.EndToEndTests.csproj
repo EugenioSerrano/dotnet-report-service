@@ -35,7 +35,7 @@
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
     <!-- The delivered ceiling code the over-ceiling case reads, never restated. -->
-    <ProjectReference Include="..\..\..\src\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
     <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
     <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>

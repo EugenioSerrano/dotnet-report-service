@@ -44,7 +44,7 @@
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
     <!-- The measurement reads the delivered take deadline, the render budget and the activity's bound. -->
-    <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

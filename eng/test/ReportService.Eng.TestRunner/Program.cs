@@ -45,8 +45,11 @@ internal static partial class Program
         "tests/Templates/ReportService.TemplateSource.Tests/ReportService.TemplateSource.Tests.csproj",
         "tests/Jobs/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj",
         "tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj",
-        "tests/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj",
-        "tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
+        "tests/Jobs/ReportService.Jobs.Orchestration.Tests/ReportService.Jobs.Orchestration.Tests.csproj",
+        "tests/Pdf/ReportService.Pdf.Output.Tests/ReportService.Pdf.Output.Tests.csproj",
+        "tests/Html/ReportService.Html.Tests/ReportService.Html.Tests.csproj",
+        "tests/Pdf/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj",
+        "tests/Pdf/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj",
         // The hermetic PDF structure verification: reads the committed golden PDFs
         // in-process (PdfPig), no container. A no-coverage hermetic project
         // (CoverageFloors.NoCoverageProjects): it owns no product assembly.

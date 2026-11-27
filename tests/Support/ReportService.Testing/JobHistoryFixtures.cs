@@ -80,6 +80,15 @@ public static class JobHistoryFixtures
     /// <summary>A job whose template source could not be checked: the version recorded at acceptance is pinned.</summary>
     public const string TemplateBaselineFile = "report-job-template-baseline.json";
 
+    /// <summary>A job at high priority that asked for a PDF and an HTML output, both produced.</summary>
+    public const string MultiOutputPriorityFile = "report-job-multi-output-priority.json";
+
+    /// <summary>A job that asked for an HTML output only.</summary>
+    public const string HtmlOnlyFile = "report-job-html-only.json";
+
+    /// <summary>A job that asked for a PDF and an HTML output whose PDF output the row bound refused.</summary>
+    public const string MultiOutputPdfRefusedFile = "report-job-multi-output-pdf-refused.json";
+
     /// <summary>A job whose upload was ready at its first check: it never waits.</summary>
     public static readonly JobHistoryFixture Ready = new(
         ReadyFile,
@@ -233,6 +242,31 @@ public static class JobHistoryFixtures
         InputWaitOptions.DefaultContinueAsNewAfter,
         MeasuredEvents: 51);
 
+    /// <summary>
+    /// A job at high priority that asked for a PDF and an HTML output: the run reads its dispatch
+    /// once, looks each output up in the families' order, and starts both outputs' executions,
+    /// the PDF one on its class.
+    /// </summary>
+    public static readonly JobHistoryFixture MultiOutputPriority = new(
+        MultiOutputPriorityFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
+    /// <summary>A job that asked for an HTML output only: no PDF output is found and only the HTML execution starts.</summary>
+    public static readonly JobHistoryFixture HtmlOnly = new(
+        HtmlOnlyFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
+    /// <summary>
+    /// A job that asked for a PDF and an HTML output whose PDF output the row bound refused: the PDF
+    /// output ends with the reason the pass kept, and only the HTML execution starts.
+    /// </summary>
+    public static readonly JobHistoryFixture MultiOutputPdfRefused = new(
+        MultiOutputPdfRefusedFile,
+        InputWaitOptions.DefaultBackstop,
+        InputWaitOptions.DefaultContinueAsNewAfter);
+
     /// <summary>Every committed recording, in the order the cases name them.</summary>
     public static readonly JobHistoryFixture[] All =
     [
@@ -253,6 +287,9 @@ public static class JobHistoryFixtures
         TemplateByName,
         TemplateTakeRefused,
         TemplateBaseline,
+        MultiOutputPriority,
+        HtmlOnly,
+        MultiOutputPdfRefused,
     ];
 
     /// <summary>

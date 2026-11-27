@@ -24,7 +24,7 @@ internal sealed record MergeWorkerImage(
 
     /// <summary>The merge worker's entry project file under a repository root.</summary>
     internal static string WorkerProjectPath(string repositoryRoot) => Path.Combine(
-        repositoryRoot, "src", "ReportService.Workers.Merge.Entry", "ReportService.Workers.Merge.Entry.csproj");
+        repositoryRoot, "src", "Pdf", "ReportService.Workers.Merge.Entry", "ReportService.Workers.Merge.Entry.csproj");
 
     /// <summary>Reads the image names from the merge worker's entry project file.</summary>
     public static async Task<MergeWorkerImage> DescribeAsync(

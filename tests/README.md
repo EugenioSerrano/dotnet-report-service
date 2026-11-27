@@ -18,7 +18,7 @@ failed.
 
 | Level | Projects | May reach | Command |
 |-------|----------|-----------|---------|
-| **Hermetic** - unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Assembly.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.Pdf.PageCodes.Hosting.Tests`, `ReportService.Pdf.PageCodes.QrCoder.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Merge.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly), and `ReportService.PdfStructure.Tests` (the hermetic PDF structure verification over the committed golden PDFs) | nothing outside the test process; files only under a temporary directory unique to each test; the committed golden PDFs read in-process | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
+| **Hermetic** - unit and component tests | `ReportService.Api.Tests`, `ReportService.Data.Tests`, `ReportService.DataContract.Tests`, `ReportService.Fixtures.Tests`, `ReportService.Jobs.Tests`, `ReportService.Jobs.Orchestration.Tests`, `ReportService.Html.Tests`, `ReportService.Migrations.Tests`, `ReportService.Pdf.Assembly.Tests`, `ReportService.Pdf.Output.Tests`, `ReportService.Pdf.Verification.Tests`, `ReportService.Pdf.PageCodes.Hosting.Tests`, `ReportService.Pdf.PageCodes.QrCoder.Tests`, `ReportService.PdfOracle.Tests`, `ReportService.Rendering.Tests`, `ReportService.Storage.Tests`, `ReportService.TemplatePackages.Tests`, `ReportService.TemplateSource.Tests`, `ReportService.TemplateChecks.Tests`, `ReportService.Templates.Tests`, `ReportService.Uploads.Tests`, `ReportService.Workers.Orchestration.Tests`, `ReportService.Workers.Merge.Tests`, `ReportService.Workers.Pdf.Tests` (one `ReportService.<Area>.Tests` per product project, each the only project that measures its own assembly), and `ReportService.PdfStructure.Tests` (the hermetic PDF structure verification over the committed golden PDFs) | nothing outside the test process; files only under a temporary directory unique to each test; the committed golden PDFs read in-process | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- hermetic [--degree <n>] [--sequential --reason "<text>"] [--coverage-role <measure\|verification>]` |
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
@@ -536,7 +536,7 @@ delivered `same-report` family stays untouched as the composition reference.
 
 ## The report job suite
 
-The same project holds the tests of one report job's own work: `ReportJobActivitiesTests`
+The job core's own project, `ReportService.Jobs.Orchestration.Tests` (`tests/Jobs/`), holds the tests of one report job's own work: `ReportJobActivitiesTests`
 runs the check of the job's data reference and the failure that ends it against
 the shared in-memory records, the case for every state an upload and a job can
 be in; `ReportJobActivityOptionsTests` asserts every execution setting of those
@@ -545,7 +545,14 @@ histories under `Histories/Jobs/` — one captured with a ready input, one with 
 rejected input and one with a confirming input — and hold each of them to the
 longest path this build writes, with no timer in it and exactly one check of the
 input. The histories are recorded by the opt-in capture case of the integration
-suite, which runs against the SDK's local engine and needs no container.
+suite, which runs against the SDK's local engine and needs no container; the
+recordings of a job with several outputs, of an HTML-only job and of a job whose
+PDF output the data step refused were taken from the local composition. A replay
+registers the output families first (`OutputFamilies.Use(OrchestrationWorkerRegistration.Families())`),
+as the worker does before it starts. `OutputFamilyBoundaryTests` in the same
+project holds the layout by output family: each family's types in its home, no
+family referenced by the core, and the exact identifiers that name a family and
+stay in the core on purpose.
 
 The integration project holds the suites that exercise a job against real
 dependencies: the job store's shared contract on PostgreSQL
