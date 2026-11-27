@@ -13,10 +13,6 @@
     <Project Path="src/ReportService.AppHost/ReportService.AppHost.csproj" />
     <Project Path="src/ReportService.Migrations/ReportService.Migrations.csproj" />
     <Project Path="src/ReportService.Workers.Orchestration/ReportService.Workers.Orchestration.csproj" />
-    <Project Path="src/ReportService.Workers.Merge/ReportService.Workers.Merge.csproj" />
-    <Project Path="src/ReportService.Workers.Merge.Entry/ReportService.Workers.Merge.Entry.csproj" />
-    <Project Path="src/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
-    <Project Path="src/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
   </Folder>
   <Folder Name="/src/Platform/">
     <Project Path="src/Platform/ReportService.ServiceDefaults/ReportService.ServiceDefaults.csproj" />
@@ -28,6 +24,7 @@
     <Project Path="src/Jobs/ReportService.Data/ReportService.Data.csproj" />
     <Project Path="src/Jobs/ReportService.DataContract/ReportService.DataContract.csproj" />
     <Project Path="src/Jobs/ReportService.Jobs/ReportService.Jobs.csproj" />
+    <Project Path="src/Jobs/ReportService.Jobs.Orchestration/ReportService.Jobs.Orchestration.csproj" />
     <Project Path="src/Jobs/ReportService.Uploads/ReportService.Uploads.csproj" />
   </Folder>
   <Folder Name="/src/Templates/">
@@ -41,15 +38,21 @@
     <Project Path="src/Pdf/ReportService.Pdf.PageCodes.Hosting/ReportService.Pdf.PageCodes.Hosting.csproj" />
     <Project Path="src/Pdf/ReportService.Pdf.PageCodes.QrCoder/ReportService.Pdf.PageCodes.QrCoder.csproj" />
     <Project Path="src/Pdf/ReportService.Pdf.Verification/ReportService.Pdf.Verification.csproj" />
+    <Project Path="src/Pdf/ReportService.Pdf.Output/ReportService.Pdf.Output.csproj" />
     <Project Path="src/Pdf/ReportService.Rendering/ReportService.Rendering.csproj" />
+    <Project Path="src/Pdf/ReportService.Workers.Merge/ReportService.Workers.Merge.csproj" />
+    <Project Path="src/Pdf/ReportService.Workers.Merge.Entry/ReportService.Workers.Merge.Entry.csproj" />
+    <Project Path="src/Pdf/ReportService.Workers.Pdf/ReportService.Workers.Pdf.csproj" />
+    <Project Path="src/Pdf/ReportService.Workers.Pdf.Entry/ReportService.Workers.Pdf.Entry.csproj" />
+  </Folder>
+  <Folder Name="/src/Html/">
+    <Project Path="src/Html/ReportService.Html/ReportService.Html.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ReportService.AppHost.Tests/ReportService.AppHost.Tests.csproj" />
     <Project Path="tests/ReportService.Api.Tests/ReportService.Api.Tests.csproj" />
     <Project Path="tests/ReportService.Migrations.Tests/ReportService.Migrations.Tests.csproj" />
     <Project Path="tests/ReportService.Workers.Orchestration.Tests/ReportService.Workers.Orchestration.Tests.csproj" />
-    <Project Path="tests/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj" />
-    <Project Path="tests/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/ReportService.Storage.Tests/ReportService.Storage.Tests.csproj" />
@@ -58,6 +61,7 @@
     <Project Path="tests/Jobs/ReportService.Data.Tests/ReportService.Data.Tests.csproj" />
     <Project Path="tests/Jobs/ReportService.DataContract.Tests/ReportService.DataContract.Tests.csproj" />
     <Project Path="tests/Jobs/ReportService.Jobs.Tests/ReportService.Jobs.Tests.csproj" />
+    <Project Path="tests/Jobs/ReportService.Jobs.Orchestration.Tests/ReportService.Jobs.Orchestration.Tests.csproj" />
     <Project Path="tests/Jobs/ReportService.Uploads.Tests/ReportService.Uploads.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Templates/">
@@ -72,7 +76,13 @@
     <Project Path="tests/Pdf/ReportService.Pdf.PageCodes.QrCoder.Tests/ReportService.Pdf.PageCodes.QrCoder.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Pdf.Verification.Tests/ReportService.Pdf.Verification.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.PdfStructure.Tests/ReportService.PdfStructure.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Pdf.Output.Tests/ReportService.Pdf.Output.Tests.csproj" />
     <Project Path="tests/Pdf/ReportService.Rendering.Tests/ReportService.Rendering.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Workers.Merge.Tests/ReportService.Workers.Merge.Tests.csproj" />
+    <Project Path="tests/Pdf/ReportService.Workers.Pdf.Tests/ReportService.Workers.Pdf.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Html/">
+    <Project Path="tests/Html/ReportService.Html.Tests/ReportService.Html.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Suites/">
     <Project Path="tests/Suites/ReportService.EndToEndTests/ReportService.EndToEndTests.csproj" />

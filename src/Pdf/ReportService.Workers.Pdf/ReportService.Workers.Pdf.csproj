@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\..\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
+    <ProjectReference Include="..\..\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
+    <ProjectReference Include="..\..\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <ProjectReference Include="..\ReportService.Rendering\ReportService.Rendering.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
+    <ProjectReference Include="..\ReportService.Pdf.PageCodes.Hosting\ReportService.Pdf.PageCodes.Hosting.csproj" />
+  </ItemGroup>
+
+  <!--
+    The part-commit fault is a test-only seam inside this assembly: the integration suite
+    installs it on the worker's own step to force a retried block, and the step's own tests
+    hold it absent from the production composition. Naming the two test projects is what
+    keeps the seam internal; no other assembly can reach it.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReportService.Workers.Pdf.Tests" />
+  </ItemGroup>
+
+</Project>

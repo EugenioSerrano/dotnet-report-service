@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <!-- The take's sample renderer, its checks and the seams they are built on. -->
-    <ProjectReference Include="..\..\..\src\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Workers.Pdf\ReportService.Workers.Pdf.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateChecks\ReportService.TemplateChecks.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplateSource\ReportService.TemplateSource.csproj" />
     <ProjectReference Include="..\..\..\src\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />

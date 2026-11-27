@@ -13,6 +13,9 @@
     <ProjectReference Include="..\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
     <ProjectReference Include="..\Templates\ReportService.Templates\ReportService.Templates.csproj" />
     <ProjectReference Include="..\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\Jobs\ReportService.Jobs.Orchestration\ReportService.Jobs.Orchestration.csproj" />
+    <ProjectReference Include="..\Pdf\ReportService.Pdf.Output\ReportService.Pdf.Output.csproj" />
+    <ProjectReference Include="..\Html\ReportService.Html\ReportService.Html.csproj" />
   </ItemGroup>
 
   <!-- The worker writes the durable requests it claims; the versions are declared centrally. -->

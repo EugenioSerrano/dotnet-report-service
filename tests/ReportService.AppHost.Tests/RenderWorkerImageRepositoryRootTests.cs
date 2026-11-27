@@ -47,7 +47,7 @@ public sealed class RenderWorkerImageRepositoryRootTests
 
             File.WriteAllText(Path.Combine(Root, "global.json"), "{}");
 
-            var workerDirectory = Path.Combine(Root, "src", "ReportService.Workers.Pdf.Entry");
+            var workerDirectory = Path.Combine(Root, "src", "Pdf", "ReportService.Workers.Pdf.Entry");
             Directory.CreateDirectory(workerDirectory);
             File.WriteAllText(
                 Path.Combine(workerDirectory, "ReportService.Workers.Pdf.Entry.csproj"),

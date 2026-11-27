@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit and component tests of the job and orchestration core: the job workflow and its recorded histories, the input wait, the dispatch by class and its aging, the transitions, the template step and the data step. Hermetic: no container, no network, no workflow engine.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The recorded histories the replay cases replay, beside the suite that consumes them. -->
+    <Content Include="Histories\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The recording object store the verifier's suite reads, shared as source with that suite. -->
+    <Compile Include="..\..\ReportService.Workers.Orchestration.Tests\VerifierRig.cs" Link="Shared\VerifierRig.cs" />
+    <Compile Include="..\..\ReportService.Workers.Orchestration.Tests\Uploads\GzipMember.cs" Link="Shared\GzipMember.cs" />
+  </ItemGroup>
+
+</Project>

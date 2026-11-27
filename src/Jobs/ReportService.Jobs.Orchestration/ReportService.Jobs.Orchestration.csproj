@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The job and orchestration core: one report job as a workflow, from its data
+    reference to its finalisation, and the steps every output shares. It starts each
+    requested output through the output-family contract and the families the
+    composition registers, so it names no output family and references none: a new
+    family is a sibling registered by the host, never a change here.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Platform\ReportService.ServiceDefaults.Temporal\ReportService.ServiceDefaults.Temporal.csproj" />
+    <ProjectReference Include="..\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\ReportService.DataContract\ReportService.DataContract.csproj" />
+    <ProjectReference Include="..\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <ProjectReference Include="..\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\..\Templates\ReportService.TemplatePackages\ReportService.TemplatePackages.csproj" />
+    <ProjectReference Include="..\..\Templates\ReportService.Templates\ReportService.Templates.csproj" />
+  </ItemGroup>
+
+</Project>

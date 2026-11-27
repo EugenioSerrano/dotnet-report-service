@@ -34,7 +34,8 @@ public sealed class PdfOutputContinueAsNewEndToEndTests : IDisposable
     public static string RecordedHistoryPath() => Path.Combine(
         RepositoryPaths.Root,
         "tests",
-        "ReportService.Workers.Orchestration.Tests",
+        "Pdf",
+        "ReportService.Pdf.Output.Tests",
         "Histories",
         "Pdf",
         "pdf-output-multi-block-window-2.json");

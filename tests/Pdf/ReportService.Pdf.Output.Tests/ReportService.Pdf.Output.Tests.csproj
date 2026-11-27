@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit and component tests of the PDF output step: its execution and recorded child history, its render window and continuation, its publication and the steps only it calls. Hermetic: no container, no network, no workflow engine.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Platform\ReportService.Storage.Filesystem\ReportService.Storage.Filesystem.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Uploads\ReportService.Uploads.csproj" />
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Orchestration\ReportService.Workers.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\Pdf\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
+    <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The recorded histories the replay cases replay, beside the suite that consumes them. -->
+    <Content Include="Histories\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

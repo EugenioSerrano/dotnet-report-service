@@ -26,6 +26,14 @@ namespace ReportService.Workers.Orchestration;
 /// </summary>
 public static class OrchestrationWorkerRegistration
 {
+    /// <summary>
+    /// The output families this worker produces, in their start order: the set the composition
+    /// registers for the job workflow before any worker starts, and the one every replay of a
+    /// recorded job registers too.
+    /// </summary>
+    /// <returns>The registry of the PDF and HTML families.</returns>
+    public static OutputFamilyRegistry Families() => new(new PdfOutputFamily(), new HtmlOutputFamily());
+
     /// <summary>Registers the verification work and the settings it runs under.</summary>
     /// <param name="builder">The process being built.</param>
     public static IHostApplicationBuilder AddUploadVerificationWork(this IHostApplicationBuilder builder)
@@ -111,7 +119,8 @@ public static class OrchestrationWorkerRegistration
         builder.AddValidatedConfiguration<PriorityAgingOptions>(PriorityAgingOptions.SectionPath);
         builder.Services.TryAddSingleton<IJobPriorityStore>(static provider =>
             (IJobPriorityStore)provider.GetRequiredService<IJobStore>());
-        builder.Services.AddSingleton(provider => ActivatorUtilities.CreateInstance<JobDispatchActivities>(
+        builder.Services.AddSingleton<JobDispatchActivities>();
+        builder.Services.AddSingleton(provider => ActivatorUtilities.CreateInstance<PdfPendingDispatchActivities>(
             provider,
             EngineReads.DescribeExecution(provider.GetRequiredService<TemporalClientHolder>())));
         builder.AddValidatedConfiguration<PendingWorkOptions>(PendingWorkOptions.SectionPath);
@@ -122,6 +131,9 @@ public static class OrchestrationWorkerRegistration
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
         builder.Services.AddSingleton<PdfOutputActivities>();
+        builder.Services.AddSingleton<OutputLookupActivities>();
+        builder.Services.AddSingleton<HtmlOutputActivities>();
+        builder.Services.AddSingleton<PageCodeDeclarationActivities>();
         builder.Services.AddSingleton<AttemptCauseActivities>();
         builder.Services.AddSingleton<InputWaitActivities>();
         builder.Services.AddSingleton<InputWaitSignalActivities>();
@@ -154,6 +166,10 @@ public static class OrchestrationWorkerRegistration
                 var inputWait = provider.GetRequiredService<IOptions<InputWaitOptions>>().Value;
                 ReportJobWorkflow.Configure(inputWait.Backstop, inputWait.ContinueAsNewAfter);
 
+                // The output families the job workflow starts are registered the same way,
+                // before any worker starts; registering the same set again is a no-op.
+                OutputFamilies.Use(Families());
+
                 // The PDF output's multi-block window is published the same way; a value
                 // below one is a configuration error at start, never a silent default.
                 var window = provider.GetRequiredService<IConfiguration>()
@@ -171,6 +187,10 @@ public static class OrchestrationWorkerRegistration
                 options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
                 options.AddAllActivities(provider.GetRequiredService<TemplateResolutionActivities>());
                 options.AddAllActivities(provider.GetRequiredService<JobDispatchActivities>());
+                options.AddAllActivities(provider.GetRequiredService<OutputLookupActivities>());
+                options.AddAllActivities(provider.GetRequiredService<HtmlOutputActivities>());
+                options.AddAllActivities(provider.GetRequiredService<PageCodeDeclarationActivities>());
+                options.AddAllActivities(provider.GetRequiredService<PdfPendingDispatchActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

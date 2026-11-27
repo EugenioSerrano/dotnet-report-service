@@ -55,7 +55,8 @@ public sealed class JobDispatchActivitiesTests
     public async Task ASampleSeesTheOutputsWaitingWorkAndTheJobsClass()
     {
         string? described = null;
-        var (_, activities, _) = Create(JobPriority.Low, (id, _) =>
+        var (store, _, _) = Create(JobPriority.Low);
+        var activities = new PdfPendingDispatchActivities(store, (id, _) =>
         {
             described = id;
             return Task.FromResult(Describe((PdfOutputStepContracts.RenderPdfBlock, PendingActivityState.Scheduled)));
@@ -106,9 +107,10 @@ public sealed class JobDispatchActivitiesTests
     [Fact]
     public async Task TheStepsRefuseNoInput()
     {
-        var (_, activities, _) = Create(JobPriority.Low);
+        var (store, activities, _) = Create(JobPriority.Low);
+        var pending = new PdfPendingDispatchActivities(store, (_, _) => Task.FromResult(new DescribeWorkflowExecutionResponse()));
         await Assert.ThrowsAsync<ArgumentNullException>(() => activities.ReadJobDispatchAsync(null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => activities.ReadPendingDispatchAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => pending.ReadPendingDispatchAsync(null!));
         await Assert.ThrowsAsync<ArgumentNullException>(() => activities.PromoteToNormalAsync(null!));
     }
 
@@ -128,8 +130,7 @@ public sealed class JobDispatchActivitiesTests
     }
 
     private static (InMemoryJobStore Store, JobDispatchActivities Activities, List<(long Value, KeyValuePair<string, object?>[] Tags)> Promotions) Create(
-        JobPriority priority,
-        Func<string, CancellationToken, Task<DescribeWorkflowExecutionResponse>>? describe = null)
+        JobPriority priority)
     {
         var store = new InMemoryJobStore(new InMemoryUploadStore());
         store.SeedAccepted(JobId, OutputId, new TemplateReferenceRecord(JobId, "template", TemplateReferenceForm.Exact));
@@ -151,7 +152,6 @@ public sealed class JobDispatchActivitiesTests
         var activities = new JobDispatchActivities(
             store,
             Options.Create(new PriorityAgingOptions { Wait = TimeSpan.FromSeconds(20) }),
-            describe ?? ((_, _) => Task.FromResult(new DescribeWorkflowExecutionResponse())),
             new OrchestrationMetrics(identity),
             NullLogger<JobDispatchActivities>.Instance);
         return (store, activities, promotions);

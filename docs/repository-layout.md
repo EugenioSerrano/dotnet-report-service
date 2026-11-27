@@ -8,15 +8,11 @@ has its own `README.md`.
 
 ```text
 dotnet-report-service/
-├── src/                       Product source — the deployable hosts at the root, the libraries grouped by capability
+├── src/                       Product source — the platform hosts at the root, the libraries and each output family's hosts grouped by capability
 │   ├── ReportService.Api/                         The API (no workflow-engine client)
 │   ├── ReportService.AppHost/                     The local composition
 │   ├── ReportService.Migrations/                  The one-shot migrator of the metadata database
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
-│   ├── ReportService.Workers.Pdf/                 The PDF worker (container image)
-│   ├── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
-│   ├── ReportService.Workers.Merge/               The merge worker (container image): assembles a PDF output from its committed parts on the report-pdf-merge queue
-│   ├── ReportService.Workers.Merge.Entry/         The merge worker container's entry point; its image is published from this project
 │   ├── Platform/              Cross-cutting libraries with no report-domain knowledge
 │   │   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
 │   │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the three workers
@@ -24,6 +20,7 @@ dotnet-report-service/
 │   │   └── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
 │   ├── Jobs/                  The job and its input data
 │   │   ├── ReportService.Jobs/                        The report job records: acceptance, outputs, template references, shared by the API and the orchestration worker
+│   │   ├── ReportService.Jobs.Orchestration/          The job core: one job as a workflow, the steps every output shares, and the output-family contract and registry it starts each requested output through
 │   │   ├── ReportService.Uploads/                     The upload record and its store, shared by the API and the orchestration worker
 │   │   ├── ReportService.Data/                        The data-contract reader: the header-items-v1 profile and one sequential pass
 │   │   └── ReportService.DataContract/                The template's data contract: the profile check, the compiled schema and its two roots, the first-violation mapping
@@ -32,19 +29,25 @@ dotnet-report-service/
 │   │   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
 │   │   ├── ReportService.TemplateChecks/           The take's static checks: the eight checks in their fixed order, the refusal message, the source scans, and the registration the PDF worker calls
 │   │   └── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban, Handlebars and Liquid (Fluid) adapters, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
-│   └── Pdf/                   Printing and verifying
-│       ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
-│       ├── ReportService.Pdf.Assembly/                Assembling the printed parts of one output into one PDF in block order, with the global page numbers
-│       └── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
+│   ├── Pdf/                   The PDF output family: printing, verifying, assembling, its output step and its worker hosts
+│   │   ├── ReportService.Pdf.Output/                  The PDF output step: its execution, render window and continuation, the steps only it calls, and the family it registers with the job core
+│   │   ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
+│   │   ├── ReportService.Pdf.Assembly/                Assembling the printed parts of one output into one PDF in block order, with the global page numbers
+│   │   ├── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
+│   │   ├── ReportService.Workers.Pdf/                 The PDF worker (container image)
+│   │   ├── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
+│   │   ├── ReportService.Workers.Merge/               The merge worker (container image): assembles a PDF output from its committed parts on the report-pdf-merge queue
+│   │   └── ReportService.Workers.Merge.Entry/         The merge worker container's entry point; its image is published from this project
+│   └── Html/                  The HTML output family
+│       └── ReportService.Html/                        The self-contained HTML assembly, its asset inlining, its output step and publication, and the family it registers with the job core
 ├── tests/                     Automated tests — the host tests at the root, the unit/component tests grouped as src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
 │   ├── ReportService.AppHost.Tests/      Unit/component tests of the composition (hermetic)
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Workers.Orchestration.Tests/  Unit/component tests of the orchestration worker (hermetic)
-│   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
-│   ├── ReportService.Workers.Merge.Tests/     Unit/component tests of the merge worker (hermetic)
 │   ├── Jobs/                  Unit/component tests of the Jobs group
 │   │   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
+│   │   ├── ReportService.Jobs.Orchestration.Tests/  Unit/component tests of the job core, its recorded histories and the layout's boundary (hermetic)
 │   │   ├── ReportService.Uploads.Tests/      Unit tests of the shared upload library (hermetic)
 │   │   ├── ReportService.Data.Tests/         Unit tests of the data-contract reader: the hostile-input matrix, plain and gzip (hermetic)
 │   │   └── ReportService.DataContract.Tests/ Unit tests of the template data contract: profile, compilation, evaluation, cache (hermetic)
@@ -53,9 +56,14 @@ dotnet-report-service/
 │   │   ├── ReportService.TemplatePackages.Tests/   Unit/component tests of the taken version (hermetic)
 │   │   ├── ReportService.TemplateChecks.Tests/    Unit/component tests of the take's static checks (hermetic)
 │   │   └── ReportService.Templates.Tests/         Unit/component tests of the composer (hermetic)
+│   ├── Html/                 Unit/component tests of the Html group
+│   │   └── ReportService.Html.Tests/         Unit/component tests of the HTML assembly, its step and its publication (hermetic)
 │   ├── Platform/            Unit/component tests of the Platform group
 │   │   └── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── Pdf/                  Unit/component tests of the Pdf group, plus the hermetic PDF structure verification
+│   │   ├── ReportService.Pdf.Output.Tests/        Unit/component tests of the PDF output step and its recorded child history (hermetic)
+│   │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
+│   │   ├── ReportService.Workers.Merge.Tests/     Unit/component tests of the merge worker (hermetic)
 │   │   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)
 │   │   ├── ReportService.Pdf.Assembly.Tests/      Unit tests of the PDF assembly (hermetic)
 │   │   ├── ReportService.Pdf.Verification.Tests/  Unit tests of the reader, the normalisation, the alignment and the checks, with synthetic extraction inputs (hermetic, integrity-critical floors)
@@ -105,10 +113,11 @@ dotnet-report-service/
 
 | What | Rule | Example |
 |------|------|---------|
-| Host project (entry point) | `src/ReportService.<Area>/ReportService.<Area>.csproj` — at the `src/` root | `src/ReportService.Api/`, `src/ReportService.AppHost/` |
-| Grouped product library | `src/<Group>/ReportService.<Area>/` — `Platform/`, `Jobs/`, `Templates/`, `Pdf/` | `src/Pdf/ReportService.Rendering/`, `src/Platform/ReportService.Storage/` |
-| Root namespace | Same as the project name (never includes the group folder) | `ReportService.Workers.Pdf` |
-| Host test project | `tests/ReportService.<Area>.Tests/` — at the `tests/` root, mirroring the hosts | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Api.Tests/` |
+| Platform host project (entry point) | `src/ReportService.<Area>/ReportService.<Area>.csproj` — at the `src/` root: the API, the composition, the migrator and the orchestration worker, which serve every output family | `src/ReportService.Api/`, `src/ReportService.AppHost/` |
+| Output family host project | `src/<Family>/ReportService.Workers.<Area>/` — a worker that serves one output family lives in that family's home | `src/Pdf/ReportService.Workers.Pdf/`, `src/Pdf/ReportService.Workers.Merge.Entry/` |
+| Grouped product library | `src/<Group>/ReportService.<Area>/` — `Platform/`, `Jobs/`, `Templates/`, and one home per output family: `Pdf/`, `Html/` | `src/Pdf/ReportService.Rendering/`, `src/Platform/ReportService.Storage/` |
+| Root namespace | Same as the project name (never includes the group folder). The one exception: a type moved between projects keeps the namespace it was declared in, so its log category and every name derived from it do not change (`ReportService.Workers.Orchestration.Jobs` in the job core and in the output steps) | `ReportService.Workers.Pdf` |
+| Host test project | `tests/ReportService.<Area>.Tests/` — at the `tests/` root, mirroring the platform hosts; an output family host's tests live in that family's test group | `tests/ReportService.Api.Tests/`, `tests/Pdf/ReportService.Workers.Pdf.Tests/` |
 | Grouped unit/component tests | `tests/<Group>/ReportService.<Area>.Tests/` — one per product project, in its src group | `tests/Pdf/ReportService.Rendering.Tests/`, `tests/Platform/ReportService.Storage.Tests/` |
 | Cross-cutting test suites | `tests/Suites/ReportService.<Kind>Tests/` | `tests/Suites/ReportService.EndToEndTests/`, `tests/Suites/ReportService.PerformanceTests/` |
 | Rendering regression suite, host and oracle | `tests/Rendering/<project>/` | `tests/Rendering/ReportService.RenderingTests/`, `tests/Rendering/ReportService.PdfOracle/` |
@@ -304,22 +313,48 @@ choices of taste:
 ## Where upload verification lives
 
 - `src/Jobs/ReportService.Uploads/` - the upload record and its store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
-- `src/ReportService.Workers.Orchestration/Uploads/` - the verification step: the read that is teed, the checksum, the decision that a compressed object is one complete unit of content, and the outcome it commits. The instruments are in `Telemetry/OrchestrationMetrics.cs`.
+- `src/ReportService.Workers.Orchestration/Uploads/` - the verification step: the read that is teed, the checksum, the decision that a compressed object is one complete unit of content, and the outcome it commits. The instruments are in `src/Jobs/ReportService.Jobs.Orchestration/Telemetry/OrchestrationMetrics.cs`.
 - `docs/operations/upload-verification.md` - what the step enforces, its settings and its instruments.
 - `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suite of that step; the record's own in `tests/Jobs/ReportService.Uploads.Tests/`.
 
 ## Where report jobs live
 
 - `src/Jobs/ReportService.Jobs/` - the job records and their store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
-- `src/ReportService.Workers.Orchestration/Jobs/` - one job as a workflow: the check of its data reference, the failure that ends it, and the settings its steps run under.
+- `src/Jobs/ReportService.Jobs.Orchestration/Jobs/` - one job as a workflow: the check of its data reference, the failure that ends it, the settings its steps run under, and the output-family contract it starts each requested output through.
+- `src/Pdf/ReportService.Pdf.Output/Jobs/` and `src/Html/ReportService.Html/Jobs/` - each output family's own execution, its steps and its publication.
+- `src/ReportService.Workers.Orchestration/` - the worker that hosts the job core and registers the output families.
 - `src/ReportService.Api/Jobs/` and `src/ReportService.Api/Artifacts/` - the creation, status and cancel operations, and the list and download of a job's files.
-- `src/ReportService.Workers.Merge/` - the assembly of a PDF output from its printed parts.
+- `src/Pdf/ReportService.Workers.Merge/` - the assembly of a PDF output from its printed parts.
 - `docs/api/report-jobs.md` - the operations, their answers and every refusal.
-- `tests/Jobs/ReportService.Jobs.Tests/` and `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suites of the records and of the workflow's steps.
+- `tests/Jobs/ReportService.Jobs.Tests/`, `tests/Jobs/ReportService.Jobs.Orchestration.Tests/`, `tests/Pdf/ReportService.Pdf.Output.Tests/` and `tests/Html/ReportService.Html.Tests/` - the hermetic suites of the records, of the job core and of each output family.
+
+## Where output families live
+
+Each output family has one home: everything that turns a job into that family's
+artifact lives under `src/<Family>/`, and its tests under `tests/<Family>/`. The
+job core (`src/Jobs/ReportService.Jobs.Orchestration/`) names no family: it
+starts every requested output through the output-family contract
+(`IOutputFamily`) of the families the orchestration worker registers
+(`OrchestrationWorkerRegistration.Families()`), in their fixed start order.
+
+- **Adding a family** (spreadsheet, Markdown): create its home under
+  `src/<Family>/` with its execution, its steps and its `IOutputFamily`; give it
+  the next start order; add it to `Families()` and register its workflow and
+  activities on the worker; add its worker or host under its home only if it
+  needs one. Nothing in the job core changes.
+- **What the core keeps on purpose.** A few identifiers that name a family stay
+  in the core and shared projects, because renaming or moving them would change
+  something outside the code: the shared output vocabulary (`OutputFormat`), the
+  API's stage and wire values, the store's refusal columns, the recorded
+  partition payload and the row bound applied in the one data pass, the data
+  step's options and span tags, the identifier of a recorded patch, and the
+  window decision the aging rule caps. The boundary test in
+  `tests/Jobs/ReportService.Jobs.Orchestration.Tests/OutputFamilyBoundaryTests.cs`
+  holds the exact list and fails on any identifier added to or dropped from it.
 
 ## Where telemetry lives
 
 - `src/Platform/ReportService.ServiceDefaults/Telemetry/` - the meter identity a host carries, the registration every process calls, the product instrument factories, the development-only metric capture and the diagnostics endpoints.
-- `src/ReportService.Api/Telemetry/` and `src/ReportService.Workers.Orchestration/Telemetry/` - the instruments of those processes, each created on the identity of its host.
+- `src/ReportService.Api/Telemetry/`, `src/Jobs/ReportService.Jobs.Orchestration/Telemetry/` and `src/ReportService.Workers.Orchestration/Telemetry/` - the instruments of the API and of the orchestration worker, each created on the identity of its host.
 - `docs/observability.md` - what each process emits, where it goes and the rule a new signal follows.
 - `tests/ReportService.Api.Tests/Telemetry/` - the telemetry test support: one host helper that carries its own identity and opens a unit of work on its own logger factory, and the suites that read a host's capture.
