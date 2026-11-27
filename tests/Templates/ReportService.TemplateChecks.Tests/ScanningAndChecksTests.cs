@@ -421,4 +421,82 @@ public sealed class ScanningAndChecksTests
     {
         Assert.Equal(expected, TemplateRefusal.Scheme(url));
     }
+
+    [Theory]
+    [InlineData("""{{ if item.quantity }}x{{ end }}""", 0)]
+    [InlineData("""{{ for line in item.lines }}<td>{{ line.name | html.escape }}</td>{{ end }}""", 1)]
+    [InlineData("""{{ if item.a }}{{ item.a | html.escape }}{{ else if item.b }}{{ item.b | html.escape }}{{ else }}{{ item.c | html.escape }}{{ end }}""", 3)]
+    [InlineData("""{{ if item.a }}{{ for line in item.lines }}{{ for part in line.parts }}{{ part.name | html.escape }}{{ end }}{{ end }}{{ end }}""", 1)]
+    [InlineData("""{{ for a in item.lines }}{{ for b in a.parts }}{{ for c in b.cells }}{{ c.value | html.escape }}{{ end }}{{ end }}{{ end }}""", 1)]
+    public void ScribanControlFlowTagsAreNotOutputs(string template, int escapedOutputs)
+    {
+        var scan = TemplateSourceScan.Scan(template, TemplateDialect.Scriban);
+
+        Assert.Equal(escapedOutputs, scan.Outputs.Count);
+        Assert.All(scan.Outputs, output => Assert.True(output.IsEscaped, output.Expression));
+    }
+
+    [Theory]
+    [InlineData("""{{ for line in item.lines }}<td>{{ line.name }}</td>{{ end }}""", "line.name")]
+    [InlineData("""{{ for line in item.lines }}{{ if line.a }}x{{ else if line.b }}{{ line.name }}{{ end }}{{ end }}""", "line.name")]
+    [InlineData("""{{ for line in item.lines }}{{ if line.a }}{{ line.name }}{{ end }}{{ end }}""", "line.name")]
+    [InlineData("""{{ for line in item.lines }}{{ for part in line.parts }}{{ part.name }}{{ end }}{{ end }}""", "part.name")]
+    [InlineData("""{{ for a in item.lines }}{{ for b in a.parts }}{{ for c in b.cells }}{{ c.value }}{{ end }}{{ end }}{{ end }}""", "c.value")]
+    [InlineData("""{{ if item.a }}{{ item.a }}{{ end }}""", "item.a")]
+    [InlineData("""{{ for line in item.lines limit:2 }}{{ line }}{{ end }}""", "line")]
+    [InlineData("""{{ for line in item.lines offset:1 }}{{ line }}{{ end }}""", "line")]
+    [InlineData("""{{ for line in item.lines reversed }}{{ line }}{{ end }}""", "line")]
+    [InlineData("""{{ for line in item.lines | array.limit 2 }}{{ line }}{{ end }}""", "line")]
+    public void ScribanUnescapedDataInsideControlFlowIsStillAnUnescapedDataOutput(string template, string output)
+    {
+        var scan = TemplateSourceScan.Scan(template, TemplateDialect.Scriban);
+
+        var found = Assert.Single(scan.Outputs, candidate => candidate.Expression == output);
+        Assert.True(found.IsData);
+        Assert.False(found.IsEscaped);
+    }
+
+    [Theory]
+    [InlineData("""{{ for.index }}""")]
+    [InlineData("""{{ endx }}""")]
+    [InlineData("""{{ iffy }}""")]
+    [InlineData("""{{ elsewhere }}""")]
+    public void ScribanOutputsNamedLikeStatementWordsStayOutputs(string template)
+    {
+        var scan = TemplateSourceScan.Scan(template, TemplateDialect.Scriban);
+
+        Assert.Single(scan.Outputs);
+    }
+
+    [Theory]
+    [InlineData("""{{ iffy item.quantity }}""")]
+    [InlineData("""{{ endx item.quantity }}""")]
+    [InlineData("""{{ for item.lines }}""")]
+    [InlineData("""{{ if item.quantity; item.quantity; end }}""")]
+    [InlineData("{{ if item.quantity\nitem.quantity\nend }}")]
+    public void ScribanTagsThatAreNotASingleControlFlowStatementKeepTheOutputPath(string template)
+    {
+        var scan = TemplateSourceScan.Scan(template, TemplateDialect.Scriban);
+
+        var output = Assert.Single(scan.Outputs);
+        Assert.True(output.IsData);
+        Assert.False(output.IsEscaped);
+    }
+
+    [Fact]
+    public void AScribanLoopOverNonDataDoesNotMakeItsVariableData()
+    {
+        var scan = TemplateSourceScan.Scan("""{{ for n in [1, 2] }}{{ n }}{{ end }}""", TemplateDialect.Scriban);
+
+        var output = Assert.Single(scan.Outputs);
+        Assert.False(output.IsData);
+    }
+
+    [Fact]
+    public void AForbiddenCallInAScribanConditionIsStillACall()
+    {
+        var scan = TemplateSourceScan.Scan("""{{ if date.now }}x{{ end }}""", TemplateDialect.Scriban);
+
+        Assert.NotEmpty(scan.Calls);
+    }
 }
