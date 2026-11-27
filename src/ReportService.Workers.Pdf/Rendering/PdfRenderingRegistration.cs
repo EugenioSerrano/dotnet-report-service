@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
+using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.TemplatePackages.Packages;
 using ReportService.Templates;
@@ -65,12 +66,22 @@ public static class PdfRenderingRegistration
 
         // The third registration on the queue: the same engine worker serves it, under
         // the one concurrency the PDF queue, the take and the resolution already carry.
+        var queue = RenderPdfBlockOptions.ServedQueue(ServedClassOptions.Read(builder));
+
+        // The schedule-to-start latency of every attempt the queue's worker takes - the block,
+        // the take and the resolution - recorded once per attempt; the three registrations share
+        // one worker, so the interceptor is installed by this one alone.
+        services.TryAddSingleton(static _ => new ScheduleToStartRecorder(
+            MeterIdentity.ForHost(TelemetryDefaults.MeterName),
+            "render",
+            static taskQueue => JobWireValues.ToWire(PriorityTaskQueues.ClassOf(taskQueue))));
         services.AddSingleton(provider => new TaskQueueWork(
-            RenderPdfBlockOptions.Queue,
+            queue,
             options =>
             {
                 options.MaxConcurrentActivities = 1;
                 options.AddAllActivities(provider.GetRequiredService<RenderPdfBlockActivity>());
+                options.Interceptors = [.. options.Interceptors ?? [], new ScheduleToStartInterceptor(provider.GetRequiredService<ScheduleToStartRecorder>())];
             }));
         return builder;
     }

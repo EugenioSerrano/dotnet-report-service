@@ -37,8 +37,12 @@ flowchart TB
 |---------|---------|------|-------------------------------|------------------------------|
 | API | `src/ReportService.Api` | The HTTP surface and the consumer registry | Yes — readiness only | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
 | Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps, the job's template step among them) and `report-data` (data verification and validation) | Yes - readiness only | Yes |
-| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time): the take of one named version and the by-name resolution that chooses one | Yes — a taken version is published by a record it writes | Yes |
-| Merge worker | `src/ReportService.Workers.Merge` (container image) | The task queue `report-pdf-merge` (one assembly at a time): assembling one PDF output from its committed parts, in block order, with the global page numbers, and writing it to object storage | Yes — it reads the job's partition, the part commits and the taken template version | Yes |
+| PDF worker | `src/ReportService.Workers.Pdf` (container image) | The render task queue of the one priority class it serves - `report-pdf-rendering` (`normal`, the default), `report-pdf-rendering-high` or `report-pdf-rendering-low`, set by `Priority:ServedClass` - one render at a time: the job's blocks, the take of one named version and the by-name resolution that chooses one | Yes — a taken version is published by a record it writes | Yes |
+| Merge worker | `src/ReportService.Workers.Merge` (container image) | The merge task queue of the one priority class it serves - `report-pdf-merge` (`normal`, the default), `report-pdf-merge-high` or `report-pdf-merge-low`, set by `Priority:ServedClass` - one assembly at a time: assembling one PDF output from its committed parts, in block order, with the global page numbers, and writing it to object storage | Yes — it reads the job's partition, the part commits and the taken template version | Yes |
+
+Every priority class needs at least one PDF worker and one merge worker serving it;
+how many is the deployment's choice. See
+[`operations/priority-and-per-class-capacity.md`](operations/priority-and-per-class-capacity.md).
 
 The one-shot migrator `src/ReportService.Migrations` is not a long-running
 process: it applies the database's schema and exits. The API and the

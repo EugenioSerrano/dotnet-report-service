@@ -20,7 +20,23 @@ public sealed record ReportPdfOutputInput(
     string ReportJobId,
     string OutputId,
     int NextBlockIndex = 0,
-    int CompletedBlocks = 0);
+    int CompletedBlocks = 0)
+{
+    /// <summary>
+    /// The class the output's render and merge work is dispatched on; none in a payload recorded
+    /// before classes existed, which dispatches on the normal class's queues.
+    /// </summary>
+    public JobPriority? PriorityClass { get; init; }
+
+    /// <summary>The deployment's aging wait, in seconds; none means the output does not age.</summary>
+    public double? AgingWaitSeconds { get; init; }
+
+    /// <summary>The pending time a continued run's predecessors accumulated, in seconds.</summary>
+    public double PendingSeconds { get; init; }
+
+    /// <summary>Whether a predecessor run already promoted the job or adopted its promotion.</summary>
+    public bool Promoted { get; init; }
+}
 
 /// <summary>
 /// The one PDF output of a job, as its own execution: it starts the output, has its
@@ -115,6 +131,7 @@ public sealed class ReportPdfOutputWorkflow
     {
         ArgumentNullException.ThrowIfNull(input);
         var metadata = ReportJobActivityOptions.Create();
+        var aging = new AgingRun(input);
 
         await Workflow.ExecuteActivityAsync(
             (JobTransitionActivities activities) => activities.TransitionOutputAsync(
@@ -125,7 +142,7 @@ public sealed class ReportPdfOutputWorkflow
         {
             if (!Workflow.Patched(MultiBlockRenderPatch))
             {
-                await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
+                await RunSingleBlockAsync(input, metadata, aging).ConfigureAwait(true);
                 return;
             }
 
@@ -151,16 +168,19 @@ public sealed class ReportPdfOutputWorkflow
 
                 if (!declaresCode)
                 {
-                    await RunSingleBlockAsync(input, metadata).ConfigureAwait(true);
+                    await RunSingleBlockAsync(input, metadata, aging).ConfigureAwait(true);
                     return;
                 }
             }
 
-            await RunFanOutAsync(input, Math.Max(1, facts.BlockCount)).ConfigureAwait(true);
+            await RunFanOutAsync(input, Math.Max(1, facts.BlockCount), aging).ConfigureAwait(true);
 
-            var assembled = await Workflow.ExecuteActivityAsync(
-                (IAssemblePdfStep step) => step.RunAsync(new AssemblePdfStepInput(input.ReportJobId, input.OutputId)),
-                AssemblePdfStepOptions.Create()).ConfigureAwait(true);
+            // The assembly is dispatched on the class current now: a promotion that came while the
+            // blocks were printed sends it to the normal class's merge queue.
+            var assembled = await aging.AwaitAsync(
+                Workflow.ExecuteActivityAsync(
+                    (IAssemblePdfStep step) => step.RunAsync(new AssemblePdfStepInput(input.ReportJobId, input.OutputId)),
+                    AssemblePdfStepOptions.Create(aging.Class))).ConfigureAwait(true);
 
             await Workflow.ExecuteActivityAsync(
                 (PdfOutputActivities activities) => activities.PublishOutputAsync(new PublishOutputInput(
@@ -217,14 +237,17 @@ public sealed class ReportPdfOutputWorkflow
     }
 
     /// <summary>The recorded single-block path: one render, and the verified part published as the artifact.</summary>
-    private static async Task RunSingleBlockAsync(ReportPdfOutputInput input, ActivityOptions metadata)
+    private static async Task RunSingleBlockAsync(ReportPdfOutputInput input, ActivityOptions metadata, AgingRun aging)
     {
-        var part = await Workflow.ExecuteActivityAsync(
-            (IRenderPdfBlockStep step) => step.RunAsync(new RenderPdfBlockStepInput(
-                input.ReportJobId,
-                input.OutputId,
-                0)),
-            RenderPdfBlockStepOptions.Create()).ConfigureAwait(true);
+        // The one block is offered at once on the output's class; a promotion while it waits
+        // moves nothing (it stays on its queue) and is still recorded and counted.
+        var part = await aging.AwaitAsync(
+            Workflow.ExecuteActivityAsync(
+                (IRenderPdfBlockStep step) => step.RunAsync(new RenderPdfBlockStepInput(
+                    input.ReportJobId,
+                    input.OutputId,
+                    0)),
+                RenderPdfBlockStepOptions.Create(aging.Class))).ConfigureAwait(true);
 
         await Workflow.ExecuteActivityAsync(
             (PdfOutputActivities activities) => activities.PublishOutputAsync(new PublishOutputInput(
@@ -242,7 +265,7 @@ public sealed class ReportPdfOutputWorkflow
     /// exactly once, completion in any order, and a run that completes its share
     /// continues as a new one carrying only the next index and the counters.
     /// </summary>
-    private static async Task RunFanOutAsync(ReportPdfOutputInput input, int blockCount)
+    private static async Task RunFanOutAsync(ReportPdfOutputInput input, int blockCount, AgingRun aging)
     {
         var window = PdfOutputConcurrencyOptions.Resolve(_window);
         var next = input.NextBlockIndex;
@@ -252,7 +275,14 @@ public sealed class ReportPdfOutputWorkflow
 
         while (true)
         {
-            var decision = PdfOutputWindow.Decide(blockCount, next, completed, outstanding.Count, window, drain);
+            // The window's own decision, with the aging sample cap applied: below the cap - and for
+            // every output that does not age - the window decides exactly as it did.
+            var decision = PriorityAging.Window(
+                PdfOutputWindow.Decide(blockCount, next, completed, outstanding.Count, window, drain),
+                aging.SamplesInRun,
+                outstanding.Count,
+                next,
+                blockCount);
             switch (decision.Action)
             {
                 case PdfOutputWindowAction.Schedule:
@@ -262,12 +292,32 @@ public sealed class ReportPdfOutputWorkflow
                             input.ReportJobId,
                             input.OutputId,
                             index)),
-                        RenderPdfBlockStepOptions.Create());
+                        RenderPdfBlockStepOptions.Create(aging.Class));
                     next = index + 1;
                     break;
 
                 case PdfOutputWindowAction.Wait:
-                    var finished = await Workflow.WhenAnyAsync(outstanding.Values).ConfigureAwait(true);
+                    Task<RenderPdfBlockStepResult> finished;
+                    if (aging.Active)
+                    {
+                        // A low output samples while it waits: the first of its renders or the
+                        // sample timer. A sample takes nothing from the window; the loop goes back
+                        // to the window's decision.
+                        var timer = aging.Timer;
+                        var first = await Workflow.WhenAnyAsync(outstanding.Values.Cast<Task>().Append(timer)).ConfigureAwait(true);
+                        if (ReferenceEquals(first, timer))
+                        {
+                            await aging.SampleAsync().ConfigureAwait(true);
+                            break;
+                        }
+
+                        finished = (Task<RenderPdfBlockStepResult>)first;
+                    }
+                    else
+                    {
+                        finished = await Workflow.WhenAnyAsync(outstanding.Values).ConfigureAwait(true);
+                    }
+
                     var finishedEntry = outstanding.First(entry => ReferenceEquals(entry.Value, finished));
                     outstanding.Remove(finishedEntry.Key);
                     try
@@ -291,7 +341,7 @@ public sealed class ReportPdfOutputWorkflow
                         input.OutputId,
                         completed,
                         next);
-                    var continuation = input with
+                    var continuation = aging.Carry(input) with
                     {
                         NextBlockIndex = next,
                         CompletedBlocks = 0,
@@ -417,6 +467,107 @@ public sealed class ReportPdfOutputWorkflow
                 new FailOutputInput(input.OutputId, code, reason)),
             options).ConfigureAwait(true);
     }
+}
+
+/// <summary>
+/// The aging of one output's run: the class its work is dispatched on, the deployment's wait,
+/// the pending time accumulated, and the sample timer. A low output with a wait samples its own
+/// pending work while it waits for its renders or its assembly; when the pending time reaches the
+/// wait it promotes the job, and from then on its later dispatch goes to the normal class's
+/// queues. Work already offered stays where it is. An output of any other class, or one whose
+/// input carries no wait - every run recorded before classes existed - never samples, so its
+/// commands are exactly the recorded ones.
+/// </summary>
+internal sealed class AgingRun(ReportPdfOutputInput input)
+{
+    private Task? _timer;
+
+    /// <summary>The class the output's later dispatch goes to.</summary>
+    public JobPriority Class { get; private set; } = input.Promoted ? JobPriority.Normal : input.PriorityClass ?? JobPriority.Normal;
+
+    /// <summary>How many samples this run has taken.</summary>
+    public int SamplesInRun { get; private set; }
+
+    /// <summary>Whether the output is still sampling.</summary>
+    public bool Active => !Stopped && PriorityAging.Samples(Class, Wait);
+
+    /// <summary>The sample timer, started when first needed and kept until it fires.</summary>
+    public Task Timer => _timer ??= Workflow.DelayAsync(PriorityAging.SamplePeriod(Wait!.Value));
+
+    private TimeSpan? Wait { get; } = input.AgingWaitSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : null;
+
+    private double PendingSeconds { get; set; } = input.PendingSeconds;
+
+    private bool Promoted { get; set; } = input.Promoted;
+
+    private bool Stopped { get; set; }
+
+    /// <summary>Awaits <paramref name="work"/>, sampling while it waits when the output ages.</summary>
+    /// <typeparam name="T">The work's result.</typeparam>
+    /// <param name="work">The scheduled work.</param>
+    public async Task<T> AwaitAsync<T>(Task<T> work)
+    {
+        while (Active && !work.IsCompleted)
+        {
+            var timer = Timer;
+            var first = await Workflow.WhenAnyAsync(work, timer).ConfigureAwait(true);
+            if (!ReferenceEquals(first, timer))
+            {
+                break;
+            }
+
+            await SampleAsync().ConfigureAwait(true);
+        }
+
+        return await work.ConfigureAwait(true);
+    }
+
+    /// <summary>Takes one sample, after the timer fired, and acts on its decision.</summary>
+    public async Task SampleAsync()
+    {
+        _timer = null;
+        SamplesInRun++;
+        var sample = await Workflow.ExecuteActivityAsync(
+            (JobDispatchActivities activities) => activities.ReadPendingDispatchAsync(
+                new ReadPendingDispatchInput(input.ReportJobId, ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId))),
+            ReportJobActivityOptions.Create()).ConfigureAwait(true);
+
+        var decision = PriorityAging.Decide(Class, Wait, PendingSeconds, sample.Pending, sample.JobClass, workRemaining: true);
+        PendingSeconds = decision.PendingSeconds;
+        switch (decision.Action)
+        {
+            case PriorityAgingAction.Promote:
+                await Workflow.ExecuteActivityAsync(
+                    (JobDispatchActivities activities) => activities.PromoteToNormalAsync(
+                        new PromoteToNormalInput(input.ReportJobId, PendingSeconds)),
+                    ReportJobActivityOptions.Create()).ConfigureAwait(true);
+                Class = JobPriority.Normal;
+                Promoted = true;
+                break;
+
+            case PriorityAgingAction.Adopt:
+                Class = JobPriority.Normal;
+                Promoted = true;
+                break;
+
+            case PriorityAgingAction.Stop:
+                Stopped = true;
+                break;
+
+            case PriorityAgingAction.SampleAgain:
+                break;
+
+            default:
+                throw new InvalidOperationException("the aging rule decided an action the workflow does not know.");
+        }
+    }
+
+    /// <summary>The input a continued run starts with: the aging state rides beside the window's counters.</summary>
+    /// <param name="current">The run's own input.</param>
+    public ReportPdfOutputInput Carry(ReportPdfOutputInput current) =>
+        current.PriorityClass is null
+            ? current
+            : current with { PriorityClass = Class, PendingSeconds = PendingSeconds, Promoted = Promoted };
 }
 
 /// <summary>A block's render failed: the block index is kept so the output's mapping reads the block's own cause.</summary>

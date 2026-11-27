@@ -1,3 +1,4 @@
+using ReportService.Jobs;
 using Temporalio.Common;
 using Temporalio.Workflows;
 
@@ -15,6 +16,14 @@ public static class TakeTemplateVersionActivityOptions
 {
     /// <summary>The queue the take is served from.</summary>
     public const string Queue = "report-pdf-rendering";
+
+    /// <summary>The queue of <paramref name="priority"/> for this kind of work.</summary>
+    /// <param name="priority">The class.</param>
+    public static string QueueFor(JobPriority priority) => PriorityTaskQueues.For(Queue, priority);
+
+    /// <summary>The queue this process serves for this kind of work, from its served-class setting.</summary>
+    /// <param name="servedClassSetting">The value of <c>Priority:ServedClass</c>, or none.</param>
+    public static string ServedQueue(string? servedClassSetting) => PriorityTaskQueues.ServedQueue(Queue, servedClassSetting);
 
     /// <summary>How often a running take reports that it is still working.</summary>
     public static readonly TimeSpan HeartbeatEvery = TimeSpan.FromSeconds(5);

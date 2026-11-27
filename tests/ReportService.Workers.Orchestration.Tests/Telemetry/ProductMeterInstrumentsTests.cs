@@ -15,7 +15,7 @@ public sealed class ProductMeterInstrumentsTests
     private static readonly MeterIdentity Identity = MeterIdentity.ForHost("ReportService.Tests.ProductMeter");
 
     [Fact]
-    public void TheWorkerMeterDeclaresItsTenInstrumentsAndNoEleventh()
+    public void TheWorkerMeterDeclaresItsTwelveInstrumentsAndNoThirteenth()
     {
         List<(string Name, string Unit, string Kind)> declared = [];
         using var listener = new MeterListener
@@ -44,6 +44,8 @@ public sealed class ProductMeterInstrumentsTests
             (OrchestrationMetrics.QueueToFirstStageDurationInstrumentName, "s", "Histogram"),
             (OrchestrationMetrics.TemplateResolutionsInstrumentName, "{resolution}", "Counter"),
             (OrchestrationMetrics.CancellationDurationInstrumentName, "s", "Histogram"),
+            (OrchestrationMetrics.PriorityPromotionsInstrumentName, "{job}", "Counter"),
+            (OrchestrationMetrics.TaskQueuePendingInstrumentName, "{task}", "ObservableGauge"),
         };
         Assert.Equal(
             expected.OrderBy(row => row.Name, StringComparer.Ordinal),
@@ -56,6 +58,7 @@ public sealed class ProductMeterInstrumentsTests
         Counter<long> => "Counter",
         Histogram<double> => "Histogram",
         ObservableGauge<double> => "ObservableGauge",
+        ObservableGauge<long> => "ObservableGauge",
         _ => instrument.GetType().Name,
     };
 }

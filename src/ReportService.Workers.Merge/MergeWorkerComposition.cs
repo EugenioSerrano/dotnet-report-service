@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Workers.Merge.Assembly;
@@ -35,8 +36,11 @@ public static class MergeWorkerComposition
 
         builder.AddObjectStorage("merge-worker");
 
-        // The one queue this process declares; the assembly step is its only work.
-        builder.AddWorkflowEngine("merge-worker", [AssemblyStepOptions.Queue]);
+        // The one queue this process declares - the merge queue of the one priority class it
+        // serves; the assembly step is its only work. A served class the setting does not name
+        // stops the process at start.
+        builder.AddServedClassCheck(static value => PriorityTaskQueues.TryParseServedClass(value, out _));
+        builder.AddWorkflowEngine("merge-worker", [AssemblyStepOptions.ServedQueue(ServedClassOptions.Read(builder))]);
         builder.Services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy());
         builder.AddMergeWorkerWork();
         return builder;

@@ -1,3 +1,4 @@
+using ReportService.Jobs;
 using Temporalio.Common;
 using Temporalio.Workflows;
 
@@ -61,4 +62,16 @@ public static class AssemblePdfStepOptions
             NonRetryableErrorTypes = NonRetryableErrorTypes,
         },
     };
+
+    /// <summary>
+    /// Builds the execution settings for a job dispatched on <paramref name="priority"/>: the
+    /// class's own queue, every other value as <see cref="Create()"/> builds it.
+    /// </summary>
+    /// <param name="priority">The job's effective class.</param>
+    public static ActivityOptions Create(JobPriority priority)
+    {
+        var options = Create();
+        options.TaskQueue = PriorityTaskQueues.For(Queue, priority);
+        return options;
+    }
 }

@@ -52,6 +52,9 @@ described in full, and the README links to it rather than repeating it.
 - [`operations/printing-and-failed-attempts.md`](operations/printing-and-failed-attempts.md)
   — what happens while a report is printed: retries, restarts and failed
   attempts.
+- [`operations/priority-and-per-class-capacity.md`](operations/priority-and-per-class-capacity.md)
+  — the three priority levels, the aging of a waiting `low` job, the dedicated
+  capacity per class and what to watch.
 
 ### Verification and measurement
 

@@ -12,6 +12,7 @@ using ReportService.TemplatePackages.Records;
 using ReportService.Templates;
 using ReportService.Workers.Orchestration.Dispatch;
 using ReportService.Workers.Orchestration.Jobs;
+using ReportService.Workers.Orchestration.Telemetry;
 using ReportService.Workers.Orchestration.Uploads;
 
 namespace ReportService.Workers.Orchestration;
@@ -103,6 +104,20 @@ public static class OrchestrationWorkerRegistration
             return DocumentCapacity.From(settings.MaximumPages, settings.MaximumPartBytes, settings.ProfileName);
         });
         builder.Services.TryAddSingleton<IJobStore, PostgresJobStore>();
+
+        // The job's dispatch by class and its aging: the store the effective class is read and
+        // moved through (the job store itself), the deployment's aging wait, the steps, and the
+        // engine reads they make through the connection this worker already holds.
+        builder.AddValidatedConfiguration<PriorityAgingOptions>(PriorityAgingOptions.SectionPath);
+        builder.Services.TryAddSingleton<IJobPriorityStore>(static provider =>
+            (IJobPriorityStore)provider.GetRequiredService<IJobStore>());
+        builder.Services.AddSingleton(provider => ActivatorUtilities.CreateInstance<JobDispatchActivities>(
+            provider,
+            EngineReads.DescribeExecution(provider.GetRequiredService<TemporalClientHolder>())));
+        builder.AddValidatedConfiguration<PendingWorkOptions>(PendingWorkOptions.SectionPath);
+        builder.Services.AddHostedService(provider => ActivatorUtilities.CreateInstance<PendingWorkSampler>(
+            provider,
+            EngineReads.DescribeTaskQueue(provider.GetRequiredService<TemporalClientHolder>())));
         builder.AddValidatedConfiguration<InputWaitOptions>(InputWaitOptions.SectionPath);
         builder.Services.AddSingleton<ReportJobActivities>();
         builder.Services.AddSingleton<JobTransitionActivities>();
@@ -155,6 +170,7 @@ public static class OrchestrationWorkerRegistration
                 options.AddAllActivities(provider.GetRequiredService<InputWaitActivities>());
                 options.AddAllActivities(provider.GetRequiredService<InputWaitSignalActivities>());
                 options.AddAllActivities(provider.GetRequiredService<TemplateResolutionActivities>());
+                options.AddAllActivities(provider.GetRequiredService<JobDispatchActivities>());
             }));
         builder.Services.AddSingleton(provider => new TaskQueueWork(
             PdfOutputActivityOptions.DataQueue,

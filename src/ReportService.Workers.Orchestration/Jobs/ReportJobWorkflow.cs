@@ -119,6 +119,15 @@ public sealed class ReportJobWorkflow
     /// </summary>
     public const string RestartCancellationGuardPatch = "restart-cancel-guard-v1";
 
+    /// <summary>
+    /// The identifier of the patch that dispatches a job's render and merge work by its priority
+    /// class: the job's effective class and the deployment's aging wait are read once, recorded,
+    /// and carried to the template steps and the output executions. A run recorded before it
+    /// carries no marker, reads nothing and dispatches on the normal class's queues exactly as
+    /// recorded.
+    /// </summary>
+    public const string PriorityDispatchPatch = "priority-dispatch-v1";
+
     /// <summary>Runs one job up to its continuation point, winding it down when it is cancelled.</summary>
     /// <param name="input">The job to run.</param>
     [WorkflowRun]
@@ -215,7 +224,16 @@ public sealed class ReportJobWorkflow
         // any step that would need the version. The reference is resolved by the job's own
         // path - a version already taken is bound, one that is not is taken, a name is
         // resolved - and what the answer says is pinned to the job and never read again.
-        if (await ResolveTemplateAsync(input.ReportJobId).ConfigureAwait(true))
+        // The class the job's work is dispatched on, and the deployment's aging wait: read once
+        // and recorded, so a replay dispatches exactly as the run did whatever the settings are.
+        var dispatch = Workflow.Patched(PriorityDispatchPatch)
+            ? await Workflow.ExecuteActivityAsync(
+                (JobDispatchActivities activities) => activities.ReadJobDispatchAsync(
+                    new ReadJobDispatchInput(input.ReportJobId)),
+                ReportJobActivityOptions.Create()).ConfigureAwait(true)
+            : null;
+
+        if (await ResolveTemplateAsync(input.ReportJobId, dispatch?.PriorityClass ?? JobPriority.Normal).ConfigureAwait(true))
         {
             return;
         }
@@ -276,7 +294,7 @@ public sealed class ReportJobWorkflow
                 // fixed order, run concurrently, each child's failure isolated to its own output,
                 // and the job always finalised from the per-output states (ADR-048, Phase D.0).
                 // A whole-job FailJob is never used here — it would mask a sibling's success.
-                await RunRequestedOutputsAsync(input, partition, options).ConfigureAwait(true);
+                await RunRequestedOutputsAsync(input, partition, options, dispatch).ConfigureAwait(true);
             }
             else
             {
@@ -306,7 +324,7 @@ public sealed class ReportJobWorkflow
                     {
                         await Workflow.ExecuteChildWorkflowAsync(
                             (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
-                                new ReportPdfOutputInput(input.ReportJobId, output.OutputId)),
+                                OutputInput(input.ReportJobId, output.OutputId, dispatch)),
                             new ChildWorkflowOptions
                             {
                                 Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
@@ -366,7 +384,8 @@ public sealed class ReportJobWorkflow
     private static async Task RunRequestedOutputsAsync(
         ReportJobInput input,
         PartitionResult partition,
-        ActivityOptions options)
+        ActivityOptions options,
+        JobDispatch? dispatch)
     {
         await Workflow.ExecuteActivityAsync(
             (JobTransitionActivities activities) => activities.TransitionJobAsync(
@@ -403,7 +422,7 @@ public sealed class ReportJobWorkflow
             {
                 var pdfChild = Workflow.ExecuteChildWorkflowAsync(
                     (ReportPdfOutputWorkflow workflow) => workflow.RunAsync(
-                        new ReportPdfOutputInput(input.ReportJobId, pdfOutputId)),
+                        OutputInput(input.ReportJobId, pdfOutputId, dispatch)),
                     new ChildWorkflowOptions
                     {
                         Id = ReportPdfOutputWorkflow.WorkflowIdFor(input.ReportJobId),
@@ -665,7 +684,21 @@ public sealed class ReportJobWorkflow
     /// any other failure of a step ends it as the step's own failure.
     /// </summary>
     /// <param name="reportJobId">The job whose template is fixed.</param>
-    private static async Task<bool> ResolveTemplateAsync(string reportJobId)
+    /// <summary>
+    /// What one PDF output's execution is started with: the job, the output and - when the run
+    /// read the job's dispatch - its class and the aging wait. A run that read nothing starts it
+    /// exactly as it was recorded.
+    /// </summary>
+    private static ReportPdfOutputInput OutputInput(string reportJobId, string outputId, JobDispatch? dispatch) =>
+        dispatch is null
+            ? new ReportPdfOutputInput(reportJobId, outputId)
+            : new ReportPdfOutputInput(reportJobId, outputId)
+            {
+                PriorityClass = dispatch.PriorityClass,
+                AgingWaitSeconds = dispatch.AgingWaitSeconds,
+            };
+
+    private static async Task<bool> ResolveTemplateAsync(string reportJobId, JobPriority priority)
     {
         if (!Workflow.Patched(TemplateResolvePatch))
         {
@@ -695,7 +728,7 @@ public sealed class ReportJobWorkflow
                             prepared.RequestedVersion!,
                             prepared.RequestingConsumerId!,
                             reportJobId)),
-                        TakeTemplateStepOptions.Create()).ConfigureAwait(true);
+                        TakeTemplateStepOptions.Create(priority)).ConfigureAwait(true);
                     pinned = await PinTemplateAsync(reportJobId, prepared.TemplateId!, taken.Version, metadata).ConfigureAwait(true);
                     break;
 
@@ -710,7 +743,7 @@ public sealed class ReportJobWorkflow
                                 prepared.TemplateId!,
                                 prepared.RequestingConsumerId!,
                                 reportJobId)),
-                            ResolveTemplateStepOptions.Create()).ConfigureAwait(true);
+                            ResolveTemplateStepOptions.Create(priority)).ConfigureAwait(true);
                         pinned = string.Equals(
                                 resolved.Outcome,
                                 TemplateStepContracts.ResolutionOutcomes.ResolvedFromTakenCopy,
