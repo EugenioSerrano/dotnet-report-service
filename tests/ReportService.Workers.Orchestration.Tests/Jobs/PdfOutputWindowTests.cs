@@ -97,6 +97,117 @@ public sealed class PdfOutputWindowTests
         Assert.Equal(1_000, segment.NextIndex);
     }
 
+    /// <summary>
+    /// Across every run of one output, at any window: each run but the last completes exactly
+    /// one thousand blocks and ends with nothing outstanding, the runs number the share count
+    /// rounded up, the last run completes rather than continues, and every index is scheduled
+    /// exactly once, each run starting from the index its predecessor carried.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(WindowsAndBlockCounts))]
+    public void EveryRunCompletesItsShareAndEveryBlockIsScheduledOnce(int window, int blockCount)
+    {
+        var chain = PdfOutputWindowLoop.RunChain(PdfOutputWindow.Decide, blockCount, window);
+
+        var expectedRuns = Math.Max(1, (blockCount + PdfOutputWindow.ContinueAsNewAfter - 1) / PdfOutputWindow.ContinueAsNewAfter);
+        Assert.Equal(expectedRuns, chain.Segments.Count);
+        for (var run = 0; run < chain.Segments.Count; run++)
+        {
+            var segment = chain.Segments[run];
+            var last = run == chain.Segments.Count - 1;
+            Assert.Equal(0, segment.Outstanding);
+            Assert.Equal(last ? PdfOutputWindowAction.Complete : PdfOutputWindowAction.ContinueAsNew, segment.End);
+            Assert.Equal(
+                last ? blockCount - (run * PdfOutputWindow.ContinueAsNewAfter) : PdfOutputWindow.ContinueAsNewAfter,
+                segment.Completed);
+            Assert.Equal(run * PdfOutputWindow.ContinueAsNewAfter, segment.FirstIndex);
+            Assert.Equal(segment.FirstIndex + segment.Completed, segment.NextIndex);
+            if (run > 0)
+            {
+                Assert.Equal(chain.Segments[run - 1].NextIndex, segment.FirstIndex);
+            }
+        }
+
+        Assert.Equal(Enumerable.Range(0, blockCount), chain.Scheduled);
+    }
+
+    /// <summary>The windows and block counts the run theory covers.</summary>
+    public static TheoryData<int, int> WindowsAndBlockCounts
+    {
+        get
+        {
+            var data = new TheoryData<int, int>();
+            foreach (var window in new[] { 1, 2, 3, 64 })
+            {
+                foreach (var blockCount in new[] { 1, 999, 1_000, 1_001, 2_500, 3_001 })
+                {
+                    data.Add(window, blockCount);
+                }
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>
+    /// A run recorded before the drain replays through the legacy decisions, so they must be
+    /// exactly the decisions the window made then, as the committed transcript holds them.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TranscriptCases))]
+    public void TheLegacyDecisionsAreTheRecordedOnes(int window, int blockCount)
+    {
+        var recorded = PdfOutputWindowTranscript.Read()[PdfOutputWindowTranscript.KeyOf(window, blockCount)];
+
+        var chain = PdfOutputWindowLoop.RunChain(
+            (blocks, next, completed, outstanding, size) =>
+                PdfOutputWindow.Decide(blocks, next, completed, outstanding, size, drainBeforeContinueAsNew: false),
+            blockCount,
+            window);
+
+        Assert.Equal(recorded, chain.Trace);
+    }
+
+    /// <summary>The cases the transcript holds.</summary>
+    public static TheoryData<int, int> TranscriptCases
+    {
+        get
+        {
+            var data = new TheoryData<int, int>();
+            foreach (var window in PdfOutputWindowTranscript.Windows)
+            {
+                foreach (var blockCount in PdfOutputWindowTranscript.BlockCounts)
+                {
+                    data.Add(window, blockCount);
+                }
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>
+    /// States the loop reaches: a run whose share is scheduled but not all completed waits even
+    /// with a free slot, and a run one block short of its share still schedules.
+    /// </summary>
+    [Fact]
+    public void ARunWithItsShareScheduledWaitsEvenWithAFreeSlot()
+    {
+        Assert.Equal(PdfOutputWindowAction.Wait, PdfOutputWindow.Decide(2_500, 1_000, 999, 1, 2).Action);
+
+        var shortOfTheShare = PdfOutputWindow.Decide(2_500, 999, 998, 1, 2);
+        Assert.Equal(PdfOutputWindowAction.Schedule, shortOfTheShare.Action);
+        Assert.Equal(999, shortOfTheShare.NextIndex);
+    }
+
+    /// <summary>When the share ends on the last block, the run completes; it never continues into nothing.</summary>
+    [Fact]
+    public void AShareEndingOnTheLastBlockCompletes()
+    {
+        Assert.Equal(PdfOutputWindowAction.Wait, PdfOutputWindow.Decide(1_000, 1_000, 999, 1, 2).Action);
+        Assert.Equal(PdfOutputWindowAction.Complete, PdfOutputWindow.Decide(1_000, 1_000, 1_000, 0, 2).Action);
+    }
+
     [Fact]
     public void TheThresholdIsOneThousandBlocks()
     {

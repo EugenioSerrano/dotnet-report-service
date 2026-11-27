@@ -64,6 +64,14 @@ public sealed class ReportPdfOutputWorkflow
     /// </summary>
     public const string PageCodeOnePartPatch = "page-code-one-part-v1";
 
+    /// <summary>
+    /// The identifier of the patch that gates the drain before a continuation: once a run
+    /// has scheduled its share of blocks it waits for every outstanding render and then
+    /// continues as a new run, whatever the window. A run recorded before it carries no
+    /// marker and keeps its old window decisions exactly.
+    /// </summary>
+    public const string ContinueAsNewDrainPatch = "continue-as-new-drain-v1";
+
     private static int _window = PdfOutputConcurrencyOptions.DefaultWindow;
 
     /// <summary>Publishes the configured window to the workflow type, once, while the process plans its workers.</summary>
@@ -240,10 +248,11 @@ public sealed class ReportPdfOutputWorkflow
         var next = input.NextBlockIndex;
         var completed = input.CompletedBlocks;
         var outstanding = new SortedDictionary<int, Task<RenderPdfBlockStepResult>>();
+        var drain = Workflow.Patched(ContinueAsNewDrainPatch);
 
         while (true)
         {
-            var decision = PdfOutputWindow.Decide(blockCount, next, completed, outstanding.Count, window);
+            var decision = PdfOutputWindow.Decide(blockCount, next, completed, outstanding.Count, window, drain);
             switch (decision.Action)
             {
                 case PdfOutputWindowAction.Schedule:
