@@ -75,8 +75,8 @@ dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAu
 order, then renders the package's own `sample.json` once through the product's
 sample renderer: the same engine adapter, fragment composition, Chromium print
 and post-render verification a job uses. It writes two files into
-`artifacts/template-preview/<id>/<version>/` by default (git-ignored), or into
-`--out`:
+`artifacts/template-preview/<id>/<version>/` under the current directory by
+default (git-ignored when that is the repository root), or into `--out`:
 
 - `<id>-<version>.html` — the document that was printed, with the page rule
   appended;
@@ -126,6 +126,10 @@ margins `html/styles.css` declares is what the measurements cover.
 `pilot-simple` (Scriban), `pilot-handlebars` (Handlebars) and `pilot-liquid`
 (Liquid/Fluid) under `samples/templates/` are the same report in the three
 engines: copy the one written in the engine you want and change it.
+
+`invoice-batch` and `invoice-batch-two-up` (Liquid/Fluid) are one batch of
+invoices printed in two layouts — one invoice per page, and two per page; see
+[Printing a batch of invoices](#printing-a-batch-of-invoices).
 
 ### Then publish
 
@@ -291,6 +295,93 @@ reach them; the engines' own formatters are refused when a version is taken.
 Templates are written for one engine, named by the manifest: Scriban, Handlebars
 or Liquid. The three are peers — none is a default — and the same context is
 available to each.
+
+## Printing a batch of invoices
+
+A batch of invoices — many invoices printed by one job, in one document — needs
+no special mode. The job's data is an ordinary `header-items-v1` document in
+which **each record is one invoice**: its own fields, its lines as a nested
+array, its totals, and the values its graphics and codes are drawn from. The
+header describes the batch. Every record is checked against the record schema,
+printed once and in the order received, and the 1 MiB record bound applies to
+each invoice.
+
+The examples `samples/templates/invoice-batch` and
+`samples/templates/invoice-batch-two-up` are the same package in two layouts;
+copy one and change it.
+
+### The layout is the template's
+
+The service has no invoice-per-page rule. Where a page breaks is decided by the
+template's own stylesheet: `invoice-batch` starts every invoice after the first
+on a new page (`.invoice + .invoice { break-before: page; }`), and
+`invoice-batch-two-up` keeps each invoice whole and starts a new page before
+every odd invoice after the first, so two share a page. Any other arrangement
+your layout produces is printed as it is.
+
+### Lines and other nested values
+
+A record's nested arrays are read in the row part with the engine's loop — in
+Liquid, `{% for line in item.lines %}…{% endfor %}`. Totals are carried in the
+data: a template does no arithmetic, so the consumer computes the subtotal, the
+tax and the total and the template prints them.
+
+### Graphics and codes are computed before the job
+
+A graphic or a code that depends on an invoice — a barcode, a QR, a small
+chart — is **computed by the consumer before the job** and carried inside the
+record. The service never runs code written in a template: there is no script
+in a package, and an expression has no effect beyond printing a value. The ways
+that work today:
+
+- **Geometry printed as SVG elements.** The record carries the shapes — for a
+  barcode, the position and width of each bar — and the row prints them inside
+  an inline `<svg>`, each value in an ordinary quoted attribute:
+
+  ```text
+  <svg viewBox="0 0 {{ item.barcode.width }} {{ item.barcode.height }}">{% for bar in item.barcode.bars %}<rect x="{{ bar.x }}" y="0" width="{{ bar.w }}" height="{{ item.barcode.height }}"></rect>{% endfor %}</svg>
+  ```
+
+  The examples print a Code 128 barcode of the invoice number this way.
+- **Text in a font the package ships.** A barcode font declared with
+  `@font-face` and packaged with the template prints the record's text as bars.
+  The examples do not demonstrate it, and the font's licence is yours.
+
+**What the take's current rule refuses:** a data value written inside `src`,
+`srcset`, `href`, `xlink:href`, `poster`, `data`, `action`, `formaction`,
+`style` or an event attribute. So a data URI carried in the record cannot be
+the source of an `<img>` — `<img src="{{ item.qr }}">` is refused when the
+version is taken, naming the part and the `"src"` attribute.
+
+A code that depends on the final page rather than on an invoice is not
+precomputed: the template declares it and the service applies it to every page.
+It is documented with that feature.
+
+### Showing or hiding on a flag
+
+A template may show or hide a field, or a whole graphic, on a value the consumer
+put in the data — in Liquid, `{% if item.flags.showBarcode %}…{% endif %}`.
+That is a choice over data, not a computation. Two consequences:
+
+- hide with the condition, never with CSS: text hidden by `display: none` is in
+  the composed document but not on the page, and the verification fails;
+- a field printed only on a flag is never an anchor — an anchor is printed as it
+  is and unconditionally.
+
+At the take's current rule, `if` and `for` over record data are accepted in
+Liquid templates; a Scriban template that writes `{{ if item.… }}` or
+`{{ for … in item.… }}` is refused by the lint as an unescaped data output,
+which is why the examples are written in Liquid.
+
+### What is yours
+
+The **correctness of the data, and of every graphic and code printed from it**,
+is the adopter's: test the reports you produce with your own testers and users.
+The service verifies the printed text against the composed document and the
+declared anchors — the fields that feed a code can be declared as anchors so a
+missing or altered value is caught — and it never decodes, scans or analyses a
+printed symbol: a barcode that encodes the wrong value, or none, does not fail
+the job.
 
 ## Presenting a date or a number
 

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <title>{{ header.reportTitle }}</title>
+  <link rel="stylesheet" href="html/styles.css">
+</head>
+<body>
+<header class="batch-header">
+  <h1>{{ header.reportTitle }}</h1>
+  <p>{{ header.issuer.name }} · CUIT {{ header.issuer.taxId }}</p>
+  <p>Lote {{ header.batchId }} · {{ header.invoiceCount }} facturas · {{ header.currency }}</p>
+</header>
+<main class="invoices">

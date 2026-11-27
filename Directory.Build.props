@@ -38,6 +38,41 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <!--
+    Where a bare `dotnet test` (one that names no results directory) writes its results:
+    under the repository's single ignored output root, artifacts/, rather than a
+    TestResults/ folder in the directory the run was started from.
+
+    The test platform takes its results directory from the command line first, then from
+    the "platformOptions.resultDirectory" setting of the test application's configuration
+    file, and only then falls back to TestResults/ under the working directory. This
+    target gives every test application that setting: it writes a configuration source
+    under obj/ naming artifacts/test-results/local/<project>/ and hands it to the
+    platform's own generation step, which copies it beside the test application. A
+    results directory given on the command line - as the hermetic test runner gives one
+    to every project it runs - still wins. A project that keeps its own testconfig.json
+    is left to it.
+  -->
+  <Target Name="DefaultTestResultsUnderArtifacts"
+          BeforeTargets="_GenerateTestingPlatformConfigurationFileInputCache"
+          DependsOnTargets="_CalculateGenerateTestingPlatformConfigurationFile"
+          Condition="'$(GenerateTestingPlatformConfigurationFile)' == 'true' AND !Exists('$(MSBuildProjectDirectory)/testconfig.json')">
+    <PropertyGroup>
+      <_DefaultTestResultsDirectory>$([System.String]::Copy('$(MSBuildThisFileDirectory)artifacts/test-results/local/$(MSBuildProjectName)').Replace('%5C', '/'))</_DefaultTestResultsDirectory>
+      <_DefaultTestConfigurationSource>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'testconfig.json'))</_DefaultTestConfigurationSource>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_DefaultTestConfigurationSource)"
+                      Lines="{ &quot;platformOptions&quot;: { &quot;resultDirectory&quot;: &quot;$(_DefaultTestResultsDirectory)&quot; } }"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <PropertyGroup>
+      <_TestingPlatformConfigurationFileSourcePath>$(_DefaultTestConfigurationSource)</_TestingPlatformConfigurationFileSourcePath>
+    </PropertyGroup>
+    <ItemGroup>
+      <FileWrites Include="$(_DefaultTestConfigurationSource)" />
+    </ItemGroup>
+  </Target>
+
   <PropertyGroup>
     <!--
       Product version (Semantic Versioning). One version for the whole

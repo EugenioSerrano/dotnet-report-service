@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   refused with `422 UNSUPPORTED_CAPABILITY`. The metadata database gains the two priority
   columns of a job (migration `0021`); existing jobs read `normal`. The priority does not
   yet change the order work is dispatched in.
+- Two example packages, `invoice-batch` and `invoice-batch-two-up`, print a batch of
+  invoices in one document: each record is one invoice with its nested lines, its
+  precomputed totals, flags that show or hide a field or the barcode, and the
+  precomputed bars of a Code 128 barcode printed as inline SVG; one invoice per page in
+  the first, two per page in the second. The authoring guide gains "Printing a batch of
+  invoices": the record-per-invoice pattern, the layout as the template's choice, what
+  the consumer computes before the job, the data values the take's current rule refuses
+  in an image source, conditions over flags, and what the adopter owns.
 
 ### Changed
 

@@ -146,7 +146,7 @@ How the figures are obtained, and how exact they are:
   under a root of 111.
 - The `staging` class's longest key is the **health probe's**
   (`staging/probe/<process>/<32 hex>`, 67 with `orchestration-worker`, the
-  longest of the three process names the product ships), not an upload's (55).
+  longest of the four process names the product ships), not an upload's (55).
 - The two template classes are **maxima**, not fixed widths, and a real key can
   be shorter. `templates` is `templates/` + three values encoded to at most 34
   characters each + `/` + the package's 64-character hash: 179, the class's own
@@ -210,7 +210,7 @@ logical roots.
 ### Development diagnostics
 
 When `Storage:Diagnostics:Enabled` is true — the composition sets it for its
-three processes, a deployed profile does not — each process offers two
+four processes, a deployed profile does not — each process offers two
 endpoints that exist only to show that the root is shared. They are **not a
 product API** and have no authentication; keep them off outside development.
 

@@ -11,7 +11,8 @@ and that anyone can run against a local instance.
   sample data, template parts, styles, assets), one per template. The three
   pilot packages `pilot-simple`, `pilot-grouped` and `pilot-volume` render the
   three pilot datasets, and `pilot-handlebars` and `pilot-liquid` are the same
-  simple report in the two other engines — see
+  simple report in the two other engines; `invoice-batch` and
+  `invoice-batch-two-up` print a batch of invoices in two layouts — see
   [`templates/README.md`](templates/README.md).
 - `template-authoring/` — the local authoring tool: it scaffolds a template
   package for any of the three engines and renders a package's own sample to a

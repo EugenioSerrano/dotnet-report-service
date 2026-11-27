@@ -7,7 +7,8 @@ refusal it gives, and what the service guarantees about the connection and about
 the work that follows.
 
 The job's published files are listed and downloaded through the two operations
-described below, after the status read that follows them.
+described below, after the status read that follows them and the operation that
+cancels a job.
 
 ## Who may read a job
 
@@ -168,6 +169,38 @@ Every answer is `Cache-Control: no-store`: an intermediary serving an older
 answer would show counters going back. Poll at about one request per second
 while the job runs; at that rate a poll costs one indexed read of the service's
 own database. An inactive consumer may read its own jobs.
+
+## Cancel a job
+
+```http
+POST /api/v1/report-jobs/job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a/cancel
+X-Consumer-Id: dev-consumer
+```
+
+Cancelling asks the service to stop a job that has not finished. It is the only
+way a job is cancelled: a client timeout or a dropped connection never cancels
+one, and the service decides the request without watching the connection. The
+answer is the job's status document, the same one the status read returns, and
+is `Cache-Control: no-store`.
+
+| The job is | Status | What happens |
+|------------|--------|--------------|
+| Not finished and not yet cancelling | 202 | The job moves to `cancelling` and the cancellation is recorded durably, once; the work winds down and the job ends `cancelled`. `Location` names the job's status. |
+| Already `cancelling` | 202 | The same accepted answer; nothing new is recorded. |
+| Already finished (`succeeded`, `failed` or `cancelled`) | 200 | Nothing changes; the answer is the job's current state. |
+
+Refusals:
+
+| Condition | Status | `code` |
+|-----------|--------|--------|
+| No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` |
+| The job does not exist, belongs to another consumer, or its identifier is malformed | 404 | `INPUT_NOT_FOUND` |
+| The cancellation could not be recorded | 503 | `SERVICE_UNAVAILABLE` |
+
+A consumer made inactive may still cancel its own jobs: stopping a running job is
+a safety and cost control, so only registration is required. Refusals of an
+unknown consumer are counted on `reportservice.consumer.refusals` with the
+operation `job-cancel`.
 
 ## List a job's files
 

@@ -5,7 +5,7 @@ immutable JSON snapshot plus one versioned template into downloadable **PDF,
 HTML, Excel and Markdown** files — durably, asynchronously, and with memory
 that stays bounded no matter how large the report is.
 
-> **Version: 0.9.0 — released** (builds report `0.9.0`). Latest release:
+> **Version: 0.9.0 — released** (builds between releases report `0.10.0-dev`). Latest release:
 > **0.9.0** (2026-11-23). See [CHANGELOG.md](CHANGELOG.md).
 >
 > **Project status: 0.9.0 released - PDF reports render end-to-end.** A
@@ -262,7 +262,17 @@ SHA and hash. No pull request is mandatory (a repository may require one by its
 own policy). Republishing an existing version with different bytes is
 rejected: bump the version. A new version takes effect only for the jobs that
 reference it — consumers pin exact versions, so nothing changes under their
-feet.
+feet. The service does not rely on CI alone: the first time a job references a
+version, the service *takes* it — runs its own static checks, renders the
+package's sample and keeps the version, once — as
+[`docs/template-authoring.md`](docs/template-authoring.md) describes.
+
+**Authoring locally.** Before publishing, an author can scaffold a package for
+any of the three engines and render the package's own sample to a preview HTML
+and a verified PDF on their machine, with the same checks and renderer the
+service applies when it takes a version. The loop, its limits and worked
+examples in each engine are described in
+[`docs/template-authoring.md`](docs/template-authoring.md#the-local-loop-scaffold-preview-then-publish).
 
 **Ownership.** Every package belongs to a consumer and may be flagged
 `shared`; a consumer can render its own packages and the shared ones.
@@ -344,11 +354,13 @@ Status while running:
 }
 ```
 
-Stable error codes: `TEMPLATE_NOT_FOUND`, `TEMPLATE_VERSION_CONFLICT`,
-`TEMPLATE_INVALID`, `DATA_INVALID`, `RECORD_TOO_LARGE`, `QUOTA_EXCEEDED`,
-`UNSUPPORTED_CAPABILITY`, `PAGINATION_FAILED`, `RENDER_TIMEOUT`,
-`ARTIFACT_INTEGRITY_FAILED`, `OUTPUT_LIMIT_EXCEEDED`, `IDEMPOTENCY_CONFLICT`,
-`JOB_CANCELLED`.
+Every refusal and every failure carries a stable `code` — for example
+`CONSUMER_UNKNOWN`, `INPUT_NOT_FOUND`, `IDEMPOTENCY_CONFLICT`,
+`TEMPLATE_NOT_FOUND`, `DATA_INVALID` or `OUTPUT_LIMIT_EXCEEDED`. The complete
+list for each operation, with the status and the condition of each code, is on
+that operation's page under [`docs/api/`](docs/README.md#api-reference). A
+cancelled job carries no error code: its status, `cancelled`, says why it
+ended.
 
 ## Job lifecycle and status
 
@@ -542,7 +554,9 @@ warnings.
 dotnet run --project src/ReportService.AppHost
 ```
 
-Before any resource starts, the command prepares the render worker image:
+Before any resource starts, the command prepares the two worker images. The
+merge worker image is published by the .NET SDK on the ASP.NET Core runtime
+image, with no browser. The render worker image needs a base with a browser:
 
 1. it makes sure the local development registry container
    `report-service-dev-registry` is running — the pinned `registry` image,
@@ -574,7 +588,9 @@ output before any resource starts. It then starts, on the local machine only:
   inside the container);
 - `render-worker` — the PDF render worker container, built by the .NET SDK on
   a base image with the Chromium headless shell, connected to the workflow
-  engine on the `report-pdf-rendering` queue.
+  engine on the `report-pdf-rendering` queue;
+- `merge-worker` — the PDF merge worker container, which assembles each PDF
+  output from its printed parts on the `report-pdf-merge` queue.
 
 The console prints the dashboard URL (with its login link); the dashboard
 shows every resource, its health and its logs. The composition is up when
@@ -639,11 +655,12 @@ reported.
 dotnet-report-service/
 ├── src/                       Product source — src/ReportService.<Area>/
 ├── tests/                     Tests mirroring src/ (ReportService.<Area>.Tests)
-│                              + IntegrationTests, RenderingTests, PerformanceTests
-├── samples/                   Templates and seeded datasets for adopters
+│                              + Suites/ (end-to-end, performance), Rendering/, Samples/, Support/
+├── samples/                   Templates, seeded datasets and the template authoring tool
 ├── docs/                      Documentation
 ├── eng/                       Build and engineering assets
 ├── spikes/                    Stage 0 experiments — not part of the product
+├── artifacts/                 Local build and test output (git-ignored)
 ├── dotnet-report-service.slnx Product solution
 ├── global.json                .NET SDK pin (11.0.1xx band)
 ├── Directory.Build.props      Shared build settings (net11.0, warnings as errors, code style) and product version
@@ -659,11 +676,12 @@ each folder has its own `README.md`.
 Product projects under `src/` (each prefixed `ReportService.`): the hosts
 `Api`, `AppHost` and `Migrations` at the root; the job pipeline under `Jobs/`
 (`Uploads`, `DataContract`, `Data`, `Jobs`); PDF rendering and verification
-under `Pdf/` (`Rendering`, `Pdf.Verification`); the platform building blocks
+under `Pdf/` (`Rendering`, `Pdf.Assembly`, `Pdf.Verification`); the platform building blocks
 under `Platform/` (`ServiceDefaults`, `ServiceDefaults.Temporal`, `Storage`,
 `Storage.Filesystem`); the template stack under `Templates/` (`Templates`,
 `TemplateSource`, `TemplatePackages`, `TemplateChecks`); and the workers
-`Workers.Orchestration`, `Workers.Pdf` and `Workers.Pdf.Entry`.
+`Workers.Orchestration`, `Workers.Pdf` with `Workers.Pdf.Entry`, and
+`Workers.Merge` with `Workers.Merge.Entry`.
 
 ## Contributing and licence
 
