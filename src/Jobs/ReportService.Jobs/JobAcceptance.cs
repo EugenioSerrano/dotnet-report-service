@@ -50,4 +50,10 @@ public sealed record JobAcceptance(
     /// named none, in which case the template the job takes supplies it.
     /// </summary>
     public string? TimeZone { get; init; }
+
+    /// <summary>The priority the consumer declared; <see cref="JobPriority.Normal"/> when it declared none. Fixed at acceptance.</summary>
+    public JobPriority DeclaredPriority { get; init; } = JobPriority.Normal;
+
+    /// <summary>The class the job is dispatched on; at acceptance, the declared priority.</summary>
+    public JobPriority EffectivePriorityClass { get; init; } = JobPriority.Normal;
 }

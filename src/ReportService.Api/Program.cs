@@ -45,6 +45,10 @@ builder.Services.AddSingleton<IUploadStore, PostgresUploadStore>();
 builder.Services.AddSingleton<IJobStore, PostgresJobStore>();
 builder.Services.AddSingleton<JobAcceptanceMetrics>();
 
+// The deployment's restriction of the high priority: a static policy read and validated at
+// start, never a count of work in flight. An allow-list may only name declared consumers.
+builder.AddHighPriorityPolicy();
+
 // Taken template versions: the owner's read answers the record the take committed. The
 // API holds the record and never the source, so this registration is the only way a
 // version reaches the request path.

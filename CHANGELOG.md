@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A job request may declare a `priority` of `low`, `normal` or `high`; a request that
+  declares none is created at `normal`, and any other value is refused with
+  `400 REQUEST_INVALID` naming the field. The priority is fixed when the job is accepted,
+  is part of the request's idempotency identity (a request naming `normal` and one naming
+  none are the same request, so every existing key keeps its identity), and is read back
+  on the job status as `priority.declared` and `priority.effective`. A deployment may
+  restrict `high` with `Jobs:Priority:High:Restriction` (`none`, `allow-list` with
+  `Jobs:Priority:High:AllowedConsumers`, or `disabled`); a `high` it does not admit is
+  refused with `422 UNSUPPORTED_CAPABILITY`. The metadata database gains the two priority
+  columns of a job (migration `0021`); existing jobs read `normal`. The priority does not
+  yet change the order work is dispatched in.
+
 ### Changed
 
 - The single-block limit of PDF reports is removed. A PDF report may now span several

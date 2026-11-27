@@ -23,6 +23,7 @@ namespace ReportService.Api.Jobs;
 /// <param name="CreatedAt">When the job was accepted, in UTC.</param>
 /// <param name="StartedAt">When the job's work began, in UTC; null until then.</param>
 /// <param name="FinishedAt">When the job ended, in UTC; null until it did.</param>
+/// <param name="Priority">The priority the job was declared with and the class it is dispatched on.</param>
 public sealed record ReportJobStatusResponse(
     string ReportJobId,
     string Status,
@@ -33,7 +34,8 @@ public sealed record ReportJobStatusResponse(
     string? ErrorMessage,
     string? CreatedAt,
     string? StartedAt,
-    string? FinishedAt)
+    string? FinishedAt,
+    JobPriorityResponse Priority)
 {
     /// <summary>Projects a stored job onto the answer.</summary>
     /// <param name="view">The job as the store read it.</param>
@@ -57,9 +59,21 @@ public sealed record ReportJobStatusResponse(
             ErrorMessages.Format(view.ErrorCode, view.ErrorReason, logger),
             UploadWireValues.FormatTimestamp(view.CreatedAt),
             view.StartedAt is { } started ? UploadWireValues.FormatTimestamp(started) : null,
-            view.FinishedAt is { } finished ? UploadWireValues.FormatTimestamp(finished) : null);
+            view.FinishedAt is { } finished ? UploadWireValues.FormatTimestamp(finished) : null,
+            new JobPriorityResponse(
+                JobWireValues.ToWire(view.DeclaredPriority),
+                JobWireValues.ToWire(view.EffectivePriorityClass)));
     }
 }
+
+/// <summary>
+/// A job's priority as two facts: what the consumer declared, fixed at acceptance, and the class
+/// the job is dispatched on. They are equal when the job is accepted; a scheduling rule may later
+/// move the effective class, never the declared priority.
+/// </summary>
+/// <param name="Declared">The priority the consumer declared: <c>low</c>, <c>normal</c> or <c>high</c>.</param>
+/// <param name="Effective">The class the job is dispatched on: <c>low</c>, <c>normal</c> or <c>high</c>.</param>
+public sealed record JobPriorityResponse(string Declared, string Effective);
 
 /// <summary>The counters of a job's work: what it has read, what it has produced and the totals once they are known.</summary>
 /// <param name="RecordsRead">How many records of the input the job has read.</param>

@@ -16,6 +16,7 @@ namespace ReportService.Api.Jobs;
 /// <param name="Outputs">The outputs the request asked for, in the order it named them.</param>
 /// <param name="Culture">The culture the request named, as received; null when it named none.</param>
 /// <param name="TimeZone">The time zone the request named, as received; null when it named none.</param>
+/// <param name="Priority">The priority the request declared, one of the three levels; null when it declared none.</param>
 public sealed record CreateReportJobRequest(
     string TemplateId,
     string? TemplateVersion,
@@ -23,4 +24,5 @@ public sealed record CreateReportJobRequest(
     string Profile,
     IReadOnlyList<string> Outputs,
     string? Culture,
-    string? TimeZone);
+    string? TimeZone,
+    string? Priority = null);

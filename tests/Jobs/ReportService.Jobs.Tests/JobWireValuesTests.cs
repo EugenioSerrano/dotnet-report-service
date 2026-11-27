@@ -140,4 +140,45 @@ public sealed class JobWireValuesTests
         Assert.Equal(0, truncated.Ticks % TimeSpan.TicksPerMillisecond);
         Assert.Equal(instant.AddTicks(-(instant.Ticks % TimeSpan.TicksPerMillisecond)), truncated);
     }
+
+    [Theory]
+    [InlineData(JobPriority.Low, "low")]
+    [InlineData(JobPriority.Normal, "normal")]
+    [InlineData(JobPriority.High, "high")]
+    public void EveryPriorityRoundTripsThroughItsText(JobPriority priority, string text)
+    {
+        Assert.Equal(text, JobWireValues.ToWire(priority));
+        Assert.True(JobWireValues.TryParsePriority(text, out var read));
+        Assert.Equal(priority, read);
+        Assert.Equal(priority, JobWireValues.ParseStoredPriority(text));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("High")]
+    [InlineData("critical")]
+    [InlineData(" low")]
+    public void AnyOtherTextIsNoPriority(string? text)
+    {
+        Assert.False(JobWireValues.TryParsePriority(text, out var read));
+        Assert.Equal(JobPriority.Normal, read);
+    }
+
+    [Fact]
+    public void AStoredPriorityThisBuildDoesNotKnowIsRefusedInsteadOfDefaulted() =>
+        Assert.Throws<InvalidOperationException>(() => JobWireValues.ParseStoredPriority("urgent"));
+
+    [Fact]
+    public void APriorityOutsideTheThreeHasNoText() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => JobWireValues.ToWire((JobPriority)99));
+
+    [Fact]
+    public void AnAcceptanceAndARecordDefaultToNormalForBothFacts()
+    {
+        var record = new ReportJobRecord("job", "consumer", "upload", ReportJobStatus.Queued, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(JobPriority.Normal, record.DeclaredPriority);
+        Assert.Equal(JobPriority.Normal, record.EffectivePriorityClass);
+    }
 }

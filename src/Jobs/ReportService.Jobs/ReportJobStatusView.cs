@@ -36,4 +36,11 @@ public sealed record ReportJobStatusView(
     DateTimeOffset CreatedAt,
     DateTimeOffset? StartedAt,
     DateTimeOffset? FinishedAt,
-    IReadOnlyList<ReportOutputStatusView> Outputs);
+    IReadOnlyList<ReportOutputStatusView> Outputs)
+{
+    /// <summary>The priority the consumer declared for the job.</summary>
+    public JobPriority DeclaredPriority { get; init; } = JobPriority.Normal;
+
+    /// <summary>The class the job is dispatched on.</summary>
+    public JobPriority EffectivePriorityClass { get; init; } = JobPriority.Normal;
+}

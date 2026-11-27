@@ -30,7 +30,9 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
     private const string Hash = "9ffcbf0acedfe4529a6093c4c669efab29c2d523a7794bacfb8eb8a946ca8dd3";
 
     private static readonly string[] TopMembers =
-        ["reportJobId", "status", "stage", "progress", "outputs", "errorCode", "errorMessage", "createdAt", "startedAt", "finishedAt"];
+        ["reportJobId", "status", "stage", "progress", "outputs", "errorCode", "errorMessage", "createdAt", "startedAt", "finishedAt", "priority"];
+
+    private static readonly string[] PriorityMembers = ["declared", "effective"];
 
     private static readonly string[] ProgressMembers =
         ["recordsRead", "recordsTotal", "blocksCompleted", "blocksTotal", "pagesGenerated"];
@@ -370,7 +372,55 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         Assert.DoesNotContain("the server did not answer", body, StringComparison.Ordinal);
     }
 
-    private async Task<(string JobId, string OutputId)> AcceptedAsync(string consumer = JobApiHost.Consumer)
+    [Theory]
+    [InlineData(JobPriority.Low, "low")]
+    [InlineData(JobPriority.Normal, "normal")]
+    [InlineData(JobPriority.High, "high")]
+    public async Task TheReadAnswersTheDeclaredPriorityAndTheEffectiveClassAsTwoMembers(JobPriority priority, string wire)
+    {
+        var (jobId, _) = await AcceptedAsync(priority: priority);
+
+        using var response = await GetAsync(JobApiHost.Consumer, jobId);
+        var answer = await JobApiHost.AnswerAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        AssertExactly(answer, TopMembers);
+        var read = answer.GetProperty("priority");
+        AssertExactly(read, PriorityMembers);
+        Assert.Equal(wire, read.GetProperty("declared").GetString());
+        Assert.Equal(wire, read.GetProperty("effective").GetString());
+    }
+
+    [Fact]
+    public async Task AJobRecordedWithoutAPriorityReadsNormalForBoth()
+    {
+        var (jobId, _) = await AcceptedAsync();
+
+        using var response = await GetAsync(JobApiHost.Consumer, jobId);
+        var read = (await JobApiHost.AnswerAsync(response)).GetProperty("priority");
+
+        Assert.Equal("normal", read.GetProperty("declared").GetString());
+        Assert.Equal("normal", read.GetProperty("effective").GetString());
+    }
+
+    [Fact]
+    public async Task TheDeclaredPriorityAndTheEffectiveClassAreReadApart()
+    {
+        // The two are equal when a job is accepted; the read must still report each from its own
+        // fact, so a later rule that moves the effective class is visible without a new surface.
+        var (jobId, _) = await AcceptedAsync(priority: JobPriority.Low, effective: JobPriority.Normal);
+
+        using var response = await GetAsync(JobApiHost.Consumer, jobId);
+        var read = (await JobApiHost.AnswerAsync(response)).GetProperty("priority");
+
+        Assert.Equal("low", read.GetProperty("declared").GetString());
+        Assert.Equal("normal", read.GetProperty("effective").GetString());
+    }
+
+    private async Task<(string JobId, string OutputId)> AcceptedAsync(
+        string consumer = JobApiHost.Consumer,
+        JobPriority? priority = null,
+        JobPriority? effective = null)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var uploadId = await _host.UploadAsync(JobApiHost.UploadState.Ready, consumer);
@@ -383,6 +433,15 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
             TemplateReferenceForm.Exact,
             "1.0.0",
             ReportService.Testing.AcceptanceIdentity.For(uploadId));
+        if (priority is { } declared)
+        {
+            acceptance = acceptance with
+            {
+                DeclaredPriority = declared,
+                EffectivePriorityClass = effective ?? declared,
+            };
+        }
+
         Assert.IsType<JobAcceptanceResult.Accepted>(await _host.Jobs.AcceptAsync(acceptance, JobApiHost.Now, cancellationToken));
         return (acceptance.ReportJobId, acceptance.Outputs[0].OutputId);
     }

@@ -34,6 +34,9 @@ internal sealed class JobApiHost : IDisposable
     /// <summary>The consumer every case acts as.</summary>
     public const string Consumer = "dev-consumer";
 
+    /// <summary>A second active consumer, for a case that needs one the first is not.</summary>
+    public const string OtherConsumer = "consumer-b";
+
     /// <summary>The consumer the registry carries as inactive.</summary>
     public const string InactiveConsumer = "consumer-c";
 
@@ -63,17 +66,20 @@ internal sealed class JobApiHost : IDisposable
     /// <param name="objects">Wraps the object storage the service is given, so a case can count its reads or make one fail.</param>
     /// <param name="registry">Feeds the registry from an in-memory source instead of the host's file, so a case triggers the reload itself.</param>
     /// <param name="meterName">The meter this host's instruments are created on, when a case must hear only its own measurements.</param>
+    /// <param name="settings">Settings the service is started with, beside the host's own.</param>
     public JobApiHost(
         Func<IJobStore, IJobStore>? store = null,
         Func<ITemplateVersionStore, ITemplateVersionStore>? versions = null,
         Func<IObjectStore, IObjectStore>? objects = null,
         ReplaceableConfiguration? registry = null,
-        string? meterName = null)
+        string? meterName = null,
+        IReadOnlyDictionary<string, string>? settings = null)
     {
         _registryPath = _directory.Write(
             "consumers.json",
             "{ \"consumers\": ["
             + $"{{ \"consumerId\": \"{Consumer}\", \"active\": true }}, "
+            + $"{{ \"consumerId\": \"{OtherConsumer}\", \"active\": true }}, "
             + $"{{ \"consumerId\": \"{InactiveConsumer}\", \"active\": false }}"
             + "] }");
         Jobs = new InMemoryJobStore(Uploads);
@@ -83,6 +89,11 @@ internal sealed class JobApiHost : IDisposable
             builder.UseSetting("Storage:Filesystem:Root", Path.Combine(_directory.Path, "storage"));
             builder.UseSetting(DatabaseOptions.ConnectionStringSetting, MetadataDatabaseStub.ConnectionString);
             builder.UseSetting(DatabaseOptions.ExpectedSchemaVersionSetting, MetadataDatabaseStub.ExpectedVersion);
+            foreach (var (key, value) in settings ?? new Dictionary<string, string>())
+            {
+                builder.UseSetting(key, value);
+            }
+
             builder.ConfigureLogging(logging => logging.AddProvider(Logs));
             builder.ConfigureTestServices(services =>
             {
@@ -244,18 +255,21 @@ internal sealed class JobApiHost : IDisposable
     /// <param name="outputs">The outputs, as the JSON array's elements.</param>
     /// <param name="templateId">The template's identifier.</param>
     /// <param name="render">The presentation, as the JSON value of the member; null sends none.</param>
+    /// <param name="priority">The priority, as the JSON value of the member; null sends none.</param>
     public static string Body(
         string uploadId,
         string? version = "1.0.0",
         string profile = UploadWireValues.HeaderItemsV1,
         string outputs = "\"pdf\"",
         string templateId = "pilot-grouped",
-        string? render = null)
+        string? render = null,
+        string? priority = null)
     {
         var reference = version is null
             ? $"\"id\": \"{templateId}\""
             : $"\"id\": \"{templateId}\", \"version\": \"{version}\"";
         var presentation = render is null ? string.Empty : $", \"render\": {render}";
+        presentation += priority is null ? string.Empty : $", \"priority\": {priority}";
         return $"{{ \"template\": {{ {reference} }}, "
             + $"\"data\": {{ \"uploadId\": \"{uploadId}\", \"profile\": \"{profile}\" }}, "
             + $"\"outputs\": [ {outputs} ]{presentation} }}";
