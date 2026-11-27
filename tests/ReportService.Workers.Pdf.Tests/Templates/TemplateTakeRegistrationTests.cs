@@ -3,10 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Source;
@@ -39,6 +41,18 @@ public sealed class TemplateTakeRegistrationTests
         Assert.Equal(TakeTemplateVersionActivityOptions.Queue, planned.Queue);
         Assert.Contains(planned.Options.Activities, activity => activity.Name == TakeTemplateVersionActivity.Name);
         Assert.NotNull(host.Services.GetRequiredService<TakeTemplateVersionActivity>());
+    }
+
+    [Fact]
+    public void TheTakeWithoutTheRenderWorkResolvesItsChecksAtTheExampleCapacity()
+    {
+        using var host = Build(out _);
+
+        var capacity = host.Services.GetRequiredService<NumberingCapacity>();
+        var checks = host.Services.GetServices<ReportService.TemplateSource.Checks.ITemplateVersionCheck>();
+
+        Assert.Equal(DocumentCapacity.Example.MaximumPages, capacity.MaximumPages);
+        Assert.Contains(checks, check => check.Name == "NumberingContractCheck");
     }
 
     [Fact]

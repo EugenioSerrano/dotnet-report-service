@@ -7,13 +7,16 @@ using ReportService.Pdf.PageCodes.Hosting;
 using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.Storage;
+using ReportService.Jobs;
 using ReportService.TemplateChecks;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplatePackages.Records;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Manifest;
 using ReportService.TemplateSource.Source;
 using ReportService.TemplateSource.Take;
 using ReportService.Templates;
+using ReportService.Workers.Pdf.Capacity;
 
 namespace ReportService.Workers.Pdf.Templates;
 
@@ -68,6 +71,9 @@ public static class TemplateTakeRegistration
         builder.Services.AddSingleton<ITemplateVersionStore, PostgresTemplateVersionStore>();
         builder.Services.AddSingleton<TemplateTake>();
         builder.Services.AddPageCodeGenerators(builder.Configuration);
+        builder.AddDocumentCapacity();
+        builder.Services.TryAddSingleton(static services =>
+            new NumberingCapacity(services.GetRequiredService<DocumentCapacity>().MaximumPages));
         builder.Services.AddTemplateVersionChecks();
         builder.Services.AddSingleton<TakeTemplateVersionActivity>();
 

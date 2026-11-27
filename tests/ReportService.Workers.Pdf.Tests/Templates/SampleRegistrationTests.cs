@@ -2,9 +2,12 @@ using System.Xml.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
+using ReportService.Jobs;
 using ReportService.ServiceDefaults;
 using ReportService.Storage;
 using ReportService.TemplateChecks;
+using ReportService.TemplateChecks.PdfConstraints;
 using ReportService.TemplateChecks.Sample;
 using ReportService.TemplateSource;
 using ReportService.TemplateSource.Checks;
@@ -41,6 +44,54 @@ public sealed class SampleRegistrationTests
     }
 
     [Fact]
+    public void AnUnconfiguredWorkerMeasuresTheStampAtTheCapacityItRuns()
+    {
+        using var host = Build();
+
+        var capacity = host.Services.GetRequiredService<NumberingCapacity>();
+
+        Assert.Equal(DocumentCapacity.Example.MaximumPages, capacity.MaximumPages);
+        Assert.Equal(host.Services.GetRequiredService<DocumentCapacity>().MaximumPages, capacity.MaximumPages);
+    }
+
+    [Fact]
+    public void AConfiguredCapacityReachesTheNumberingCheck()
+    {
+        using var host = Build(new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["DocumentCapacity:MaximumPages"] = "100000",
+            ["DocumentCapacity:ProfileName"] = "configured-100k",
+        });
+
+        var capacity = host.Services.GetRequiredService<NumberingCapacity>();
+        var checks = host.Services.GetServices<ITemplateVersionCheck>().ToArray();
+
+        Assert.Equal(100_000, capacity.MaximumPages);
+        Assert.Equal(TemplateChecksRegistration.Order, checks.Select(check => check.Name));
+    }
+
+    [Fact]
+    public async Task TheCapacitySettingsAreBoundAndCheckedOnceByTheTakeAndTheRenderTogether()
+    {
+        using var host = Build(new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["DocumentCapacity:MaximumPages"] = "0",
+            ["DocumentCapacity:ProfileName"] = "bound-once",
+        });
+        var validation = new ConfigurationValidation(
+            host.Services,
+            host.Services.GetRequiredService<IHostEnvironment>(),
+            NullLogger<ConfigurationValidation>.Instance);
+
+        var error = await Assert.ThrowsAsync<ConfigurationError>(
+            () => validation.StartingAsync(TestContext.Current.CancellationToken));
+
+        var pages = error.Problems.Where(problem => problem.Setting == "DocumentCapacity:MaximumPages").ToArray();
+        Assert.Single(pages);
+        Assert.Equal("must be greater than zero", pages[0].Reason);
+    }
+
+    [Fact]
     public void TheApiProjectReferencesNoneOfTheTakeEngineOrRenderingAssemblies()
     {
         var api = Path.Combine(Root, "src", "ReportService.Api", "ReportService.Api.csproj");
@@ -64,7 +115,7 @@ public sealed class SampleRegistrationTests
         }
     }
 
-    private static IHost Build()
+    private static IHost Build(IReadOnlyDictionary<string, string?>? settings = null)
     {
         var directory = Directory.CreateTempSubdirectory("sample-registration-");
         var storage = Path.Combine(directory.FullName, "storage");
@@ -84,6 +135,11 @@ public sealed class SampleRegistrationTests
             ["TemplateSource:Store:Filesystem:CreateIfMissing"] = "true",
             ["Templates:Sample:RenderBudgetSeconds"] = "90",
         });
+        if (settings is not null)
+        {
+            builder.Configuration.AddInMemoryCollection(settings);
+        }
+
         builder.AddValidatedConfiguration<TemplateSourceOptions>(TemplateSourceOptions.SectionPath);
         builder.AddValidatedConfiguration<SampleRenderOptions>(SampleRenderOptions.SectionPath);
         builder.Services.AddSingleton(MeterIdentity.ForHost("reportservice-test"));

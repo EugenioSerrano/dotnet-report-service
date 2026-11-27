@@ -36,7 +36,7 @@ public sealed class PageAccountingTakeChecks : IDisposable
             new IncludeAndAssetCheck(_session),
             new TemplateLintCheck(_session),
             new EngineVersionCheck(),
-            new NumberingContractCheck(_session),
+            new NumberingContractCheck(_session, new NumberingCapacity(10_000)),
             new AccountedDetailMarkupCheck(_session),
             new AccountingFooterCheck(),
             new NamedFontFamilyCheck(_session),
