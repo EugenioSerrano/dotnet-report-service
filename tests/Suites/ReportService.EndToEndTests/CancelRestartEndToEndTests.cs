@@ -236,11 +236,13 @@ public sealed class CancelRestartEndToEndTests : IDisposable
     }
 
     /// <summary>
-    /// R3 — window (iii) and Phase D: the render worker is stopped mid-render while the cancellation
-    /// is in flight. The interrupted attempt dies with its container, its retry after the restart is
-    /// a retry of work already begun and commits nothing, and the job still ends <c>CANCELLED</c>
-    /// with no part commit or artifact at or after the request and no block above the highest one
-    /// begun before it (T, N1–N4).
+    /// R3 — window (iii) and Phase D: the render worker is killed mid-render, the way the watchdog's
+    /// remedy kills it (SIGKILL, the designed crash — not a graceful teardown), while the cancellation
+    /// is in flight. The in-flight attempt is lost and cannot acknowledge the cancellation, so the job
+    /// stays <c>CANCELLING</c> until the engine resolves the lost attempt after the render heartbeat
+    /// timeout; the retried attempt after the platform's replacement is a retry of work already begun
+    /// and commits nothing, and the job still ends <c>CANCELLED</c> with no part commit or artifact at
+    /// or after the request and no block above the highest one begun before it (T, N1–N4).
     /// </summary>
     [Fact]
     public async Task R3_TheRenderWorkerRestartsMidRenderAndNothingIsCommittedAfterTheCancel()
@@ -256,9 +258,15 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal(HttpStatusCode.Accepted, cancel.StatusCode);
         var cancelInstant = await RestartHarness.CancelInstantAsync(world.DataSource, reportJobId, cancellationToken);
 
-        // Step 3: the attempt dies with the container the watchdog's remedy replaces; the buffer is
-        // the pre-cancel view of what had begun, held since before the job was submitted.
-        await RestartHarness.StopAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+        // Step 3: the render worker dies the way the watchdog's remedy kills it — an abrupt process
+        // death, not a graceful teardown (SPEC §6 Phase D): the container is killed with SIGKILL, so
+        // the in-flight attempt is lost and cannot acknowledge the cancellation. The engine resolves
+        // a lost attempt only after the render heartbeat timeout (30 s), so the job stays CANCELLING
+        // across the kill and the frozen window is observable. A graceful `docker stop` would let the
+        // orchestration worker finalise during the teardown (run 261126-2246: the terminal
+        // `CANCELLED` was written 1.27 s before the stop returned).
+        var killedAt = DateTimeOffset.UtcNow;
+        await RestartHarness.KillContainerAsync(world.RenderWorkerContainerName, cancellationToken);
         var beforeRestart = world.Logs.Lines;
         var highestBegun = await HighestBlockBegunBeforeAsync(
             world.DataSource,
@@ -272,13 +280,16 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal("CANCELLING", stopped.Status);
         Assert.Null(stopped.FinishedAt);
 
-        // Step 4: the container is replaced by the platform, as the watchdog's remedy does. The tap is
-        // re-established at the restarted container's own start instant, so only the restarted
-        // process's lines enter after the boundary; the wait is the proof that stream is live —
-        // without a line written after the stop, the "no block above …" assertion would pass on an
-        // empty read (SPEC §6 B.1, §8.2).
-        await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
-        var restartBoundary = await world.Logs.ResumeAsync(DateTimeOffset.UtcNow, cancellationToken);
+        // Step 4: the platform replaces the killed container (`--restart=always` — the watchdog's
+        // remedy, ADR-012 §3.9(3)). The wait observes the restarted process's own start instant and
+        // the tap is re-established at it, so only the restarted process's lines enter after the
+        // boundary; the wait is the proof that stream is live — without a line written after the
+        // kill, the "no block above …" assertion would pass on an empty read (SPEC §6 B.1, §8.2).
+        var startedAgainAt = await RestartHarness.WaitForContainerRestartAsync(
+            world.RenderWorkerContainerName,
+            killedAt,
+            cancellationToken);
+        var restartBoundary = await world.Logs.ResumeAsync(startedAgainAt, cancellationToken);
         await world.Logs.WaitForLineAfterAsync(
             restartBoundary,
             "a line written after the render worker was stopped",
@@ -531,7 +542,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         var connectionString = await app.GetConnectionStringAsync("reportservice", cancellationToken)
             ?? throw new InvalidOperationException("the composition had no connection string for its metadata database");
         var dataSource = NpgsqlDataSource.Create(connectionString);
-        return new World(app, dataSource, app.CreateHttpClient("api"), logs);
+        return new World(app, dataSource, app.CreateHttpClient("api"), logs, renderWorkerContainerName);
     }
 
     // Takes the fixture package into the composition's shared storage and metadata, the way a
@@ -1185,7 +1196,8 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         DistributedApplication App,
         NpgsqlDataSource DataSource,
         HttpClient Api,
-        RenderLogTap Logs) : IAsyncDisposable
+        RenderLogTap Logs,
+        string RenderWorkerContainerName) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {

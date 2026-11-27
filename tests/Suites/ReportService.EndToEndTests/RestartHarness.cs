@@ -46,6 +46,9 @@ internal static class RestartHarness
     /// <summary>How long the durable cancel request may take to be readable after its answer.</summary>
     public static readonly TimeSpan CancelInstantDeadline = TimeSpan.FromSeconds(60);
 
+    /// <summary>The container runtime's own CLI, the one the composition's processes run under.</summary>
+    private const string DockerCli = "docker";
+
     /// <summary>
     /// Stops one of the composition's resources through its own command and waits until it reached a
     /// terminal state: after this returns the process is gone, so the durable state read then is the
@@ -160,6 +163,94 @@ internal static class RestartHarness
             ?? throw new InvalidOperationException($"the cancel-job request of {reportJobId} was readable but carried no instant");
     }
 
+    /// <summary>
+    /// Kills the container with <paramref name="containerName"/> the way the watchdog's remedy
+    /// kills it: an abrupt process death (<c>docker kill</c>, SIGKILL), not a graceful teardown. The
+    /// in-flight work of that process is lost — a running render attempt cannot acknowledge a
+    /// cancellation — and the platform's restart policy replaces the container, exactly as it
+    /// replaces a worker the watchdog stopped (ADR-012 §3.9(3), SPEC §6 Phase D).
+    /// </summary>
+    /// <param name="containerName">The exact name of the container to kill.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public static async Task KillContainerAsync(string containerName, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+        await RunDockerAsync(["kill", "--signal", "KILL", containerName], cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Waits until the runtime restarted the container with <paramref name="containerName"/> after
+    /// <paramref name="killedAt"/> — the platform's replacement of a killed worker — and answers the
+    /// restarted process's own start instant, which is the boundary a re-established log stream is
+    /// filtered at. The container's start instant, not its restart count, is the evidence: a
+    /// restart the daemon's policy performs and one the platform performs both move it forward.
+    /// </summary>
+    /// <param name="containerName">The exact name of the container to watch.</param>
+    /// <param name="killedAt">The instant before the kill; a start after it is the new process.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>The restarted container's <c>State.StartedAt</c>, in UTC.</returns>
+    public static async Task<DateTimeOffset> WaitForContainerRestartAsync(
+        string containerName,
+        DateTimeOffset killedAt,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+        var startedAt = DateTimeOffset.MinValue;
+        await Wait.UntilAsync(
+            $"the platform to start the render worker container '{containerName}' again after the kill",
+            async token =>
+            {
+                var text = await InspectAsync(containerName, "{{.State.StartedAt}}", token).ConfigureAwait(false);
+                return DateTimeOffset.TryParse(
+                        text.Trim(),
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.AssumeUniversal,
+                        out startedAt)
+                    && startedAt > killedAt;
+            },
+            LifecycleDeadline,
+            PollInterval,
+            cancellationToken).ConfigureAwait(false);
+        return startedAt;
+    }
+
+    /// <summary>The <c>docker inspect</c> field <paramref name="format"/> of one container, as the runtime prints it.</summary>
+    /// <param name="containerName">The exact name of the container to inspect.</param>
+    /// <param name="format">The Go-template field to print, e.g. <c>{{.State.Running}}</c>.</param>
+    /// <param name="cancellationToken">The caller's cancellation token.</param>
+    internal static Task<string> InspectAsync(string containerName, string format, CancellationToken cancellationToken) =>
+        RunDockerAsync(["inspect", "--format", format, containerName], cancellationToken);
+
+    private static async Task<string> RunDockerAsync(
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo(DockerCli)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException(
+                $"the container runtime's CLI could not be launched: docker {string.Join(' ', arguments)}");
+        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var error = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"docker {string.Join(' ', arguments)} failed with exit code {process.ExitCode}: {error.Trim()}");
+        }
+
+        return output;
+    }
+
     private static async Task ExecuteAsync(
         DistributedApplication app,
         string resource,
@@ -269,7 +360,7 @@ internal sealed class RenderLogTap : IAsyncDisposable
             $"the composition's render worker container '{containerName}' to run",
             async token =>
             {
-                var running = await InspectAsync(containerName, "{{.State.Running}}", token).ConfigureAwait(false);
+                var running = await RestartHarness.InspectAsync(containerName, "{{.State.Running}}", token).ConfigureAwait(false);
                 return running.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
             },
             RestartHarness.LifecycleDeadline,
@@ -562,7 +653,7 @@ internal sealed class RenderLogTap : IAsyncDisposable
 
     private async Task<DateTimeOffset?> StartedAtAsync(CancellationToken cancellationToken)
     {
-        var text = await InspectAsync(_containerName, "{{.State.StartedAt}}", cancellationToken).ConfigureAwait(false);
+        var text = await RestartHarness.InspectAsync(_containerName, "{{.State.StartedAt}}", cancellationToken).ConfigureAwait(false);
         return DateTimeOffset.TryParse(
             text.Trim(),
             CultureInfo.InvariantCulture,
@@ -603,33 +694,6 @@ internal sealed class RenderLogTap : IAsyncDisposable
                 _ => $"the container stream of '{_containerName}' is running",
             };
         }
-    }
-
-    private static async Task<string> InspectAsync(string containerName, string format, CancellationToken cancellationToken)
-    {
-        var startInfo = new ProcessStartInfo(Docker)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        foreach (var argument in new[] { "inspect", "--format", format, containerName })
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("the container runtime's CLI could not be launched to inspect the render worker's container");
-        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        var error = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException(
-                $"docker inspect --format {format} {containerName} failed with exit code {process.ExitCode}: {error.Trim()}");
-        }
-
-        return output;
     }
 
     private static void Kill(Process process)
