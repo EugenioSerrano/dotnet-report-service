@@ -146,6 +146,7 @@ internal sealed class MultiBlockStage : IDisposable
             """{ "consumers": [ { "consumerId": "consumer-a", "displayName": "Consumer A", "active": true } ] }""",
             cancellationToken);
         var builder = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
+        var mergeWorkerContainerName = TestComposition.DeclaredMergeWorkerContainerName(builder);
         var app = await builder.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
         using var api = app.CreateHttpClient("api");
@@ -168,7 +169,7 @@ internal sealed class MultiBlockStage : IDisposable
             StorageRoot(),
             TimeProvider.System,
             NullLogger<FilesystemObjectStore>.Instance);
-        return new Composition(app, dataSource, storage, new PostgresUploadStore(dataSource), new PostgresTemplateVersionStore(dataSource));
+        return new Composition(app, dataSource, storage, new PostgresUploadStore(dataSource), new PostgresTemplateVersionStore(dataSource), mergeWorkerContainerName);
     }
 
     /// <summary>Takes the multi-block template with its numbering contract, font and native page counter.</summary>
@@ -713,7 +714,8 @@ internal sealed class MultiBlockStage : IDisposable
         NpgsqlDataSource DataSource,
         IObjectStore Storage,
         PostgresUploadStore Uploads,
-        PostgresTemplateVersionStore Versions) : IAsyncDisposable
+        PostgresTemplateVersionStore Versions,
+        string MergeWorkerContainerName) : IAsyncDisposable
     {
         /// <inheritdoc />
         public async ValueTask DisposeAsync()

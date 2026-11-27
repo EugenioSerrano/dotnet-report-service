@@ -83,6 +83,9 @@ internal static class TestComposition
     /// <summary>The render worker's resource name.</summary>
     public const string RenderWorkerName = "render-worker";
 
+    /// <summary>The merge worker's logical resource name in the run's model.</summary>
+    public const string MergeWorkerName = "merge-worker";
+
     /// <summary>The telemetry view's resource name in the run's model.</summary>
     public const string DashboardResourceName = "aspire-dashboard";
 
@@ -178,7 +181,43 @@ internal static class TestComposition
             context.EnvironmentVariables[OtlpEndpointVariable] = Text(ContainerReceiver(builder));
         });
 
+        // The merge worker's container name belongs to this composition alone: it is declared
+        // in the composition's own model before that model is built, so the restart harness can
+        // read it back and address exactly this composition's container — never a listing of
+        // the daemon that every parallel composition's merge worker also satisfies.
+        var mergeWorker = (ContainerResource)builder.Resources.Single(resource => resource.Name == MergeWorkerName);
+        builder.CreateResourceBuilder(mergeWorker).WithContainerName(NewMergeWorkerContainerName());
+
         return builder;
+    }
+
+    /// <summary>
+    /// A merge-worker container name unique to one composition: the resource's logical name
+    /// and sixteen hex digits of a fresh identifier. The name is part of the composition's own
+    /// model, never of a daemon listing, so a sibling composition, a stale container from an
+    /// earlier run or a container the runtime might otherwise re-use can never carry it.
+    /// </summary>
+    public static string NewMergeWorkerContainerName() =>
+        MergeWorkerName + "-" + Guid.NewGuid().ToString("N")[..16];
+
+    /// <summary>
+    /// The merge-worker container name the composition declared in its own model. The name is
+    /// read back from the annotation the composition put on its merge worker resource before
+    /// the model was built; nothing about the runtime's containers participates.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The model holds no merge worker resource, or the resource carries no declared container
+    /// name, so this composition cannot say which container is its own.
+    /// </exception>
+    public static string DeclaredMergeWorkerContainerName(IDistributedApplicationTestingBuilder builder)
+    {
+        var mergeWorker = builder.Resources.FirstOrDefault(resource => string.Equals(resource.Name, MergeWorkerName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"The composition's model holds no '{MergeWorkerName}' resource, so the merge worker's container name cannot be read back.");
+        var declared = mergeWorker.Annotations.OfType<ContainerNameAnnotation>().FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                $"The composition's '{MergeWorkerName}' resource carries no declared container name, so the restart harness cannot address this composition's container.");
+        return declared.Name;
     }
 
     /// <summary>
