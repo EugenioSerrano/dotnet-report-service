@@ -19,8 +19,10 @@ namespace ReportService.EndToEndTests;
 /// dependency wait keeps the behaviour the composition was written for, the
 /// render worker is pointed at that view before its container is created — a
 /// container does not inherit the AppHost's telemetry address and cannot be given
-/// one afterwards — and the template a class names without a version is published
-/// into the root the worker reads its templates from, before any process starts.
+/// one afterwards — the template a class names without a version is published
+/// into the root the worker reads its templates from, before any process starts,
+/// and each worker's container name is declared in the composition's own model,
+/// so a harness addresses exactly this composition's container.
 /// </summary>
 internal static class TestComposition
 {
@@ -181,6 +183,13 @@ internal static class TestComposition
             context.EnvironmentVariables[OtlpEndpointVariable] = Text(ContainerReceiver(builder));
         });
 
+        // The render worker's container name belongs to this composition alone, as the merge
+        // worker's does: it is declared in the composition's own model before that model is built,
+        // so the restart harness can read it back and address exactly this composition's container
+        // through the runtime's own log stream. The resource's logical name, its endpoint, its
+        // health check and every command stay `render-worker`, so the entries drive it unchanged.
+        builder.CreateResourceBuilder(worker).WithContainerName(NewRenderWorkerContainerName());
+
         // The merge worker's container name belongs to this composition alone: it is declared
         // in the composition's own model before that model is built, so the restart harness can
         // read it back and address exactly this composition's container — never a listing of
@@ -189,6 +198,36 @@ internal static class TestComposition
         builder.CreateResourceBuilder(mergeWorker).WithContainerName(NewMergeWorkerContainerName());
 
         return builder;
+    }
+
+    /// <summary>
+    /// A render-worker container name unique to one composition: the resource's logical name and
+    /// sixteen hex digits of a fresh identifier. The name is part of the composition's own model,
+    /// never of a daemon listing, so a sibling composition, a stale container from an earlier run
+    /// or a container the runtime might otherwise re-use can never carry it.
+    /// </summary>
+    public static string NewRenderWorkerContainerName() =>
+        RenderWorkerName + "-" + Guid.NewGuid().ToString("N")[..16];
+
+    /// <summary>
+    /// The render-worker container name the composition declared in its own model. The name is
+    /// read back from the annotation the composition put on its render worker resource before the
+    /// model was built; nothing about the runtime's containers participates. It is what the render
+    /// log tap addresses: the runtime's own log stream of exactly this composition's container.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The model holds no render worker resource, or the resource carries no declared container
+    /// name, so this composition cannot say which container is its own.
+    /// </exception>
+    public static string DeclaredRenderWorkerContainerName(IDistributedApplicationTestingBuilder builder)
+    {
+        var renderWorker = builder.Resources.FirstOrDefault(resource => string.Equals(resource.Name, RenderWorkerName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"The composition's model holds no '{RenderWorkerName}' resource, so the render worker's container name cannot be read back.");
+        var declared = renderWorker.Annotations.OfType<ContainerNameAnnotation>().FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                $"The composition's '{RenderWorkerName}' resource carries no declared container name, so the restart harness cannot address this composition's container.");
+        return declared.Name;
     }
 
     /// <summary>

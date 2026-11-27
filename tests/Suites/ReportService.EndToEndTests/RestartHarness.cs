@@ -1,3 +1,7 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -207,42 +211,77 @@ internal static class RestartHarness
 }
 
 /// <summary>
-/// The render worker's own log, tapped once and buffered: one live subscription to the composition's
-/// log stream for the resource, opened when the tap is created and read from the buffer afterwards.
+/// The render worker's own log, read from the container runtime and buffered: one
+/// <c>docker logs --follow</c> of the container this composition declared, opened before the first
+/// job is submitted, and re-established at the restarted container's start instant after a stop.
 /// <para>
-/// The instrument is the live stream, not a snapshot. <see cref="ResourceLoggerService.WatchAsync"/>
-/// delivers the lines already written and then the lines as they are written, and stays open while
-/// the resource lives; <see cref="ResourceLoggerService.GetAllAsync"/> is a DI-backed console-log
-/// read that completes, so re-reading it on every poll misses a one-shot line written between two
-/// reads — a render attempt's <c>Block … started, attempt …</c> line is written once, when the
-/// attempt begins, and must be observed rather than re-read (the cause of the integration run
-/// <c>261126-2026</c>'s R2/R3/R5 failures). The tap is therefore created <b>before</b> the job is
-/// submitted, so the line cannot precede the subscription.
+/// The instrument is the container runtime's own stream. A container's stdout never reaches
+/// <see cref="ResourceLoggerService"/>'s in-memory resource log — that state carries a project's own
+/// process output — so its <c>WatchAsync</c> and <c>GetAllAsync</c> both read something else; runs
+/// <c>261126-2026</c> and <c>261126-2146</c> falsified the first and refined the second. The
+/// runtime's stream is the one instrument that sees the container's lines (SPEC §5, §6 B.1, D12).
+/// </para>
+/// <para>
+/// The container is addressed by the name the composition declared in its own model
+/// (<see cref="TestComposition.DeclaredRenderWorkerContainerName"/>), never by a listing of the
+/// daemon: a name the runtime does not hold fails loudly with that name, and no other container is
+/// ever considered. A stream ends when the platform stops or replaces the container, and the tap
+/// does not pretend it continues — <see cref="ResumeAsync"/> opens a new stream with
+/// <c>--since &lt;boundary&gt;</c>, so only the restarted process's lines enter after the boundary,
+/// and a stream that ended or faulted says so in every later wait's diagnostic.
 /// </para>
 /// <para>
 /// Waits read the buffer with the harness's bounded poll and its named diagnostic: a line that never
 /// arrives still fails the entry after <see cref="RestartHarness.LogDeadline"/>, naming what was
-/// awaited. Nothing here weakens an assertion — it makes the same assertions observable.
+/// awaited, with the stream's own state beside it. Nothing here weakens an assertion — it makes the
+/// same assertions observable.
 /// </para>
 /// </summary>
 internal sealed class RenderLogTap : IAsyncDisposable
 {
+    private const string Docker = "docker";
+
+    private readonly string _containerName;
     private readonly CancellationTokenSource _stop = new();
     private readonly List<string> _lines = [];
     private readonly Lock _gate = new();
-    private readonly Task _pump;
-    private bool _closed;
+    private CancellationTokenSource? _stream;
+    private Task _pump = Task.CompletedTask;
+    private StreamState _state = StreamState.Running;
+    private string? _fault;
 
-    /// <summary>Opens the one subscription and starts buffering the render worker's lines.</summary>
-    /// <param name="app">The running composition.</param>
-    public RenderLogTap(DistributedApplication app)
+    private RenderLogTap(string containerName) => _containerName = containerName;
+
+    /// <summary>
+    /// Opens the tap on the container the composition declared: it waits, bounded, until the runtime
+    /// holds that name and the container runs, then starts one <c>docker logs --follow</c> and
+    /// buffers everything it prints. Waiting for the container to run — not merely to exist — keeps
+    /// the stream from ending on a container that was created but had not started when the tap
+    /// opened.
+    /// </summary>
+    /// <param name="containerName">The composition's declared render-worker container name.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>The tap the entry reads the render worker's lines through.</returns>
+    public static async Task<RenderLogTap> OpenAsync(string containerName, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(app);
-        var logs = app.Services.GetRequiredService<ResourceLoggerService>();
-        _pump = PumpAsync(logs, _stop.Token);
+        ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+        await Wait.UntilAsync(
+            $"the composition's render worker container '{containerName}' to run",
+            async token =>
+            {
+                var running = await InspectAsync(containerName, "{{.State.Running}}", token).ConfigureAwait(false);
+                return running.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+            },
+            RestartHarness.LifecycleDeadline,
+            RestartHarness.PollInterval,
+            cancellationToken).ConfigureAwait(false);
+
+        var tap = new RenderLogTap(containerName);
+        tap.StartStream(since: null);
+        return tap;
     }
 
-    /// <summary>Every line the render worker wrote since the tap was opened, in the order it wrote them.</summary>
+    /// <summary>Every line the container wrote since the tap was opened, in the order it wrote them.</summary>
     public IReadOnlyList<string> Lines
     {
         get
@@ -250,22 +289,6 @@ internal sealed class RenderLogTap : IAsyncDisposable
             lock (_gate)
             {
                 return [.. _lines];
-            }
-        }
-    }
-
-    /// <summary>
-    /// Whether the composition completed the resource's log stream. A completed stream never
-    /// delivers another line — the composed line that a later assertion waits for is then
-    /// unobservable, and the wait says so instead of passing on an empty read.
-    /// </summary>
-    public bool IsClosed
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return _closed;
             }
         }
     }
@@ -279,6 +302,34 @@ internal sealed class RenderLogTap : IAsyncDisposable
         {
             return [.. _lines.Skip(count)];
         }
+    }
+
+    /// <summary>
+    /// Re-establishes the stream at the restarted container, after the entry observed the resource
+    /// running. The boundary is the container's own <c>State.StartedAt</c>, read from the runtime;
+    /// <paramref name="observedRunningAt"/> — the instant the entry saw it running — is the boundary
+    /// when the runtime reports none. The stream that served the stopped container is ended first,
+    /// so only the restarted process's lines enter the buffer from here on.
+    /// </summary>
+    /// <param name="observedRunningAt">The instant the entry observed the resource running.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <returns>
+    /// How many lines the buffer held when the re-established stream began: the index boundary the
+    /// entry's post-restart assertions read from, so a line the ended stream flushed as it stopped
+    /// can never be mistaken for one the restarted process wrote.
+    /// </returns>
+    public async Task<int> ResumeAsync(DateTimeOffset observedRunningAt, CancellationToken cancellationToken)
+    {
+        await EndStreamAsync().ConfigureAwait(false);
+        var startedAt = await StartedAtAsync(cancellationToken).ConfigureAwait(false);
+        int boundary;
+        lock (_gate)
+        {
+            boundary = _lines.Count;
+        }
+
+        StartStream(startedAt ?? observedRunningAt);
+        return boundary;
     }
 
     /// <summary>
@@ -297,24 +348,32 @@ internal sealed class RenderLogTap : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(predicate);
         IReadOnlyList<string> held = [];
-        await Wait.UntilAsync(
-            $"the render worker's log to hold {what}",
-            token =>
-            {
-                held = Lines;
-                return Task.FromResult(held.Any(predicate));
-            },
-            RestartHarness.LogDeadline,
-            RestartHarness.PollInterval,
-            cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await Wait.UntilAsync(
+                $"the render worker's log to hold {what}",
+                token =>
+                {
+                    held = Lines;
+                    return Task.FromResult(held.Any(predicate));
+                },
+                RestartHarness.LogDeadline,
+                RestartHarness.PollInterval,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new TimeoutException($"{exception.Message} {BufferDetail()}", exception);
+        }
+
         return held;
     }
 
     /// <summary>
     /// Waits until a line was written after the buffer held <paramref name="count"/> lines: the proof
-    /// that the stream is still live for the process restarted after that boundary. It is what makes
-    /// the entries' "no line after the restart names …" assertions observe something instead of
-    /// passing on an empty read; a stream the composition completed fails the wait, naming it.
+    /// that the re-established stream is live for the process restarted after that boundary. It is
+    /// what makes the entries' "no line after the restart names …" assertions observe something
+    /// instead of passing on an empty read; a stream that ended or faulted fails the wait, naming it.
     /// </summary>
     /// <param name="count">How many lines the buffer held when the boundary was taken.</param>
     /// <param name="what">What the line proves, named in the diagnostic.</param>
@@ -339,12 +398,7 @@ internal sealed class RenderLogTap : IAsyncDisposable
         }
         catch (TimeoutException exception)
         {
-            throw new TimeoutException(
-                $"the render worker's log did not hold {what} within {(int)RestartHarness.LogDeadline.TotalSeconds} s; "
-                + $"the buffer holds {Lines.Count} line(s) and the composition's stream for {TestComposition.RenderWorkerName} is "
-                + (IsClosed ? "closed (a completed stream delivers no further line)" : "open but silent")
-                + ".",
-                exception);
+            throw new TimeoutException($"{exception.Message} {BufferDetail()}", exception);
         }
     }
 
@@ -358,40 +412,247 @@ internal sealed class RenderLogTap : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
-            // The subscription was cancelled: the tap is being disposed.
+            // The stream was cancelled: the tap is being disposed.
         }
 
+        _stream?.Dispose();
         _stop.Dispose();
     }
 
-    private async Task PumpAsync(ResourceLoggerService logs, CancellationToken cancellationToken)
+    private void StartStream(DateTimeOffset? since)
+    {
+        _stream?.Dispose();
+        _stream = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
+        lock (_gate)
+        {
+            _state = StreamState.Running;
+            _fault = null;
+        }
+
+        _pump = FollowAsync(since, _stream.Token);
+    }
+
+    private async Task EndStreamAsync()
+    {
+        if (_stream is { } stream)
+        {
+            await stream.CancelAsync().ConfigureAwait(false);
+        }
+
+        try
+        {
+            await _pump.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The stream was cancelled by this call: that is what "end it" means here.
+        }
+    }
+
+    private async Task FollowAsync(DateTimeOffset? since, CancellationToken cancellationToken)
+    {
+        var arguments = new List<string> { "logs", "--follow" };
+        if (since is { } boundary)
+        {
+            arguments.Add("--since");
+            arguments.Add(boundary.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ", CultureInfo.InvariantCulture));
+        }
+
+        arguments.Add(_containerName);
+
+        Process? process;
+        try
+        {
+            var startInfo = new ProcessStartInfo(Docker)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+            foreach (var argument in arguments)
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
+
+            process = Process.Start(startInfo);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            RecordFault($"the stream could not be started: {exception.Message}");
+            return;
+        }
+
+        if (process is null)
+        {
+            RecordFault("the stream could not be started: the container runtime's CLI could not be launched");
+            return;
+        }
+
+        using (process)
+        {
+            var errors = new StringBuilder();
+            var output = ReadLinesAsync(process.StandardOutput, cancellationToken);
+            var error = ReadErrorLinesAsync(process.StandardError, errors, cancellationToken);
+            try
+            {
+                await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                Kill(process);
+            }
+
+            // Both readers treat the tap's own cancellation as the end of their work, so this never
+            // throws for it: a deliberate end is not the runtime's answer.
+            await Task.WhenAll(output, error).ConfigureAwait(false);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            lock (_gate)
+            {
+                _state = process.ExitCode == 0 ? StreamState.Ended : StreamState.Faulted;
+                _fault = process.ExitCode == 0 ? null : errors.ToString().Trim();
+            }
+        }
+    }
+
+    private async Task ReadLinesAsync(StreamReader reader, CancellationToken cancellationToken)
     {
         try
         {
-            await foreach (var batch in logs
-                .WatchAsync(TestComposition.RenderWorkerName)
-                .WithCancellation(cancellationToken)
-                .ConfigureAwait(false))
+            while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
             {
                 lock (_gate)
                 {
-                    _lines.AddRange(batch.Select(line => line.Content));
+                    _lines.Add(line);
                 }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return;
+        }
+        catch (Exception exception)
+        {
+            RecordFault($"the stream could not be read: {exception.Message}");
+        }
+    }
+
+    private static async Task ReadErrorLinesAsync(
+        StreamReader reader,
+        StringBuilder destination,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+            {
+                destination.AppendLine(line);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
         catch (Exception)
         {
-            // The stream ended in a way the next subscription could not resume: a completed stream
-            // delivers nothing more, so the tap records it and every later wait names it.
+            // The runtime's error stream failing on its own is reported by the exit-code path.
         }
+    }
 
+    private async Task<DateTimeOffset?> StartedAtAsync(CancellationToken cancellationToken)
+    {
+        var text = await InspectAsync(_containerName, "{{.State.StartedAt}}", cancellationToken).ConfigureAwait(false);
+        return DateTimeOffset.TryParse(
+            text.Trim(),
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal,
+            out var startedAt)
+            ? startedAt.ToUniversalTime()
+            : null;
+    }
+
+    private void RecordFault(string fault)
+    {
         lock (_gate)
         {
-            _closed = true;
+            _state = StreamState.Faulted;
+            _fault = fault;
         }
+    }
+
+    private string BufferDetail()
+    {
+        int count;
+        lock (_gate)
+        {
+            count = _lines.Count;
+        }
+
+        return $"{DescribeStream()}; the buffer holds {count} line(s).";
+    }
+
+    private string DescribeStream()
+    {
+        lock (_gate)
+        {
+            return _state switch
+            {
+                StreamState.Faulted => $"the container stream of '{_containerName}' faulted: {_fault ?? "the runtime reported no reason"}",
+                StreamState.Ended => $"the container stream of '{_containerName}' ended (the container stopped) and was not re-established",
+                _ => $"the container stream of '{_containerName}' is running",
+            };
+        }
+    }
+
+    private static async Task<string> InspectAsync(string containerName, string format, CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo(Docker)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        foreach (var argument in new[] { "inspect", "--format", format, containerName })
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("the container runtime's CLI could not be launched to inspect the render worker's container");
+        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var error = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"docker inspect --format {format} {containerName} failed with exit code {process.ExitCode}: {error.Trim()}");
+        }
+
+        return output;
+    }
+
+    private static void Kill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (Win32Exception)
+        {
+        }
+    }
+
+    private enum StreamState
+    {
+        Running,
+        Ended,
+        Faulted,
     }
 }

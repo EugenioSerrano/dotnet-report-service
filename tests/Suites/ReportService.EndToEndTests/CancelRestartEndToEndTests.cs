@@ -272,12 +272,15 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal("CANCELLING", stopped.Status);
         Assert.Null(stopped.FinishedAt);
 
-        // Step 4: the container is replaced by the platform, as the watchdog's remedy does. The wait
-        // is the proof the stream is live for the restarted process: without a line written after
-        // the stop, the "no block above …" assertion below would pass on an empty read.
+        // Step 4: the container is replaced by the platform, as the watchdog's remedy does. The tap is
+        // re-established at the restarted container's own start instant, so only the restarted
+        // process's lines enter after the boundary; the wait is the proof that stream is live —
+        // without a line written after the stop, the "no block above …" assertion would pass on an
+        // empty read (SPEC §6 B.1, §8.2).
         await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+        var restartBoundary = await world.Logs.ResumeAsync(DateTimeOffset.UtcNow, cancellationToken);
         await world.Logs.WaitForLineAfterAsync(
-            beforeRestart.Count,
+            restartBoundary,
             "a line written after the render worker was stopped",
             cancellationToken);
         var job = await WaitForTerminalAsync(world.DataSource, reportJobId, cancellationToken);
@@ -300,7 +303,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             0,
             await BlocksAboveAsync(world.DataSource, reportJobId, highestBegun, cancellationToken));
         Assert.DoesNotContain(
-            world.Logs.Since(beforeRestart.Count),
+            world.Logs.Since(restartBoundary),
             line => NamesOutput(line, outputId) && BlockIndexIn(line, outputId) > highestBegun);
 
         // T: one terminal write, unchanged on a later read.
@@ -412,8 +415,13 @@ public sealed class CancelRestartEndToEndTests : IDisposable
 
         await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
         await RestartHarness.WaitUntilHealthyAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+
+        // The stream is re-established at the restarted container's own start instant: only its
+        // lines enter after the boundary, and the wait proves the stream is live before the
+        // no-new-work predicate reads it (SPEC §6 B.1, §8.2).
+        var restartBoundary = await world.Logs.ResumeAsync(DateTimeOffset.UtcNow, cancellationToken);
         await world.Logs.WaitForLineAfterAsync(
-            beforeRestart.Count,
+            restartBoundary,
             "a line written after the render worker was stopped",
             cancellationToken);
 
@@ -440,7 +448,7 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             await BlocksAboveAsync(world.DataSource, reportJobId, highestBegun, cancellationToken));
         Assert.Equal(0, await PartCommitsAfterAsync(world.DataSource, reportJobId, cancelInstant, cancellationToken));
         Assert.DoesNotContain(
-            world.Logs.Since(beforeRestart.Count),
+            world.Logs.Since(restartBoundary),
             line => NamesOutput(line, outputId) && BlockIndexIn(line, outputId) > highestBegun);
     }
 
@@ -493,12 +501,18 @@ public sealed class CancelRestartEndToEndTests : IDisposable
             cancellationToken);
 
         var builder = await TestComposition.CreateAsync(cancellationToken, $"--Consumers:File={registry}");
+
+        // The composition declares the render worker's container name in its own model; the name is
+        // read back before the model is built, so the tap addresses exactly this composition's
+        // container and never a listing of the daemon (SPEC §6 B.1, the BUG-057 pattern).
+        var renderWorkerContainerName = TestComposition.DeclaredRenderWorkerContainerName(builder);
         var app = await builder.BuildAsync(cancellationToken);
         await app.StartAsync(cancellationToken);
 
-        // The render worker's log is tapped here, before any job is submitted: its attempt's
-        // "started" line is written once and must be observed rather than re-read later.
-        var logs = new RenderLogTap(app);
+        // The render worker's log is tapped here, from the container runtime's own stream, before
+        // any job is submitted: its attempt's "started" line is written once and must be observed
+        // rather than re-read later.
+        var logs = await RenderLogTap.OpenAsync(renderWorkerContainerName, cancellationToken);
 
         using (var health = app.CreateHttpClient("api"))
         {
