@@ -35,6 +35,28 @@ public sealed class NumberingFitTests
     }
 
     [Fact]
+    public void A_capacity_of_one_hundred_thousand_pages_refuses_an_area_that_fits_only_ten_thousand()
+    {
+        var probe = AssemblyFixture.Contract();
+        var tenThousand = NumberingFit.Measure(probe, probe.TextFor(10_000, 10_000)).WidthPt;
+        var hundredThousand = NumberingFit.Measure(probe, probe.TextFor(100_000, 100_000)).WidthPt;
+        Assert.True(tenThousand < hundredThousand);
+        var widthMm = (tenThousand + hundredThousand) / 2 / NumberingArea.PointsPerMillimetre;
+        var numbering = AssemblyFixture.Contract(new NumberingArea(120, 268, widthMm, 8));
+
+        var fit = NumberingFit.Measure(numbering);
+
+        TestContext.Current.TestOutputHelper?.WriteLine(
+            "reason=" + (fit.Reason ?? "null")
+            + " widthPt=" + NumberingFit.Number(fit.WidthPt)
+            + " areaWidthPt=" + NumberingFit.Number(fit.AreaWidthPt)
+            + " width10000Pt=" + NumberingFit.Number(tenThousand)
+            + " width100000Pt=" + NumberingFit.Number(hundredThousand));
+        Assert.False(fit.Fits);
+        Assert.Equal("stamp-overflows-area", fit.Reason);
+    }
+
+    [Fact]
     public void A_low_area_refuses_the_line_height()
     {
         var numbering = AssemblyFixture.Contract(new NumberingArea(120, 268, 80, 1));
