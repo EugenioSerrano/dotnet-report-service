@@ -96,9 +96,9 @@ public sealed class GridCellTakeTests : IAsyncDisposable
         var second = await Take().TakeAsync(Template, Version, Consumer, "job-2", TestContext.Current.CancellationToken);
 
         var refused = Assert.IsType<RefusedVersion>(first);
-        Assert.Equal(TemplateCheckCodes.UnsupportedCapability, refused.Code);
-        Assert.Contains("page subtotals", refused.Reason, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith("template.yaml:", refused.Reason, StringComparison.Ordinal);
+        Assert.Equal(TemplateCheckCodes.TemplateInvalid, refused.Code);
+        Assert.Contains("data-role", refused.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("html/row.html.sbn:", refused.Reason, StringComparison.Ordinal);
         Assert.Empty(_versions.Records);
         Assert.Empty(await KeysAsync(TemplatePackageKeys.ClassPrefix));
 
@@ -169,7 +169,8 @@ public sealed class GridCellTakeTests : IAsyncDisposable
         new IncludeAndAssetCheck(_session),
         new TemplateLintCheck(_session),
         new EngineVersionCheck(),
-        new PageAccountingCheck(),
+        new AccountedDetailMarkupCheck(_session),
+        new AccountingFooterCheck(),
         new NamedFontFamilyCheck(_session),
         new BottomAlignedGridCellCheck(_session),
     ];

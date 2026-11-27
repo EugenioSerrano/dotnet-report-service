@@ -206,5 +206,8 @@ public sealed class PrintStallTests : IDisposable
             File.Copy(DocumentPath, pdfPath, overwrite: true);
             return Task.FromResult(new PrintOutcome(pdfPath, 0, 0, TimeSpan.Zero));
         }
+
+        public Task<PrintOutcome> PrintAsync(ReportService.Rendering.Layout.PdfPrintRequest request, CancellationToken cancellationToken = default) =>
+            PrintAsync(request.Document, request.PageRule, request.Files, request.PdfPath, cancellationToken);
     }
 }

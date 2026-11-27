@@ -1,3 +1,4 @@
+using ReportService.Rendering.Layout;
 using ReportService.Templates;
 
 namespace ReportService.Rendering;
@@ -10,7 +11,12 @@ namespace ReportService.Rendering;
 /// </summary>
 public interface IPdfPrinter
 {
-    /// <summary>Prints <paramref name="document"/> to <paramref name="pdfPath"/>.</summary>
+    /// <summary>Prints <paramref name="request"/>.</summary>
+    /// <param name="request">The document, its page rule, the mode and the destination.</param>
+    /// <param name="cancellationToken">The step's cancellation token.</param>
+    Task<PrintOutcome> PrintAsync(PdfPrintRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Prints <paramref name="document"/> on the native path.</summary>
     /// <param name="document">The document to serve: the composed document followed by the page rule.</param>
     /// <param name="pageRule">The page rule the document carries, which the served policy allows by its hash.</param>
     /// <param name="files">The files of the taken package.</param>

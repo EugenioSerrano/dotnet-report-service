@@ -36,6 +36,58 @@ public sealed class ContentOrderAlignerTests
     }
 
     [Fact]
+    public void ThePageEachUnitWasCompletedOnIsReported()
+    {
+        var outcome = Align([Unit("abc", 0), Unit("def", 1), Unit("ghi", 2)], "abc", "defghi");
+
+        Assert.True(outcome.Passed);
+        Assert.Equal([1, 2, 2], outcome.Pages);
+    }
+
+    [Fact]
+    public void AUnitThatNeverCompletesReportsNoPage()
+    {
+        var outcome = Align([Unit("alpha", 0), Unit("beta", 1)], "alpha");
+
+        Assert.False(outcome.Passed);
+        Assert.Null(outcome.Pages);
+    }
+
+    [Fact]
+    public void TheAccountingUnitsAreConsumedInFullAtThePageTheUnitBeforeEnded()
+    {
+        var units = new[]
+        {
+            Unit("alpha", 0),
+            new TextUnit("10.00", "10.00", 1, FragmentKind.Row, 1, 1, false, false, Accounting: true),
+            Unit("beta", 2),
+        };
+        var filtered = new ContentOrderAligner().Align(Sample.Pages("alpha", "beta"), units.Where(unit => !unit.Accounting).ToList());
+
+        var expanded = ContentOrderAligner.ConsumeAccountingUnits(filtered, units);
+
+        Assert.True(expanded.Passed);
+        Assert.Equal([5, 5, 4], expanded.ConsumedCharacters);
+        Assert.Equal([1, 1, 2], expanded.Pages);
+    }
+
+    [Fact]
+    public void AFailedAlignmentIsNotExpanded()
+    {
+        var units = new[]
+        {
+            Unit("alpha", 0),
+            new TextUnit("10.00", "10.00", 1, FragmentKind.Row, 1, 1, false, false, Accounting: true),
+        };
+        var failed = new ContentOrderAligner().Align(Sample.Pages("nothing"), units.Where(unit => !unit.Accounting).ToList());
+
+        var expanded = ContentOrderAligner.ConsumeAccountingUnits(failed, units);
+
+        Assert.False(expanded.Passed);
+        Assert.Equal(failed.Reason, expanded.Reason);
+    }
+
+    [Fact]
     public void ThreePagesPass()
     {
         var outcome = Align([Unit("abc", 0), Unit("def", 1), Unit("ghi", 2)], "abc", "def", "ghi");

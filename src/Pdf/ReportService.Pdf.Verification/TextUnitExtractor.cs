@@ -16,6 +16,7 @@ namespace ReportService.Pdf.Verification;
 /// <param name="IndexInFragment">Its position among the units of its own fragment.</param>
 /// <param name="RepeatableHead">Whether it was composed inside a repeated head.</param>
 /// <param name="RepeatableFoot">Whether it was composed inside a repeated foot.</param>
+/// <param name="Accounting">Whether it was composed inside an accounting cell, whose printed value the accounting check judges.</param>
 public sealed record TextUnit(
     string Text,
     string Normalised,
@@ -24,7 +25,8 @@ public sealed record TextUnit(
     long RecordOrdinal,
     int IndexInFragment,
     bool RepeatableHead,
-    bool RepeatableFoot);
+    bool RepeatableFoot,
+    bool Accounting = false);
 
 /// <summary>The text units of a composed block, in the order the document holds them.</summary>
 /// <param name="Units">The units, in document order; units whose normalised text is empty are absent.</param>
@@ -60,6 +62,17 @@ public sealed class TextUnitExtractor
         "head", "script", "style", "template", "noscript",
     };
 
+    private static readonly HashSet<string> Void = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr",
+    };
+
+    /// <summary>The literal role values whose cells the accounting check judges.</summary>
+    private static readonly HashSet<string> AccountingRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "amount", "group-total",
+    };
+
     private static bool IsRawText(string name) =>
         string.Equals(name, "script", StringComparison.OrdinalIgnoreCase)
         || string.Equals(name, "style", StringComparison.OrdinalIgnoreCase);
@@ -89,6 +102,8 @@ public sealed class TextUnitExtractor
         var head = 0;
         var foot = 0;
         var indexInFragment = 0;
+        var depth = 0;
+        var accounting = new Stack<int>();
 
         void Flush()
         {
@@ -113,7 +128,8 @@ public sealed class TextUnitExtractor
                 fragment.RecordOrdinal,
                 indexInFragment++,
                 head > 0,
-                foot > 0));
+                foot > 0,
+                accounting.Count > 0));
         }
 
         var position = 0;
@@ -172,6 +188,22 @@ public sealed class TextUnitExtractor
 
                 if (tag.Value.IsEnd)
                 {
+                    // The element that closes sits at depth - 1: the open that carried an
+                    // accounting role pushed the depth its content begins at, so the role
+                    // ends here. The cell's own text is flushed here, before the role closes:
+                    // the element need not be a block boundary, and text flushed later would
+                    // no longer be the accounting cell's.
+                    if (accounting.Count > 0 && accounting.Peek() == depth - 1)
+                    {
+                        Flush();
+                        _ = accounting.Pop();
+                    }
+
+                    if (!Void.Contains(name))
+                    {
+                        depth = Math.Max(0, depth - 1);
+                    }
+
                     if (Skipped.Contains(name))
                     {
                         skipped = Math.Max(0, skipped - 1);
@@ -209,6 +241,19 @@ public sealed class TextUnitExtractor
                     {
                         foot++;
                     }
+
+                    if (!tag.Value.IsSelfClosing && !Void.Contains(name))
+                    {
+                        if (CarriesAccountingRole(html, open, tag.Value.End))
+                        {
+                            // The cell's own text begins here: what printed before it (the
+                            // group's key, a label) is its own unit, not accounting text.
+                            Flush();
+                            accounting.Push(depth);
+                        }
+
+                        depth++;
+                    }
                 }
             }
 
@@ -217,6 +262,24 @@ public sealed class TextUnitExtractor
 
         Flush();
         return units;
+    }
+
+    /// <summary>Whether the tag that ends at <paramref name="end"/> carries an accounting role attribute.</summary>
+    private static bool CarriesAccountingRole(string html, int open, int end)
+    {
+        var tag = html[open..end];
+        foreach (var role in AccountingRoles)
+        {
+            if (tag.Contains("data-role=\"" + role + "\"", StringComparison.OrdinalIgnoreCase)
+                || tag.Contains("data-role='" + role + "'", StringComparison.OrdinalIgnoreCase)
+                || tag.Contains("data-role=" + role + " ", StringComparison.OrdinalIgnoreCase)
+                || tag.Contains("data-role=" + role + ">", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

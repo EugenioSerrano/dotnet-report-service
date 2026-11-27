@@ -97,8 +97,11 @@ public static class TemplateRefusal
         /// <summary>The declared engine version is not this deployment's major.</summary>
         public const string EngineVersion = "engine-version-mismatch";
 
-        /// <summary>The version declares the printed page totals, which this build does not print.</summary>
-        public const string PageAccounting = "pdf-page-accounting";
+        /// <summary>The version declares printed page totals whose accounting contract is unusable.</summary>
+        public const string AccountedDetail = "pdf-accounted-detail";
+
+        /// <summary>The version declares printed page totals whose reserved accounting footer is unusable.</summary>
+        public const string AccountingFooter = "pdf-accounting-footer";
 
         /// <summary>The detail text of a PDF version names no font family.</summary>
         public const string FontFamily = "pdf-font-family";

@@ -48,8 +48,38 @@ public static class VerificationReasons
     /// <summary>The package declares no field it prints as it is, so nothing can be bound to the source.</summary>
     public const string AnchorsUndeclared = "anchors-undeclared";
 
-    /// <summary>The package declares page subtotals, which this increment cannot print.</summary>
-    public const string PageAccounting = "page-accounting";
+    /// <summary>A page's subtotal is not the sum of the rows that ended on it.</summary>
+    public const string PageSubtotalWrong = "page-subtotal-wrong";
+
+    /// <summary>A page's brought forward is not the running total of every amount before it.</summary>
+    public const string BroughtForwardWrong = "brought-forward-wrong";
+
+    /// <summary>A page's carried forward does not close onto the next page's brought forward.</summary>
+    public const string CarriedForwardWrong = "carried-forward-wrong";
+
+    /// <summary>The chain does not close on the block total recorded by the partition.</summary>
+    public const string AccountingChainWrong = "accounting-chain-wrong";
+
+    /// <summary>A group's printed total is not the sum of the group's own rows.</summary>
+    public const string AccountingGroupWrong = "accounting-group-wrong";
+
+    /// <summary>A page carries no accounting footer, or one of its three lines is missing.</summary>
+    public const string AccountingFooterMissing = "accounting-footer-missing";
+
+    /// <summary>A continuation part does not carry the fixed mark in its amount cell.</summary>
+    public const string AccountingMarkWrong = "accounting-mark-wrong";
+
+    /// <summary>A record's amount is absent, is not a number, or is printed in an unusable form.</summary>
+    public const string AccountingAmountInvalid = "accounting-amount-invalid";
+
+    /// <summary>An accounting value was printed inside the global page-numbering area.</summary>
+    public const string AccountingNumberingCollision = "accounting-numbering-collision";
+
+    /// <summary>The partition never recorded the open group's opening amount for a continuing block.</summary>
+    public const string AccountingIndexIncomplete = "accounting-index-incomplete";
+
+    /// <summary>The in-render guard of the accounting path refused the layout.</summary>
+    public const string LayoutGuard = "layout-guard";
 
     /// <summary>The page settings the manifest declares are absent or unusable, so nothing was printed.</summary>
     public const string PageSettingsInvalid = "page-settings-invalid";
@@ -67,6 +97,7 @@ public static class VerificationReasons
 /// <param name="ConsumedCharacters">How many characters of each unit the pass consumed, by unit.</param>
 /// <param name="Spent">How many character comparisons the search spent.</param>
 /// <param name="BudgetExhausted">Whether the search reached the comparison budget before it could decide.</param>
+/// <param name="Pages">The page each unit was completed on, from one, by unit; zero for a unit the pass did not complete.</param>
 public sealed record AlignmentOutcome(
     bool Passed,
     string? Reason,
@@ -75,7 +106,8 @@ public sealed record AlignmentOutcome(
     int? UnitIndex,
     IReadOnlyList<int> ConsumedCharacters,
     int Spent = 0,
-    bool BudgetExhausted = false);
+    bool BudgetExhausted = false,
+    IReadOnlyList<int>? Pages = null);
 
 /// <summary>
 /// Consumes the expected text units page by page, in the painting order the
@@ -113,10 +145,53 @@ public sealed class ContentOrderAligner
         var search = new Search(pages, units, budget);
         if (search.Solve())
         {
-            return new AlignmentOutcome(true, null, null, null, null, search.ConsumedCharacters(), search.Spent, search.BudgetExhausted);
+            return new AlignmentOutcome(true, null, null, null, null, search.ConsumedCharacters(), search.Spent, search.BudgetExhausted, search.PagesOfUnits());
         }
 
         return search.Failure();
+    }
+
+    /// <summary>
+    /// Consumes the accounting units of <paramref name="units"/> in place of an alignment
+    /// that ran over the other units: an accounting unit is printed text the accounting
+    /// check judges, so it counts as fully consumed at the page the unit before it ended on.
+    /// </summary>
+    /// <param name="alignment">The alignment of the units that are not accounting units, in their order.</param>
+    /// <param name="units">Every unit of the block, in document order.</param>
+    public static AlignmentOutcome ConsumeAccountingUnits(AlignmentOutcome alignment, IReadOnlyList<TextUnit> units)
+    {
+        ArgumentNullException.ThrowIfNull(alignment);
+        ArgumentNullException.ThrowIfNull(units);
+        if (!alignment.Passed)
+        {
+            return alignment;
+        }
+
+        var consumed = new int[units.Count];
+        var unitPages = new int[units.Count];
+        var index = 0;
+        var lastPage = 1;
+        for (var unit = 0; unit < units.Count; unit++)
+        {
+            if (units[unit].Accounting)
+            {
+                consumed[unit] = units[unit].Normalised.Length;
+                unitPages[unit] = lastPage;
+                continue;
+            }
+
+            consumed[unit] = index < alignment.ConsumedCharacters.Count ? alignment.ConsumedCharacters[index] : 0;
+            var page = alignment.Pages is { } pagesOfUnits && index < pagesOfUnits.Count ? pagesOfUnits[index] : 0;
+            unitPages[unit] = page;
+            if (page > 0)
+            {
+                lastPage = page;
+            }
+
+            index++;
+        }
+
+        return alignment with { ConsumedCharacters = consumed, Pages = unitPages };
     }
 
     /// <summary>One unit that was started and not finished, and how much of it was consumed.</summary>
@@ -212,6 +287,7 @@ public sealed class ContentOrderAligner
         private readonly string foot;
         private readonly HashSet<State> failed = [];
         private readonly int[] consumed;
+        private readonly int[] lastPage;
         private readonly int budget;
         private int spent;
         private bool overBudget;
@@ -222,6 +298,7 @@ public sealed class ContentOrderAligner
             this.units = units;
             this.budget = budget;
             consumed = new int[units.Count];
+            lastPage = new int[units.Count];
             head = string.Concat(units.Where(unit => unit.RepeatableHead).Select(unit => unit.Normalised));
             foot = string.Concat(units.Where(unit => unit.RepeatableFoot).Select(unit => unit.Normalised));
         }
@@ -237,6 +314,9 @@ public sealed class ContentOrderAligner
         }
 
         public IReadOnlyList<int> ConsumedCharacters() => consumed;
+
+        /// <summary>The page each unit was completed on, from one; zero for a unit the pass did not complete.</summary>
+        public IReadOnlyList<int> PagesOfUnits() => lastPage;
 
         /// <summary>How many character comparisons the search spent.</summary>
         public int Spent => spent;
@@ -342,6 +422,7 @@ public sealed class ContentOrderAligner
                     {
                         var unit = frame.Unit;
                         consumed[unit] = frame.Offset + length;
+                        lastPage[unit] = page + 1;
                         if (TryEnter(page, frame.Position + length, frame.Cursor, frame.Open.CloseFirst(), end, unit, out var closed))
                         {
                             stack.Add(closed!);
@@ -349,6 +430,7 @@ public sealed class ContentOrderAligner
                         else
                         {
                             consumed[unit] = 0;
+                            lastPage[unit] = 0;
                         }
 
                         continue;
@@ -376,6 +458,7 @@ public sealed class ContentOrderAligner
                 {
                     var unit = frame.Cursor;
                     consumed[unit] = length;
+                    lastPage[unit] = page + 1;
                     if (TryEnter(page, frame.Position + length, frame.Cursor + 1, frame.Open, end, unit, out var started))
                     {
                         stack.Add(started!);
@@ -383,6 +466,7 @@ public sealed class ContentOrderAligner
                     else
                     {
                         consumed[unit] = 0;
+                        lastPage[unit] = 0;
                     }
 
                     continue;
@@ -485,6 +569,7 @@ public sealed class ContentOrderAligner
             if (frame.UndoUnit >= 0)
             {
                 consumed[frame.UndoUnit] = 0;
+                lastPage[frame.UndoUnit] = 0;
             }
         }
 

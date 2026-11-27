@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.Globalization;
 using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Testing;
+using ReportService.Testing.Containers;
 
 namespace ReportService.EndToEndTests;
 
@@ -133,8 +133,8 @@ public sealed class MultiBlockRenderMergeRestartTests
         string reportJobId,
         CancellationToken cancellationToken)
     {
-        var container = await FindMergeWorkerAsync(cancellationToken);
-        var restartsBefore = await RestartCountAsync(container, cancellationToken);
+        var container = await FindMergeWorkerAsync(composition, cancellationToken);
+        var restartsBefore = await container.RestartCountAsync(cancellationToken);
 
         string? outputId = null;
         await Wait.UntilAsync(
@@ -159,22 +159,20 @@ public sealed class MultiBlockRenderMergeRestartTests
         // The marker is written before the process exits. Either the runtime restarts
         // the container (its restart count moves) or it does not (the container stops);
         // the case then starts the same container itself.
-        await Wait.UntilAsync(
+        await container.WaitUntilStoppedOrRestartedAsync(
             "the merge worker to stop or be replaced",
-            async token => !await IsRunningAsync(container, token)
-                || await RestartCountAsync(container, token) > restartsBefore,
+            restartsBefore,
             TimeSpan.FromMinutes(2),
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
 
-        if (!await IsRunningAsync(container, cancellationToken))
+        if (!await container.IsRunningAsync(cancellationToken))
         {
-            await DockerAsync(["start", container], cancellationToken);
+            await container.StartAsync(cancellationToken);
         }
 
-        await Wait.UntilAsync(
+        await container.WaitUntilRunningAsync(
             "the merge worker to run again",
-            token => IsRunningAsync(container, token),
             TimeSpan.FromMinutes(5),
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
@@ -234,28 +232,13 @@ public sealed class MultiBlockRenderMergeRestartTests
             ?? throw new InvalidOperationException("the composition's render worker container was not found");
     }
 
-    private static async Task<string> FindMergeWorkerAsync(CancellationToken cancellationToken)
-    {
-        // The container may already have exited after the seam; the case needs its name
-        // either way, so it lists every state.
-        var output = await DockerAsync(
-            ["ps", "-a", "--filter", "name=merge-worker", "--format", "{{.Names}}"],
+    private static Task<MergeWorkerContainer> FindMergeWorkerAsync(
+        MultiBlockStage.Composition composition,
+        CancellationToken cancellationToken) =>
+        MergeWorkerContainer.ResolveAsync(
+            new DockerContainerRuntime(),
+            composition.MergeWorkerContainerName,
             cancellationToken);
-        return output
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault(name => name.Contains("merge-worker", StringComparison.Ordinal))
-            ?? throw new InvalidOperationException("the composition's merge worker container was not found");
-    }
-
-    private static async Task<int> RestartCountAsync(string container, CancellationToken cancellationToken)
-    {
-        var count = await DockerAsync(
-            ["inspect", "--format", "{{.RestartCount}}", container],
-            cancellationToken);
-        return int.TryParse(count.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
-            ? value
-            : 0;
-    }
 
     private static async Task<bool> IsRunningAsync(string container, CancellationToken cancellationToken)
     {

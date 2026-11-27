@@ -11,7 +11,22 @@ public sealed record PartitionFacts(int BlockCount, long RecordCount);
 /// <param name="BlockIndex">The block's position in the partition, from zero.</param>
 /// <param name="RecordCount">How many records the block holds.</param>
 /// <param name="FirstRecordOrdinal">The ordinal of the block's first record.</param>
-public sealed record IndexFacts(int BlockIndex, long RecordCount, int FirstRecordOrdinal);
+/// <param name="ContinuesPreviousGroup">Whether the block's first record continues a group carried in from the previous block.</param>
+/// <param name="ContinuesNextGroup">Whether the block's last group continues into the next block.</param>
+/// <param name="OpeningGroupKey">The group key the block opens with when it continues a group.</param>
+/// <param name="OpeningCarriedForward">The running sum of the amounts of every record in earlier blocks.</param>
+/// <param name="OpeningGroupAccumulated">The open group's sum over the earlier blocks when the block continues it.</param>
+/// <param name="BlockAmountTotal">The sum of the block's own amounts the partition recorded.</param>
+public sealed record IndexFacts(
+    int BlockIndex,
+    long RecordCount,
+    int FirstRecordOrdinal,
+    bool ContinuesPreviousGroup = false,
+    bool ContinuesNextGroup = false,
+    string? OpeningGroupKey = null,
+    decimal? OpeningCarriedForward = null,
+    decimal? OpeningGroupAccumulated = null,
+    decimal? BlockAmountTotal = null);
 
 /// <summary>One record of the block: its ordinal and its values as plain values.</summary>
 /// <param name="Ordinal">The record's ordinal in the snapshot.</param>
@@ -41,6 +56,7 @@ public sealed record BlockFacts(
 /// <param name="Text">The text units of the composition.</param>
 /// <param name="Anchors">The fields the package prints as they are, or <see langword="null"/> when it declares none.</param>
 /// <param name="IsFirstBlock">Whether this is the first block of the job.</param>
+/// <param name="PageAccounting">Whether the block prints on the accounting path, whose recorded index facts it needs.</param>
 public sealed record SourceCheckInput(
     PartitionFacts Partition,
     IndexFacts Index,
@@ -48,7 +64,8 @@ public sealed record SourceCheckInput(
     ComposedBlock Composition,
     ExtractedText Text,
     VerificationAnchors? Anchors,
-    bool IsFirstBlock);
+    bool IsFirstBlock,
+    bool PageAccounting = false);
 
 /// <summary>What a source check found. A failure names its reason and where it stopped, never a value.</summary>
 /// <param name="Passed">Whether the check passed.</param>
@@ -75,13 +92,39 @@ public sealed record SourceCheckOutcome(bool Passed, string? Reason, long? Recor
 /// <param name="Composition">The composed block the document was laid out from.</param>
 /// <param name="Text">The text units of the composition.</param>
 /// <param name="SourceChecksMs">How long the source checks took.</param>
+/// <param name="Accounting">The accounting contract when the block printed on the accounting path, or <see langword="null"/>.</param>
 public sealed record PrintedCheckInput(
     string PdfPath,
     int BlockIndex,
     PageFrame Frame,
     ComposedBlock Composition,
     ExtractedText Text,
-    long SourceChecksMs);
+    long SourceChecksMs,
+    AccountingCheckInput? Accounting = null);
+
+/// <summary>
+/// What the page-accounting check reads: the block's records and their amounts, the
+/// partition's opening facts, the declared amount field, scale, culture, the reserved
+/// footer band and the numbering area it must not touch. The expected values come from
+/// the source data and the partition, never from the layout engine.
+/// </summary>
+/// <param name="Block">The block document, read back.</param>
+/// <param name="Index">The index page's entry for this block.</param>
+/// <param name="AmountField">The record field the totals sum.</param>
+/// <param name="GroupKey">The record field that begins a group, or <see langword="null"/> when the package groups none.</param>
+/// <param name="Scale">The fraction digits the printed values carry.</param>
+/// <param name="Culture">The BCP 47 culture the printed values are written in.</param>
+/// <param name="Footer">The reserved band and its labels, in millimetres.</param>
+/// <param name="NumberingArea">The reserved global page-numbering area, or <see langword="null"/>.</param>
+public sealed record AccountingCheckInput(
+    BlockFacts Block,
+    IndexFacts Index,
+    string AmountField,
+    string? GroupKey,
+    int Scale,
+    string Culture,
+    AccountingFooter Footer,
+    NumberingAreaMm? NumberingArea = null);
 
 /// <summary>
 /// What one block's verification found: whether it passed, and when it did not, a

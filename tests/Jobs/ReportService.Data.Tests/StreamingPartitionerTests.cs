@@ -114,9 +114,41 @@ public sealed class StreamingPartitionerTests
         Assert.True(blocks[1].ContinuesPreviousGroup, "the next block carries the same group in");
         Assert.Equal("a", blocks[1].OpeningGroupKey);
 
+        // The block that continues the group records what the group summed to in the earlier
+        // block, so it can print the group's true total without reading the earlier block.
+        Assert.Null(blocks[0].OpeningGroupAccumulated);
+        Assert.Equal(6.00m, blocks[1].OpeningGroupAccumulated);
+
         // No record is lost by the split.
         var readBack = await PartitionFixtures.ReadAllRecordsAsync(sink, Cancellation);
         Assert.Equal(records, readBack);
+    }
+
+    [Fact]
+    public async Task AGroupThatStartsAtACutCarriesNoOpeningAmount()
+    {
+        var records = new[]
+        {
+            PartitionFixtures.GroupedRecord(1, "a", "1.00"),
+            PartitionFixtures.GroupedRecord(2, "a", "2.00"),
+            PartitionFixtures.GroupedRecord(3, "b", "3.00"),
+            PartitionFixtures.GroupedRecord(4, "b", "4.00"),
+        };
+
+        var (partition, _) = await PartitionFixtures.PartitionAsync(records, PartitionFixtures.GroupedSpec(SmallRecordLimits), Cancellation);
+
+        Assert.All(partition.Index.Blocks, block => Assert.Null(block.OpeningGroupAccumulated));
+    }
+
+    [Fact]
+    public async Task TheEmptySnapshotRecordsNoOpenGroupAmount()
+    {
+        var (partition, _) = await PartitionFixtures.PartitionAsync([], PartitionFixtures.GroupedSpec(SmallRecordLimits), Cancellation);
+
+        var block = Assert.Single(partition.Index.Blocks);
+        Assert.Equal(0, block.RecordCount);
+        Assert.Null(block.OpeningGroupAccumulated);
+        Assert.Null(block.OpeningGroupKey);
     }
 
     [Fact]

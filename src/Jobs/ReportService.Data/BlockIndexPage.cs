@@ -15,6 +15,7 @@ namespace ReportService.Data;
 /// <param name="OpeningGroupKey">The group key the block opens with when it continues a group; null otherwise.</param>
 /// <param name="OpeningCarriedForward">The running sum of the amounts of every record in earlier blocks; null when no total is carried.</param>
 /// <param name="BlockAmountTotal">The sum of the amounts of the block's own records; null when no total is carried.</param>
+/// <param name="OpeningGroupAccumulated">The running sum of the open group's amounts in earlier blocks when the block continues that group; null otherwise.</param>
 public sealed record BlockIndexEntry(
     int BlockIndex,
     string Key,
@@ -27,7 +28,8 @@ public sealed record BlockIndexEntry(
     bool ContinuesNextGroup = false,
     string? OpeningGroupKey = null,
     decimal? OpeningCarriedForward = null,
-    decimal? BlockAmountTotal = null);
+    decimal? BlockAmountTotal = null,
+    decimal? OpeningGroupAccumulated = null);
 
 /// <summary>
 /// The index page of a partition: the list of its blocks with the interval, the content
@@ -76,6 +78,7 @@ public sealed record BlockIndexPage(
                 WriteNullableString(writer, "openingGroupKey", block.OpeningGroupKey);
                 WriteNullableNumber(writer, "openingCarriedForward", block.OpeningCarriedForward);
                 WriteNullableNumber(writer, "blockAmountTotal", block.BlockAmountTotal);
+                WriteNullableNumber(writer, "openingGroupAccumulated", block.OpeningGroupAccumulated);
                 writer.WriteEndObject();
             }
 
@@ -109,7 +112,8 @@ public sealed record BlockIndexPage(
                 OptionalBoolean(block, "continuesNextGroup"),
                 OptionalString(block, "openingGroupKey"),
                 OptionalDecimal(block, "openingCarriedForward"),
-                OptionalDecimal(block, "blockAmountTotal")));
+                OptionalDecimal(block, "blockAmountTotal"),
+                OptionalDecimal(block, "openingGroupAccumulated")));
         }
 
         ValidateContiguity(blocks);
