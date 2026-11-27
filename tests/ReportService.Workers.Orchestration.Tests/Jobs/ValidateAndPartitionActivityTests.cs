@@ -3,16 +3,19 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using ReportService.Data;
+using ReportService.Data.Partitioning;
 using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.Storage;
 using ReportService.Storage.Filesystem;
 using ReportService.TemplatePackages.Keys;
+using ReportService.TemplatePackages.Manifest;
 using ReportService.TemplatePackages.Packages;
 using ReportService.TemplatePackages.Records;
 using ReportService.Testing;
 using ReportService.Uploads;
 using ReportService.Workers.Orchestration.Jobs;
+using Temporalio.Converters;
 using Temporalio.Exceptions;
 using Temporalio.Testing;
 
@@ -21,9 +24,11 @@ namespace ReportService.Workers.Orchestration.Tests.Jobs;
 /// <summary>
 /// The data step of a job, run inside the engine's host against a storage root of the
 /// test's own, the in-memory records and a clock the test holds: the whole path from a
-/// ready snapshot to a committed partition, the answer a second attempt receives, what
-/// it refuses when there is nothing to read, and what the template's own contract
-/// refuses — the header, a middle record, the last of two thousand, a format, an
+/// ready snapshot to a committed partition, the multi-block admission and the ordered
+/// index, the partition spec the pinned manifest declares, the empty snapshot, the
+/// resume from the checkpoint the heartbeat carried, the answer a second attempt
+/// receives, what it refuses when there is nothing to read, and what the template's own
+/// contract refuses — the header, a middle record, the last of two thousand, a format, an
 /// undeclared member, a schema that cannot be used and a pin that cannot be sourced.
 /// </summary>
 public sealed class ValidateAndPartitionActivityTests : IDisposable
@@ -60,6 +65,36 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
                 "sequence": { "type": "integer", "minimum": 1 },
                 "amount": { "type": "number" },
                 "date": { "type": "string", "format": "date" }
+              }
+            }
+          }
+        }
+        """;
+
+    /// <summary>The schema of the grouped snapshot: the header and a record carrying its group key and amount.</summary>
+    private const string GroupedSchema = """
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "header": { "$ref": "#/$defs/header" },
+            "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+          },
+          "$defs": {
+            "header": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title"],
+              "properties": { "title": { "type": "string" } }
+            },
+            "item": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sequence", "group", "amount"],
+              "properties": {
+                "sequence": { "type": "integer", "minimum": 1 },
+                "group": { "type": "string" },
+                "amount": { "type": "number" }
               }
             }
           }
@@ -134,7 +169,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         Assert.Equal(1, result.BlockCount);
         Assert.Equal(2, result.RecordCount);
         Assert.Equal(1, result.FirstRecordOrdinal);
-        Assert.Equal(SingleBlockPartitioner.PartitionerVersion, result.PartitionerVersion);
+        Assert.Equal(StreamingPartitioner.PartitionerVersion, result.PartitionerVersion);
         Assert.Equal(2, Objects.Writes - writesBefore);
         Assert.Matches("^[0-9a-f]{64}$", result.BlockSha256);
         Assert.Matches("^[0-9a-f]{64}$", result.IndexSha256);
@@ -171,7 +206,18 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
 
         Assert.Equal(1, result.BlockCount);
         Assert.Equal(0, result.RecordCount);
+        Assert.Equal(0, result.RecordBytes);
         Assert.Equal(1, result.FirstRecordOrdinal);
+
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        Assert.Equal(0, partition!.RecordBytes);
+        var index = await ReadIndexAsync(partition, cancellationToken);
+        var block = Assert.Single(index.Blocks);
+        Assert.Equal(0, block.BlockIndex);
+        Assert.Equal(1, block.FirstRecordOrdinal);
+        Assert.Equal(0, block.RecordCount);
+        Assert.Equal(0, block.RecordBytes);
     }
 
     [Fact]
@@ -189,72 +235,243 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
     }
 
     [Fact]
-    public async Task ASnapshotLargerThanOneBlockEndsTheStepWithTheCodeOfTheLimit()
+    public async Task AValidSnapshotOfFiveThousandRecordsIsAdmittedAsSeveralOrderedBlocks()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(5_000), cancellationToken);
+
+        var result = await RunAsync();
+
+        Assert.True(result.BlockCount > 1, "a snapshot of five thousand records spans more than one block");
+        Assert.Equal(5_000, result.RecordCount);
+        Assert.Equal(StreamingPartitioner.PartitionerVersion, result.PartitionerVersion);
+
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        var index = await ReadIndexAsync(partition!, cancellationToken);
+
+        // The index the partition committed: page-boundary layout, sequential blocks,
+        // contiguous record ordinals, every block inside the governed hard maximum.
+        Assert.Equal(BlockIndexPage.PageBoundaryLayout, index.ChunkLayout);
+        Assert.Equal(StreamingPartitioner.PartitionerVersion, index.PartitionerVersion);
+        Assert.Equal(result.BlockCount, index.Blocks.Count);
+        Assert.Equal(partition!.BlockCount, index.Blocks.Count);
+        Assert.Equal(index.Blocks.Sum(block => block.RecordCount), partition.RecordCount);
+        Assert.Equal(index.Blocks.Sum(block => block.RecordBytes), partition.RecordBytes);
+        Assert.Equal(5_000, partition.RecordCount);
+
+        var ordinal = 1;
+        for (var position = 0; position < index.Blocks.Count; position++)
+        {
+            var block = index.Blocks[position];
+            Assert.Equal(position, block.BlockIndex);
+            Assert.Equal(ordinal, block.FirstRecordOrdinal);
+            Assert.InRange(block.RecordCount, 1, PartitionLimits.Default.HardMaxRecords);
+            Assert.InRange(block.RecordBytes, 0, PartitionLimits.Default.HardMaxRecordBytes);
+            ordinal += (int)block.RecordCount;
+        }
+
+        Assert.Equal(5_001, ordinal);
+
+        // The result names block 0's facts and the partition's real block count.
+        Assert.Equal(index.Blocks[0].Key, result.BlockKey);
+        Assert.Equal(index.Blocks[0].Sha256, result.BlockSha256);
+        Assert.Equal(index.Blocks[0].SizeBytes, result.BlockSizeBytes);
+        Assert.Equal(index.Blocks[0].FirstRecordOrdinal, result.FirstRecordOrdinal);
+    }
+
+    [Fact]
+    public async Task ASnapshotOneRecordPastTheBlockMaximumIsAdmittedAsSeveralBlocks()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await SeedAcceptedJobAsync(Records(DataContractLimits.BlockRecords + 1), cancellationToken);
 
-        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+        var result = await RunAsync();
 
-        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
-        Assert.True(failure.NonRetryable);
-        Assert.Contains("limit=block", failure.Message, StringComparison.Ordinal);
-        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        Assert.True(result.BlockCount >= 2, "the strongest snapshot the retired limit refused is admitted");
+        Assert.Equal(DataContractLimits.BlockRecords + 1, result.RecordCount);
+        Assert.Null(result.PdfRefusal);
+
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        Assert.Null(partition!.PdfRefusalCode);
+        Assert.DoesNotContain(Logs.Lines, line => line.Contains("QUOTA_EXCEEDED", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task AConfiguredThousandAdmitsAThousandRecords()
+    public async Task ASnapshotOfTwentyFiveRecordsYieldsExactlyOneBlock()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await SeedAcceptedJobAsync(Records(1_000), cancellationToken);
+        await SeedAcceptedJobAsync(Records(25), cancellationToken);
 
-        var result = await RunWithAsync(new SingleBlockLimit(1_000));
+        var result = await RunAsync();
 
         Assert.Equal(1, result.BlockCount);
-        Assert.Equal(1_000, result.RecordCount);
-        Assert.NotNull(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        Assert.Equal(25, result.RecordCount);
+        Assert.Equal(1, result.FirstRecordOrdinal);
+
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        var index = await ReadIndexAsync(partition!, cancellationToken);
+        var block = Assert.Single(index.Blocks);
+        Assert.Equal(0, block.BlockIndex);
+        Assert.Equal(1, block.FirstRecordOrdinal);
+        Assert.Equal(25, block.RecordCount);
     }
 
     [Fact]
-    public async Task AConfiguredThousandRefusesTheThousandAndFirstRecordAndLogsTheConfiguration()
+    public async Task TheGroupKeyAndAmountFieldComeFromThePinnedManifestsTypedManifest()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await SeedAcceptedJobAsync(Records(1_001), cancellationToken);
+        await SeedVersionAsync(GroupedSchema, cancellationToken, manifest: GroupedManifest());
 
-        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
-            () => RunWithAsync(new SingleBlockLimit(1_000)));
+        // One group ends at the soft target, and the next is larger than a block's hard
+        // maximum: the cut prefers the group boundary and continues the group it splits.
+        var records = GroupedRecords(("G1", 1_200), ("G2", 2_400));
+        await SeedAcceptedJobAsync(Snapshot("""{"title":"Monthly"}""", records), cancellationToken);
 
-        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
-        Assert.True(failure.NonRetryable);
-        Assert.Contains(
-            "reason=dimension=records applied=1000 limit=block ordinal=1001",
-            failure.Message,
-            StringComparison.Ordinal);
-        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        var result = await RunAsync();
 
-        // One refusal event, carrying the configured value on the operator's side only;
-        // the consumer's text is the failure's own message, which never names it.
-        var refusals = Logs.Lines.Where(line => line.Contains("snapshot refused", StringComparison.Ordinal)).ToList();
-        Assert.Single(refusals);
-        Assert.Contains("configured=1000", refusals[0], StringComparison.Ordinal);
-        Assert.DoesNotContain("configured=", failure.Message, StringComparison.Ordinal);
+        Assert.Equal(3, result.BlockCount);
+        Assert.Equal(3_600, result.RecordCount);
+
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        var index = await ReadIndexAsync(partition!, cancellationToken);
+        Assert.Equal(3, index.Blocks.Count);
+
+        // Block 0 holds G1 and ends at its boundary; block 1 holds the first two thousand
+        // records of G2 and continues it; block 2 continues G2 with the remainder.
+        Assert.Equal(1_200, index.Blocks[0].RecordCount);
+        Assert.Equal(2_000, index.Blocks[1].RecordCount);
+        Assert.Equal(400, index.Blocks[2].RecordCount);
+        Assert.True(index.Blocks[1].ContinuesNextGroup);
+        Assert.True(index.Blocks[2].ContinuesPreviousGroup);
+        Assert.Equal("G2", index.Blocks[2].OpeningGroupKey);
+        Assert.Equal(4_000m, index.Blocks[2].OpeningCarriedForward);
+        Assert.Equal(2_500m, index.Blocks[2].OpeningGroupAccumulated);
+        Assert.Equal(2_500m, index.Blocks[1].BlockAmountTotal);
+        Assert.Equal(500m, index.Blocks[2].BlockAmountTotal);
     }
 
     [Fact]
-    public async Task AConfiguredFiveThousandBehavesAsTheHardMaximum()
+    public async Task AResumedPassProducesTheIndexOfACleanPass()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await SeedAcceptedJobAsync(Records(2_001), cancellationToken);
+        var snapshot = Records(5_000);
+        await SeedAcceptedJobAsync(snapshot, cancellationToken);
+        const string ResumedJobId = "job-2123456789abcdef0123456789abcdef";
+        await AcceptAnotherJobAsync(ResumedJobId, cancellationToken);
 
-        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(
-            () => RunWithAsync(new SingleBlockLimit(5_000)));
+        // The clean pass is the oracle: the same snapshot, read once and cut in one go.
+        var clean = await RunAsync();
+        var cleanPartition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(cleanPartition);
+        var cleanIndex = await ReadIndexAsync(cleanPartition!, cancellationToken);
 
-        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
-        Assert.True(failure.NonRetryable);
-        Assert.Contains("dimension=records applied=2000", failure.Message, StringComparison.Ordinal);
-        Assert.Contains("ordinal=2001", failure.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("5000", failure.Message, StringComparison.Ordinal);
-        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        // The first pass over the second job is interrupted after its first block is
+        // committed: the store refuses the write of block 1, and the commit callback has
+        // already produced the checkpoint the heartbeat would carry.
+        PartitionCheckpoint? checkpoint = null;
+        Objects.WriteFailure = StorageOutcome.Transient;
+        Objects.WriteFailureWhen = key => key.ToString().StartsWith($"block/{ResumedJobId}/1/", StringComparison.Ordinal);
+        try
+        {
+            using var source = new MemoryStream(snapshot, writable: false);
+            await Assert.ThrowsAnyAsync<Exception>(() => new DurablePartitionDriver(
+                Objects,
+                new PartitionSpec(GroupKeyField: null, AmountField: null, Limits: PartitionLimits.Default)).RunAsync(
+                    ResumedJobId,
+                    HeaderItemsReader.ReadAsync(source, cancellationToken),
+                    resumeFrom: null,
+                    cancellationToken,
+                    committed => checkpoint = committed));
+        }
+        finally
+        {
+            Objects.WriteFailure = null;
+            Objects.WriteFailureWhen = null;
+        }
+
+        Assert.NotNull(checkpoint);
+        Assert.Equal(0, checkpoint!.LastCommittedBlockIndex);
+        Assert.Equal(PartitionLimits.Default.HardMaxRecords, checkpoint.LastRecordOrdinal);
+
+        // The engine delivers the step again with the checkpoint in the heartbeat details:
+        // the activity hands it to the driver, which continues past the committed ordinal.
+        var resumed = await RunWithHeartbeatAsync(
+            ResumedJobId,
+            new PartitionHeartbeat(checkpoint.LastRecordOrdinal, checkpoint),
+            cancellationToken);
+
+        Assert.Equal(clean.RecordCount, resumed.RecordCount);
+        Assert.Equal(clean.BlockCount, resumed.BlockCount);
+
+        var resumedPartition = await Jobs.FindPartitionAsync(ResumedJobId, cancellationToken);
+        Assert.NotNull(resumedPartition);
+        var resumedIndex = await ReadIndexAsync(resumedPartition!, cancellationToken);
+
+        // The index is field-identical to the clean pass; the attempt-scoped block key is
+        // the one field free to differ.
+        Assert.Equal(cleanIndex.PartitionerVersion, resumedIndex.PartitionerVersion);
+        Assert.Equal(cleanIndex.ChunkLayout, resumedIndex.ChunkLayout);
+        Assert.Equal(cleanIndex.Blocks.Count, resumedIndex.Blocks.Count);
+        Assert.Equal(
+            cleanIndex.Blocks.Select(WithoutAttemptKey),
+            resumedIndex.Blocks.Select(WithoutAttemptKey));
+    }
+
+    [Fact]
+    public async Task TheHeartbeatCarriesTheCheckpointOfTheCommittedBlocks()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedAcceptedJobAsync(Records(DataContractLimits.BlockRecords + 1), cancellationToken);
+        var beats = new List<PartitionHeartbeat>();
+
+        // A store that takes its time makes the pass outlast one beat interval, so the
+        // beat the activity sends while the pass runs carries the checkpoint it has.
+        Objects.WriteDelay = TimeSpan.FromSeconds(2);
+        try
+        {
+            var environment = new ActivityEnvironment
+            {
+                Info = ActivityEnvironment.DefaultInfo with
+                {
+                    WorkflowId = $"report-job/{ReportJobId}",
+                    WorkflowRunId = "run-0123456789abcdef",
+                    ActivityId = "1",
+                    ActivityType = ValidateAndPartitionActivity.Name,
+                    Attempt = 1,
+                    TaskQueue = PdfOutputActivityOptions.DataQueue,
+                },
+                Heartbeater = details =>
+                {
+                    if (details.Length == 1 && details[0] is PartitionHeartbeat beat)
+                    {
+                        lock (beats)
+                        {
+                            beats.Add(beat);
+                        }
+                    }
+                },
+            };
+
+            await environment.RunAsync(() => Activity.RunAsync(new ValidateAndPartitionInput(ReportJobId)));
+        }
+        finally
+        {
+            Objects.WriteDelay = TimeSpan.Zero;
+        }
+
+        PartitionHeartbeat? carried;
+        lock (beats)
+        {
+            carried = beats.LastOrDefault(beat => beat.Checkpoint is not null);
+        }
+
+        Assert.NotNull(carried);
+        Assert.Equal(DataContractLimits.BlockRecords + 1, carried!.RecordsRead);
+        Assert.Equal(1, carried.Checkpoint!.LastCommittedBlockIndex);
     }
 
     [Fact]
@@ -360,7 +577,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
             1,
             25,
             512);
-        var page = BlockIndexPage.Serialize(new BlockIndexPage(SingleBlockPartitioner.PartitionerVersion, [entry]));
+        var page = BlockIndexPage.Serialize(new BlockIndexPage(StreamingPartitioner.PartitionerVersion, [entry]));
         var indexKey = ObjectKey.FromSegments("index", ReportJobId, "0", "attempt");
         using var content = new MemoryStream(page, writable: false);
         var write = await Objects.WriteAsync(indexKey, content, cancellationToken);
@@ -371,7 +588,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         await Jobs.CommitPartitionAsync(
             new PartitionRecord(
                 ReportJobId,
-                SingleBlockPartitioner.PartitionerVersion,
+                StreamingPartitioner.PartitionerVersion,
                 1,
                 25,
                 512,
@@ -400,7 +617,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
             1,
             25,
             512);
-        var page = BlockIndexPage.Serialize(new BlockIndexPage(SingleBlockPartitioner.PartitionerVersion, [entry]));
+        var page = BlockIndexPage.Serialize(new BlockIndexPage(StreamingPartitioner.PartitionerVersion, [entry]));
         var indexKey = ObjectKey.FromSegments("index", ReportJobId, "0", "attempt");
         using var content = new MemoryStream(page, writable: false);
         var write = await Objects.WriteAsync(indexKey, content, cancellationToken);
@@ -409,7 +626,7 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         await Jobs.CommitPartitionAsync(
             new PartitionRecord(
                 ReportJobId,
-                SingleBlockPartitioner.PartitionerVersion,
+                StreamingPartitioner.PartitionerVersion,
                 1,
                 25,
                 512,
@@ -735,6 +952,52 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         return Encoding.UTF8.GetBytes($$"""{"contractVersion":"1.0","header":{"title":"Monthly"},"items":[{{items}}]}""");
     }
 
+    // The records of the grouped snapshot: contiguous groups of the stated sizes, every
+    // record carrying the group key and the same amount, so the expected carried-forward
+    // values are the record counts times that amount.
+    private static string[] GroupedRecords(params (string Group, int Count)[] groups)
+    {
+        var records = new List<string>();
+        var sequence = 1;
+        foreach (var (group, count) in groups)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                records.Add($$"""{"sequence":{{sequence}},"group":"{{group}}","amount":1.25}""");
+                sequence++;
+            }
+        }
+
+        return [.. records];
+    }
+
+    // The typed manifest the grouped package declares: its group key and the page-totals
+    // amount field. No member beyond those two is replaced.
+    private static TemplateManifest GroupedManifest() => new()
+    {
+        ManifestVersion = "1.0",
+        Id = "pilot-simple",
+        Version = "1.0.0",
+        Owner = ConsumerId,
+        Shared = true,
+        Engine = TemplateEngine.Scriban,
+        DeclaredEngineVersion = "7.5.1",
+        DataContract = new TemplateDataContract
+        {
+            Profile = "header-items-v1",
+            Version = "1.0",
+            Schema = "schema.json",
+        },
+        Partitioning = new TemplatePartitioning { GroupKey = "group" },
+        Outputs = new TemplateOutputs
+        {
+            Pdf = new TemplatePdfOutput
+            {
+                PageTotals = new TemplatePageTotals { Enabled = true, AmountField = "amount" },
+            },
+        },
+    };
+
     // A snapshot of the profile's shape with a header of the case's own and records of the
     // case's own, so a case says what the schema is asked about.
     private static byte[] Snapshot(string header, params string[] records)
@@ -822,7 +1085,8 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         CancellationToken cancellationToken,
         string schemaRef = "schema.json",
         string version = "1.0.0",
-        bool carriesTheSchema = true)
+        bool carriesTheSchema = true,
+        TemplateManifest? manifest = null)
     {
         var files = new List<PackageFileSource>();
         if (carriesTheSchema)
@@ -858,41 +1122,39 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
             ObjectKey = key,
         };
 
+        if (manifest is not null)
+        {
+            record = record with { Manifest = manifest };
+        }
+
         Versions.Seed(record);
         return record;
     }
 
     private Task<PartitionResult> RunAsync() => RunAsync(ReportJobId);
 
-    // The same step under a configured limit: the pass's own answer, with the activity
-    // built from the configured value rather than from the hard maximum.
-    private Task<PartitionResult> RunWithAsync(SingleBlockLimit limit)
+    // The step the engine delivers again: the last attempt's heartbeat details carry the
+    // checkpoint, and the attempt number is the second one.
+    private Task<PartitionResult> RunWithHeartbeatAsync(
+        string reportJobId,
+        PartitionHeartbeat heartbeat,
+        CancellationToken cancellationToken)
     {
-        var activity = new ValidateAndPartitionActivity(
-            Jobs,
-            Uploads,
-            Objects,
-            Versions,
-            Contracts,
-            new FixedTimeProvider(Now),
-            _loggerFactory.CreateLogger<ValidateAndPartitionActivity>(),
-            Path.Combine(_root, "scratch"),
-            limit);
-
         var environment = new ActivityEnvironment
         {
             Info = ActivityEnvironment.DefaultInfo with
             {
-                WorkflowId = $"report-job/{ReportJobId}",
+                WorkflowId = $"report-job/{reportJobId}",
                 WorkflowRunId = "run-0123456789abcdef",
                 ActivityId = "1",
                 ActivityType = ValidateAndPartitionActivity.Name,
-                Attempt = 1,
+                Attempt = 2,
                 TaskQueue = PdfOutputActivityOptions.DataQueue,
+                HeartbeatDetails = [DataConverter.Default.PayloadConverter.ToPayload(heartbeat)],
             },
             Heartbeater = _ => { },
         };
-        return environment.RunAsync(() => activity.RunAsync(new ValidateAndPartitionInput(ReportJobId)));
+        return environment.RunAsync(() => Activity.RunAsync(new ValidateAndPartitionInput(reportJobId)));
     }
 
     private Task<PartitionResult> RunAsync(string reportJobId)
@@ -912,4 +1174,43 @@ public sealed class ValidateAndPartitionActivityTests : IDisposable
         };
         return environment.RunAsync(() => Activity.RunAsync(new ValidateAndPartitionInput(reportJobId)));
     }
+
+    // A second job on the same upload and version, so a clean pass and a resumed pass can
+    // be compared over the same snapshot without either finding the other's partition.
+    private async Task AcceptAnotherJobAsync(string reportJobId, CancellationToken cancellationToken)
+    {
+        var accepted = await Jobs.AcceptAsync(
+            new JobAcceptance(
+                reportJobId,
+                [new RequestedOutput("output-" + reportJobId[4..], OutputFormat.Pdf)],
+                ConsumerId,
+                UploadId,
+                "pilot-simple",
+                TemplateReferenceForm.Exact,
+                "1.0.0",
+                ReportService.Testing.AcceptanceIdentity.For(UploadId)),
+            Now,
+            cancellationToken);
+        Assert.IsType<JobAcceptanceResult.Accepted>(accepted);
+    }
+
+    // The committed index page, read back through the storage port with the record's own
+    // size and SHA-256 - the map both the result and the partition record are held to.
+    private async Task<BlockIndexPage> ReadIndexAsync(PartitionRecord partition, CancellationToken cancellationToken)
+    {
+        var read = await Objects.OpenReadAsync(
+            ObjectKey.Create(partition.IndexObjectKey),
+            partition.IndexSizeBytes,
+            partition.IndexSha256,
+            cancellationToken);
+        Assert.True(read.Succeeded, read.Outcome.ToString());
+        await using var content = read.Value!;
+        using var buffer = new MemoryStream();
+        await content.Content.CopyToAsync(buffer, cancellationToken);
+        return BlockIndexPage.Parse(buffer.ToArray());
+    }
+
+    // The index entry without its attempt-scoped key: the one field a resumed pass is free
+    // to write differently, because the block lives under the attempt that wrote it.
+    private static BlockIndexEntry WithoutAttemptKey(BlockIndexEntry entry) => entry with { Key = string.Empty };
 }

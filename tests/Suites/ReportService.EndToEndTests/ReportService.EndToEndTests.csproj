@@ -33,6 +33,8 @@
     <!-- The durable partition driver and the job store the multi-block stage is committed through. -->
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Jobs\ReportService.Jobs.csproj" />
+    <!-- The delivered ceiling code the over-ceiling case reads, never restated. -->
+    <ProjectReference Include="..\..\..\src\ReportService.Workers.Merge\ReportService.Workers.Merge.csproj" />
     <ProjectReference Include="..\..\Support\ReportService.Testing\ReportService.Testing.csproj" />
   </ItemGroup>
 

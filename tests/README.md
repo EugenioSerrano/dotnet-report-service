@@ -556,20 +556,20 @@ reading its answer (`JobAcceptanceOverRealServerTests`), and — for a build tha
 prints — the job that runs to a terminal status (`JobNeverLostNeverDoubledTests`,
 which carries `[Trait("Requires", "printing")]`).
 
-`SingleBlockLimitTests` holds the report that does not fit in one block: each case
-starts the composition with the record count it asserts (the setting is read when the
-worker starts), submits a snapshot of the families in
-`tests/Support/ReportService.Testing/Limits/`, and asserts one state — the job and its PDF
-output failed with the same code and the same stored reason, the data step ran once,
-no render or publish step was scheduled, no partition record, part commit or artifact
-was written and no object reached the output namespace — or, for the document at the
-limit, that it printed and published once. `SingleBlockLimitEndToEndTests` follows the
-same limit the way a consumer does: upload, confirm, accept and the status read until
-it ends, with the message on the job and on its output and the refusal's transcript
-kept with the run. `SingleBlockLimitMessageTests` (hermetic) asserts the sentence
-itself, and `SingleBlockLimitRefusalMeasurementTests` records what a refusal of fifty
-thousand records costs, as an observation on the reference environment with no
-threshold.
+The live data path's own suite, `ValidateAndPartitionActivityTests`, drives the data
+step over its in-memory records and the filesystem object store: a snapshot of a few
+thousand records is admitted as more than one ordered block, and its committed index,
+block facts and partition record agree; a snapshot one record past the block's hard
+maximum is still admitted as several blocks; the single-block, empty-snapshot and
+resume cases keep their shape, with a resumed pass field-identical to a clean one and
+the heartbeat carrying the engine's checkpoint; and the data-contract, schema and
+row-bound refusals keep their codes, their order and their non-retryability.
+`MultiBlockPdfJobEndToEndTests` follows a multi-block job through the whole local
+composition - the live data step partitions it, the render and merge workers print and
+assemble it, and the artifact is read back page by page against the committed parts and
+the test's own totals. `OverCeilingPdfJobEndToEndTests` drives the derived over-ceiling
+fixture to the document limit's error with nothing published. Both run on the `e2e`
+level.
 
 ## The restarted print and the exhausted budget
 

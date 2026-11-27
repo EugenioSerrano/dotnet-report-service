@@ -5,11 +5,20 @@ namespace ReportService.Data.Partitioning;
 
 /// <summary>
 /// What one durable partition pass produced: the ordered index page of its committed
-/// blocks, as held in memory after the pass. The blocks and the index page are durable in
-/// the object store; this is the caller's map of them.
+/// blocks, as held in memory after the pass, and the write facts of the page the pass
+/// stored beside them. The blocks and the index page are durable in the object store;
+/// this is the caller's map of them. The write facts let the caller record the index in
+/// its partition record without a second writer of the durable index.
 /// </summary>
 /// <param name="Index">The ordered index page of the partition's committed blocks.</param>
-public sealed record DurablePartition(BlockIndexPage Index);
+/// <param name="IndexObjectKey">The key the index page was written under.</param>
+/// <param name="IndexSizeBytes">The size of the stored index page.</param>
+/// <param name="IndexSha256">The SHA-256 of the stored index page, lower-case hexadecimal.</param>
+public sealed record DurablePartition(
+    BlockIndexPage Index,
+    string IndexObjectKey,
+    long IndexSizeBytes,
+    string IndexSha256);
 
 /// <summary>
 /// Runs the <see cref="StreamingPartitioner"/> against an object store: it writes each
@@ -20,7 +29,7 @@ public sealed record DurablePartition(BlockIndexPage Index);
 /// the committed-block record. On resume the driver is given the last
 /// checkpoint and the committed blocks already in the store, re-reads the snapshot from
 /// the start, and continues under a fresh attempt, rewriting only the blocks past the
-/// checkpoint. It does not replace the live single-block activity; it is the restart-safe,
+/// checkpoint. It is the live PDF data step's partition pass and the restart-safe,
 /// at-scale, real-storage entry point for the multi-block engine.
 /// </summary>
 public sealed class DurablePartitionDriver
@@ -67,12 +76,16 @@ public sealed class DurablePartitionDriver
         var bytes = BlockIndexPage.Serialize(partition.Index);
         using var content = new MemoryStream(bytes, writable: false);
         var write = await _store.WriteAsync(indexKey, content, cancellationToken).ConfigureAwait(false);
-        if (!write.Succeeded)
+        if (!write.Succeeded || write.Value is null)
         {
             throw new InvalidOperationException("the durable partition index page could not be written");
         }
 
-        return new DurablePartition(partition.Index);
+        return new DurablePartition(
+            partition.Index,
+            indexKey.ToString(),
+            write.Value.Size,
+            write.Value.Sha256);
     }
 
     // A sink that writes each block document to the object store under an attempt-scoped key.

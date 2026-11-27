@@ -1,4 +1,5 @@
 using System.Text;
+using ReportService.Data.Partitioning;
 
 namespace ReportService.Data.Tests;
 
@@ -12,7 +13,7 @@ public sealed class BlockIndexPageTests
     public void APageRoundTripsThroughItsJson()
     {
         var page = new BlockIndexPage(
-            SingleBlockPartitioner.PartitionerVersion,
+            StreamingPartitioner.PartitionerVersion,
             [new BlockIndexEntry(0, "block/job-0123456789abcdef0123456789abcdef/0/aa", new string('a', 64), 1_024, 1, 25, 900)]);
 
         var parsed = BlockIndexPage.Parse(BlockIndexPage.Serialize(page));
@@ -27,8 +28,8 @@ public sealed class BlockIndexPageTests
         Assert.Equal(25, entry.RecordCount);
         Assert.Equal(900, entry.RecordBytes);
 
-        // An entry built without the enriched fields defaults them, so the live single-block
-        // path keeps writing the same on-disk shape (backward compatibility).
+        // An entry built without the enriched fields defaults them, so a page written before
+        // this deployment keeps parsing with the same defaults (backward compatibility).
         Assert.False(entry.ContinuesPreviousGroup);
         Assert.False(entry.ContinuesNextGroup);
         Assert.Null(entry.OpeningGroupKey);
@@ -40,7 +41,7 @@ public sealed class BlockIndexPageTests
     public void AnEnrichedEntryRoundTripsEveryNewField()
     {
         var page = new BlockIndexPage(
-            SingleBlockPartitioner.PartitionerVersion,
+            StreamingPartitioner.PartitionerVersion,
             [new BlockIndexEntry(
                 0,
                 "block/job-0123456789abcdef0123456789abcdef/0/dd",
@@ -86,7 +87,7 @@ public sealed class BlockIndexPageTests
     public void TheEmptyBlockIsEncodedWithOrdinalOneAndNoRecord()
     {
         var page = new BlockIndexPage(
-            SingleBlockPartitioner.PartitionerVersion,
+            StreamingPartitioner.PartitionerVersion,
             [new BlockIndexEntry(0, "block/job-0123456789abcdef0123456789abcdef/0/bb", new string('b', 64), 64, 1, 0, 0)]);
 
         var json = Encoding.UTF8.GetString(BlockIndexPage.Serialize(page));
@@ -104,7 +105,7 @@ public sealed class BlockIndexPageTests
     public void TheSerialisedPageIsStableAcrossCalls()
     {
         var page = new BlockIndexPage(
-            SingleBlockPartitioner.PartitionerVersion,
+            StreamingPartitioner.PartitionerVersion,
             [new BlockIndexEntry(0, "block/job-0123456789abcdef0123456789abcdef/0/cc", new string('c', 64), 4, 1, 1, 2)]);
 
         Assert.Equal(BlockIndexPage.Serialize(page), BlockIndexPage.Serialize(page));
@@ -121,7 +122,7 @@ public sealed class BlockIndexPageTests
     [Fact]
     public void APageWithNoBlockParsesAsAnEmptyList()
     {
-        var page = new BlockIndexPage(SingleBlockPartitioner.PartitionerVersion, []);
+        var page = new BlockIndexPage(StreamingPartitioner.PartitionerVersion, []);
 
         var json = BlockIndexPage.Serialize(page);
         var parsed = BlockIndexPage.Parse(json);

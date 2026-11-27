@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using ReportService.Data;
+using ReportService.Data.Partitioning;
 using ReportService.DataContract;
 using ReportService.Jobs;
 using ReportService.Storage;
@@ -18,14 +19,17 @@ public sealed record ValidateAndPartitionInput(string ReportJobId);
 /// <summary>
 /// The data step of one job: it sources the data contract of the template the job is
 /// pinned to, reads the job's snapshot once through the verifying reader, checks the
-/// header and every record against that contract while it reads, admits the records into
-/// one block, writes the block and its index page under keys of this attempt, and records
-/// the partition. It first looks for the partition it may already have committed, so an
-/// attempt that arrives again reads what exists instead of writing a second one. A
-/// snapshot the profile refuses, or a value the template's schema refuses, ends the step
-/// with a failure that is never retried; a template whose pin or schema cannot be used
-/// ends it with a failure of its own, also never retried; the objects of a losing attempt
-/// are left where they are.
+/// header and every record against that contract while it reads, partitions the records
+/// into contiguous ordered blocks through the durable driver that writes each block and
+/// the index page under keys of its attempt, and records the partition. The group key and
+/// the page-totals amount field come from the pinned version's typed manifest; the block
+/// limits are the engine's governed constants. It first looks for the partition it may
+/// already have committed, so an attempt that arrives again reads what exists instead of
+/// writing a second one, and a retried attempt resumes from the checkpoint its heartbeat
+/// carried. A snapshot the profile refuses, or a value the template's schema refuses, ends
+/// the step with a failure that is never retried; a template whose pin or schema cannot be
+/// used ends it with a failure of its own, also never retried; the objects of a losing
+/// attempt are left where they are.
 /// </summary>
 public sealed class ValidateAndPartitionActivity(
     IJobStore jobs,
@@ -35,8 +39,7 @@ public sealed class ValidateAndPartitionActivity(
     PreparedDataContractCache contracts,
     TimeProvider clock,
     ILogger<ValidateAndPartitionActivity> logger,
-    string? scratchRoot = null,
-    SingleBlockLimit? limit = null)
+    string? scratchRoot = null)
 {
     /// <summary>The name the step is registered and scheduled under.</summary>
     public const string Name = "ValidateAndPartition";
@@ -107,8 +110,11 @@ public sealed class ValidateAndPartitionActivity(
 
         // The template's data contract is sourced before the snapshot is read: the pin names
         // the schema the data is checked against, and a pin that cannot be sourced leaves
-        // nothing to check it with.
-        using var lease = await LeaseTheContractAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false);
+        // nothing to check it with. The same record carries the typed manifest the partition
+        // spec is read from.
+        var leased = await LeaseTheContractAsync(input.ReportJobId, cancellationToken).ConfigureAwait(false);
+        using var lease = leased.Lease;
+        var spec = leased.Spec;
         var contract = lease.Compilation.Contract
             ?? throw SchemaRefused(input.ReportJobId, lease.Compilation.Profile.Rule, ordinal: null, keyword: null);
 
@@ -120,12 +126,6 @@ public sealed class ValidateAndPartitionActivity(
             throw RefuseUnverifiable(read.Outcome, read.Error!, "the snapshot");
         }
 
-        var attempt = ActivityExecutionContext.Current.Info;
-        var attemptId = PdfOutputActivityOptions.AttemptId(
-            attempt.WorkflowId ?? string.Empty,
-            attempt.WorkflowRunId ?? string.Empty,
-            attempt.ActivityId,
-            attempt.Attempt);
         var jobId = input.ReportJobId;
 
         await using var verified = read.Value!;
@@ -133,16 +133,21 @@ public sealed class ValidateAndPartitionActivity(
             ? new System.IO.Compression.GZipStream(verified.Content, System.IO.Compression.CompressionMode.Decompress)
             : verified.Content;
 
-        // The block is one bounded document — at most the block's own maximum — so it is held
-        // while it is written, and never the snapshot or the record set. The beat runs beside
-        // the pass, so a slow read inside it cannot silence the step.
-        using var block = new MemoryStream();
-        long recordsRead = 0;
+        // The checkpoint the step's last attempt carried, when the engine delivers it again:
+        // the engine resumes past the committed blocks instead of writing them again.
+        var resumeFrom = await ResumedFromAsync().ConfigureAwait(false);
+
+        // The pass holds the header and the open block, never the record set. The beat runs
+        // beside it and carries the engine's checkpoint with the records read, so a retried
+        // attempt can resume from the last committed block. A slow read inside the pass
+        // cannot silence the beat.
+        long recordsRead = resumeFrom?.LastRecordOrdinal ?? 0;
+        PartitionCheckpoint? checkpoint = resumeFrom;
         using var passEnds = new CancellationTokenSource();
         var beat = ActivityHeartbeat.WhileRunningAsync(
             PdfOutputActivityOptions.HeartbeatEvery,
             () => Interlocked.Read(ref recordsRead),
-            count => ActivityExecutionContext.Current.Heartbeat(new PartitionHeartbeat(count)),
+            count => ActivityExecutionContext.Current.Heartbeat(new PartitionHeartbeat(count, Volatile.Read(ref checkpoint))),
             passEnds.Token);
 
         // The progress the consumer polls is written by a task of the pass's own: it awaits
@@ -151,16 +156,20 @@ public sealed class ValidateAndPartitionActivity(
         // from delaying a beat.
         var progress = WriteProgressAsync(jobId, () => Interlocked.Read(ref recordsRead), passEnds.Token);
 
-        PartitionSummary summary;
+        DurablePartition partition;
         try
         {
-            summary = await SingleBlockPartitioner
-                .PartitionAsync(
+            partition = await new DurablePartitionDriver(objects, spec)
+                .RunAsync(
+                    jobId,
                     CheckedAsync(contract, HeaderItemsReader.ReadAsync(content, cancellationToken), input.ReportJobId, rowBound, cancellationToken),
-                    block,
+                    resumeFrom,
                     cancellationToken,
-                    count => Interlocked.Exchange(ref recordsRead, count),
-                    limit ?? SingleBlockLimit.Unconfigured)
+                    committed =>
+                    {
+                        Volatile.Write(ref checkpoint, committed);
+                        Interlocked.Exchange(ref recordsRead, committed.LastRecordOrdinal);
+                    })
                 .ConfigureAwait(false);
         }
         catch (DataContractViolation violation)
@@ -176,15 +185,12 @@ public sealed class ValidateAndPartitionActivity(
             System.Diagnostics.Activity.Current?.SetTag(ViolationReasonTag, violation.Reason ?? violation.Limit);
             System.Diagnostics.Activity.Current?.SetTag(ViolationOrdinalTag, violation.Ordinal);
             logger.LogInformation(
-                "Job {ReportJobId} snapshot refused: code={Code} reason={Reason} ordinal={Ordinal} offset={Offset} configured={Configured} path={Path} keyword={Keyword}",
+                "Job {ReportJobId} snapshot refused: code={Code} reason={Reason} ordinal={Ordinal} offset={Offset} path={Path} keyword={Keyword}",
                 input.ReportJobId,
                 violation.Code,
                 violation.Reason ?? violation.Limit,
                 violation.Ordinal,
                 violation.Offset,
-                string.Equals(violation.Limit, "block", StringComparison.Ordinal)
-                    ? (limit ?? SingleBlockLimit.Unconfigured).ConfiguredRecords
-                    : null,
                 violation.Path,
                 violation.Keyword);
             throw new ApplicationFailureException(violation.Message, errorType: violation.Code, nonRetryable: true);
@@ -201,40 +207,22 @@ public sealed class ValidateAndPartitionActivity(
             await progress.ConfigureAwait(false);
         }
 
-        var blockKey = ObjectKey.FromSegments("block", jobId, "0", attemptId);
-        block.Position = 0;
-        var blockWrite = await objects.WriteAsync(blockKey, block, cancellationToken).ConfigureAwait(false);
-        var written = Written(blockWrite.Value, "the block");
-
-        var index = BlockIndexPage.Serialize(new BlockIndexPage(
-            SingleBlockPartitioner.PartitionerVersion,
-            [new BlockIndexEntry(
-                0,
-                blockKey.ToString(),
-                written.Sha256,
-                written.Size,
-                summary.FirstRecordOrdinal,
-                summary.RecordCount,
-                summary.RecordBytes)]));
-        var indexKey = ObjectKey.FromSegments("index", jobId, "0", attemptId);
-        using var indexContent = new MemoryStream(index, writable: false);
-        var indexWrite = await objects.WriteAsync(indexKey, indexContent, cancellationToken).ConfigureAwait(false);
-        var writtenIndex = Written(indexWrite.Value, "the index page");
-
-        var partition = new PartitionRecord(
+        var index = partition.Index;
+        var first = index.Blocks[0];
+        var partitionRecord = new PartitionRecord(
             jobId,
-            SingleBlockPartitioner.PartitionerVersion,
-            summary.BlockCount,
-            summary.RecordCount,
-            summary.RecordBytes,
-            indexKey.ToString(),
-            writtenIndex.Sha256,
-            writtenIndex.Size,
+            index.PartitionerVersion,
+            index.Blocks.Count,
+            index.Blocks.Sum(block => block.RecordCount),
+            index.Blocks.Sum(block => block.RecordBytes),
+            partition.IndexObjectKey,
+            partition.IndexSha256,
+            partition.IndexSizeBytes,
             clock.GetUtcNow(),
             rowBound.Code,
             rowBound.Reason);
 
-        var committed = await jobs.CommitPartitionAsync(partition, cancellationToken).ConfigureAwait(false);
+        var committed = await jobs.CommitPartitionAsync(partitionRecord, cancellationToken).ConfigureAwait(false);
         if (committed.Outcome == PartitionCommitOutcome.AlreadyCommitted)
         {
             // Another attempt committed first; this attempt's objects are its own orphans and
@@ -245,26 +233,23 @@ public sealed class ValidateAndPartitionActivity(
         logger.LogInformation(
             "Job {ReportJobId} partitioned into {BlockCount} block(s) holding {RecordCount} record(s)",
             jobId,
-            partition.BlockCount,
-            partition.RecordCount);
+            partitionRecord.BlockCount,
+            partitionRecord.RecordCount);
 
         return new PartitionResult(
-            partition.PartitionerVersion,
-            partition.BlockCount,
-            partition.RecordCount,
-            partition.RecordBytes,
-            1,
-            blockKey.ToString(),
-            written.Size,
-            written.Sha256,
-            partition.IndexObjectKey,
-            partition.IndexSizeBytes,
-            partition.IndexSha256,
+            partitionRecord.PartitionerVersion,
+            partitionRecord.BlockCount,
+            partitionRecord.RecordCount,
+            partitionRecord.RecordBytes,
+            first.FirstRecordOrdinal,
+            first.Key,
+            first.SizeBytes,
+            first.Sha256,
+            partitionRecord.IndexObjectKey,
+            partitionRecord.IndexSizeBytes,
+            partitionRecord.IndexSha256,
             rowBound.Refusal);
     }
-
-    private static ObjectWrite Written(ObjectWrite? write, string what) =>
-        write ?? throw new InvalidOperationException($"the storage provider reported success without {what}");
 
     // The progress writer of the pass: it ticks on the beat's own interval, awaits each
     // store write, and reports the count only when it changed since the last write. A
@@ -319,11 +304,12 @@ public sealed class ValidateAndPartitionActivity(
         }
     }
 
-    // The job's own reference, the taken version it names and the contract of that version,
-    // leased from the worker's cache. The version is read off the reference and the version
-    // store is reached only when one is there: a reference by name carries none, and a store
-    // refuses a null version by throwing rather than answering nothing.
-    private async Task<PreparedDataContractLease> LeaseTheContractAsync(
+    // The job's own reference, the taken version it names, the contract of that version,
+    // leased from the worker's cache, and the partition spec the version's typed manifest
+    // declares. The version is read off the reference and the version store is reached only
+    // when one is there: a reference by name carries none, and a store refuses a null
+    // version by throwing rather than answering nothing.
+    private async Task<(PreparedDataContractLease Lease, PartitionSpec Spec)> LeaseTheContractAsync(
         string reportJobId,
         CancellationToken cancellationToken)
     {
@@ -366,7 +352,44 @@ public sealed class ValidateAndPartitionActivity(
                 System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
 
-        return lease;
+        return (lease, TemplatePartitionSpec.From(record.Manifest));
+    }
+
+    // The checkpoint the last attempt of this step carried in its heartbeat, when the engine
+    // delivers the step again. The first attempt carries none. A detail this build cannot
+    // read is not a checkpoint: the pass starts clean, which is safe because the partition
+    // is insert-once and the committed blocks are write-once.
+    private async Task<PartitionCheckpoint?> ResumedFromAsync()
+    {
+        var info = ActivityExecutionContext.Current.Info;
+        if (info.HeartbeatDetails.Count == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var last = await info.HeartbeatDetailAtAsync<PartitionHeartbeat>(0).ConfigureAwait(false);
+            if (last.Checkpoint is not { } checkpoint)
+            {
+                return null;
+            }
+
+            logger.LogInformation(
+                "The data step resumes after block {BlockIndex} at ordinal {Ordinal}",
+                checkpoint.LastCommittedBlockIndex,
+                checkpoint.LastRecordOrdinal);
+            return checkpoint;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // A heartbeat written by a build whose details this one cannot read leaves no
+            // usable checkpoint; the pass re-reads the snapshot and continues from the start.
+            logger.LogWarning(
+                "The data step's last heartbeat carries no readable checkpoint ({ExceptionType})",
+                exception.GetType().Name);
+            return null;
+        }
     }
 
     // The schema of the pinned version, read from the taken copy at the path the version's
@@ -627,9 +650,10 @@ public sealed class ValidateAndPartitionActivity(
             : new StorageException(outcome, error);
 }
 
-/// <summary>The beat a running data step reports: how many records it has read so far.</summary>
+/// <summary>The beat a running data step reports: how many records it has read so far, and the checkpoint of the blocks it has committed.</summary>
 /// <param name="RecordsRead">How many records the pass has admitted.</param>
-public sealed record PartitionHeartbeat(long RecordsRead);
+/// <param name="Checkpoint">The engine's checkpoint after the last committed block; null before the first commit and on a first attempt.</param>
+public sealed record PartitionHeartbeat(long RecordsRead, PartitionCheckpoint? Checkpoint = null);
 
 /// <summary>
 /// What one pass knows about the PDF row bound: whether the job asked for a PDF output at all,

@@ -15,7 +15,6 @@ public sealed class ProjectConfigurationTests
     /// <summary>The settings the host requires and the cases leave to the configuration file.</summary>
     private static readonly string[] RequiredSettings =
     [
-        "Partitioning:SingleBlockRecordLimit",
         "Uploads:Expiry:BatchSize",
         "Uploads:Expiry:SweepInterval",
         "Uploads:VerificationDeadline",
@@ -44,7 +43,6 @@ public sealed class ProjectConfigurationTests
         // Exactly these settings, by their full names, at the values the host accepts.
         var settings = Settings(source);
         Assert.Equal(RequiredSettings, settings.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal("1000", settings["Partitioning:SingleBlockRecordLimit"]);
         Assert.Equal("00:01:00", settings["Uploads:Expiry:SweepInterval"]);
         Assert.Equal("500", settings["Uploads:Expiry:BatchSize"]);
         Assert.Equal("06:00:00", settings["Uploads:VerificationDeadline"]);
