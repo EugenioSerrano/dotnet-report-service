@@ -389,4 +389,36 @@ public sealed class TemplateChecksTests
     {
         Assert.Equal(refused, SchemaPatternRule.IsCatastrophic(pattern));
     }
+
+    [Theory]
+    [InlineData("""<tr><td>{{ item.quantity | html.escape }}</td></tr>{{ if item.sequence }}x{{ end }}""")]
+    [InlineData("""<tr>{{ for line in item.lines }}<td>{{ line.name | html.escape }}</td>{{ end }}</tr>""")]
+    [InlineData("""<tr><td>{{ if item.a }}{{ item.a | html.escape }}{{ else if item.b }}{{ item.b | html.escape }}{{ else }}{{ item.quantity | html.escape }}{{ end }}</td></tr>""")]
+    [InlineData("""<tr>{{ if item.a }}{{ for line in item.lines }}{{ for part in line.parts }}<td>{{ part.name | html.escape }}</td>{{ end }}{{ end }}{{ end }}</tr>""")]
+    public async Task AScribanTemplateWithControlFlowOverDataAndEscapedOutputsIsTaken(string row)
+    {
+        using var package = Packages.Package(row: row);
+        var candidate = package.Candidate(Packages.ManifestJson());
+
+        var result = await Packages.RunAsync(Packages.Checks(), candidate);
+
+        Assert.True(result.Passed, result.Reason);
+    }
+
+    [Theory]
+    [InlineData("""<tr>{{ for line in item.lines }}<td>{{ line.name }}</td>{{ end }}</tr>""")]
+    [InlineData("""<tr>{{ for line in item.lines }}<td>{{ if line.a }}x{{ else if line.b }}{{ line.name }}{{ end }}</td>{{ end }}</tr>""")]
+    [InlineData("""<tr>{{ for line in item.lines }}{{ for part in line.parts }}<td>{{ part.name }}</td>{{ end }}{{ end }}</tr>""")]
+    [InlineData("""<tr>{{ for line in item.lines }}<td>{{ if line.a }}{{ line.name }}{{ end }}</td>{{ end }}</tr>""")]
+    [InlineData("""<tr><td>{{ if item.a }}{{ item.a }}{{ end }}</td></tr>""")]
+    public async Task AnUnescapedScribanDataOutputInsideControlFlowIsRefused(string row)
+    {
+        using var package = Packages.Package(row: row);
+        var candidate = package.Candidate(Packages.ManifestJson());
+
+        var result = await Packages.RunAsync(Packages.Checks(), candidate);
+
+        Assert.False(result.Passed);
+        Assert.Contains("writes a data value without escaping", result.Reason, StringComparison.Ordinal);
+    }
 }
