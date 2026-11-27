@@ -17,11 +17,13 @@ limit that was reached, its configured value and the value the report reached - 
 value of the report. [Document capacity](document-capacity.md) describes the settings,
 the measured figures and what to do above the capacity.
 
-**A job of about 50 000 pages does not complete end to end in this version.** With the
-default rendering window, the workflow history of a job at that block count passes its
-bound - a defect being corrected. The published capacity figures measure one document's
-assembly; they do not establish that a job of that size completes. This limitation goes
-when the defect is corrected and a job of that size is shown to complete.
+**Very large documents need a larger merge worker.** One document's assembly grows with
+its page count: on the light pages the capacity figures were measured on, a 50 000-page
+document needs about 1.4 GiB, above the local composition's 512 MiB merge worker. A
+deployment that admits such documents sizes its merge worker from its own measurement
+(see [document capacity](document-capacity.md)). The workflow history defect that kept a
+job of about 50 000 pages from completing has been corrected. This limitation goes if
+assembly memory stops growing with the page count.
 
 Nothing else refuses a PDF report for its size: the block limits split a large report
 into more blocks, and a report that fits one block is printed exactly as it is.

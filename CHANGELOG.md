@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   describes the settings, the answer above a deployment's capacity and the separation of
   document size from concurrency, and holds the figures of one document's assembly at
   10 000 and 50 000 pages with per-page codes - a lower bound, measured on synthetic
-  pages. A job of about 50 000 pages does not yet complete end to end (see
+  pages: 389.0 MiB at 10 000 pages and 1 424.4 MiB at 50 000 pages, so a 50 000-page
+  document needs a merge worker larger than the local composition's 512 MiB (see
   `docs/limitations.md`).
 - A job request may declare a `priority` of `low`, `normal` or `high`; a request that
   declares none is created at `normal`, and any other value is refused with

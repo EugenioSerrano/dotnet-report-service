@@ -105,28 +105,40 @@ document of the same page count printed from a real template needs **at least**
 these resources and probably more. Size a deployment with a margin above them, or
 measure your own templates.
 
-**What they do not claim.** They measure the assembly of one document, not a job.
-A job of about 50 000 pages does not complete end to end in this version: with the
-default rendering window, the job's workflow history passes its bound at that block
-count, a defect being corrected. Until it is corrected, these figures establish
-what one document's assembly needs; they do not establish that a job of that size
-completes.
+**What they measure.** They measure the assembly of one document in process, not a
+job running through the whole service. The workflow history defect that kept a job of
+about 50 000 pages from completing has been corrected; a job of that size end to end
+was not part of this measurement, so its time and its other resources are not stated
+here.
 
 | Figure | 10 000 pages, with codes | 50 000 pages, with codes |
 |--------|--------------------------|--------------------------|
-| Parts / parts bytes | pending measurement | pending measurement |
-| Peak working set of the assembly | pending measurement | pending measurement |
-| Peak managed heap | pending measurement | pending measurement |
-| Stamping and merge time | pending measurement | pending measurement |
-| Code generation time | pending measurement | pending measurement |
-| Verification time | pending measurement | pending measurement |
-| Temporary-disk peak / quota | pending measurement | pending measurement |
-| Output size | pending measurement | pending measurement |
-| Fits the local composition's 512 MiB merge worker | pending measurement | pending measurement |
+| Parts / parts bytes | 45 / 4.7 MiB | 225 / 23.6 MiB |
+| Peak working set of the measuring process | 389.0 MiB | 1 424.4 MiB |
+| Peak managed heap | 186.2 MiB | 1 210.8 MiB |
+| Stamping and merge time | 10.2 s | 53.2 s |
+| Code generation time | 4.7 s | 24.0 s |
+| Verification time | 9.2 s | 48.1 s |
+| Temporary-disk peak / quota | 18.4 MiB / 170.4 MiB | 92.1 MiB / 851.9 MiB |
+| Output size | 18.4 MiB | 92.8 MiB |
+| Fits the local composition's 512 MiB merge worker | yes (389.0 MiB) | **no** (1 424.4 MiB) |
 
-Memory growth between the two points, per 1 000 pages: pending measurement (the
-assembly of ordinary rows without codes was last measured at about 10 MiB per
-1 000 pages).
+Memory growth between the two points: **25.89 MiB per 1 000 pages** with per-page
+codes. The assembly of ordinary rows without codes was last measured at about 10 MiB
+per 1 000 pages. The two figures were taken on different pages and processes, so the
+difference is reported, not attributed.
+
+Measured on 2026-11-27 on the reference environment (22 logical processors, 32 GiB),
+PDF library 6.2.4, reference code generator, in the service's performance test level.
+The peak working set is that of the test process that built the parts and ran the
+assembly, so it is an upper reading of the assembly's own memory on these pages and,
+being taken on synthetic pages, still a lower bound for a real template's document.
+
+**At 50 000 pages the local composition's merge worker is too small.** Its 512 MiB
+limit holds the 10 000-page document with room to spare, but a 50 000-page document
+needs at least about 1.4 GiB on these light pages, and more on a real template's
+pages. A deployment that admits documents of that size gives its merge worker at
+least that memory plus a margin, measured on its own templates.
 
 The merge worker of the local composition runs with a 512 MiB memory limit. That
 limit is a deployment parameter of the composition, not a product rule: a

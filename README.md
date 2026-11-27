@@ -404,8 +404,8 @@ stateDiagram-v2
   blocks: a large snapshot is cut into ordered blocks, rendered within the bounded
   window, assembled in order and stamped with one global "Page X of Y".
   [`docs/document-capacity.md`](docs/document-capacity.md) gives the settings and the
-  measured figures; [`docs/limitations.md`](docs/limitations.md) states what a job of
-  about 50 000 pages does not do yet.
+  measured figures; [`docs/limitations.md`](docs/limitations.md) states what a very
+  large document needs from the merge worker.
 
 ## Security model — read this before deploying
 
