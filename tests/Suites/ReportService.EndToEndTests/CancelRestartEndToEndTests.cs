@@ -240,9 +240,10 @@ public sealed class CancelRestartEndToEndTests : IDisposable
     /// remedy kills it (SIGKILL, the designed crash — not a graceful teardown), while the cancellation
     /// is in flight. The in-flight attempt is lost and cannot acknowledge the cancellation, so the job
     /// stays <c>CANCELLING</c> until the engine resolves the lost attempt after the render heartbeat
-    /// timeout; the retried attempt after the platform's replacement is a retry of work already begun
-    /// and commits nothing, and the job still ends <c>CANCELLED</c> with no part commit or artifact at
-    /// or after the request and no block above the highest one begun before it (T, N1–N4).
+    /// timeout; the retried attempt after the harness starts the container again is a retry of work
+    /// already begun and commits nothing, and the job still ends <c>CANCELLED</c> with no part commit
+    /// or artifact at or after the request and no block above the highest one begun before it
+    /// (T, N1–N4).
     /// </summary>
     [Fact]
     public async Task R3_TheRenderWorkerRestartsMidRenderAndNothingIsCommittedAfterTheCancel()
@@ -280,15 +281,20 @@ public sealed class CancelRestartEndToEndTests : IDisposable
         Assert.Equal("CANCELLING", stopped.Status);
         Assert.Null(stopped.FinishedAt);
 
-        // Step 4: the platform replaces the killed container (`--restart=always` — the watchdog's
-        // remedy, ADR-012 §3.9(3)). The wait observes the restarted process's own start instant and
-        // the tap is re-established at it, so only the restarted process's lines enter after the
-        // boundary; the wait is the proof that stream is live — without a line written after the
-        // kill, the "no block above …" assertion would pass on an empty read (SPEC §6 B.1, §8.2).
-        var startedAgainAt = await RestartHarness.WaitForContainerRestartAsync(
-            world.RenderWorkerContainerName,
-            killedAt,
-            cancellationToken);
+        // Step 4: the harness starts the killed render worker through the composition's own
+        // `StartCommand` on the declared resource and waits for `Running` — the operator's act, since
+        // the local substrate replaces nothing (SPEC revision 3, §6 Phase D, D8/D13). The started
+        // container must be the composition's own and its start instant must have advanced past the
+        // kill, so the re-established stream carries the restarted process's lines and none from the
+        // dead one (§5's obligation, §15's stop). The tap is re-established at that instant, and the
+        // wait is the proof that stream is live — without a line written after the kill, the "no
+        // block above …" assertion would pass on an empty read (SPEC §6 B.1, §8.2).
+        await RestartHarness.StartAsync(world.App, TestComposition.RenderWorkerName, cancellationToken);
+        var startedAgainAt = await RestartHarness.StartedAtAsync(world.RenderWorkerContainerName, cancellationToken)
+            ?? DateTimeOffset.UtcNow;
+        Assert.True(
+            startedAgainAt > killedAt,
+            $"the render worker container '{world.RenderWorkerContainerName}' reports State.StartedAt {startedAgainAt:O}, which did not advance past the kill at {killedAt:O}: the restarted process's lines cannot be separated from the dead one's");
         var restartBoundary = await world.Logs.ResumeAsync(startedAgainAt, cancellationToken);
         await world.Logs.WaitForLineAfterAsync(
             restartBoundary,

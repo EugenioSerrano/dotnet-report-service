@@ -167,8 +167,10 @@ internal static class RestartHarness
     /// Kills the container with <paramref name="containerName"/> the way the watchdog's remedy
     /// kills it: an abrupt process death (<c>docker kill</c>, SIGKILL), not a graceful teardown. The
     /// in-flight work of that process is lost — a running render attempt cannot acknowledge a
-    /// cancellation — and the platform's restart policy replaces the container, exactly as it
-    /// replaces a worker the watchdog stopped (ADR-012 §3.9(3), SPEC §6 Phase D).
+    /// cancellation — so the job stays being cancelled until the engine resolves the lost attempt
+    /// (ADR-012 §3.9(3), SPEC §6 Phase D). The local substrate replaces nothing: the harness starts
+    /// the container again through the composition's own command, acting as the operator (SPEC
+    /// revision 3, D8/D13).
     /// </summary>
     /// <param name="containerName">The exact name of the container to kill.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
@@ -179,39 +181,25 @@ internal static class RestartHarness
     }
 
     /// <summary>
-    /// Waits until the runtime restarted the container with <paramref name="containerName"/> after
-    /// <paramref name="killedAt"/> — the platform's replacement of a killed worker — and answers the
-    /// restarted process's own start instant, which is the boundary a re-established log stream is
-    /// filtered at. The container's start instant, not its restart count, is the evidence: a
-    /// restart the daemon's policy performs and one the platform performs both move it forward.
+    /// The container's own <c>State.StartedAt</c>, read from the runtime: the instant its current
+    /// process started, which is the boundary a re-established log stream is filtered at. It answers
+    /// <see langword="null"/> when the runtime reports no instant the caller can parse, so a caller
+    /// falls back to the instant it observed the resource running (SPEC §6 B.1).
     /// </summary>
-    /// <param name="containerName">The exact name of the container to watch.</param>
-    /// <param name="killedAt">The instant before the kill; a start after it is the new process.</param>
+    /// <param name="containerName">The exact name of the container to read.</param>
     /// <param name="cancellationToken">The test's cancellation token.</param>
-    /// <returns>The restarted container's <c>State.StartedAt</c>, in UTC.</returns>
-    public static async Task<DateTimeOffset> WaitForContainerRestartAsync(
-        string containerName,
-        DateTimeOffset killedAt,
-        CancellationToken cancellationToken)
+    /// <returns>The instant the container's current process started, in UTC, or <see langword="null"/>.</returns>
+    public static async Task<DateTimeOffset?> StartedAtAsync(string containerName, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
-        var startedAt = DateTimeOffset.MinValue;
-        await Wait.UntilAsync(
-            $"the platform to start the render worker container '{containerName}' again after the kill",
-            async token =>
-            {
-                var text = await InspectAsync(containerName, "{{.State.StartedAt}}", token).ConfigureAwait(false);
-                return DateTimeOffset.TryParse(
-                        text.Trim(),
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.AssumeUniversal,
-                        out startedAt)
-                    && startedAt > killedAt;
-            },
-            LifecycleDeadline,
-            PollInterval,
-            cancellationToken).ConfigureAwait(false);
-        return startedAt;
+        var text = await InspectAsync(containerName, "{{.State.StartedAt}}", cancellationToken).ConfigureAwait(false);
+        return DateTimeOffset.TryParse(
+            text.Trim(),
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal,
+            out var startedAt)
+            ? startedAt.ToUniversalTime()
+            : null;
     }
 
     /// <summary>The <c>docker inspect</c> field <paramref name="format"/> of one container, as the runtime prints it.</summary>
@@ -651,17 +639,8 @@ internal sealed class RenderLogTap : IAsyncDisposable
         }
     }
 
-    private async Task<DateTimeOffset?> StartedAtAsync(CancellationToken cancellationToken)
-    {
-        var text = await RestartHarness.InspectAsync(_containerName, "{{.State.StartedAt}}", cancellationToken).ConfigureAwait(false);
-        return DateTimeOffset.TryParse(
-            text.Trim(),
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal,
-            out var startedAt)
-            ? startedAt.ToUniversalTime()
-            : null;
-    }
+    private async Task<DateTimeOffset?> StartedAtAsync(CancellationToken cancellationToken) =>
+        await RestartHarness.StartedAtAsync(_containerName, cancellationToken).ConfigureAwait(false);
 
     private void RecordFault(string fault)
     {
