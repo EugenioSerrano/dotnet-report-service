@@ -98,37 +98,22 @@ the stage never move back either. A job that ends `failed` carries the stable
 code of the condition on itself, and its PDF output carries the same code; the
 answer itself still succeeds with `200`.
 
-### The message of a refused report
+### A report beyond the document limits
 
-A PDF report whose data does not fit in one block ends `failed` with
-`QUOTA_EXCEEDED`, on the job and on its PDF output, before anything is printed:
-no page, no artifact. Its `errorMessage` names the record at which the pass
-stopped and the limit **actually applied** to the data - the configured record
-count, or the block's own maximum when the configuration is above it:
+A PDF report whose assembled document would exceed the published document limits -
+**10 000 pages**, or **37 748 736 bytes** of rendered parts, whichever is reached
+first - ends `failed` with `OUTPUT_LIMIT_EXCEEDED`, on the job and on its PDF output,
+before anything is published: no artifact, no partial file, nothing to download. The
+stored diagnostic names the limit, the limit's value and the value the report reached:
 
-```json
-{
-  "status": "failed",
-  "errorCode": "QUOTA_EXCEEDED",
-  "errorMessage": "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report.",
-  "outputs": [
-    {
-      "format": "pdf",
-      "status": "failed",
-      "artifactId": null,
-      "errorCode": "QUOTA_EXCEEDED",
-      "errorMessage": "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report."
-    }
-  ]
-}
+```text
+limit=document-pages limitValue=10000 reached=10183
 ```
 
-The same sentence names bytes when the record data was what crossed the bound:
-`… exceeds this version's limit of 1048576 bytes of record data per report (one
-block) …`. The numbers are plain digits. The report cannot be downloaded, and
-sending the same data again fails the same way: the refusal is not retried.
-[docs/limitations.md](../limitations.md) states the limit, why it exists and
-what removes it.
+The same diagnostic names `document-bytes` when the byte total was what crossed the
+bound. In this version `errorMessage` is `null` for that code; the diagnostic is kept
+with the failure and the code is the stable value a client branches on. A report within
+the limits is printed from one or more blocks.
 
 ### The message of a report refused by the row bound
 

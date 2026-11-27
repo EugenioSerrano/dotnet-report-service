@@ -5,7 +5,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -25,6 +27,7 @@ using ReportService.TemplateSource.Take;
 using ReportService.Templates;
 using ReportService.Testing;
 using ReportService.Testing.Fixtures;
+using ReportService.Testing.MultiBlock;
 using ReportService.Testing.TemplatePackages;
 using ReportService.Testing.TemplateSource;
 using ReportService.Testing.Uploads;
@@ -35,12 +38,12 @@ namespace ReportService.EndToEndTests;
 /// <summary>
 /// The multi-block stage over the whole local composition: a snapshot whose durable
 /// partition is committed for an accepted job while its upload is still confirming,
-/// the upload completed, and the job left to run the live path — the data step
-/// returns the committed partition, the real Chromium worker renders the blocks
-/// within the bounded window, the real merge worker assembles and stamps them, and
+/// the upload completed, and the job left to run the live path - the data step
+/// partitions the snapshot into its ordered blocks, the real Chromium worker renders
+/// them within the bounded window, the real merge worker assembles and stamps them, and
 /// the published PDF is read back and checked page by page against the parts' own
-/// commits. The single-block limit is untouched: the retained refusal case proves it
-/// in the same covering run.
+/// commits. A job that leaves the partition to the live data step - the multi-block
+/// PDF case - uses the same stage without the staged partition.
 /// </summary>
 internal sealed class MultiBlockStage : IDisposable
 {
@@ -68,6 +71,10 @@ internal sealed class MultiBlockStage : IDisposable
     private readonly string? _templateId;
 
     private readonly string? _amountField;
+
+    private readonly Func<int, (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records)>? _snapshotFactory;
+
+    private readonly Func<string, string, Dictionary<string, byte[]>>? _packageFactory;
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -110,11 +117,20 @@ internal sealed class MultiBlockStage : IDisposable
     /// <param name="accounted">Whether the stage publishes and renders the page-accounting fixture instead of the native one.</param>
     /// <param name="templateId">The published identity, or the fixture's own.</param>
     /// <param name="amountField">The amount field the accounted fixture declares, or its own; a non-numeric field is the known-bad control.</param>
-    public MultiBlockStage(bool accounted = false, string? templateId = null, string? amountField = null)
+    /// <param name="snapshotFactory">The snapshot a case supplies instead of the stage's own, with its oracle.</param>
+    /// <param name="packageFactory">The package a case supplies instead of the stage's own.</param>
+    public MultiBlockStage(
+        bool accounted = false,
+        string? templateId = null,
+        string? amountField = null,
+        Func<int, (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records)>? snapshotFactory = null,
+        Func<string, string, Dictionary<string, byte[]>>? packageFactory = null)
     {
         _accounted = accounted;
         _templateId = templateId;
         _amountField = amountField;
+        _snapshotFactory = snapshotFactory;
+        _packageFactory = packageFactory;
         System.IO.Directory.CreateDirectory(_directory);
     }
 
@@ -430,7 +446,15 @@ internal sealed class MultiBlockStage : IDisposable
     }
 
     /// <summary>Waits for the job to end and answers its record with its one artifact.</summary>
-    public async Task<EndedJob> WaitForEndAsync(Composition composition, string reportJobId, CancellationToken cancellationToken)
+    /// <param name="composition">The running composition.</param>
+    /// <param name="reportJobId">The job to wait for.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    /// <param name="deadline">How long the job may take, or the stage's own when null.</param>
+    public async Task<EndedJob> WaitForEndAsync(
+        Composition composition,
+        string reportJobId,
+        CancellationToken cancellationToken,
+        TimeSpan? deadline = null)
     {
         EndedJob? ended = null;
         await Wait.UntilAsync(
@@ -440,10 +464,80 @@ internal sealed class MultiBlockStage : IDisposable
                 ended = await ReadJobAsync(composition.DataSource, reportJobId, token);
                 return ended is { Status: "SUCCEEDED" or "FAILED" or "CANCELLED" or "PARTIALLY_SUCCEEDED" };
             },
-            JobDeadline,
+            deadline ?? JobDeadline,
             TimeSpan.FromMilliseconds(500),
             cancellationToken);
         return ended!;
+    }
+
+    /// <summary>Reads the job's committed partition record.</summary>
+    /// <param name="composition">The running composition.</param>
+    /// <param name="reportJobId">The job whose partition is read.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<PartitionRecord> ReadPartitionAsync(
+        Composition composition,
+        string reportJobId,
+        CancellationToken cancellationToken)
+    {
+        var jobs = new PostgresJobStore(composition.DataSource);
+        return await jobs.FindPartitionAsync(reportJobId, cancellationToken)
+            ?? throw new InvalidOperationException("the job has no committed partition");
+    }
+
+    /// <summary>Reads the committed index page through the storage port and parses it.</summary>
+    /// <param name="composition">The running composition.</param>
+    /// <param name="partition">The partition record whose index is read.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public async Task<BlockIndexPage> ReadIndexAsync(
+        Composition composition,
+        PartitionRecord partition,
+        CancellationToken cancellationToken)
+    {
+        var read = await composition.Storage.OpenReadAsync(
+            ObjectKey.Create(partition.IndexObjectKey),
+            partition.IndexSizeBytes,
+            partition.IndexSha256,
+            cancellationToken);
+        Assert.True(read.Succeeded, read.Outcome.ToString());
+        await using var content = read.Value!;
+        using var buffer = new MemoryStream();
+        await content.Content.CopyToAsync(buffer, cancellationToken);
+        return BlockIndexPage.Parse(buffer.ToArray());
+    }
+
+    /// <summary>
+    /// The console lines a composition resource wrote, backlog and lines still arriving,
+    /// collected for a short window and returned. It is how a case reads the orchestration
+    /// worker's own log without touching the process.
+    /// </summary>
+    /// <param name="app">The running composition.</param>
+    /// <param name="resourceName">The resource whose log is read.</param>
+    /// <param name="cancellationToken">The test's cancellation token.</param>
+    public static async Task<IReadOnlyList<string>> ReadWorkerLogAsync(
+        DistributedApplication app,
+        string resourceName,
+        CancellationToken cancellationToken)
+    {
+        var loggers = app.Services.GetRequiredService<ResourceLoggerService>();
+        var lines = new List<string>();
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        stop.CancelAfter(TimeSpan.FromSeconds(5));
+        try
+        {
+            await foreach (var batch in loggers.WatchAsync(resourceName).WithCancellation(stop.Token))
+            {
+                foreach (var line in batch)
+                {
+                    lines.Add(line.Content);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The backlog and the lines written so far are the evidence.
+        }
+
+        return lines;
     }
 
     /// <summary>Reads one page's outside-area words, in painting order.</summary>
@@ -495,7 +589,7 @@ internal sealed class MultiBlockStage : IDisposable
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT j.status, j.error_code, o.output_id, o.status, o.error_code,
+            SELECT j.status, j.error_code, o.output_id, o.status, o.error_code, o.error_reason,
                    a.artifact_id, a.object_key, a.sha256, a.size_bytes, a.page_count
               FROM report_service.report_jobs j
               LEFT JOIN report_service.report_outputs o ON o.report_job_id = j.report_job_id
@@ -506,7 +600,7 @@ internal sealed class MultiBlockStage : IDisposable
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
-            return new EndedJob("UNKNOWN", null, null, null, null, null, null, null, null);
+            return new EndedJob("UNKNOWN", null, null, null, null, null, null, null, null, null);
         }
 
         return new EndedJob(
@@ -518,14 +612,20 @@ internal sealed class MultiBlockStage : IDisposable
             reader.IsDBNull(5) ? null : reader.GetString(5),
             reader.IsDBNull(6) ? null : reader.GetString(6),
             reader.IsDBNull(7) ? null : reader.GetString(7),
-            reader.IsDBNull(8) ? null : reader.GetInt64(8));
+            reader.IsDBNull(8) ? null : reader.GetString(8),
+            reader.IsDBNull(9) ? null : reader.GetInt64(9));
     }
 
     private Dictionary<string, byte[]> PackageFiles()
     {
+        if (_packageFactory is not null)
+        {
+            return _packageFactory(Consumer, TemplateId);
+        }
+
         if (_accounted)
         {
-            return PageAccountingFixtures.Files(Consumer, TemplateId, _amountField ?? PageAccountingFixtures.AmountField);
+            return MultiBlockFixtures.Package(Consumer, TemplateId, _amountField);
         }
 
         var root = System.IO.Path.Combine(RepositoryPaths.Root, "samples", "templates", Sample);
@@ -581,7 +681,9 @@ internal sealed class MultiBlockStage : IDisposable
 
     /// <summary>The snapshot a job uploads, and the accounted records the oracle needs.</summary>
     private (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) SnapshotForUpload(int records) =>
-        _accounted ? AccountingSnapshot(records) : (Snapshot(records), []);
+        _snapshotFactory is not null
+            ? _snapshotFactory(records)
+            : _accounted ? AccountingSnapshot(records) : (Snapshot(records), []);
 
     /// <summary>
     /// The first records of the pilot grouped dataset, with the fixture package's header:
@@ -589,7 +691,7 @@ internal sealed class MultiBlockStage : IDisposable
     /// and group keys are kept for the independent oracle.
     /// </summary>
     private static (byte[] Snapshot, IReadOnlyList<AccountedRecord> Records) AccountingSnapshot(int records) =>
-        PageAccountingFixtures.ReadGroupedSlice(records);
+        MultiBlockFixtures.Snapshot(records);
     private static string StorageRoot() => System.IO.Path.Combine(RepositoryPaths.Root, ".storage");
 
     /// <summary>
@@ -628,6 +730,7 @@ internal sealed class MultiBlockStage : IDisposable
         string? OutputId,
         string? OutputStatus,
         string? OutputErrorCode,
+        string? OutputErrorReason,
         string? ArtifactId,
         string? ObjectKey,
         string? Sha256,

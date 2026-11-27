@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using ReportService.Data;
 using ReportService.ServiceDefaults;
 
 namespace ReportService.Workers.Orchestration;
@@ -23,12 +21,6 @@ public sealed class OrchestrationWorkerProgram
 
         var app = builder.Build();
 
-        // The limit that governs this process, once, before it serves: the effective
-        // record count, the byte bound, and a configuration above the maximum that has
-        // no effect.
-        app.Logger.LogInformation(
-            "{SingleBlockLimitStartupLine}",
-            app.Services.GetRequiredService<SingleBlockLimit>().DescribeStartupLine());
         app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.Json });
         app.MapStorageDiagnostics();
         app.MapTelemetryDiagnostics();

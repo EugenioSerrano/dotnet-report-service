@@ -45,11 +45,47 @@ public sealed class OrchestrationWorkerCompositionTests
             Assert.NotNull(host.Services.GetRequiredService<UploadVerifier>());
             Assert.NotNull(host.Services.GetRequiredService<UploadVerificationActivities>());
 
+            // The retired single-block limit is published by nothing: no setting record and
+            // no limit singleton.
+            Assert.DoesNotContain(
+                builder.Services,
+                descriptor => descriptor.ServiceType.FullName?.Contains("Partitioning", StringComparison.Ordinal) == true);
+            Assert.DoesNotContain(
+                builder.Services,
+                descriptor => descriptor.ServiceType.FullName?.Contains("SingleBlockLimit", StringComparison.Ordinal) == true);
+
             // Registered, not constructed: starting the dispatcher would reach the engine.
             Assert.Contains(
                 builder.Services,
                 descriptor => descriptor.ServiceType == typeof(IHostedService)
                     && descriptor.ImplementationType == typeof(IntentDispatcher));
+        }
+        finally
+        {
+            root.Delete(true);
+        }
+    }
+
+    [Fact]
+    public void TheWorkerBuildsWithNoPartitioningSectionAndAKeyLeftInADeploymentHasNoEffect()
+    {
+        var root = Directory.CreateTempSubdirectory("worker-composition-");
+        try
+        {
+            var settings = Settings(root.FullName);
+            settings["Partitioning:SingleBlockRecordLimit"] = "50";
+            var builder = Host.CreateApplicationBuilder();
+            builder.Configuration.AddInMemoryCollection(settings);
+            builder.ConfigureContainer(new DefaultServiceProviderFactory(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
+            OrchestrationWorkerComposition.Configure(builder);
+
+            using var host = builder.Build();
+
+            // The order of the work is served, and the key an older deployment still sets
+            // is bound to nothing: the worker starts normally and the value has no effect.
+            Assert.NotNull(host.Services.GetRequiredService<ValidateAndPartitionActivity>());
+            Assert.Equal("50", host.Services.GetRequiredService<IConfiguration>()["Partitioning:SingleBlockRecordLimit"]);
         }
         finally
         {

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using ReportService.Data;
+using ReportService.Data.Partitioning;
 
 namespace ReportService.Data.Tests;
 
@@ -68,10 +69,14 @@ public sealed class DocumentRefusalTests
     [Fact]
     public async Task ASequenceWithNoHeaderIsRefusedByThePartitioner()
     {
-        using var block = new MemoryStream();
+        var record = Encoding.UTF8.GetBytes("""{"sequence":1,"amount":1.5}""");
 
         var violation = await Assert.ThrowsAsync<DataContractViolation>(
-            () => SingleBlockPartitioner.PartitionAsync(Empty(), block, TestContext.Current.CancellationToken));
+            () => StreamingPartitioner.PartitionAsync(
+                Only(new RawRecord(1, record, record.Length, 0)),
+                new InMemoryBlockSink(),
+                new PartitionSpec(GroupKeyField: null, AmountField: null, Limits: PartitionLimits.Default),
+                TestContext.Current.CancellationToken));
 
         Assert.Equal("profile-violation", violation.Reason);
     }
@@ -124,9 +129,9 @@ public sealed class DocumentRefusalTests
         Assert.DoesNotContain("reason=", violation.Message, StringComparison.Ordinal);
     }
 
-    private static async IAsyncEnumerable<RawRecord> Empty()
+    private static async IAsyncEnumerable<RawRecord> Only(RawRecord record)
     {
         await Task.CompletedTask;
-        yield break;
+        yield return record;
     }
 }

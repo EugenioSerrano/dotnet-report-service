@@ -18,13 +18,13 @@ using Temporalio.Testing;
 namespace ReportService.Workers.Orchestration.Tests.Jobs;
 
 /// <summary>
-/// The progress the data step writes beside its pass: the count it has read, on its own
-/// writer, on the beat's own interval. The interval is a static readonly consumed by a
-/// timer no test clock drives, so a case that observes a tick waits the real interval;
-/// the pass is held at a record boundary while it does, by a storage read the case
-/// releases when it has seen what it waited for. A write that fails is logged and never
-/// fails the step, a second attempt cannot lower what the first raised, and a snapshot
-/// the reader refuses leaves the count of the records it accepted and no total.
+/// The progress the data step writes beside its pass: the count of the records in the blocks
+/// it has committed, on its own writer, on the beat's own interval. The interval is a static
+/// readonly consumed by a timer no test clock drives, so a case that observes a tick waits the
+/// real interval; the pass is held at a record boundary while it does, by a storage read the
+/// case releases when it has seen what it waited for. A write that fails is logged and never
+/// fails the step, a second attempt cannot lower what the first raised, and a snapshot the
+/// reader refuses leaves the count of the blocks it committed and no total.
 /// </summary>
 public sealed class ValidateAndPartitionProgressTests : IDisposable
 {
@@ -99,20 +99,22 @@ public sealed class ValidateAndPartitionProgressTests : IDisposable
     public GatedObjectStore Objects { get; }
 
     [Fact]
-    public async Task TheCountThePassReadIsWrittenOnItsOwnTickAndOnlyWhenItChanged()
+    public async Task TheCountOfTheCommittedBlocksIsWrittenOnItsOwnTickAndOnlyWhenItChanged()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var document = Records(400);
+        var document = Records(2_002);
         await SeedAcceptedJobAsync(document, cancellationToken);
-        Objects.GateAt(OffsetOf(document, "\"sequence\":301"));
+        Objects.GateAt(OffsetOf(document, "\"sequence\":2002"));
 
         var run = RunAsync();
 
-        // The pass is held before the 301st record: the tick that follows writes the 300
-        // it read. The count is read from the store the consumer would read.
+        // The first block is committed when the pass reads the record past the hard
+        // maximum; the pass is then held before the last record, and the tick that follows
+        // writes the two thousand records the committed block holds. The count is read
+        // from the store the consumer would read.
         await Wait.UntilAsync(
-            "the progress tick to write the records the pass had read",
-            async token => (await Jobs.FindStatusAsync(ReportJobId, ConsumerId, token))?.RecordsRead == 300,
+            "the progress tick to write the records of the committed block",
+            async token => (await Jobs.FindStatusAsync(ReportJobId, ConsumerId, token))?.RecordsRead == 2_000,
             TimeSpan.FromSeconds(20),
             TimeSpan.FromMilliseconds(100),
             cancellationToken);
@@ -126,33 +128,37 @@ public sealed class ValidateAndPartitionProgressTests : IDisposable
 
         Objects.Release();
         var result = await run.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
-        Assert.Equal(400, result.RecordCount);
+        Assert.Equal(2_002, result.RecordCount);
+        Assert.Equal(2, result.BlockCount);
 
         var status = await Jobs.FindStatusAsync(ReportJobId, ConsumerId, cancellationToken);
-        Assert.Equal(400, status!.RecordsRead);
-        Assert.Equal(400, status.RecordsTotal);
-        Assert.Equal(1, status.BlocksTotal);
+        Assert.Equal(2_002, status!.RecordsRead);
+        Assert.Equal(2_002, status.RecordsTotal);
+        Assert.Equal(2, status.BlocksTotal);
 
         // A second attempt cannot lower what the first raised: the store ignores a lower
         // value, and the step that finds the partition reads it instead of writing again.
         Assert.Equal(ProgressWriteOutcome.Unchanged, await Jobs.RecordRecordsReadAsync(ReportJobId, 100, cancellationToken));
-        Assert.Equal(400, (await Jobs.FindStatusAsync(ReportJobId, ConsumerId, cancellationToken))!.RecordsRead);
+        Assert.Equal(2_002, (await Jobs.FindStatusAsync(ReportJobId, ConsumerId, cancellationToken))!.RecordsRead);
     }
 
     [Fact]
-    public async Task ARefusedSnapshotLeavesTheCountOfTheRecordsItAcceptedAndNoTotal()
+    public async Task ARefusedSnapshotLeavesTheCountOfTheBlocksItCommittedAndNoTotal()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var accepted = Enumerable.Range(1, 41).Select(ordinal => $$"""{"sequence":{{ordinal}},"amount":{{ordinal}}.5}""");
-        var refused = Snapshot("""{"title":"Monthly"}""", [.. accepted, """{"sequence":42,"amount":"refused"}"""]);
+        var accepted = Enumerable.Range(1, 2_500).Select(ordinal => $$"""{"sequence":{{ordinal}},"amount":{{ordinal}}.5}""");
+        var refused = Snapshot("""{"title":"Monthly"}""", [.. accepted, """{"sequence":2501,"amount":"refused"}"""]);
         await SeedAcceptedJobAsync(refused, cancellationToken);
 
         var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
 
         Assert.Equal(DataContractViolation.DataInvalid, failure.ErrorType);
         Assert.True(failure.NonRetryable);
+
+        // The first block was committed before the refused record; the block the pass was
+        // filling is not, and no total is fixed.
         var status = await Jobs.FindStatusAsync(ReportJobId, ConsumerId, cancellationToken);
-        Assert.Equal(41, status!.RecordsRead);
+        Assert.Equal(2_000, status!.RecordsRead);
         Assert.Null(status.RecordsTotal);
         Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
     }
@@ -161,8 +167,8 @@ public sealed class ValidateAndPartitionProgressTests : IDisposable
     public async Task AProgressWriteThatFailsIsLoggedAndNeverFailsTheStep()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await SeedAcceptedJobAsync(Records(400), cancellationToken);
-        Objects.GateAt(OffsetOf(Records(400), "\"sequence\":301"));
+        await SeedAcceptedJobAsync(Records(2_002), cancellationToken);
+        Objects.GateAt(OffsetOf(Records(2_002), "\"sequence\":2002"));
         Jobs.ProgressWriteFailure = new InvalidOperationException("the records are not reachable");
 
         var run = RunAsync();
@@ -181,9 +187,9 @@ public sealed class ValidateAndPartitionProgressTests : IDisposable
 
         // The step completed, the partition is durable and the counters were still fixed by
         // the commit: a progress write that failed is not a step that failed.
-        Assert.Equal(400, result.RecordCount);
+        Assert.Equal(2_002, result.RecordCount);
         var status = await Jobs.FindStatusAsync(ReportJobId, ConsumerId, cancellationToken);
-        Assert.Equal(400, status!.RecordsTotal);
+        Assert.Equal(2_002, status!.RecordsTotal);
     }
 
     public void Dispose()

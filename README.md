@@ -8,7 +8,7 @@ that stays bounded no matter how large the report is.
 > **Version: 0.9.0 — released** (builds report `0.9.0`). Latest release:
 > **0.9.0** (2026-11-23). See [CHANGELOG.md](CHANGELOG.md).
 >
-> **Project status: 0.9.0 released — PDF reports render end-to-end.** A
+> **Project status: 0.9.0 released - PDF reports render end-to-end.** A
 > consumer can upload data that is verified into an immutable snapshot, create
 > a report job against a pinned template version, and download a printed,
 > integrity-checked PDF that is validated before it is published and then
@@ -16,8 +16,9 @@ that stays bounded no matter how large the report is.
 > take and pinning, data-contract validation of the snapshot, three peer
 > template engines, idempotent job creation, job progress and status reads,
 > published-artifact retention, restart-resilient rendering, and a growing
-> rendering-regression suite — see [CHANGELOG.md](CHANGELOG.md). PDF rendering
-> currently covers single-block reports (see the [roadmap](#roadmap)); the
+> rendering-regression suite - see [CHANGELOG.md](CHANGELOG.md). PDF rendering
+> covers reports of one or more blocks within the published document limits
+> (see the [roadmap](#roadmap)); the
 > HTML, XLSX and Markdown outputs described below are planned for later
 > milestones. The design and analysis documents live in the companion
 > repository
@@ -383,11 +384,12 @@ stateDiagram-v2
 - Counters are monotonic. No percentage is reported unless the total is known.
 - An HTTP timeout or a dropped connection never cancels a job; only
   `POST …/cancel` does, cooperatively, and nothing is published after it.
-- A PDF report whose data does not fit in **one block** is refused before anything is
-  printed: the job and its PDF output end `failed` with `QUOTA_EXCEEDED`, and the
-  status read's `errorMessage` names the limit the data exceeded. The limit is
-  temporary — [`docs/limitations.md`](docs/limitations.md) states what it is, why it
-  exists, how to recognise it and what removes it.
+- A PDF report beyond the published document limits - **10 000 pages**, or
+  **37 748 736 bytes** of rendered parts, whichever is reached first - ends `failed`
+  with `OUTPUT_LIMIT_EXCEEDED` before anything is published. A report within the limits
+  is printed from one or more blocks: a large snapshot is cut into ordered blocks,
+  rendered within the bounded window, assembled in order and stamped with one global
+  "Page X of Y". [`docs/limitations.md`](docs/limitations.md) states the bound.
 
 ## Security model — read this before deploying
 

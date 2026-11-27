@@ -246,6 +246,12 @@ internal sealed class RecordingObjectStore : IObjectStore
     /// <summary>When set, a write answers this outcome instead of writing.</summary>
     public StorageOutcome? WriteFailure { get; set; }
 
+    /// <summary>When set beside <see cref="WriteFailure"/>, only a key it selects fails.</summary>
+    public Func<ObjectKey, bool>? WriteFailureWhen { get; set; }
+
+    /// <summary>How long each write takes before the inner store is asked; zero writes immediately.</summary>
+    public TimeSpan WriteDelay { get; set; }
+
     /// <summary>When set, a write whose source failed reports success anyway.</summary>
     public bool ReportWriteSuccessOnSourceFailure { get; set; }
 
@@ -259,9 +265,14 @@ internal sealed class RecordingObjectStore : IObjectStore
         CancellationToken cancellationToken)
     {
         Writes++;
-        if (WriteFailure is { } outcome)
+        if (WriteFailure is { } outcome && (WriteFailureWhen is null || WriteFailureWhen(key)))
         {
             return StorageResult.Failure<ObjectWrite>(outcome, new StorageError("storage.test", "refused by the test"));
+        }
+
+        if (WriteDelay > TimeSpan.Zero)
+        {
+            await Task.Delay(WriteDelay, cancellationToken);
         }
 
         try

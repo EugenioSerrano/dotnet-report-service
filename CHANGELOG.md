@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The single-block limit of PDF reports is removed. A PDF report may now span several
+  blocks: the data step partitions the snapshot into ordered blocks with a durable index,
+  the blocks are rendered within the bounded window, assembled in order and stamped with
+  one global "Page X of Y". The `Partitioning:SingleBlockRecordLimit` setting, its
+  validation and its start-up line no longer exist; a deployment that still sets the key
+  starts normally and the value has no effect. The only size bound a PDF report has is the
+  published document limit - 10 000 pages or 37 748 736 bytes of rendered parts, whichever
+  is reached first - and a report beyond it ends `OUTPUT_LIMIT_EXCEEDED`, publishing
+  nothing.
+
 ## [0.9.0] - 2026-11-23
 
 This release takes the product from the groundwork skeleton of `0.1.0` — which

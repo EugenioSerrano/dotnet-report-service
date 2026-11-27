@@ -2,8 +2,8 @@
 
   <!--
     The snapshot's data side: one forward-only reader of the document profile, the
-    record model it yields, the limits the profile fixes, the single-block and the
-    multi-block streaming partitioner and the block and index documents they write.
+    record model it yields, the limits the profile fixes, the streaming partitioner
+    and the block and index documents it writes.
     Base class library only, with one exception: the durable partition driver reaches
     durable storage through the object-storage port (the ReportService.Storage
     reference below); no storage provider, database or workflow-engine type enters

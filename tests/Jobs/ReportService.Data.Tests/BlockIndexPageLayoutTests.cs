@@ -112,7 +112,7 @@ public sealed class BlockIndexPageLayoutTests
     [Fact]
     public void AnOldSingleEntryPageWithoutTheNewFieldsStillParsesWithDefaults()
     {
-        // The shape the live single-block path writes today: no chunkLayout, no continuity, no carried-forward.
+        // The shape a partition cut before this deployment wrote: no chunkLayout, no continuity, no carried-forward.
         var old = Encoding.UTF8.GetBytes(
             """{"partitionerVersion":1,"blocks":[{"blockIndex":0,"key":"block/job-0123456789abcdef0123456789abcdef/0/aa","sha256":"""
             + "\"" + new string('a', 64) + "\""

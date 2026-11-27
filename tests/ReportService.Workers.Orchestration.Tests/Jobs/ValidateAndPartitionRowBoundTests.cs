@@ -274,7 +274,7 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
     }
 
     [Fact]
-    public async Task ASnapshotThatFillsTheSingleBlockFailsAtTheBlockBeforeALaterOversizedRecord()
+    public async Task ASnapshotBeyondTheBlockMaximumKeepsTheRowBoundRefusalAndCommitsThePartition()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var records = Enumerable.Range(1, DataContractLimits.BlockRecords + 1)
@@ -283,15 +283,19 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
         records[0] = Item(1, UpperCase(262_145));
         await SeedAcceptedJobAsync(Snapshot(Header("Monthly"), records), cancellationToken);
 
-        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+        // The block limits split the snapshot instead of refusing it; the row bound is the
+        // refusal the output keeps, and the partition is committed for it to travel with.
+        var result = await RunAsync();
 
-        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
-        Assert.Contains("limit=block", failure.Message, StringComparison.Ordinal);
-        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        Assert.Equal(DataContractViolation.RowBoundExceeded, result.PdfRefusal!.Code);
+        Assert.Contains("ordinal=1", result.PdfRefusal.Reason, StringComparison.Ordinal);
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        Assert.True(partition!.BlockCount >= 2, "the snapshot is admitted as more than one block");
     }
 
     [Fact]
-    public async Task TheBlockByteMaximumCrossedBeforeTheOversizedRecordFailsAtTheBlock()
+    public async Task TheBlockByteMaximumIsSplitAndTheLaterOversizedRecordIsTheRowBoundRefusal()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var records = Enumerable.Range(1, 6)
@@ -304,17 +308,20 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
             .ToArray();
 
         // The first five records are within the row bound, and together they cross the block's
-        // byte maximum at the fifth: the sixth, over the bound, is never reached.
+        // byte maximum: the blocks are cut rather than refused, and the sixth record's bound
+        // is the refusal the output keeps.
         var admitted = records[..5].Sum(record => (long)Encoding.UTF8.GetByteCount(record));
         Assert.True(admitted > DataContractLimits.BlockRecordBytes, $"the first five records hold {admitted} bytes");
         Assert.All(records[..5], record => Assert.True(Encoding.UTF8.GetByteCount(record) < PdfRowBound.Bytes));
         await SeedAcceptedJobAsync(Snapshot(Header("Monthly"), records), cancellationToken);
 
-        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(RunAsync);
+        var result = await RunAsync();
 
-        Assert.Equal(DataContractViolation.QuotaExceeded, failure.ErrorType);
-        Assert.Contains("limit=block", failure.Message, StringComparison.Ordinal);
-        Assert.Null(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+        Assert.Equal(DataContractViolation.RowBoundExceeded, result.PdfRefusal!.Code);
+        Assert.Contains("ordinal=6", result.PdfRefusal.Reason, StringComparison.Ordinal);
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        Assert.True(partition!.BlockCount >= 2, "the byte maximum is split, never refused");
     }
 
     [Fact]

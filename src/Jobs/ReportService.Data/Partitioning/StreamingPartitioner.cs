@@ -14,8 +14,7 @@ namespace ReportService.Data.Partitioning;
 /// deterministic for a fixed <see cref="PartitionerVersion"/>. A resume from a durable
 /// checkpoint re-reads the stream from the start, skips the committed records without
 /// rewriting them, and continues — yielding a block set and index identical to a clean
-/// run. It does not apply the single-block refusal: that stays in the
-/// single-block partitioner, which this type does not modify.
+/// run. Its limits split a snapshot into more blocks; they never refuse one.
 /// </summary>
 public static class StreamingPartitioner
 {

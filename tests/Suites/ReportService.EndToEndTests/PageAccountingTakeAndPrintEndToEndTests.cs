@@ -7,11 +7,11 @@ namespace ReportService.EndToEndTests;
 
 /// <summary>
 /// The retired refusals and the printed path over the whole local composition: the
-/// page-accounting fixture is published and taken through the real take — the thirteen
-/// static checks in their fixed order, the two accounting admission rules included — and a
+/// page-accounting fixture is published and taken through the real take - the thirteen
+/// static checks in their fixed order, the two accounting admission rules included - and a
 /// single-block job over it runs through the live path (no staged partition: the data step
-/// partitions the 120-record snapshot into one block, under the still-active single-block
-/// limit of the composition), prints on the accounting path with the real Chromium worker
+/// partitions the 120-record snapshot into one block, within the governed block limits),
+/// prints on the accounting path with the real Chromium worker
 /// and publishes its PDF. The published document is read back: every page carries its
 /// three labelled accounting values, the page subtotals add up to the source's total, and
 /// the reserved numbering area is declared and free of accounting words. The global stamp

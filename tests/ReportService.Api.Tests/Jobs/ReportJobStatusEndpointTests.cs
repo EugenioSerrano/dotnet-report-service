@@ -163,7 +163,7 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task ARefusedSnapshotAnswersTheLimitItsDataExceededInPlainWords()
+    public async Task ARetiredRefusalKeepsItsCodeAndStatusWithoutASentence()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var (refused, _) = await AcceptedAsync();
@@ -179,17 +179,19 @@ public sealed class ReportJobStatusEndpointTests : IDisposable
         await _host.Jobs.PublishAsync(Artifact(published, publishedOutput), cancellationToken);
         await _host.Jobs.FinalizeJobAsync(published, Now, cancellationToken);
 
-        // The sentence a producer reads: the applied limit, the record that crossed it and what
-        // to do next. It names no value of the report and no operator setting.
-        const string Expected =
-            "The PDF report was not printed: record 1001 exceeds this version's limit of 1000 records per report (one block). Send a smaller report.";
+        // The retired cause no longer has a sentence: the status read keeps the code, the
+        // status and the non-retryability it had, and answers no message on the job or its
+        // output - the formatter's defined answer for a failure it cannot word.
         using (var response = await GetAsync(JobApiHost.Consumer, refused))
         {
             var answer = await JobApiHost.AnswerAsync(response);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal(Expected, answer.GetProperty("errorMessage").GetString());
+            Assert.Equal("failed", answer.GetProperty("status").GetString());
+            Assert.Equal("QUOTA_EXCEEDED", answer.GetProperty("errorCode").GetString());
+            Assert.Equal(JsonValueKind.Null, answer.GetProperty("errorMessage").ValueKind);
             var output = Assert.Single(answer.GetProperty("outputs").EnumerateArray());
-            Assert.Equal(Expected, output.GetProperty("errorMessage").GetString());
+            Assert.Equal("QUOTA_EXCEEDED", output.GetProperty("errorCode").GetString());
+            Assert.Equal(JsonValueKind.Null, output.GetProperty("errorMessage").ValueKind);
         }
 
         using (var response = await GetAsync(JobApiHost.Consumer, published))
