@@ -233,13 +233,16 @@ public sealed partial class PostgresJobStore : IJobStore
         """;
 
     private readonly NpgsqlDataSource _dataSource;
+    private readonly DocumentCapacity _capacity;
 
     /// <summary>Reads and writes through <paramref name="dataSource"/>, which the process owns.</summary>
     /// <param name="dataSource">The pooled data source of the application's database.</param>
-    public PostgresJobStore(NpgsqlDataSource dataSource)
+    /// <param name="capacity">The deployment's document capacity a part commit is judged against; the example profile when none is given.</param>
+    public PostgresJobStore(NpgsqlDataSource dataSource, DocumentCapacity? capacity = null)
     {
         ArgumentNullException.ThrowIfNull(dataSource);
         _dataSource = dataSource;
+        _capacity = capacity ?? DocumentCapacity.Example;
     }
 
     /// <inheritdoc />

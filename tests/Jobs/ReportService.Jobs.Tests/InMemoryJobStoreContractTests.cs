@@ -17,6 +17,10 @@ public sealed class InMemoryJobStoreContractTests : JobStoreContract
     protected override Task<(IJobStore Jobs, IUploadStore Uploads)> CreateStoresAsync(CancellationToken cancellationToken) =>
         Task.FromResult<(IJobStore, IUploadStore)>((new InMemoryJobStore(_uploads), _uploads));
 
+    /// <summary>A store over the same upload records, judging commits against <paramref name="capacity"/>.</summary>
+    /// <param name="capacity">The configured document capacity.</param>
+    protected override IJobStore CreateStoreAtCapacity(DocumentCapacity capacity) => new InMemoryJobStore(_uploads, capacity);
+
     /// <summary>
     /// Publishes an artifact of an output beyond the one the acceptance creates: the double
     /// records an output of any format, so the fixed order of the formats is exercised here.

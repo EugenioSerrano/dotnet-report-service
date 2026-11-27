@@ -80,7 +80,7 @@ public sealed class AssemblePdfActivityTests
     }
 
     [Fact]
-    public async Task TheCeilingIsRecheckedBeforeAnythingIsAssembled()
+    public async Task WithNoConfiguredCapacityTheExampleIsRecheckedBeforeAnythingIsAssembled()
     {
         using var harness = new MergeStepHarness(blocks: 1, pagesEach: 1);
         var commit = harness.Commits[0];

@@ -518,7 +518,7 @@ public sealed partial class PostgresJobStore
                 return new PartCommitResult(PartCommitOutcome.GuardRefused, null);
             }
 
-            // The ceiling is checked inside the commit transaction, from the insert-once
+            // The capacity is checked inside the commit transaction, from the insert-once
             // rows: the first commit that would pass it is rolled back and fails the
             // output, and the refusal names the limit, its value and the reached value -
             // never a data value. The block's own row is excluded so a repeated commit
@@ -531,15 +531,9 @@ public sealed partial class PostgresJobStore
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
             var reachedPages = totals.Pages + commit.PageCount;
             var reachedBytes = totals.Bytes + commit.SizeBytes;
-            if (reachedPages > DocumentCeiling.MaximumPages || reachedBytes > DocumentCeiling.MaximumBytes)
+            if (_capacity.Judge(reachedPages, reachedBytes) is { } refusal)
             {
-                var pagesOver = reachedPages > DocumentCeiling.MaximumPages;
-                var limit = pagesOver ? DocumentCeiling.PagesLimit : DocumentCeiling.BytesLimit;
-                var limitValue = pagesOver ? DocumentCeiling.MaximumPages : DocumentCeiling.MaximumBytes;
-                var reached = pagesOver ? reachedPages : reachedBytes;
-                var reason = "limit=" + limit
-                    + " limitValue=" + limitValue.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + " reached=" + reached.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var reason = refusal.Reason;
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
 
                 await using (var failConnection = await _dataSource.OpenConnectionAsync(cancellationToken).ConfigureAwait(false))
@@ -559,9 +553,9 @@ public sealed partial class PostgresJobStore
 
                 return new PartCommitResult(PartCommitOutcome.LimitExceeded, null)
                 {
-                    Limit = limit,
-                    LimitValue = limitValue,
-                    ReachedValue = reached,
+                    Limit = refusal.Limit,
+                    LimitValue = refusal.LimitValue,
+                    ReachedValue = refusal.ReachedValue,
                 };
             }
 

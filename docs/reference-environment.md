@@ -86,6 +86,13 @@ Revision 6 re-measured the PDF base image on the .NET 11 / Ubuntu 26.04 base (20
 | Publish of the render worker image after a source file change (time stamp only) | *pending the covering cycle* |
 | Start of the local composition to a healthy API, base already in the registry | *pending the covering cycle* |
 
+## Document capacity measurements
+
+The assembly figures of one PDF document at 10 000 and 50 000 pages, and how a
+deployment measures its own, are published in
+[document capacity](document-capacity.md). They are taken on this environment and are
+a lower bound for documents printed from real templates.
+
 ## Reporting measurements
 
 Every measurement states:

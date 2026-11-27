@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using ReportService.Jobs;
 using ReportService.Pdf.Verification;
 using ReportService.Rendering;
+using ReportService.ServiceDefaults;
 using ReportService.ServiceDefaults.Temporal;
 using ReportService.TemplatePackages.Packages;
 using ReportService.Templates;
@@ -27,6 +29,12 @@ public static class PdfRenderingRegistration
         var services = builder.Services;
 
         services.TryAddSingleton(TimeProvider.System);
+        builder.AddValidatedConfiguration<DocumentCapacitySettings>(DocumentCapacitySettings.SectionPath);
+        services.TryAddSingleton(static provider =>
+        {
+            var settings = provider.GetRequiredService<IOptions<DocumentCapacitySettings>>().Value;
+            return DocumentCapacity.From(settings.MaximumPages, settings.MaximumPartBytes, settings.ProfileName);
+        });
         services.TryAddSingleton<IJobStore, PostgresJobStore>();
         services.TryAddSingleton<TakenTemplatePackageReader>();
         services.TryAddSingleton<PreparedTemplateCache>();

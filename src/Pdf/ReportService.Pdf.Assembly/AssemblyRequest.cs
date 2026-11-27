@@ -21,6 +21,8 @@ public sealed record AssemblyPart(int PartIndex, string Path, int PageCount, lon
 /// <param name="Metrics">The measurements the assembly records, when the caller supplies one.</param>
 /// <param name="OnBatch">Called after each staging batch was saved, with the number of batches written so far.</param>
 /// <param name="PageCode">The per-page code drawn in the same pass as the number, when the template declares one.</param>
+/// <param name="MaximumPages">The deployment's configured page capacity the parts are re-checked against before anything is read; no check when absent.</param>
+/// <param name="MaximumPartBytes">The deployment's configured parts-bytes capacity the parts are re-checked against before anything is read; no check when absent.</param>
 public sealed record AssemblyRequest(
     IReadOnlyList<AssemblyPart> Parts,
     PageNumbering? Numbering,
@@ -29,7 +31,9 @@ public sealed record AssemblyRequest(
     int BatchSize = AssemblyLimits.BatchSize,
     AssemblyMetrics? Metrics = null,
     Func<int, ValueTask>? OnBatch = null,
-    PageCodes.AssemblyPageCode? PageCode = null)
+    PageCodes.AssemblyPageCode? PageCode = null,
+    int? MaximumPages = null,
+    long? MaximumPartBytes = null)
 {
     /// <summary>
     /// Whether the request's shape is one the assembly accepts: a numbering contract,

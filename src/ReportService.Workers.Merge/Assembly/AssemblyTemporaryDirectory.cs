@@ -1,9 +1,13 @@
+using ReportService.Pdf.Verification.PageCodes;
+
 namespace ReportService.Workers.Merge.Assembly;
 
 /// <summary>
 /// The quota-checked folder one assembly owns: a directory of its own under the
 /// worker's scratch root, removed when it is disposed, whose bytes may never pass
-/// three times the parts' own committed bytes. The folder holds the copied parts,
+/// three times the parts' own committed bytes plus, when the template declares a
+/// per-page code, the most bytes the codes may add: one stored code of at most
+/// <see cref="PageCodeContentValidator.MaximumStoredBytes"/> per page. The folder holds the copied parts,
 /// the staging batches and the assembled document; a refusal is the assembly's
 /// temporary-disk quota, whose cause may be transient.
 /// </summary>
@@ -15,14 +19,28 @@ public sealed class AssemblyTemporaryDirectory : IDisposable
     /// <summary>Creates the folder under <paramref name="scratchRoot"/>.</summary>
     /// <param name="scratchRoot">The worker's scratch root.</param>
     /// <param name="partBytes">The parts' total committed bytes.</param>
-    public AssemblyTemporaryDirectory(string scratchRoot, long partBytes)
+    /// <param name="pages">The parts' total pages; counted only when a code is declared.</param>
+    /// <param name="codeDeclared">Whether the template declares a per-page code.</param>
+    public AssemblyTemporaryDirectory(string scratchRoot, long partBytes, long pages = 0, bool codeDeclared = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scratchRoot);
         ArgumentOutOfRangeException.ThrowIfNegative(partBytes);
-        QuotaBytes = Math.Max(partBytes, 1) * QuotaFactor;
+        ArgumentOutOfRangeException.ThrowIfNegative(pages);
+        QuotaBytes = Quota(partBytes, pages, codeDeclared);
         Root = Path.Combine(scratchRoot, "assembly-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Root);
     }
+
+    /// <summary>
+    /// The quota of one assembly: three times the parts' bytes, plus one maximum stored
+    /// code per page when the template declares a code.
+    /// </summary>
+    /// <param name="partBytes">The parts' total committed bytes.</param>
+    /// <param name="pages">The parts' total pages.</param>
+    /// <param name="codeDeclared">Whether the template declares a per-page code.</param>
+    public static long Quota(long partBytes, long pages, bool codeDeclared) =>
+        (Math.Max(partBytes, 1) * QuotaFactor)
+        + (codeDeclared ? pages * PageCodeContentValidator.MaximumStoredBytes : 0);
 
     /// <summary>The folder this assembly owns.</summary>
     public string Root { get; }

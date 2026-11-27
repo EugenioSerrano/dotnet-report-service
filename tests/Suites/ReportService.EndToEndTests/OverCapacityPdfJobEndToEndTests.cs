@@ -7,32 +7,38 @@ using ReportService.Workers.Merge.Assembly;
 namespace ReportService.EndToEndTests;
 
 /// <summary>
-/// The live path's document ceiling over the whole local composition: a valid grouped
-/// snapshot whose assembled document would cross the published page limit is uploaded and
-/// confirmed against the running API, the live data step partitions it, and the real
-/// Chromium worker renders the blocks until the part commit that would pass the ceiling.
-/// The output ends non-retryably with the delivered ceiling code; its stored reason names
-/// the limit, the limit's value and the value the report reached; the reached value is
-/// above the named limit and above the committed parts' own sum; and nothing is published -
-/// no artifact row, no output-class object, no partial PDF.
+/// The live path's configured document capacity over the whole local composition: the
+/// composition is given a page capacity of its own, which every process that judges a
+/// document's size receives; a valid grouped snapshot whose assembled document would cross
+/// it is uploaded and confirmed against the running API, the live data step partitions it,
+/// and the real Chromium worker renders the blocks until the part commit that would pass
+/// the capacity. The output ends non-retryably with the limit code; its stored reason names
+/// the limit, the configured value - not the example profile's - and the value the report
+/// reached; the reached value is above the configured value and above the committed parts'
+/// own sum; and nothing is published - no artifact row, no output-class object, no partial PDF.
 /// </summary>
-public sealed class OverCeilingPdfJobEndToEndTests : IDisposable
+public sealed class OverCapacityPdfJobEndToEndTests : IDisposable
 {
-    // The fixture prints more than ten thousand pages before the crossing commit; the
-    // covering run records its own --timeout and this deadline is the test's own bound.
-    private static readonly TimeSpan OverCeilingDeadline = TimeSpan.FromMinutes(90);
+    // The fixture prints a few hundred pages before the crossing commit; the covering run
+    // records its own --timeout and this deadline is the test's own bound.
+    private static readonly TimeSpan OverCapacityDeadline = TimeSpan.FromMinutes(30);
 
     private readonly MultiBlockStage _stage = new(
         accounted: true,
-        templateId: "over-ceiling",
-        snapshotFactory: _ => MultiBlockFixtures.OverCeilingSnapshot(),
-        packageFactory: MultiBlockFixtures.OverCeilingPackage);
+        templateId: "over-capacity",
+        snapshotFactory: _ => MultiBlockFixtures.CapacitySnapshot(MultiBlockFixtures.OverCapacityGroups),
+        packageFactory: MultiBlockFixtures.CapacityPackage,
+        compositionArguments:
+        [
+            "--DocumentCapacity:MaximumPages=" + MultiBlockFixtures.OverCapacityPageLimit.ToString(CultureInfo.InvariantCulture),
+            "--DocumentCapacity:ProfileName=e2e-over-capacity",
+        ]);
 
     /// <inheritdoc />
     public void Dispose() => _stage.Dispose();
 
     [Fact]
-    public async Task ADocumentBeyondThePageLimitFailsWithTheLimitErrorAndPublishesNothing()
+    public async Task ADocumentBeyondTheConfiguredPagesFailsWithTheLimitErrorNamingTheConfiguredValueAndPublishesNothing()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var composition = await _stage.StartAsync(cancellationToken);
@@ -40,13 +46,13 @@ public sealed class OverCeilingPdfJobEndToEndTests : IDisposable
         var uploadId = await _stage.SeedConfirmingUploadAsync(
             composition,
             cancellationToken,
-            MultiBlockFixtures.OverCeilingRecords);
+            MultiBlockFixtures.OverCapacityRecords);
         var reportJobId = await _stage.SubmitAsync(composition, uploadId, cancellationToken);
         await _stage.CompleteUploadAsync(composition, uploadId, cancellationToken);
 
-        var ended = await _stage.WaitForEndAsync(composition, reportJobId, cancellationToken, OverCeilingDeadline);
+        var ended = await _stage.WaitForEndAsync(composition, reportJobId, cancellationToken, OverCapacityDeadline);
 
-        // The code is the delivered one, read from the assembly that decides the ceiling.
+        // The code is the delivered one, read from the assembly that re-checks the capacity.
         Assert.Equal(AssemblePdfActivity.OutputLimitExceeded, ended.OutputErrorCode);
         Assert.Equal("FAILED", ended.Status);
         Assert.NotNull(ended.OutputId);
@@ -68,10 +74,10 @@ public sealed class OverCeilingPdfJobEndToEndTests : IDisposable
         var limitValue = long.Parse(limitValueText!, CultureInfo.InvariantCulture);
         var reached = long.Parse(reachedText!, CultureInfo.InvariantCulture);
 
-        // The fixture is derived so the page limit is the one it crosses, and the published
-        // value is the one the delivery applies.
+        // The page dimension is the one the fixture crosses, and the value named is the
+        // composition's configured capacity, not the example profile's.
         Assert.Equal("document-pages", limit);
-        Assert.Equal(MultiBlockFixtures.OverCeilingPageLimit, limitValue);
+        Assert.Equal(MultiBlockFixtures.OverCapacityPageLimit, limitValue);
         Assert.True(reached > limitValue, $"the reached value {reached} is above the limit {limitValue}");
 
         // The crossing commit was rolled back: the committed parts stay within the limit,
@@ -93,13 +99,13 @@ public sealed class OverCeilingPdfJobEndToEndTests : IDisposable
 
         // The committed sums and the reached value stay with the run's evidence.
         RunEnvironment.WriteEvidence(
-            "over-ceiling.evidence.txt",
+            "over-capacity.evidence.txt",
             Encoding.UTF8.GetBytes(
                 $"code={ended.OutputErrorCode} reason={ended.OutputErrorReason} "
                 + $"committedBlocks={parts.Count} committedPages={committedPages.ToString(CultureInfo.InvariantCulture)} "
                 + $"reached={reached.ToString(CultureInfo.InvariantCulture)} "
                 + $"outputObjects={outputs.Count}{Environment.NewLine}"));
         TestContext.Current.TestOutputHelper?.WriteLine(
-            $"over-ceiling: blocks={parts.Count} committedPages={committedPages} reached={reached}");
+            $"over-capacity: blocks={parts.Count} committedPages={committedPages} reached={reached}");
     }
 }

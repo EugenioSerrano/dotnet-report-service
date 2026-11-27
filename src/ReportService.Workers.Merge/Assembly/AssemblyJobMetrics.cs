@@ -51,6 +51,12 @@ public sealed class AssemblyJobMetrics : IDisposable
     /// <summary>Pages whose per-page code could not be drawn.</summary>
     public const string CodeFailuresInstrumentName = "reportservice.pdf.assembly.code_failures";
 
+    /// <summary>The histogram of the page capacity one assembly was admitted against.</summary>
+    public const string CapacityPagesInstrumentName = "reportservice.pdf.assembly.capacity_pages";
+
+    /// <summary>The histogram of the parts-bytes capacity one assembly was admitted against.</summary>
+    public const string CapacityPartBytesInstrumentName = "reportservice.pdf.assembly.capacity_part_bytes";
+
     /// <summary>The stage tag of checking the inputs.</summary>
     public const string InputsStage = "inputs";
 
@@ -86,6 +92,8 @@ public sealed class AssemblyJobMetrics : IDisposable
     private readonly Histogram<long> _codeBytes;
     private readonly Histogram<double> _codeGeneration;
     private readonly Counter<long> _codeFailures;
+    private readonly Histogram<long> _capacityPages;
+    private readonly Histogram<long> _capacityPartBytes;
 
     /// <summary>Creates the host's instruments on the identity it carries.</summary>
     /// <param name="identity">The identity of the host that owns the instruments.</param>
@@ -136,6 +144,14 @@ public sealed class AssemblyJobMetrics : IDisposable
             CodeFailuresInstrumentName,
             unit: "{page}",
             description: "Pages whose per-page code could not be drawn, by generator.");
+        _capacityPages = _meter.CreateHistogram<long>(
+            CapacityPagesInstrumentName,
+            unit: "{page}",
+            description: "The configured page capacity one assembly was admitted against.");
+        _capacityPartBytes = _meter.CreateHistogram<long>(
+            CapacityPartBytesInstrumentName,
+            unit: "By",
+            description: "The configured parts-bytes capacity one assembly was admitted against.");
     }
 
     /// <summary>Records the measurements and verdict of one assembly.</summary>
@@ -155,6 +171,15 @@ public sealed class AssemblyJobMetrics : IDisposable
         _outputBytes.Record(metrics.OutputBytes);
         _heap.Record(metrics.PeakManagedBytes);
         _workingSet.Record(metrics.PeakWorkingSetBytes);
+        if (metrics.CapacityPages is { } capacityPages)
+        {
+            _capacityPages.Record(capacityPages);
+        }
+
+        if (metrics.CapacityPartBytes is { } capacityPartBytes)
+        {
+            _capacityPartBytes.Record(capacityPartBytes);
+        }
         if (metrics.CodeGenerator is { } generator)
         {
             KeyValuePair<string, object?>[] tags =

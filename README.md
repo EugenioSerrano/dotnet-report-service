@@ -17,7 +17,7 @@ that stays bounded no matter how large the report is.
 > template engines, idempotent job creation, job progress and status reads,
 > published-artifact retention, restart-resilient rendering, and a growing
 > rendering-regression suite - see [CHANGELOG.md](CHANGELOG.md). PDF rendering
-> covers reports of one or more blocks within the published document limits
+> covers reports of one or more blocks within the deployment's configured document capacity
 > (see the [roadmap](#roadmap)); the
 > HTML, XLSX and Markdown outputs described below are planned for later
 > milestones. The design and analysis documents live in the companion
@@ -396,12 +396,16 @@ stateDiagram-v2
 - Counters are monotonic. No percentage is reported unless the total is known.
 - An HTTP timeout or a dropped connection never cancels a job; only
   `POST …/cancel` does, cooperatively, and nothing is published after it.
-- A PDF report beyond the published document limits - **10 000 pages**, or
-  **37 748 736 bytes** of rendered parts, whichever is reached first - ends `failed`
-  with `OUTPUT_LIMIT_EXCEEDED` before anything is published. A report within the limits
-  is printed from one or more blocks: a large snapshot is cut into ordered blocks,
-  rendered within the bounded window, assembled in order and stamped with one global
-  "Page X of Y". [`docs/limitations.md`](docs/limitations.md) states the bound.
+- A PDF report beyond the deployment's configured document capacity - pages or bytes
+  of rendered parts, whichever is reached first; **10 000 pages** or **37 748 736 bytes**
+  in the example the service ships - ends `failed` with `OUTPUT_LIMIT_EXCEEDED` before
+  anything is published. The service imposes no ceiling of its own: each deployment
+  measures and configures its capacity. A report within it is printed from one or more
+  blocks: a large snapshot is cut into ordered blocks, rendered within the bounded
+  window, assembled in order and stamped with one global "Page X of Y".
+  [`docs/document-capacity.md`](docs/document-capacity.md) gives the settings and the
+  measured figures; [`docs/limitations.md`](docs/limitations.md) states what a very
+  large document needs from the merge worker.
 
 ## Security model — read this before deploying
 
