@@ -6,7 +6,7 @@ namespace ReportService.Api.Jobs;
 
 /// <summary>
 /// Reads the document that creates a report job:
-/// <c>{ "template": { "id", "version" }, "data": { "uploadId", "profile" }, "outputs": [ ], "render": { "culture", "timeZone" } }</c>.
+/// <c>{ "template": { "id", "version" }, "data": { "uploadId", "profile" }, "outputs": [ ], "render": { "culture", "timeZone" }, "priority" }</c>.
 /// The document is read here, explicitly and within a bound, instead of through
 /// automatic model binding, whose failures would answer with framework errors
 /// carrying no stable code. Reading it is strict on purpose — one JSON object, only
@@ -34,6 +34,12 @@ public static class CreateReportJobRequestReader
 
     /// <summary>The member carrying the presentation the report is written in.</summary>
     public const string RenderMember = "render";
+
+    /// <summary>The optional member carrying the priority the job is declared with.</summary>
+    public const string PriorityMember = "priority";
+
+    /// <summary>What an answer says when the priority is not one of the three levels. It never repeats the value.</summary>
+    public const string PriorityFormatDetail = "The field 'priority' must be one of 'low', 'normal' or 'high'.";
 
     /// <summary>The member of the template object carrying its identifier.</summary>
     public const string IdMember = "id";
@@ -109,6 +115,7 @@ public static class CreateReportJobRequestReader
         RenderCulturePath,
         RenderTimeZonePath,
         OutputsMember,
+        PriorityMember,
     ];
 
     private static readonly string[] RequiredPaths =
@@ -310,6 +317,19 @@ public static class CreateReportJobRequestReader
 
                         break;
 
+                    case PriorityMember:
+                        Count(counts, kinds, name, reader.TokenType);
+                        if (reader.TokenType == JsonTokenType.String)
+                        {
+                            values[PriorityMember] = reader.GetString() ?? string.Empty;
+                        }
+                        else if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
+                        {
+                            reader.Skip();
+                        }
+
+                        break;
+
                     default:
                         // An unknown member is unknown once however it is written, and its name is
                         // caller text: the count is all an answer may say about it.
@@ -385,6 +405,7 @@ public static class CreateReportJobRequestReader
                      (ProfilePath, StringType),
                      (RenderCulturePath, StringType),
                      (RenderTimeZonePath, StringType),
+                     (PriorityMember, StringType),
                  })
         {
             // A member that was not sent at all is not of a wrong type: the optional one is the
@@ -410,6 +431,14 @@ public static class CreateReportJobRequestReader
             }
         }
 
+        // The priority is a closed set of three words, compared exactly: anything else is a
+        // malformed request, answered with the field and never with what was sent.
+        if (values.TryGetValue(PriorityMember, out var priority)
+            && !ReportService.Jobs.JobWireValues.TryParsePriority(priority, out _))
+        {
+            return new Result.Rejected(InvalidRequestBody.InvalidFormat(PriorityMember, PriorityFormatDetail));
+        }
+
         if (!outputsHoldAStringOnly)
         {
             return new Result.Rejected(InvalidRequestBody.WrongType(OutputsMember, ArrayOfStringsType));
@@ -432,7 +461,8 @@ public static class CreateReportJobRequestReader
             values[ProfilePath],
             outputs,
             values.TryGetValue(RenderCulturePath, out var culture) ? culture : null,
-            values.TryGetValue(RenderTimeZonePath, out var timeZone) ? timeZone : null));
+            values.TryGetValue(RenderTimeZonePath, out var timeZone) ? timeZone : null,
+            values.TryGetValue(PriorityMember, out var declared) ? declared : null));
     }
 
     // A presentation value is a word of the ASCII range with no whitespace in it: bounded,

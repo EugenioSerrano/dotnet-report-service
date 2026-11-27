@@ -1,6 +1,6 @@
 # Process topology
 
-The service runs as three processes. This page explains what each one owns,
+The service runs as four processes. This page explains what each one owns,
 what "ready" means for each, and how the consumer registry is declared and
 changed while the service runs.
 
@@ -14,6 +14,9 @@ flowchart TB
     subgraph CONT["Container (PDF base image, user app)"]
         PDF["PDF worker<br/>task queue report-pdf-rendering<br/>Chromium"]
     end
+    subgraph CONTM["Container (ASP.NET Core runtime image, no browser)"]
+        MRG["Merge worker<br/>task queue report-pdf-merge"]
+    end
     PG[("PostgreSQL")]
     VK[("Valkey")]
     TM[("Temporal")]
@@ -23,16 +26,19 @@ flowchart TB
     ORCH --> PG
     ORCH --> TM
     PDF --> TM
+    MRG --> TM
+    MRG --> PG
     PDF -. "no metadata record yet" .-> PG
 ```
 
-## The three processes
+## The four processes
 
 | Process | Project | Owns | Talks to the metadata database | Talks to the workflow engine |
 |---------|---------|------|-------------------------------|------------------------------|
 | API | `src/ReportService.Api` | The HTTP surface and the consumer registry | Yes — readiness only | **Never** — it holds no workflow-engine client and does not depend on the engine to start or to be ready |
 | Orchestration worker | `src/ReportService.Workers.Orchestration` | The task queues `report-orchestration` (workflows and short metadata steps, the job's template step among them) and `report-data` (data verification and validation) | Yes - readiness only | Yes |
 | PDF worker | `src/ReportService.Workers.Pdf` (container image) | The task queue `report-pdf-rendering` (one render at a time): the take of one named version and the by-name resolution that chooses one | Yes — a taken version is published by a record it writes | Yes |
+| Merge worker | `src/ReportService.Workers.Merge` (container image) | The task queue `report-pdf-merge` (one assembly at a time): assembling one PDF output from its committed parts, in block order, with the global page numbers, and writing it to object storage | Yes — it reads the job's partition, the part commits and the taken template version | Yes |
 
 The one-shot migrator `src/ReportService.Migrations` is not a long-running
 process: it applies the database's schema and exits. The API and the
@@ -40,8 +46,9 @@ orchestration worker start only after it succeeded, and its failure keeps both
 from starting. The database, its role, its journal and the migration rules are
 described in [`metadata-database.md`](metadata-database.md).
 
-The two workers share `src/ReportService.ServiceDefaults.Temporal`, the
-workflow-engine connection. All three share `src/ReportService.ServiceDefaults`:
+The three workers share `src/Platform/ReportService.ServiceDefaults.Temporal`,
+the workflow-engine connection. All four share
+`src/Platform/ReportService.ServiceDefaults`:
 validated settings, the JSON body of the health endpoints and the metadata
 database's readiness check. The API references only the second, so it carries no
 workflow-engine package.
@@ -66,12 +73,14 @@ the worker's host and owns the process's end. A start the configuration refuses
 setting and the reason and ends the process with exit code `1`, with the host's
 own `Hosting failed to start` preceding it. A stop requested while the process
 starts is an ordinary shutdown and ends it with `0`. The render worker image is
-published from that entry project.
+published from that entry project. The merge worker's image is published the same
+way from `src/ReportService.Workers.Merge.Entry`, on the ASP.NET Core runtime
+image: it carries no browser and no PDF base.
 
 | Setting | Process | Required | Meaning |
 |---------|---------|----------|---------|
-| `Temporal:Address` | both workers | yes | The engine's gRPC endpoint, `host:port` (no scheme, no credential) |
-| `Temporal:Namespace` | both workers | yes (default `default`) | The engine namespace |
+| `Temporal:Address` | every worker | yes | The engine's gRPC endpoint, `host:port` (no scheme, no credential) |
+| `Temporal:Namespace` | every worker | yes (default `default`) | The engine namespace |
 | `Consumers:File` | API | no | The consumer registry file; without it, `consumers.json` next to the API |
 | `ConnectionStrings:reportservice` | API, orchestration worker, migrator | yes | The application role's connection string for the metadata database |
 | `Database:ExpectedSchemaVersion` | API, orchestration worker | yes | The schema version the build expects — the highest migration script it embeds |

@@ -255,6 +255,8 @@ public sealed partial class InMemoryJobStore : IJobStore
             {
                 Culture = acceptance.Culture,
                 TimeZone = acceptance.TimeZone,
+                DeclaredPriority = acceptance.DeclaredPriority,
+                EffectivePriorityClass = acceptance.EffectivePriorityClass,
             };
             _jobs.Add(job.ReportJobId, job);
             _progress.Add(job.ReportJobId, JobProgress.Empty);

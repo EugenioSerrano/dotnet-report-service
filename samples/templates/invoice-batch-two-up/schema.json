@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Invoice batch (header-items-v1)",
+  "description": "A batch of invoices: the header describes the batch, and every record is one invoice carrying its own lines, its precomputed totals, its flags and the precomputed geometry of its barcode.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "header", "items"],
+  "properties": {
+    "contractVersion": { "const": "1.0" },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["batchId", "reportTitle", "issuer", "currency", "generatedAt", "invoiceCount"],
+      "properties": {
+        "batchId": { "type": "string" },
+        "reportTitle": { "type": "string" },
+        "issuer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "taxId"],
+          "properties": {
+            "name": { "type": "string" },
+            "taxId": { "type": "string" }
+          }
+        },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "invoiceCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/invoice" }
+    }
+  },
+  "$defs": {
+    "invoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invoiceNumber", "issueDate", "dueDate", "customer", "lines", "subtotal", "tax", "total", "flags", "barcode", "dueNotice"],
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date" },
+        "dueDate": { "type": "string", "format": "date" },
+        "customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "taxId", "address"],
+          "properties": {
+            "name": { "type": "string" },
+            "taxId": { "type": "string" },
+            "address": { "type": "string" }
+          }
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/line" }
+        },
+        "subtotal": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "flags": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paid", "showBarcode", "showDueNotice"],
+          "properties": {
+            "paid": { "type": "boolean" },
+            "showBarcode": { "type": "boolean" },
+            "showDueNotice": { "type": "boolean" }
+          }
+        },
+        "barcode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "width", "height", "bars"],
+          "properties": {
+            "value": { "type": "string" },
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 },
+            "bars": {
+              "type": "array",
+              "maxItems": 200,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["x", "w"],
+                "properties": {
+                  "x": { "type": "integer", "minimum": 0 },
+                  "w": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "dueNotice": { "type": "string" }
+      }
+    },
+    "line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lineNumber", "description", "quantity", "unitPrice", "amount"],
+      "properties": {
+        "lineNumber": { "type": "integer", "minimum": 1 },
+        "description": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "amount": { "type": "number" }
+      }
+    }
+  }
+}

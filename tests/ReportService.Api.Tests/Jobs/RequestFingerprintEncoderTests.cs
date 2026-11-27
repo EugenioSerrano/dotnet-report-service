@@ -46,6 +46,7 @@ public sealed class RequestFingerprintEncoderTests
             [RequestFingerprintEncoder.CultureMember] = (original with { Culture = "es-AR" }, "consumer-a"),
             [RequestFingerprintEncoder.TimeZoneMember] = (original with { TimeZone = "UTC" }, "consumer-a"),
             [RequestFingerprintEncoder.OutputsMember] = (original with { Outputs = ["html"] }, "consumer-a"),
+            [RequestFingerprintEncoder.PriorityMember] = (original with { Priority = "high" }, "consumer-a"),
         };
 
         // Every declared member has a mutation here: a member added to the table without one
@@ -61,6 +62,42 @@ public sealed class RequestFingerprintEncoderTests
                 RequestFingerprintEncoder.Compute(mutation.Consumer, mutation.Request).Value);
         }
     }
+
+    [Theory]
+    [InlineData("consumer-a", "1.0.0", "v1:8f46096b8affc201b09a455505de5d71dade1f79058acf464394ac2876f8db19")]
+    [InlineData("consumer-a", null, "v1:7d50aefb703fb91c36e5700ac2f72837cb5b3c732323a73ea938c8febe0d3b33")]
+    [InlineData("consumer-b", "1.0.0", "v1:13924a976ba3611a162c683ad92665e091ce4845fdcdde6c0210c5fa7df2a6e0")]
+    public void ARequestDeclaringNormalKeepsThePublishedIdentityOfARequestDeclaringNone(string consumerId, string? version, string expected)
+    {
+        // A priority of normal is what an absent one means: the two are the same request, and
+        // every identity computed before the priority existed is unchanged.
+        var declared = Request(version: version) with { Priority = "normal" };
+
+        Assert.Equal(expected, RequestFingerprintEncoder.Compute(consumerId, declared).Value);
+    }
+
+    [Fact]
+    public void EachDeclaredPriorityOtherThanNormalIsItsOwnIdentity()
+    {
+        var none = RequestFingerprintEncoder.Compute("consumer-a", Request()).Value;
+        var low = RequestFingerprintEncoder.Compute("consumer-a", Request() with { Priority = "low" }).Value;
+        var high = RequestFingerprintEncoder.Compute("consumer-a", Request() with { Priority = "high" }).Value;
+
+        Assert.Equal(3, new[] { none, low, high }.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Theory]
+    [InlineData(null, JobPriority.Normal)]
+    [InlineData("low", JobPriority.Low)]
+    [InlineData("normal", JobPriority.Normal)]
+    [InlineData("high", JobPriority.High)]
+    public void TheDeclaredPriorityOfARequestIsTheLevelItNamesOrNormal(string? sent, JobPriority expected) =>
+        Assert.Equal(expected, RequestFingerprintEncoder.DeclaredPriority(Request() with { Priority = sent }));
+
+    [Fact]
+    public void AnUnreadPriorityIsAnInvariantBreachNotAnInput() =>
+        Assert.Throws<InvalidOperationException>(() =>
+            RequestFingerprintEncoder.DeclaredPriority(Request() with { Priority = "urgent" }));
 
     [Fact]
     public void TheOutputsAreASetInOrdinalOrderWhateverOrderTheRequestNamedThem()

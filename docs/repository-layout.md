@@ -15,9 +15,11 @@ dotnet-report-service/
 │   ├── ReportService.Workers.Orchestration/       The orchestration worker (orchestration and data queues)
 │   ├── ReportService.Workers.Pdf/                 The PDF worker (container image)
 │   ├── ReportService.Workers.Pdf.Entry/           The render worker container's entry point: builds the worker's host and owns its lifecycle
+│   ├── ReportService.Workers.Merge/               The merge worker (container image): assembles a PDF output from its committed parts on the report-pdf-merge queue
+│   ├── ReportService.Workers.Merge.Entry/         The merge worker container's entry point; its image is published from this project
 │   ├── Platform/              Cross-cutting libraries with no report-domain knowledge
 │   │   ├── ReportService.ServiceDefaults/             Validated settings, health bodies, the database check, the object store and the telemetry baseline, shared by every process
-│   │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the two workers
+│   │   ├── ReportService.ServiceDefaults.Temporal/    The workflow-engine connection, shared by the three workers
 │   │   ├── ReportService.Storage/                     The object storage port: write-once, verified reads, key grammar
 │   │   └── ReportService.Storage.Filesystem/          The Filesystem provider of the storage port
 │   ├── Jobs/                  The job and its input data
@@ -29,9 +31,10 @@ dotnet-report-service/
 │   │   ├── ReportService.TemplateSource/            The template source: its settings, the class read of the deployment's object storage, the publication record and its checks, the manifest reader, the take that keeps a version once, and the checks a version passes before it is taken
 │   │   ├── ReportService.TemplatePackages/            The taken template version: its record and store, the parsed manifest, the package archive and the reader of the copy
 │   │   ├── ReportService.TemplateChecks/           The take's static checks: the eight checks in their fixed order, the refusal message, the source scans, and the registration the PDF worker calls
-│   │   └── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban adapter, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
+│   │   └── ReportService.Templates/                   Composing a block into HTML: the adapter contract, the Scriban, Handlebars and Liquid (Fluid) adapters, the render context, the escaping policy, the guards, the block composer and the prepared-template cache
 │   └── Pdf/                   Printing and verifying
 │       ├── ReportService.Rendering/                   Printing a composed block: the browser session, the confined print, the block renderer and the test-only controls
+│       ├── ReportService.Pdf.Assembly/                Assembling the printed parts of one output into one PDF in block order, with the global page numbers
 │       └── ReportService.Pdf.Verification/            Reading a printed PDF and deciding it: the word reader, the normalisation, the text units, the alignment and the checks bound to the source
 ├── tests/                     Automated tests — the host tests at the root, the unit/component tests grouped as src/
 │   ├── ReportService.Api.Tests/          Unit/component tests of the API (hermetic)
@@ -39,6 +42,7 @@ dotnet-report-service/
 │   ├── ReportService.Migrations.Tests/   Unit/component tests of the migrator (hermetic)
 │   ├── ReportService.Workers.Orchestration.Tests/  Unit/component tests of the orchestration worker (hermetic)
 │   ├── ReportService.Workers.Pdf.Tests/       Unit/component tests of the PDF worker: the take on its queue and the activity as a plain class (hermetic)
+│   ├── ReportService.Workers.Merge.Tests/     Unit/component tests of the merge worker (hermetic)
 │   ├── Jobs/                  Unit/component tests of the Jobs group
 │   │   ├── ReportService.Jobs.Tests/         Unit tests of the shared report job library (hermetic)
 │   │   ├── ReportService.Uploads.Tests/      Unit tests of the shared upload library (hermetic)
@@ -53,10 +57,10 @@ dotnet-report-service/
 │   │   └── ReportService.Storage.Tests/      Unit/component tests of the storage port and its Filesystem provider, and the provider-conformance suite (hermetic)
 │   ├── Pdf/                  Unit/component tests of the Pdf group, plus the hermetic PDF structure verification
 │   │   ├── ReportService.Rendering.Tests/         Unit tests of the printer's policy and options and of the controls' reachability (hermetic)
+│   │   ├── ReportService.Pdf.Assembly.Tests/      Unit tests of the PDF assembly (hermetic)
 │   │   ├── ReportService.Pdf.Verification.Tests/  Unit tests of the reader, the normalisation, the alignment and the checks, with synthetic extraction inputs (hermetic, integrity-critical floors)
 │   │   └── ReportService.PdfStructure.Tests/  The hermetic PDF structure verification: reads the committed golden PDFs in-process (PdfPig) and checks order, global "Page X of Y", row coverage and per-page words (hermetic, no container)
 │   ├── Suites/              Cross-cutting test suites
-│   │   ├── ReportService.IntegrationTests/   Tests against real dependencies in containers
 │   │   ├── ReportService.EndToEndTests/      Tests over the whole local composition
 │   │   └── ReportService.PerformanceTests/   Memory and throughput measurements over the generated datasets (reference environment)
 │   ├── Rendering/           The rendering regression suite, its host and the independent reader (oracle)
@@ -64,20 +68,28 @@ dotnet-report-service/
 │   │   ├── ReportService.RenderingTests/     The rendering regression suite: the core tier and the known-bad controls, each printed and judged by an independent reader
 │   │   ├── ReportService.PdfOracle/          The independent reader of a printed PDF (its own image, process-invoked text tools)
 │   │   └── ReportService.PdfOracle.Tests/    Tests of the oracle
+│   ├── Samples/             Tests of the sample tools
+│   │   └── ReportService.Samples.TemplateAuthoring.Tests/  Tests of the template authoring tool, with its committed golden PDFs
 │   └── Support/             Shared test support and its hermetic test suite
 │       ├── ReportService.Testing/            Support library shared by the test projects: the repository and image pins, the template-source and template-package fixtures, the in-memory stores and the waits
+│       ├── ReportService.Testing.StreamFlooder/  A child process the tests start to fill its standard error and output on demand, to prove a reader drains both
 │       └── ReportService.Fixtures.Tests/     Hermetic tests of the fixture library in ReportService.Testing
-├── samples/                   Templates and datasets for adopters
-├── docs/                      Documentation (this page; the processes and their readiness: process-topology.md; the database: metadata-database.md; object storage: object-storage.md; telemetry: observability.md; the upload operations: api/uploads.md; the job creation operation: api/report-jobs.md; the taken version's read: api/templates.md; writing a template: template-authoring.md; how a printed PDF is verified: pdf-verification.md)
+├── samples/                   Templates, datasets and tools for adopters
+│   ├── datasets/              The seeded pilot datasets and their generator
+│   ├── templates/             The sample template packages, one per pilot dataset and engine
+│   └── template-authoring/    The local template authoring tool (see template-authoring.md)
+├── docs/                      Documentation — every page is listed in docs/README.md
 ├── eng/                       Build and engineering assets
 │   ├── pdf-base/              The PDF base image (Chromium headless shell)
 │   ├── pdf-oracle/           The judge's image: the independent reader, its text tools and the accepted licence record
+│   ├── pdf-reader-agreement/  The re-run of the PDF reader agreement: reads the agreed document set with the product's reader and compares the readings
 │   └── test/                  The test runner: one command per test level
 ├── spikes/                    Stage 0 experiments (not part of the product)
-├── artifacts/                 Local build and test output (git-ignored, never committed)
+├── artifacts/                 Local build and test output, test results included (git-ignored, never committed)
 ├── .storage/                  Object storage root of the local composition (git-ignored, never committed)
+├── .template-source/          Template source root of the local composition (git-ignored, never committed)
 ├── dotnet-report-service.slnx Product solution
-├── global.json                .NET SDK pin (10.0.4xx band)
+├── global.json                .NET SDK pin (11.0.1xx band) and the test runner
 ├── Directory.Build.props      Build settings shared by every project, product version
 ├── Directory.Packages.props   Central package versions
 ├── NuGet.config               Package sources (nuget.org only)
@@ -98,22 +110,25 @@ dotnet-report-service/
 | Root namespace | Same as the project name (never includes the group folder) | `ReportService.Workers.Pdf` |
 | Host test project | `tests/ReportService.<Area>.Tests/` — at the `tests/` root, mirroring the hosts | `tests/ReportService.Workers.Pdf.Tests/`, `tests/ReportService.Api.Tests/` |
 | Grouped unit/component tests | `tests/<Group>/ReportService.<Area>.Tests/` — one per product project, in its src group | `tests/Pdf/ReportService.Rendering.Tests/`, `tests/Platform/ReportService.Storage.Tests/` |
-| Cross-cutting test suites | `tests/Suites/ReportService.<Kind>Tests/` | `tests/Suites/ReportService.IntegrationTests/`, `tests/Suites/ReportService.EndToEndTests/`, `tests/Suites/ReportService.PerformanceTests/` |
+| Cross-cutting test suites | `tests/Suites/ReportService.<Kind>Tests/` | `tests/Suites/ReportService.EndToEndTests/`, `tests/Suites/ReportService.PerformanceTests/` |
 | Rendering regression suite, host and oracle | `tests/Rendering/<project>/` | `tests/Rendering/ReportService.RenderingTests/`, `tests/Rendering/ReportService.PdfOracle/` |
 | Shared test support and its test suite | `tests/Support/<project>/` | `tests/Support/ReportService.Testing/`, `tests/Support/ReportService.Fixtures.Tests/` |
 | Sample template | `samples/templates/<template-id>/` | `samples/templates/invoice-energy/` |
 | Sample tool | `samples/<area>/ReportService.Samples.<Tool>/` | `samples/datasets/ReportService.Samples.DatasetGenerator/` |
 | Image built from a Dockerfile | `eng/<image>/Dockerfile` — only for images that need operating-system steps; product images are built by the .NET SDK from their project file | `eng/pdf-base/Dockerfile` |
 | Engineering tool | `eng/<area>/ReportService.Eng.<Tool>/` | `eng/pdf-base/ReportService.Eng.PlaywrightInstaller/`, `eng/test/ReportService.Eng.TestRunner/` |
-| Test run output | `artifacts/test-results/<yyMMdd-HHmm>/` (git-ignored) | `artifacts/test-results/261101-1430/run.json` |
+| Test run output (the test runner) | `artifacts/test-results/<yyMMdd-HHmm>/` (git-ignored) | `artifacts/test-results/261101-1430/run.json` |
+| Test results of a bare `dotnet test` | `artifacts/test-results/local/<project>/` (git-ignored) | `artifacts/test-results/local/ReportService.Api.Tests/` |
+| Sample tool tests | `tests/Samples/ReportService.Samples.<Tool>.Tests/` | `tests/Samples/ReportService.Samples.TemplateAuthoring.Tests/` |
 | Spike | `spikes/NN-<topic>/` | `spikes/01-streaming-parser/` |
 | Documentation page | kebab-case `.md` in `docs/` | `docs/template-authoring.md` |
 | API documentation | one page per resource family under `docs/api/` | `docs/api/uploads.md`, `docs/api/report-jobs.md` |
 
 Product and test projects are added to `dotnet-report-service.slnx` under the
 `src` and `tests` solution folders (`dotnet sln add <path> --solution-folder src`);
-sample tools go under the `samples` solution folder and engineering tools
-under the `eng` solution folder, so they build with the same rules. Spikes are never added.
+sample tools go under the `samples` solution folder (their tests under
+`tests/Samples`) and engineering tools under the `eng` solution folder, so they
+build with the same rules. Spikes are never added.
 
 ## Commands
 
@@ -136,6 +151,15 @@ What each test level may reach, the evidence a run leaves under
 `artifacts/test-results/` and the coverage rules are described in
 [`tests/README.md`](../tests/README.md).
 
+A bare `dotnet test` — one that names no results directory — also writes under
+`artifacts/`: each test project's results go to
+`artifacts/test-results/local/<project>/`, not to a `TestResults/` folder in the
+directory the command was started from. A results directory given on the command
+line still wins (the test runner gives one to every project it runs), and a test
+project that keeps its own `testconfig.json` keeps its own setting. Scratch
+working directories (`work/`) and Node.js dependencies (`node_modules/`) are
+git-ignored as well.
+
 ## Shared configuration
 
 - **`global.json`** pins the .NET SDK to the 11.0.1xx band (11.0.100 or a
@@ -151,7 +175,8 @@ What each test level may reach, the evidence a run leaves under
   explicitly when it has a reason to; the language version is the framework's
   default. It also sets `SourceRevisionId` from the commit the build came from,
   which is what appends `+<commit>` to every assembly's informational version
-  and reports `+unknown` for a tree without git.
+  and reports `+unknown` for a tree without git. Finally, it points the results
+  of a bare `dotnet test` at `artifacts/test-results/local/<project>/`.
 - **`spikes/Directory.Build.props`** imports the root file and relaxes it for
   experiments: warnings do not fail the build and nothing is packable.
 - **`Directory.Packages.props`** enables central package management: package
@@ -205,7 +230,8 @@ the metadata database connect with Npgsql and run explicit SQL with Dapper.
 | ASP.NET Core runtime | `mcr.microsoft.com/dotnet/aspnet:11.0.0-resolute` | Base of the PDF base image (and of every .NET image) |
 | Local development registry | `registry:3.1.2` (pinned by digest) | Local composition only, on `127.0.0.1:5055`; holds the PDF base image; never shipped |
 | PDF base | `report-service-pdf-base` — project-owned, tag `<Playwright version>-<runtime>-resolute` (now `1.63.0-11.0.0-resolute`) | Base of the render worker image; built from `eng/pdf-base/Dockerfile` |
-| Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (now `0.9.0`) | Local composition (`render-worker`) |
+| Render worker | `report-service-render-worker` — built by the .NET SDK, tag = product version (`X.Y.Z-dev` between releases; now `0.10.0-dev`) | Local composition (`render-worker`) |
+| Merge worker | `report-service-merge-worker` — built by the .NET SDK on the ASP.NET Core runtime image, no browser; tag = product version, as the render worker's | Local composition (`merge-worker`) |
 
 The three dependency images are pinned in one file,
 `src/ReportService.AppHost/composition-pins.json`, read by the composition and
@@ -277,22 +303,23 @@ choices of taste:
 
 ## Where upload verification lives
 
-- `src/ReportService.Uploads/` - the upload record and its store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
+- `src/Jobs/ReportService.Uploads/` - the upload record and its store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
 - `src/ReportService.Workers.Orchestration/Uploads/` - the verification step: the read that is teed, the checksum, the decision that a compressed object is one complete unit of content, and the outcome it commits. The instruments are in `Telemetry/OrchestrationMetrics.cs`.
 - `docs/operations/upload-verification.md` - what the step enforces, its settings and its instruments.
-- `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suite of that step.
+- `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suite of that step; the record's own in `tests/Jobs/ReportService.Uploads.Tests/`.
 
 ## Where report jobs live
 
-- `src/ReportService.Jobs/` - the job records and their store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
+- `src/Jobs/ReportService.Jobs/` - the job records and their store, shared by the API and the orchestration worker. It holds no HTTP type and no workflow-engine type.
 - `src/ReportService.Workers.Orchestration/Jobs/` - one job as a workflow: the check of its data reference, the failure that ends it, and the settings its steps run under.
-- `src/ReportService.Api/Jobs/` - the creation operation, the strict reader of its document and the answer it gives.
-- `docs/api/report-jobs.md` - the request, the answer and every refusal.
-- `tests/ReportService.Jobs.Tests/` and `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suites of the records and of the workflow's steps.
+- `src/ReportService.Api/Jobs/` and `src/ReportService.Api/Artifacts/` - the creation, status and cancel operations, and the list and download of a job's files.
+- `src/ReportService.Workers.Merge/` - the assembly of a PDF output from its printed parts.
+- `docs/api/report-jobs.md` - the operations, their answers and every refusal.
+- `tests/Jobs/ReportService.Jobs.Tests/` and `tests/ReportService.Workers.Orchestration.Tests/` - the hermetic suites of the records and of the workflow's steps.
 
 ## Where telemetry lives
 
-- `src/ReportService.ServiceDefaults/Telemetry/` - the meter identity a host carries, the registration every process calls, the product instrument factories, the development-only metric capture and the diagnostics endpoints.
+- `src/Platform/ReportService.ServiceDefaults/Telemetry/` - the meter identity a host carries, the registration every process calls, the product instrument factories, the development-only metric capture and the diagnostics endpoints.
 - `src/ReportService.Api/Telemetry/` and `src/ReportService.Workers.Orchestration/Telemetry/` - the instruments of those processes, each created on the identity of its host.
 - `docs/observability.md` - what each process emits, where it goes and the rule a new signal follows.
 - `tests/ReportService.Api.Tests/Telemetry/` - the telemetry test support: one host helper that carries its own identity and opens a unit of work on its own logger factory, and the suites that read a host's capture.

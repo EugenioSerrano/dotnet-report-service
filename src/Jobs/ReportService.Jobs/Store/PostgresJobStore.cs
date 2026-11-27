@@ -48,10 +48,11 @@ public sealed partial class PostgresJobStore : IJobStore
         INSERT INTO report_service.report_jobs
             (report_job_id, consumer_id, upload_id, status, stage, report_clock, error_code,
              error_reason, culture, time_zone, created_at, started_at, finished_at,
-             idempotency_key, fingerprint)
+             idempotency_key, fingerprint, declared_priority, effective_priority_class)
         VALUES
             (@ReportJobId, @ConsumerId, @UploadId, 'QUEUED', NULL, @Now, NULL, NULL,
-             @Culture, @TimeZone, @Now, NULL, NULL, @IdempotencyKey, @Fingerprint)
+             @Culture, @TimeZone, @Now, NULL, NULL, @IdempotencyKey, @Fingerprint,
+             @DeclaredPriority, @EffectivePriorityClass)
         ON CONFLICT (consumer_id, idempotency_key) WHERE idempotency_key IS NOT NULL
         DO NOTHING
         RETURNING report_job_id
@@ -106,6 +107,8 @@ public sealed partial class PostgresJobStore : IJobStore
                j.error_message    AS "ErrorMessage",
                j.culture          AS "Culture",
                j.time_zone        AS "TimeZone",
+               j.declared_priority        AS "DeclaredPriority",
+               j.effective_priority_class AS "EffectivePriorityClass",
                j.created_at       AS "CreatedAt",
                j.started_at       AS "StartedAt",
                j.finished_at      AS "FinishedAt",
@@ -292,6 +295,8 @@ public sealed partial class PostgresJobStore : IJobStore
             acceptance.TimeZone,
             acceptance.IdempotencyKey,
             Fingerprint = acceptance.Fingerprint.Value,
+            DeclaredPriority = JobWireValues.ToWire(acceptance.DeclaredPriority),
+            EffectivePriorityClass = JobWireValues.ToWire(acceptance.EffectivePriorityClass),
             Now = UtcInstant(now),
         };
 
@@ -439,6 +444,8 @@ public sealed partial class PostgresJobStore : IJobStore
             {
                 Culture = acceptance.Culture,
                 TimeZone = acceptance.TimeZone,
+                DeclaredPriority = acceptance.DeclaredPriority,
+                EffectivePriorityClass = acceptance.EffectivePriorityClass,
             });
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -872,6 +879,10 @@ public sealed partial class PostgresJobStore : IJobStore
 
         public string? TimeZone { get; set; }
 
+        public string DeclaredPriority { get; set; } = string.Empty;
+
+        public string EffectivePriorityClass { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? StartedAt { get; set; }
@@ -903,6 +914,8 @@ public sealed partial class PostgresJobStore : IJobStore
                 ErrorMessage = ErrorMessage,
                 Culture = Culture,
                 TimeZone = TimeZone,
+                DeclaredPriority = JobWireValues.ParseStoredPriority(DeclaredPriority),
+                EffectivePriorityClass = JobWireValues.ParseStoredPriority(EffectivePriorityClass),
                 StartedAt = StartedAt is { } started ? Utc(started) : null,
                 FinishedAt = FinishedAt is { } finished ? Utc(finished) : null,
             },

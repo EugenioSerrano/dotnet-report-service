@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReportService.Api.Consumers;
+using ReportService.Api.Jobs;
 using ReportService.Api.Uploads;
 using ReportService.ServiceDefaults;
 using ReportService.Testing;
@@ -74,6 +75,7 @@ internal sealed class StartFailureProbe : IDisposable
         builder.AddConsumerRegistry();
         builder.AddObjectStorage("api");
         builder.AddValidatedConfiguration<UploadOptions>(UploadOptions.SectionPath);
+        builder.AddHighPriorityPolicy();
 
         replacements?.Invoke(builder.Services);
         foreach (var provider in logProviders)

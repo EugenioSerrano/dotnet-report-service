@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Options;
 using ReportService.Api.Consumers;
 using ReportService.Api.Http;
 using ReportService.Api.Telemetry;
@@ -47,6 +48,12 @@ public static class CreateReportJobEndpoint
     /// <summary>What an answer says when a job could not be accepted for a cause on the service's side.</summary>
     public const string ServiceUnavailableTitle = "Service unavailable";
 
+    /// <summary>
+    /// What an answer says when the deployment does not offer the <c>high</c> priority to the
+    /// declared consumer. It names the level and nothing of the policy that refused it.
+    /// </summary>
+    public const string HighPriorityNotOfferedDetail = "The requested priority 'high' is not offered for this request.";
+
     /// <summary>What an answer says when a key was already used with a different request.</summary>
     public const string ConflictTitle = "Idempotency key conflict";
 
@@ -72,6 +79,7 @@ public static class CreateReportJobEndpoint
         ITemplateVersionStore versions,
         ConsumerRegistry registry,
         JobAcceptanceMetrics metrics,
+        IOptions<HighPriorityPolicy> priorityPolicy,
         TimeProvider clock,
         ILoggerFactory loggerFactory)
     {
@@ -147,6 +155,23 @@ public static class CreateReportJobEndpoint
                         "Unsupported capability",
                         capability.Detail,
                         capability.Reason);
+                }
+
+                // The deployment's restriction of the high priority is a capability of this
+                // deployment for this consumer: it is decided with the other capabilities, before
+                // the key is looked up, so a request the policy does not admit creates nothing.
+                if (RequestFingerprintEncoder.DeclaredPriority(accepted.Request) == JobPriority.High
+                    && !priorityPolicy.Value.AdmitsHigh(consumerId))
+                {
+                    return Refuse(
+                        context,
+                        metrics,
+                        logger,
+                        ErrorCodes.UnsupportedCapability,
+                        StatusCodes.Status422UnprocessableEntity,
+                        "Unsupported capability",
+                        HighPriorityNotOfferedDetail,
+                        RefusalReasons.Priority);
                 }
 
                 // The presentation is decided before any template or data work: a request whose
@@ -321,6 +346,8 @@ public static class CreateReportJobEndpoint
             BaselineVersion = availability.BaselineVersion,
             Culture = presentation.Culture,
             TimeZone = presentation.TimeZone,
+            DeclaredPriority = RequestFingerprintEncoder.DeclaredPriority(request),
+            EffectivePriorityClass = RequestFingerprintEncoder.DeclaredPriority(request),
         };
 
         JobAcceptanceResult result;
@@ -535,6 +562,8 @@ public static class CreateReportJobEndpoint
         public const string KeyReused = "key-reused";
 
         public const string StoreUnavailable = "store-unavailable";
+
+        public const string Priority = "priority";
     }
 
     // The key use a log line names, a constant of the two cases there are.

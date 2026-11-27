@@ -7,7 +7,8 @@ refusal it gives, and what the service guarantees about the connection and about
 the work that follows.
 
 The job's published files are listed and downloaded through the two operations
-described below, after the status read that follows them.
+described below, after the status read that follows them and the operation that
+cancels a job.
 
 ## Who may read a job
 
@@ -68,7 +69,8 @@ Cache-Control: no-store
   "errorMessage": null,
   "createdAt": "2026-11-01T12:03:17.123Z",
   "startedAt": "2026-11-01T12:03:18.004Z",
-  "finishedAt": null
+  "finishedAt": null,
+  "priority": { "declared": "normal", "effective": "normal" }
 }
 ```
 
@@ -89,6 +91,8 @@ Every member is always present; a value that does not exist yet is written as
 | `errorCode` | The stable code of the condition that ended a failed job; `null` otherwise. |
 | `errorMessage` | The message the failed job carries for you; `null` otherwise. It is written from the condition the job ended with, names no value of your data and no setting of the deployment, and is `null` when the condition has no message in this version. |
 | `createdAt`, `startedAt`, `finishedAt` | When the job was accepted, when it entered its first step and when it ended, in UTC as RFC 3339 with `Z` and three fractional digits; `null` until each happens. |
+| `priority.declared` | The priority the job was created with: `low`, `normal` or `high` — `normal` when the request named none. It never changes. |
+| `priority.effective` | The class the job is dispatched on: `low`, `normal` or `high`. It equals `priority.declared` when the job is accepted; it is reported separately because a scheduling rule may later move it, never the declared priority. Jobs created before the priority existed read `normal` for both. |
 
 **There is no percentage.** The service never presents a share of a total it has
 not counted; a client that knows both numbers may compute one itself.
@@ -165,6 +169,38 @@ Every answer is `Cache-Control: no-store`: an intermediary serving an older
 answer would show counters going back. Poll at about one request per second
 while the job runs; at that rate a poll costs one indexed read of the service's
 own database. An inactive consumer may read its own jobs.
+
+## Cancel a job
+
+```http
+POST /api/v1/report-jobs/job-8c1d0f7a6b5e4d3c2b1a0f9e8d7c6b5a/cancel
+X-Consumer-Id: dev-consumer
+```
+
+Cancelling asks the service to stop a job that has not finished. It is the only
+way a job is cancelled: a client timeout or a dropped connection never cancels
+one, and the service decides the request without watching the connection. The
+answer is the job's status document, the same one the status read returns, and
+is `Cache-Control: no-store`.
+
+| The job is | Status | What happens |
+|------------|--------|--------------|
+| Not finished and not yet cancelling | 202 | The job moves to `cancelling` and the cancellation is recorded durably, once; the work winds down and the job ends `cancelled`. `Location` names the job's status. |
+| Already `cancelling` | 202 | The same accepted answer; nothing new is recorded. |
+| Already finished (`succeeded`, `failed` or `cancelled`) | 200 | Nothing changes; the answer is the job's current state. |
+
+Refusals:
+
+| Condition | Status | `code` |
+|-----------|--------|--------|
+| No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` |
+| The job does not exist, belongs to another consumer, or its identifier is malformed | 404 | `INPUT_NOT_FOUND` |
+| The cancellation could not be recorded | 503 | `SERVICE_UNAVAILABLE` |
+
+A consumer made inactive may still cancel its own jobs: stopping a running job is
+a safety and cost control, so only registration is required. Refusals of an
+unknown consumer are counted on `reportservice.consumer.refusals` with the
+operation `job-cancel`.
 
 ## List a job's files
 
@@ -301,6 +337,30 @@ by name, though a pre-release named exactly is used if the take accepts it.
 | `data.uploadId` | Required string. The upload must be yours, confirmed and not past its deadline; anything else is answered as an upload that does not exist. |
 | `data.profile` | Required string. Only `header-items-v1` is produced. |
 | `outputs` | Required, non-empty array of distinct strings. Only `pdf` is produced. |
+| `priority` | Optional string: exactly `low`, `normal` or `high` (lower case). When absent the job is created at `normal`. Any other value — another word such as `critical` or `urgent`, `null`, a number, an object, an array, or a different spelling such as `High` — is refused with `400 REQUEST_INVALID` naming the field `priority` and never repeating the value, and no job is created. The priority belongs to the job, not to the report's data: a `priority` placed inside the uploaded data is handled by the data contract like any other unexpected member, and no template and no output ever sees it. It is fixed when the job is accepted: there is no way to change the priority of a queued or running job — submit another job instead. |
+
+### The priority and the deployment's restriction of `high`
+
+Any declared consumer may ask for any of the three levels. A deployment **may** restrict
+`high` with the setting `Jobs:Priority:High:Restriction`:
+
+| Value | Effect |
+|-------|--------|
+| `none` (default) | Every declared consumer may ask for `high`. |
+| `allow-list` | Only the consumers listed in `Jobs:Priority:High:AllowedConsumers` may ask for `high`; the list must name at least one consumer, and only consumers the registry declares — otherwise the service does not start. |
+| `disabled` | The deployment does not offer `high` to anyone. |
+
+A `high` request the restriction does not admit is refused synchronously with
+`422 UNSUPPORTED_CAPABILITY` and the detail *"The requested priority 'high' is not offered
+for this request."*; no job is created. The answer names the level only: never the kind of
+restriction, the consumers it admits, or yours. It is never `CONSUMER_UNKNOWN` — the
+consumer is checked first. `low` and `normal` are never restricted. The level is never
+silently changed: the job is either created at the priority you asked for or refused.
+
+The restriction is a **static policy** of the deployment, never a count of work: the
+service does not refuse a `high` job because the deployment is busy. It is also **not a
+security boundary** — the consumer identity is declared, not authenticated; a deployment
+that needs one authenticates at its edge.
 
 `render`, `metadata` and every other member are **not accepted** yet: a request
 carrying one is refused as malformed rather than having it ignored, because
@@ -316,8 +376,9 @@ of creating a second one.
   (`!` to `~`), kept exactly as sent. Anything else is refused with
   `400 REQUEST_INVALID` naming the header and never echoing the value.
 - **What makes two requests the same:** the upload, the profile, the template **as the
-  request wrote it** (the identifier and, only when it was written, the version) and the
-  outputs. A request naming only the template therefore keeps the version its first job
+  request wrote it** (the identifier and, only when it was written, the version), the
+  outputs and the priority — a request naming `normal` and one naming no priority are the
+  same request. A request naming only the template therefore keeps the version its first job
   used: use a new key to have a newer version chosen. The consumer is part of it too, and
   keys belong to one consumer: another consumer's identical key is a job of its own.
 - **A repeat** is answered `202 Accepted` with the same `Location` and the same body as
@@ -329,6 +390,14 @@ of creating a second one.
 - **Only an accepted job binds a key.** A request that was refused stored nothing, so the
   next request with that key is a first request. A job that failed after acceptance keeps
   its key: retrying it means a new key.
+
+The same key with another priority is a different request and is refused with
+`409 IDEMPOTENCY_CONFLICT`; it never changes the priority of the first job.
+
+The deployment's restriction of `high` is decided **before** the key: if a deployment stops
+offering `high` (or removes you from its allow-list) after accepting your `high` job, a retry
+of that request with the same key is refused with `422 UNSUPPORTED_CAPABILITY` and is not
+answered the first job. The first job is unaffected; follow it by its status URL.
 
 The key is decided before the upload and the template version are looked at, so a retry
 is answered its first job even when its upload has been refused or has expired since, or
@@ -384,7 +453,7 @@ costs at most half a minute.
 Every refusal is a Problem Details document with a stable `code`; the same code
 always means the same condition. The checks run in this order: the consumer, the
 idempotency key's form, the body, the requested format and profile, the
-reference's syntax, the data reference, the key itself, and the versions already
+deployment's restriction of `high`, the reference's syntax, the data reference, the key itself, and the versions already
 taken; the data reference is then decided inside the transaction that accepts the
 job.
 
@@ -392,9 +461,9 @@ job.
 |------|------|--------|
 | No, malformed or unregistered consumer identity | 403 | `CONSUMER_UNKNOWN` |
 | An inactive consumer creating a job | 403 | `CONSUMER_INACTIVE` |
-| A format other than `pdf`, a profile other than `header-items-v1` | 422 | `UNSUPPORTED_CAPABILITY` |
+| A format other than `pdf`, a profile other than `header-items-v1`, or a `high` priority the deployment does not offer to you | 422 | `UNSUPPORTED_CAPABILITY` |
 | A body over 16 384 bytes | 413 | `QUOTA_EXCEEDED` |
-| A malformed body, an unknown member, a value out of its rule, a malformed `Idempotency-Key` | 400 | `REQUEST_INVALID` |
+| A malformed body, an unknown member, a value out of its rule (a `priority` other than `low`, `normal` or `high` included), a malformed `Idempotency-Key` | 400 | `REQUEST_INVALID` |
 | A template identifier outside the rule, a version that is not a semantic version, or a version of another consumer's that is not `shared` | 404 | `TEMPLATE_NOT_FOUND` |
 | An upload that does not exist for you, is not confirmed, was refused, or ran out of time | 404 | `INPUT_NOT_FOUND` |
 | A key already used with a different request | 409 | `IDEMPOTENCY_CONFLICT` |

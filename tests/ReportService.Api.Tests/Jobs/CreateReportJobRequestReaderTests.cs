@@ -40,6 +40,102 @@ public sealed class CreateReportJobRequestReaderTests
         Assert.Equal(["pdf"], accepted.Request.Outputs);
     }
 
+    // A valid document whose priority member is the JSON text written here, exactly as sent.
+    private static string WithPriority(string priority) =>
+        $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{Upload}}","profile":"header-items-v1"},"outputs":["pdf"],"priority":{{priority}}}""";
+
+    [Fact]
+    public async Task ADocumentWithoutAPriorityDeclaresNone()
+    {
+        var accepted = Assert.IsType<CreateReportJobRequestReader.Result.Accepted>(await ReadAsync(Valid()));
+
+        Assert.Null(accepted.Request.Priority);
+    }
+
+    [Theory]
+    [InlineData("low")]
+    [InlineData("normal")]
+    [InlineData("high")]
+    public async Task EachOfTheThreeLevelsIsAcceptedAsSent(string level)
+    {
+        var accepted = Assert.IsType<CreateReportJobRequestReader.Result.Accepted>(
+            await ReadAsync(WithPriority("\"" + level + "\"")));
+
+        Assert.Equal(level, accepted.Request.Priority);
+    }
+
+    [Theory]
+    [InlineData("\"critical\"")]
+    [InlineData("\"urgent\"")]
+    [InlineData("\"\"")]
+    [InlineData("\"HIGH\"")]
+    [InlineData("\"High\"")]
+    [InlineData("\" high\"")]
+    [InlineData("\"high \"")]
+    [InlineData("\"hіgh\"")]
+    public async Task AStringThatIsNotOneOfTheLevelsIsRefusedNamingTheField(string priority)
+    {
+        var problem = await RejectedAsync(WithPriority(priority));
+
+        Assert.Equal(RequestInvalidDetails.InvalidFormatReason, problem.Reason);
+        Assert.Equal(CreateReportJobRequestReader.PriorityMember, problem.Field);
+        Assert.Equal(CreateReportJobRequestReader.PriorityFormatDetail, problem.Detail);
+    }
+
+    [Fact]
+    public async Task ARefusedPriorityIsNotEchoed()
+    {
+        var problem = await RejectedAsync(WithPriority("\"" + Planted + "\""));
+
+        Assert.Equal(CreateReportJobRequestReader.PriorityMember, problem.Field);
+        Assert.DoesNotContain(Planted, problem.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ANullPriorityIsRefusedAsANullField()
+    {
+        var problem = await RejectedAsync(WithPriority("null"));
+
+        Assert.Equal(RequestInvalidDetails.NullFieldReason, problem.Reason);
+        Assert.Equal(CreateReportJobRequestReader.PriorityMember, problem.Field);
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("true")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("[\"high\"]")]
+    [InlineData("{\"level\":\"high\"}")]
+    public async Task APriorityOfAnotherJsonTypeIsRefusedAsAWrongType(string priority)
+    {
+        var problem = await RejectedAsync(WithPriority(priority));
+
+        Assert.Equal(RequestInvalidDetails.WrongTypeReason, problem.Reason);
+        Assert.Equal(CreateReportJobRequestReader.PriorityMember, problem.Field);
+    }
+
+    [Fact]
+    public async Task ARepeatedPriorityIsRefusedAsADuplicateField()
+    {
+        var body = $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{Upload}}","profile":"header-items-v1"},"outputs":["pdf"],"priority":"low","priority":"low"}""";
+
+        var problem = await RejectedAsync(body);
+
+        Assert.Equal(RequestInvalidDetails.DuplicateFieldReason, problem.Reason);
+        Assert.Equal(CreateReportJobRequestReader.PriorityMember, problem.Field);
+    }
+
+    [Fact]
+    public async Task APriorityInsideTheDataReferenceIsAnUnknownFieldNotAPriority()
+    {
+        var body = $$"""{"template":{"id":"pilot-grouped"},"data":{"uploadId":"{{Upload}}","profile":"header-items-v1","priority":"high"},"outputs":["pdf"]}""";
+
+        var problem = await RejectedAsync(body);
+
+        Assert.Equal(RequestInvalidDetails.UnknownFieldReason, problem.Reason);
+    }
+
     [Fact]
     public async Task AReferenceWithoutAVersionCarriesNone()
     {

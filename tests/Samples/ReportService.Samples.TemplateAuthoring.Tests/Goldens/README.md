@@ -11,6 +11,8 @@ so `PdfSampleRenderer` verifies the exact printed page a live print produced.
 | `pilot-simple.pdf` | `samples/templates/pilot-simple` | Scriban 7.5.1 | 55 651 | `fbd6731d…0313031b` |
 | `pilot-handlebars.pdf` | `samples/templates/pilot-handlebars` | Handlebars 2.4.3 | 55 651 | `beccc597…ec6e6252` |
 | `pilot-liquid.pdf` | `samples/templates/pilot-liquid` | Liquid/Fluid 2.40.0 | 55 651 | `3bafda49…86c18035` |
+| `invoice-batch.pdf` | `samples/templates/invoice-batch` | Liquid/Fluid 2.40.0 | 74 071 | `f1020a9a…91b363dc` |
+| `invoice-batch-two-up.pdf` | `samples/templates/invoice-batch-two-up` | Liquid/Fluid 2.40.0 | 76 787 | `1e5db173…b5c3815f` |
 
 The exact hashes are in `SHA256SUMS` beside this file.
 
@@ -34,6 +36,19 @@ page with the product's verification. The composed HTML of the three runs is
 byte-identical (`SHA-256 017e0c2398e91c307aad9938515d959104bb7539578e609987770cb2b6fff7d7`):
 the three examples are the same report in a different engine. The PDFs differ in
 their container bytes (Chromium's own metadata) and each was verified on its own.
+
+### The invoice batch goldens
+
+Printed the same way from product commit `db131f6341dac045b277b39a89b4ba744a021fb2`
+plus the two invoice packages, on Windows, with the same Chromium build:
+
+```text
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render samples/templates/invoice-batch --out artifacts/template-preview/invoice-batch/1.0.0
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render samples/templates/invoice-batch-two-up --out artifacts/template-preview/invoice-batch-two-up/1.0.0
+```
+
+They printed `rendered invoice-batch 1.0.0: engine=liquid pages=6 words=383` and
+`rendered invoice-batch-two-up 1.0.0: engine=liquid pages=3 words=383` and exited 0.
 
 ## When they must be regenerated
 

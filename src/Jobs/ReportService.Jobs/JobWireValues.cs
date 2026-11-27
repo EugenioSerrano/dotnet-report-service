@@ -206,6 +206,48 @@ public static class JobWireValues
         _ => throw new InvalidOperationException("the stored reference form is not a known value"),
     };
 
+    /// <summary>The text a priority is sent, answered and stored as.</summary>
+    /// <param name="priority">The priority.</param>
+    public static string ToWire(JobPriority priority) => priority switch
+    {
+        JobPriority.Low => "low",
+        JobPriority.Normal => "normal",
+        JobPriority.High => "high",
+        _ => throw new ArgumentOutOfRangeException(nameof(priority), priority, null),
+    };
+
+    /// <summary>
+    /// Reads a priority written as its text: exactly <c>low</c>, <c>normal</c> or <c>high</c>,
+    /// ordinal and case-sensitive. Any other text is no priority.
+    /// </summary>
+    /// <param name="value">The text to read.</param>
+    /// <param name="priority">The priority it names, when it names one.</param>
+    public static bool TryParsePriority(string? value, out JobPriority priority)
+    {
+        switch (value)
+        {
+            case "low":
+                priority = JobPriority.Low;
+                return true;
+            case "normal":
+                priority = JobPriority.Normal;
+                return true;
+            case "high":
+                priority = JobPriority.High;
+                return true;
+            default:
+                priority = JobPriority.Normal;
+                return false;
+        }
+    }
+
+    /// <summary>Reads a stored priority; a value the store cannot hold is a defect, not an input.</summary>
+    /// <param name="value">The stored text.</param>
+    public static JobPriority ParseStoredPriority(string value) =>
+        TryParsePriority(value, out var priority)
+            ? priority
+            : throw new InvalidOperationException("the stored priority is not one this build knows");
+
     /// <summary>Truncates <paramref name="value"/> to whole milliseconds in UTC, the precision every row carries.</summary>
     /// <param name="value">The value to truncate.</param>
     public static DateTimeOffset TruncateToMillisecond(DateTimeOffset value)

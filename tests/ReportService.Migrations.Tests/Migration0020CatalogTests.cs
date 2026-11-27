@@ -28,8 +28,6 @@ public sealed class Migration0020CatalogTests
 
         Assert.Contains(CancelJobIntent, names);
         Assert.True(MigrationScriptName.IsValid(CancelJobIntent));
-        Assert.Equal(CancelJobIntent, MigrationCatalog.Scripts[^1].Name);
-        Assert.Equal(CancelJobIntent, MigrationCatalog.ExpectedVersion);
 
         // Ordered strictly after 0019, with no other script between them.
         Assert.Equal(names.IndexOf(PartiallySucceeded) + 1, names.IndexOf(CancelJobIntent));

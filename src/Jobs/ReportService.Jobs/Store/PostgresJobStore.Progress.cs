@@ -15,6 +15,8 @@ public sealed partial class PostgresJobStore
     private const string FindStatusSql = """
         SELECT j.report_job_id    AS "ReportJobId",
                j.status           AS "Status",
+               j.declared_priority        AS "DeclaredPriority",
+               j.effective_priority_class AS "EffectivePriorityClass",
                j.stage            AS "Stage",
                j.records_read     AS "RecordsRead",
                j.records_total    AS "RecordsTotal",
@@ -93,7 +95,11 @@ public sealed partial class PostgresJobStore
                     JobWireValues.ParseStoredOutputStatus(row.OutputStatus),
                     row.OutputErrorCode,
                     row.OutputErrorReason,
-                    row.ArtifactId))]);
+                    row.ArtifactId))])
+            {
+                DeclaredPriority = JobWireValues.ParseStoredPriority(first.DeclaredPriority),
+                EffectivePriorityClass = JobWireValues.ParseStoredPriority(first.EffectivePriorityClass),
+            };
         }
         catch (Exception exception) when (IsUnavailable(exception))
         {
@@ -131,6 +137,10 @@ public sealed partial class PostgresJobStore
         public string ReportJobId { get; set; } = string.Empty;
 
         public string Status { get; set; } = string.Empty;
+
+        public string DeclaredPriority { get; set; } = string.Empty;
+
+        public string EffectivePriorityClass { get; set; } = string.Empty;
 
         public string? Stage { get; set; }
 

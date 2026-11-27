@@ -38,6 +38,13 @@ public static class RequestFingerprintEncoder
     /// <summary>The member carrying the time zone the request named, written only when it named one.</summary>
     public const string TimeZoneMember = "render.timeZone";
 
+    /// <summary>
+    /// The member carrying the declared priority, written only for <c>low</c> or <c>high</c>: a
+    /// request that declares <c>normal</c> and one that declares nothing ask for the same thing,
+    /// and every request written before the priority existed keeps the identity it had.
+    /// </summary>
+    public const string PriorityMember = "priority";
+
     /// <summary>The member carrying the requested outputs, one line per value in ordinal order.</summary>
     public const string OutputsMember = "outputs";
 
@@ -61,7 +68,29 @@ public static class RequestFingerprintEncoder
             request.TimeZone is { } timeZone ? [timeZone] : []),
         new(OutputsMember, nameof(CreateReportJobRequest.Outputs), (request, _) =>
             [.. request.Outputs.OrderBy(output => output, StringComparer.Ordinal)]),
+        new(PriorityMember, nameof(CreateReportJobRequest.Priority), (request, _) =>
+            DeclaredPriority(request) is var priority && priority != JobPriority.Normal
+                ? [JobWireValues.ToWire(priority)]
+                : []),
     ];
+
+    /// <summary>
+    /// The priority a read request declares: the level it names, or <see cref="JobPriority.Normal"/>
+    /// when it names none. The reader has already refused any other value.
+    /// </summary>
+    /// <param name="request">The request as it was read.</param>
+    public static JobPriority DeclaredPriority(CreateReportJobRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.Priority is null)
+        {
+            return JobPriority.Normal;
+        }
+
+        return JobWireValues.TryParsePriority(request.Priority, out var priority)
+            ? priority
+            : throw new InvalidOperationException("a read request carries a priority the reader admits");
+    }
 
     /// <summary>
     /// Computes the identity of a request: the canonical form of <paramref name="request"/>

@@ -67,9 +67,10 @@ rather than silently accepted.
 4. Build. The script is embedded in `ReportService.Migrations`; the migrator
    applies it at the next start of a composition or a deployment.
 
-The shipped set holds `0001_baseline.sql` only, which creates the
-`report_service` schema. No business table exists yet; each change that needs one
-adds its own script.
+The shipped set starts with `0001_baseline.sql`, which creates the
+`report_service` schema; every later script adds the tables, columns or checks of
+one change (uploads, jobs, intents, template versions, printed parts and so on).
+The schema version a build expects is the name of the highest script it embeds.
 
 ## What a printed block records about its presentation
 

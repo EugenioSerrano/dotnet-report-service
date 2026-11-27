@@ -58,7 +58,11 @@ public sealed partial class InMemoryJobStore
                 job.CreatedAt,
                 job.StartedAt,
                 job.FinishedAt,
-                outputs));
+                outputs)
+            {
+                DeclaredPriority = job.DeclaredPriority,
+                EffectivePriorityClass = job.EffectivePriorityClass,
+            });
         }
     }
 
