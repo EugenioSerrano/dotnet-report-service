@@ -14,6 +14,7 @@ namespace ReportService.EndToEndTests;
 /// served it, and no captured attribute of the three priority instruments carries a job
 /// identifier. The host's memory with the per-class workers running is recorded.
 /// </summary>
+[Collection(PriorityCompositionCollection.Name)]
 public sealed class JobPriorityTelemetryEndToEndTests : IDisposable
 {
     private static readonly TimeSpan JobDeadline = TimeSpan.FromMinutes(20);
