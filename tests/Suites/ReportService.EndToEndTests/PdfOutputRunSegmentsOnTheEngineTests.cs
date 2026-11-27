@@ -23,8 +23,15 @@ namespace ReportService.EndToEndTests;
 /// continues as a new run carrying only the next index; every run's history stays inside the
 /// event bound; and every block is scheduled exactly once across the runs.
 /// </summary>
+[Collection(EngineLevelCollection.Name)]
 public sealed class PdfOutputRunSegmentsOnTheEngineTests
 {
+    /// <summary>The evidence file one window writes into the run's evidence folder.</summary>
+    /// <param name="window">The window.</param>
+    /// <returns>The file name.</returns>
+    public static string EvidenceFileName(int window) =>
+        string.Create(CultureInfo.InvariantCulture, $"pdf-output-run-segments-window-{window}.json");
+
     /// <summary>The blocks the stand-in partition reports: more than one run's share.</summary>
     public const int BlockCount = 1_200;
 
@@ -46,8 +53,13 @@ public sealed class PdfOutputRunSegmentsOnTheEngineTests
     public async Task EachRunCompletesItsShareInsideTheBoundAndEveryBlockOnce(int window)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+        Assert.True(
+            RunEnvironment.RunDirectory is not null,
+            $"This case writes its measurements into the run's evidence folder, which only a run started by eng/test/ReportService.Eng.TestRunner names ({RunEnvironment.RunDirectoryVariable}); run the e2e level through the runner.");
+        var startedAt = DateTimeOffset.UtcNow;
+        var engineName = $"report-service-run-segments-{Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]}";
         await using var engine = new ContainerBuilder(EngineImage())
-            .WithName($"report-service-run-segments-{Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8]}")
+            .WithName(engineName)
             .WithCommand("server", "start-dev", "--ip", "0.0.0.0")
             .WithPortBinding(EnginePort, true)
             .Build();
@@ -91,39 +103,90 @@ public sealed class PdfOutputRunSegmentsOnTheEngineTests
 
             var runs = await ReadRunChainAsync(client, workflowId, handle.FirstExecutionRunId ?? handle.ResultRunId!, cancellationToken);
 
+            var measured = runs
+                .Select((events, run) =>
+                {
+                    var renders = RenderIndices(events);
+                    return new RunMeasurement(
+                        run + 1,
+                        events[0].WorkflowExecutionStartedEventAttributes?.OriginalExecutionRunId ?? string.Empty,
+                        events.Count,
+                        renders,
+                        renders.Count == 0 ? 0 : (double)(events.Count - Overhead(events)) / renders.Count,
+                        events[^1].EventType.ToString(),
+                        PatchIds(events).Any(patch => patch.Contains(ReportPdfOutputWorkflow.ContinueAsNewDrainPatch, StringComparison.Ordinal)));
+                })
+                .ToList();
+            var scheduled = measured.SelectMany(run => run.Renders).Order().ToList();
+            var rendered = steps.Rendered.Order().ToList();
+            var exactlyOnce = scheduled.SequenceEqual(Enumerable.Range(0, BlockCount)) && rendered.SequenceEqual(Enumerable.Range(0, BlockCount));
+
+            // The measurements are evidence: they are written before any assertion, so a failing
+            // run still leaves them in the run's folder.
+            var evidencePath = WriteEvidence(window, workflowId, engineName, startedAt, stopwatch.Elapsed, measured, exactlyOnce);
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"window={window} runs={measured.Count} exactlyOnce={exactlyOnce} evidence={evidencePath}");
+
             var expectedRuns = (BlockCount + PdfOutputWindow.ContinueAsNewAfter - 1) / PdfOutputWindow.ContinueAsNewAfter;
-            Assert.Equal(expectedRuns, runs.Count);
-            var scheduled = new List<int>();
-            for (var run = 0; run < runs.Count; run++)
+            Assert.Equal(expectedRuns, measured.Count);
+            foreach (var run in measured)
             {
-                var events = runs[run];
-                var last = run == runs.Count - 1;
-                var renders = RenderIndices(events);
-
-                Assert.True(events.Count <= HistoryBound, $"run {run + 1} holds {events.Count} events, over the bound of {HistoryBound}.");
-                Assert.Contains(PatchIds(events), patch => patch.Contains(ReportPdfOutputWorkflow.ContinueAsNewDrainPatch, StringComparison.Ordinal));
+                var last = run.Run == measured.Count;
+                Assert.True(run.Events <= HistoryBound, $"run {run.Run} holds {run.Events} events, over the bound of {HistoryBound}.");
+                Assert.True(run.DrainMarker, $"run {run.Run} carries no drain marker.");
                 Assert.Equal(
-                    last ? BlockCount - (run * PdfOutputWindow.ContinueAsNewAfter) : PdfOutputWindow.ContinueAsNewAfter,
-                    renders.Count);
+                    last ? BlockCount - ((run.Run - 1) * PdfOutputWindow.ContinueAsNewAfter) : PdfOutputWindow.ContinueAsNewAfter,
+                    run.Renders.Count);
                 Assert.Equal(
-                    last ? EventType.WorkflowExecutionCompleted : EventType.WorkflowExecutionContinuedAsNew,
-                    events[^1].EventType);
-                scheduled.AddRange(renders);
-
-                var perBlock = renders.Count == 0 ? 0 : (double)(events.Count - Overhead(events)) / renders.Count;
-                TestContext.Current.TestOutputHelper?.WriteLine(
-                    $"window={window} run={run + 1} events={events.Count} blocks={renders.Count} eventsPerBlock={perBlock.ToString("F2", CultureInfo.InvariantCulture)}");
+                    (last ? EventType.WorkflowExecutionCompleted : EventType.WorkflowExecutionContinuedAsNew).ToString(),
+                    run.Ended);
             }
 
-            Assert.Equal(Enumerable.Range(0, BlockCount), scheduled.Order());
-            Assert.Equal(Enumerable.Range(0, BlockCount), steps.Rendered.Order());
-            TestContext.Current.TestOutputHelper?.WriteLine(
-                $"window={window} runs={runs.Count} elapsed={stopwatch.Elapsed.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s");
+            Assert.Equal(Enumerable.Range(0, BlockCount), scheduled);
+            Assert.Equal(Enumerable.Range(0, BlockCount), rendered);
         }
         finally
         {
             ReportPdfOutputWorkflow.Configure(previousWindow);
         }
+    }
+
+    /// <summary>Writes one window's measurements into the run's evidence folder and answers the file's path.</summary>
+    private static string WriteEvidence(
+        int window,
+        string workflowId,
+        string engineName,
+        DateTimeOffset startedAt,
+        TimeSpan elapsed,
+        IReadOnlyList<RunMeasurement> runs,
+        bool exactlyOnce)
+    {
+        var document = new
+        {
+            window,
+            blockCount = BlockCount,
+            workflowId,
+            engineContainer = engineName,
+            startedAt = startedAt.ToString("O", CultureInfo.InvariantCulture),
+            finishedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+            elapsedSeconds = Math.Round(elapsed.TotalSeconds, 1),
+            historyBound = HistoryBound,
+            runCount = runs.Count,
+            exactlyOnce,
+            runs = runs.Select(run => new
+            {
+                run = run.Run,
+                runId = run.RunId,
+                events = run.Events,
+                renders = run.Renders.Count,
+                eventsPerBlock = Math.Round(run.EventsPerBlock, 2),
+                ended = run.Ended,
+                drainMarker = run.DrainMarker,
+            }),
+        };
+        return RunEnvironment.WriteEvidence(
+            EvidenceFileName(window),
+            JsonSerializer.SerializeToUtf8Bytes(document, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     /// <summary>The workflow engine image and tag the composition pins, read from its pin file.</summary>
@@ -248,6 +311,16 @@ public sealed class PdfOutputRunSegmentsOnTheEngineTests
         return firstRender + (events.Count - 1 - lastCompletion);
     }
 
+    /// <summary>What one run of the chain held, as measured from the engine's history.</summary>
+    private sealed record RunMeasurement(
+        int Run,
+        string RunId,
+        int Events,
+        IReadOnlyList<int> Renders,
+        double EventsPerBlock,
+        string Ended,
+        bool DrainMarker);
+
     /// <summary>The output's steps, answering at once: the partition reports its blocks, each render records its index.</summary>
     private sealed class StandInSteps(int blockCount)
     {
@@ -277,4 +350,16 @@ public sealed class PdfOutputRunSegmentsOnTheEngineTests
         public Task<PublishOutputResult> PublishOutputAsync(PublishOutputInput input) =>
             Task.FromResult(new PublishOutputResult(PublishOutputResult.Published, "artifact-stand-in"));
     }
+}
+
+/// <summary>
+/// The engine-level classes: they start their own workflow engine and workers, so they run
+/// after the parallel classes and never beside the composition-heavy ones that hold the host's
+/// memory.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class EngineLevelCollection
+{
+    /// <summary>The collection's name.</summary>
+    public const string Name = "engine-level";
 }
