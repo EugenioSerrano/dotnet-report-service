@@ -261,6 +261,48 @@ public sealed class PageCodeAssemblyTests
     }
 
     [Fact]
+    public async Task ACodeOutsideThePrintableBoxIsCaught()
+    {
+        // Drawn at 200 mm from the left: on the page, but inside the 10 mm right margin.
+        var outside = new PageCodeRectangle(195, 100, 10, 10);
+        var directory = AssemblyFixture.NewDirectory();
+        var parts = new[] { AssemblyFixture.CreatePart(directory, 0, 1) };
+        var output = Path.Combine(directory, "out.pdf");
+        await Assemble(parts, directory, output, AssemblyFixture.Contract(), Code(area: outside));
+
+        var printable = AssemblyPageCode.PrintableBoxOf(AssemblyFixture.Frame);
+        Assert.True(Verify(output, parts, AssemblyFixture.Contract(), Code(area: outside)).Passed);
+        Assert.Equal(
+            AssemblyFailureReasons.CodePlacement,
+            Verify(output, parts, AssemblyFixture.Contract(), Code(area: outside, printable: printable)).Reason);
+        Assert.True(Verify(output, parts, AssemblyFixture.Contract(), Code(area: outside, printable: new PageCodeText.Region(0, 0, 600, 850))).Passed);
+    }
+
+    [Fact]
+    public async Task ACodeOverTheAccountingFooterIsCaught()
+    {
+        var (_, parts, output) = await CodedDocument();
+        var region = CodeArea.Region;
+        var footer = new PageCodeText.Region(0, region.TopPt + 5, 600, 20);
+
+        Assert.Equal(
+            AssemblyFailureReasons.CodePlacement,
+            Verify(output, parts, AssemblyFixture.Contract(), Code(footer: footer)).Reason);
+        Assert.True(Verify(output, parts, AssemblyFixture.Contract(), Code(footer: new PageCodeText.Region(0, 800, 600, 20))).Passed);
+    }
+
+    [Fact]
+    public void ARegionDeclaredInMillimetresIsInPointsAndKnowsItsContainer()
+    {
+        var region = PageCodeText.Region.FromMillimetres(10, 20, 30, 40);
+
+        Assert.Equal(10 * 72 / 25.4, region.LeftPt, 6);
+        Assert.Equal(40 * 72 / 25.4, region.HeightPt, 6);
+        Assert.True(region.Within(PageCodeText.Region.FromMillimetres(0, 0, 50, 70)));
+        Assert.False(region.Within(PageCodeText.Region.FromMillimetres(15, 0, 50, 70)));
+    }
+
+    [Fact]
     public async Task AFormWithAnotherBoundingBoxIsNotCountedAsTheCode()
     {
         var (_, parts, output) = await CodedDocument();
@@ -294,7 +336,9 @@ public sealed class PageCodeAssemblyTests
         string value = Value,
         string pattern = Pattern,
         PageCodeRectangle? area = null,
-        NumberingArea? numbering = null)
+        NumberingArea? numbering = null,
+        PageCodeText.Region? printable = null,
+        PageCodeText.Region? footer = null)
     {
         generator ??= new ReferenceGridPageCodeGenerator();
         var problems = new List<PageCodeProblem>();
@@ -307,7 +351,9 @@ public sealed class PageCodeAssemblyTests
             "invoices",
             "1.0.0",
             AssemblyFixture.Frame.Margins,
-            numbering ?? AssemblyFixture.Area);
+            numbering ?? AssemblyFixture.Area,
+            printable,
+            footer);
     }
 
     private static Task<AssemblyResult> Assemble(

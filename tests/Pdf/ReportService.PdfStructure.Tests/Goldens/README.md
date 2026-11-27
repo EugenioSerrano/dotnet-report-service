@@ -58,6 +58,27 @@ A golden that cannot be generated with the **same structure** on two renders is 
 stop condition (ADR-039 / SPEC §15): the structure verification needs a stable
 golden.
 
+## The coded assembled golden (`Coded/`)
+
+`Coded/coded-two-parts.pdf` is an **assembled** document: the product's assembler
+wrote it from two generated parts (two pages and one page), stamped "Page X of Y"
+and drew a per-page code with the reference generator (`reference-grid`) in the
+area 160/100/20/20 mm, from `{page.number}/{page.total}|{match}` with the pattern
+`INV-[0-9]{8}`. It passed the product's assembly verification when it was
+written. It lives in its own folder because it is not a rendered golden: it has no
+source fixture or frame declaration, and the top-level catalog does not read it.
+`Coded/SHA256SUMS` holds its hash.
+
+`CodedGoldenTests` holds it to the code's structure (one form per page whose box is
+the area, drawn once onto it, its decoded content the generator's for the page's
+value, the numbering continuous) and holds the strict structural validator's
+exemption rule (`qpdf --check`, exit 3 with only "input stream is complete but
+output may still be valid") to its exact shape. The validator itself is a native
+tool installed only in the PDF oracle image; it does not run at the hermetic level.
+
+It was generated once with a throw-away program over the product's assembler; a
+change to the assembler that changes these bytes regenerates it the same way.
+
 ## When a golden must change
 
 Only a rendering-touching Bolt updates a golden, deliberately, showing the diff

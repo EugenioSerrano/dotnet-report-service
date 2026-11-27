@@ -271,7 +271,9 @@ public static class AssemblyVerifier
         var region = code.CodeRegion;
         if (region.LeftPt + region.WidthPt > output.Page.Width + tolerance
             || region.TopPt + region.HeightPt > output.Page.Height + tolerance
-            || (code.NumberingRegion is { } numbering && region.Overlaps(numbering)))
+            || (code.NumberingRegion is { } numbering && region.Overlaps(numbering))
+            || (code.PrintableBox is { } printable && !region.Within(printable))
+            || (code.Footer is { } footer && region.Overlaps(footer)))
         {
             return AssemblyVerdict.Failed(AssemblyFailureReasons.CodePlacement, partIndex, pageNumber);
         }

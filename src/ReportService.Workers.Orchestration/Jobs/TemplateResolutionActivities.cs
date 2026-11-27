@@ -43,14 +43,6 @@ public sealed class TemplateResolutionActivities(
     private static readonly ActivitySource Source = new(TelemetryDefaults.ActivitySourceName);
 
     /// <summary>
-    /// Reads the job's reference and answers what the workflow is to do next: the version
-    /// it is already fixed to, that the job ended, or which of the two deliveries to call.
-    /// An exact version already taken and usable is pinned here; one taken by another
-    /// consumer that does not share it is refused exactly like a version that never
-    /// existed.
-    /// </summary>
-    /// <param name="input">The job to prepare.</param>
-    /// <summary>
     /// Reads whether the job's taken template version declares a per-page code - the
     /// fact that sends a one-block output through the assembly. It reads the version's
     /// manifest only, never the job's data.
@@ -80,6 +72,14 @@ public sealed class TemplateResolutionActivities(
         return new PageCodeDeclarationResult(record.Manifest.Outputs?.Pdf?.PageCode is not null);
     }
 
+    /// <summary>
+    /// Reads the job's reference and answers what the workflow is to do next: the version
+    /// it is already fixed to, that the job ended, or which of the two deliveries to call.
+    /// An exact version already taken and usable is pinned here; one taken by another
+    /// consumer that does not share it is refused exactly like a version that never
+    /// existed.
+    /// </summary>
+    /// <param name="input">The job to prepare.</param>
     [Activity(PrepareTemplateName)]
     public async Task<PrepareTemplateResult> PrepareTemplateAsync(PrepareTemplateInput input)
     {

@@ -355,7 +355,7 @@ version is taken, naming the part and the `"src"` attribute.
 
 A code that depends on the final page rather than on an invoice is not
 precomputed: the template declares it and the service applies it to every page.
-It is documented with that feature.
+See [A code on every page](#a-code-on-every-page).
 
 ### Showing or hiding on a flag
 
@@ -447,8 +447,9 @@ step that stamps the page number, and never runs template code to do it.
 
 - A code or graphic that depends **only on one record** — an invoice's own QR, a
   chart of its lines — is computed **by you, before the job**, and travels in the
-  record's data (for example a precomputed SVG or PNG data URI). The template
-  prints it like any other value. The service never generates, draws or checks it.
+  record's data, printed by the template in one of the ways
+  [Graphics and codes are computed before the job](#graphics-and-codes-are-computed-before-the-job)
+  describes. The service never generates, draws or checks it.
 - A code that depends on **the page** — the page's position, or what the page
   prints — is **declared** in the manifest, and the service draws it.
 

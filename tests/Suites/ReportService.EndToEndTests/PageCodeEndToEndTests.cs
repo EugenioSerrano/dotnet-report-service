@@ -15,7 +15,8 @@ namespace ReportService.EndToEndTests;
 /// declared source gives on that page - computed here from the template's identity,
 /// the page's position and the running header every page prints, never read back
 /// from the code. The multi-block document keeps its "X of Y" stamp; the one-block
-/// document keeps its own page counter and gains no stamp.
+/// document keeps its own page counter and gains no stamp. The merge worker reports the
+/// code figures it records as metrics (generator, pages, bytes, time, failures) for each.
 /// </summary>
 [Trait("Requires", "printing")]
 public sealed class PageCodeEndToEndTests : IDisposable
@@ -54,6 +55,18 @@ public sealed class PageCodeEndToEndTests : IDisposable
         var onePartition = await _stage.ReadPartitionAsync(composition, one.ReportJobId, cancellationToken);
         Assert.Equal(1, onePartition.BlockCount);
         AssertCodes(one.Reading, numbered: false);
+
+        // The code figures the merge worker records as metrics, as its log line reports
+        // them for each output: the reference generator, every page coded, no failure.
+        var log = await MultiBlockStage.ReadWorkerLogAsync(composition.App, "merge-worker", cancellationToken);
+        foreach (var pages in new[] { multi.Reading.Pages.Count, one.Reading.Pages.Count })
+        {
+            Assert.Contains(log, line =>
+                line.Contains("page codes: generator=" + Generator, StringComparison.Ordinal)
+                && line.Contains("origin=reference", StringComparison.Ordinal)
+                && line.Contains(string.Create(CultureInfo.InvariantCulture, $"pages={pages} "), StringComparison.Ordinal)
+                && line.Contains("failures=0", StringComparison.Ordinal));
+        }
     }
 
     private async Task<(string ReportJobId, PdfDocumentReading Reading)> RunAsync(

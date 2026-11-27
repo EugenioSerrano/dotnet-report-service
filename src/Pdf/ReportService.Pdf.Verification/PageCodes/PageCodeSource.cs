@@ -314,6 +314,30 @@ public static class PageCodeText
     /// <param name="HeightPt">The height.</param>
     public sealed record Region(double LeftPt, double TopPt, double WidthPt, double HeightPt)
     {
+        /// <summary>A region declared in millimetres from the page's top-left corner.</summary>
+        /// <param name="leftMm">The left edge.</param>
+        /// <param name="topMm">The top edge.</param>
+        /// <param name="widthMm">The width.</param>
+        /// <param name="heightMm">The height.</param>
+        /// <returns>The region in points.</returns>
+        public static Region FromMillimetres(double leftMm, double topMm, double widthMm, double heightMm)
+        {
+            const double points = 72d / 25.4d;
+            return new Region(leftMm * points, topMm * points, widthMm * points, heightMm * points);
+        }
+
+        /// <summary>Whether this region lies inside another (with a small tolerance).</summary>
+        /// <param name="outer">The enclosing region.</param>
+        /// <returns>Whether it is inside.</returns>
+        public bool Within(Region outer)
+        {
+            ArgumentNullException.ThrowIfNull(outer);
+            const double tolerance = 0.05d;
+            return LeftPt >= outer.LeftPt - tolerance && TopPt >= outer.TopPt - tolerance
+                && LeftPt + WidthPt <= outer.LeftPt + outer.WidthPt + tolerance
+                && TopPt + HeightPt <= outer.TopPt + outer.HeightPt + tolerance;
+        }
+
         /// <summary>Whether a word's centre lies inside the region (with a small tolerance).</summary>
         /// <param name="word">The word.</param>
         /// <returns>Whether it is inside.</returns>

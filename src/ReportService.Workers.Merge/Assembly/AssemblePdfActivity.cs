@@ -139,7 +139,7 @@ public sealed class AssemblePdfActivity(
         Directory.CreateDirectory(ScratchRoot);
         await using var package = await packages.OpenAsync(record, ScratchRoot, cancellationToken).ConfigureAwait(false);
         var contract = NumberingContract(record.Manifest, package.Root);
-        var pageCode = PageCodeOf(record.Manifest, frame, contract);
+        var pageCode = PageCodeOf(record.Manifest, frame);
 
         // A numbering contract is required to assemble, except for a one-part output
         // whose template declares a per-page code: that output is assembled to draw
@@ -260,6 +260,22 @@ public sealed class AssemblePdfActivity(
                 assembled.Metrics.Parts,
                 assembled.Metrics.Batches,
                 written.Size);
+            if (assembled.Metrics.CodeGenerator is { } generator)
+            {
+                // The same figures the code instruments record, in one line a run can read.
+                logger.LogInformation(
+                    "Output {OutputId} page codes: generator={Generator} assembly={GeneratorAssembly} version={GeneratorVersion} origin={GeneratorOrigin} pages={CodePages} bytes={CodeBytes} generationMs={CodeGenerationMs} failures={CodeFailures}",
+                    input.OutputId,
+                    generator.Name,
+                    generator.AssemblyName,
+                    generator.AssemblyVersion,
+                    generator.Origin,
+                    assembled.Metrics.CodePages,
+                    assembled.Metrics.CodeBytes,
+                    (long)assembled.Metrics.CodeGeneration.TotalMilliseconds,
+                    assembled.Metrics.CodeFailures);
+            }
+
             return new AssemblePdfResult(key.ToString(), written.Sha256, written.Size, assembled.PageCount);
         }
         finally
@@ -401,7 +417,7 @@ public sealed class AssemblePdfActivity(
         }
     }
 
-    private AssemblyPageCode? PageCodeOf(TemplateManifest manifest, PageFrame frame, PageNumbering? contract)
+    private AssemblyPageCode? PageCodeOf(TemplateManifest manifest, PageFrame frame)
     {
         var declared = manifest.Outputs?.Pdf?.PageCode;
         if (declared is null)
@@ -437,8 +453,22 @@ public sealed class AssemblePdfActivity(
             manifest.Id ?? string.Empty,
             manifest.Version ?? string.Empty,
             frame.Margins,
-            contract?.Area);
+            NumberingAreaOf(manifest),
+            AssemblyPageCode.PrintableBoxOf(frame),
+            FooterOf(manifest));
     }
+
+    // The declared numbering area, read from the manifest itself: a one-part output
+    // drops the numbering contract, and its code must still stay clear of the area.
+    private static NumberingArea? NumberingAreaOf(TemplateManifest manifest) =>
+        manifest.Outputs?.Pdf?.Numbering?.Area is { LeftMm: { } left, TopMm: { } top, WidthMm: { } width, HeightMm: { } height }
+            ? new NumberingArea((double)left, (double)top, (double)width, (double)height)
+            : null;
+
+    private static PageCodeText.Region? FooterOf(TemplateManifest manifest) =>
+        manifest.Outputs?.Pdf?.PageTotals is { Enabled: true, Footer: { LeftMm: { } left, TopMm: { } top, WidthMm: { } width, HeightMm: { } height } }
+            ? PageCodeText.Region.FromMillimetres((double)left, (double)top, (double)width, (double)height)
+            : null;
 
     private PageNumbering? NumberingContract(TemplateManifest manifest, string packageRoot)
     {

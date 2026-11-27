@@ -15,14 +15,31 @@ namespace ReportService.Pdf.Assembly.PageCodes;
 /// <param name="TemplateVersion">The taken template's version.</param>
 /// <param name="Margins">The template's margins, in points.</param>
 /// <param name="NumberingArea">The numbering area, when the template declares one.</param>
+/// <param name="PrintableBox">The page less its margins, which the code's area must lie inside, when known.</param>
+/// <param name="Footer">The accounting footer, which the code's area must not overlap, when the template declares one.</param>
 public sealed record AssemblyPageCode(
     PageCodeDeclaration Declaration,
     RegisteredPageCodeGenerator Generator,
     string TemplateId,
     string TemplateVersion,
     PageMargins Margins,
-    NumberingArea? NumberingArea)
+    NumberingArea? NumberingArea,
+    PageCodeText.Region? PrintableBox = null,
+    PageCodeText.Region? Footer = null)
 {
+    /// <summary>The printable box of a page frame: the page less its margins.</summary>
+    /// <param name="frame">The template's page frame.</param>
+    /// <returns>The box, in points from the page's top-left corner.</returns>
+    public static PageCodeText.Region PrintableBoxOf(PageFrame frame)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        return new PageCodeText.Region(
+            frame.MarginLeftPt,
+            frame.MarginTopPt,
+            frame.WidthPt - frame.MarginLeftPt - frame.MarginRightPt,
+            frame.HeightPt - frame.MarginTopPt - frame.MarginBottomPt);
+    }
+
     /// <summary>The numbering area as a text region, when declared.</summary>
     public PageCodeText.Region? NumberingRegion => NumberingArea is { } area
         ? new PageCodeText.Region(area.LeftPt, area.TopPt, area.WidthPt, area.HeightPt)

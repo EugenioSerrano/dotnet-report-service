@@ -59,6 +59,19 @@ public sealed class AssemblePdfPageCodeTests
     }
 
     [Fact]
+    public async Task AOnePartCodeOverTheDeclaredNumberingAreaIsCaughtThoughNoNumberIsStamped()
+    {
+        // The harness's numbering area is 120/268/80/8 mm; this code sits on it.
+        var over = Declared with { Area = new TemplateNumberingArea { LeftMm = 150, TopMm = 260, WidthMm = 20, HeightMm = 20 } };
+        using var harness = new MergeStepHarness(blocks: 1, pagesEach: 1, pageCode: over);
+
+        var failure = await Assert.ThrowsAsync<ApplicationFailureException>(() => RunAsync(harness, Registry()));
+
+        Assert.Equal(AssemblePdfActivity.ArtifactIntegrityFailed, failure.ErrorType);
+        Assert.Contains("code-placement", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AOnePartOutputWithoutACodeOrANumberingContractIsRefused()
     {
         using var harness = new MergeStepHarness(blocks: 1, pagesEach: 1, withNumbering: false);

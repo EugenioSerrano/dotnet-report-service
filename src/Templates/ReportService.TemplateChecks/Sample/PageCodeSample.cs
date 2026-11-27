@@ -137,7 +137,11 @@ public static class PageCodeSample
             manifest.Id ?? string.Empty,
             manifest.Version ?? string.Empty,
             frame.Margins,
-            numbering);
+            numbering,
+            AssemblyPageCode.PrintableBoxOf(frame),
+            manifest.Outputs.Pdf.PageTotals is { Enabled: true, Footer: { LeftMm: { } fLeft, TopMm: { } fTop, WidthMm: { } fWidth, HeightMm: { } fHeight } }
+                ? PageCodeText.Region.FromMillimetres((double)fLeft, (double)fTop, (double)fWidth, (double)fHeight)
+                : null);
 
         var pages = PdfWordReader.Read(pdfPath, frame.Margins).Pages;
         for (var index = 0; index < pages.Count; index++)
