@@ -129,7 +129,7 @@ public sealed class LargeRecordPdfEndToEndTests
             ["items"] = array,
         };
         var records = items
-            .Select(item => new AccountedRecord((long)item["sequence"]!, "g", 1.00m))
+            .Select(item => new AccountedRecord(item["sequence"]!.GetValue<int>(), "g", 1.00m))
             .ToList();
         return (Encoding.UTF8.GetBytes(snapshot.ToJsonString()), records);
     }
