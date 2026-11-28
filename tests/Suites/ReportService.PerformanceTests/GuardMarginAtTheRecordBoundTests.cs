@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using ReportService.Templates;
+using ReportService.Templates.Tests;
 using ReportService.Testing;
 
-namespace ReportService.Templates.Tests;
+namespace ReportService.PerformanceTests;
 
 /// <summary>
 /// Admissible data never trips the render guards. A one-mebibyte header and a two-mebibyte
@@ -15,6 +17,7 @@ namespace ReportService.Templates.Tests;
 /// that prints a large value more than once can reach the guard; that is the template's
 /// behaviour, which the guard exists to stop, and not admissible data.
 /// </summary>
+[Collection(nameof(MemoryMeasured))]
 public sealed class GuardMarginAtTheRecordBoundTests
 {
     private const int HeaderBytes = 1_048_576;

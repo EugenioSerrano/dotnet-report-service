@@ -43,6 +43,10 @@
   <ItemGroup>
     <!-- The hostile inputs, shared with the probe the capped-container case runs. -->
     <Compile Include="..\ReportService.DataReaderProbe\HostileCases.cs" Link="Shared\HostileCases.cs" />
+    <!-- The guard-margin case composes through the Templates test helpers, compiled in by link
+         (they are internal to that test project; no product project is widened). -->
+    <Compile Include="..\..\Templates\ReportService.Templates.Tests\Engines\EngineCases.cs" Link="Shared\EngineCases.cs" />
+    <Compile Include="..\..\Templates\ReportService.Templates.Tests\MemoryPackageFiles.cs" Link="Shared\MemoryPackageFiles.cs" />
   </ItemGroup>
 
   <ItemGroup>
