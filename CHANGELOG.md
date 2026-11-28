@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A record may now be up to 2 MiB (it was 1 MiB), so a picture the producer has
+  computed can travel in the record as a `data:` URI; a single token follows the
+  record limit and the header stays at 1 MiB. Blocks still gather records up to
+  1 MiB, and a larger record is printed in a block of its own. On a PDF, a value
+  that is a base64 image data URI (PNG, JPEG, GIF, WebP or SVG) may carry up to
+  1 MiB, while every other value keeps the 256 KiB bound; the
+  `ROW_BOUND_EXCEEDED` diagnostic names the bound that applied. The Scriban
+  engine converts values of up to 2 Mi characters, so a value at the record
+  limit is never cut. A template sample may be a single record of up to 2 MiB.
+
 ### Added
 
 - A job's PDF work is now dispatched by its priority class. Each class has its own

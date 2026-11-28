@@ -90,7 +90,7 @@ public sealed class SampleRenderCheckTests
         Assert.False(result.Passed);
         Assert.Empty(renderer.Requests);
         Assert.Equal(
-            "sample.json: the sample holds 2001 records and 18009 bytes of record data, where one block holds at most 2000 records and 1 MiB. Reduce the sample to a single block's worth of records.",
+            "sample.json: the sample holds 2001 records and 18009 bytes of record data, where one block holds at most 2000 records and 1 MiB, or a single record of up to 2 MiB. Reduce the sample to a single block's worth of records.",
             result.Reason);
         Assert.Equal(TemplateRefusal.Rules.SampleOverBound, RuleOf(SampleFailureKind.OverBound));
     }

@@ -484,12 +484,12 @@ public sealed class ValidateAndPartitionActivity(
             {
                 // The header is not a row. Of a record, the first value over the bound in
                 // document order is the one kept, and its path is the delivered renderer's.
-                var finding = RowBoundScanner.FindFirst(value.Json.Span, PdfRowBound.Bytes);
+                var finding = RowBoundScanner.FindFirst(value.Json.Span, PdfRowBound.Bytes, PdfRowBound.ImageDataUriBytes);
                 if (finding is { } found)
                 {
                     var path = contract.RenderFieldPath(value.Json, found.JsonPointer);
                     rowBound.Refuse(
-                        RowBoundDiagnostic.For(value.Ordinal, value.Offset, found.DecodedBytes, PdfRowBound.Bytes, path));
+                        RowBoundDiagnostic.For(value.Ordinal, value.Offset, found.DecodedBytes, found.BoundBytes, path));
                     System.Diagnostics.Activity.Current?.SetTag(PdfRefusalCodeTag, rowBound.Code);
                     System.Diagnostics.Activity.Current?.SetTag(PdfRefusalOrdinalTag, value.Ordinal);
                     logger.LogInformation(
@@ -500,7 +500,7 @@ public sealed class ValidateAndPartitionActivity(
                         value.Ordinal,
                         value.Offset,
                         found.DecodedBytes,
-                        PdfRowBound.Bytes,
+                        found.BoundBytes,
                         path);
                 }
             }

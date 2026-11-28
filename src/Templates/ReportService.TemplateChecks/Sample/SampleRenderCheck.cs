@@ -205,7 +205,7 @@ public sealed class SampleRenderCheck(ISampleRenderer renderer, ILogger<SampleRe
                 file,
                 "the sample holds " + Number(failure.Records ?? 0) + " records and " + Number(failure.RecordBytes ?? 0)
                     + " bytes of record data, where one block holds at most " + Number(ReportService.Data.DataContractLimits.BlockRecords)
-                    + " records and 1 MiB.",
+                    + " records and 1 MiB, or a single record of up to 2 MiB.",
                 "Reduce the sample to a single block's worth of records."),
 
             SampleFailureKind.Unreadable => TemplateRefusal.Refuse(

@@ -252,12 +252,12 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
     {
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        // One record of more than a mebibyte made of fields no larger than the token limit:
+        // One record of more than two mebibytes made of fields no larger than the token limit:
         // the record's own limit refuses it, and the over-bound field inside never reaches the
         // row bound.
         var fields = new StringBuilder("{\"sequence\":1");
         fields.Append(",\"w\":").Append(Quoted(UpperCase(300_000)));
-        for (var index = 0; index < 8; index++)
+        for (var index = 0; index < 19; index++)
         {
             fields.Append(",\"f").Append(index).Append("\":").Append(Quoted(UpperCase(100_000)));
         }
@@ -425,6 +425,97 @@ public sealed class ValidateAndPartitionRowBoundTests : IDisposable
 
         Assert.True(payload.Data.Length < 4 * 1_024, $"the serialised result is {payload.Data.Length} bytes");
         Assert.True(Encoding.UTF8.GetByteCount(reason) <= 1_172, $"the reason is {Encoding.UTF8.GetByteCount(reason)} bytes");
+    }
+
+    [Fact]
+    public async Task AnImageDataUriOneByteOverTheImageBoundIsRefusedNamingTheImageBound()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedVersionAsync(OpenItemSchema, cancellationToken);
+        var record = """{"sequence":1,"logo":""" + Quoted(ImageDataUri(1_048_577)) + "}";
+        await SeedAcceptedJobAsync(Snapshot("""{"title":"Monthly"}""", record), cancellationToken);
+
+        using var span = new Activity("image-row-bound-case").Start();
+        var result = await RunAsync();
+        span.Stop();
+
+        Assert.Equal(DataContractViolation.RowBoundExceeded, result.PdfRefusal!.Code);
+        Assert.Contains("reason=field-too-large size=1048577 bound=1048576 limit=row-bound ordinal=1", result.PdfRefusal.Reason, StringComparison.Ordinal);
+        Assert.Contains(Logs.Lines, line => line.Contains("size=1048577 bound=1048576", StringComparison.Ordinal));
+        Assert.All(Logs.Lines, line => Assert.DoesNotContain("data:image", line, StringComparison.Ordinal));
+        Assert.DoesNotContain("data:image", result.PdfRefusal.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnImageDataUriAtTheImageBoundBesideOtherFieldsIsNotRefused()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedVersionAsync(OpenItemSchema, cancellationToken);
+        var record = """{"sequence":1,"caption":""" + Quoted(UpperCase(200_000)) + ""","logo":""" + Quoted(ImageDataUri(1_048_576)) + "}";
+        await SeedAcceptedJobAsync(Snapshot("""{"title":"Monthly"}""", record, Item(2, "Short")), cancellationToken);
+
+        var result = await RunAsync();
+
+        Assert.Null(result.PdfRefusal);
+        var partition = await Jobs.FindPartitionAsync(ReportJobId, cancellationToken);
+        Assert.NotNull(partition);
+        Assert.Equal(2L, partition!.RecordCount);
+    }
+
+    [Theory]
+    [InlineData("data:image/bmp;base64,")]
+    [InlineData("data:image/png,")]
+    [InlineData("data:image/png;base64, ")]
+    public async Task AnImageLikeValueThatIsNotAnImageDataUriKeepsTheOrdinaryBound(string prefix)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedVersionAsync(OpenItemSchema, cancellationToken);
+        var value = prefix + new string('A', 262_145 - prefix.Length);
+        var record = """{"sequence":1,"logo":""" + Quoted(value) + "}";
+        await SeedAcceptedJobAsync(Snapshot("""{"title":"Monthly"}""", record), cancellationToken);
+
+        var result = await RunAsync();
+
+        Assert.Contains("size=262145 bound=262144", result.PdfRefusal!.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AJobThatAskedForNoPdfIsNotScannedForImagesEither()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedVersionAsync(OpenItemSchema, cancellationToken);
+        var record = """{"sequence":1,"logo":""" + Quoted(ImageDataUri(1_500_000)) + "}";
+        await SeedAcceptedJobAsync(Snapshot("""{"title":"Monthly"}""", record), cancellationToken);
+        var activity = new ValidateAndPartitionActivity(
+            new NoPdfOutputJobStore(Jobs),
+            Uploads,
+            Objects,
+            Versions,
+            Contracts,
+            new FixedTimeProvider(Now),
+            _loggerFactory.CreateLogger<ValidateAndPartitionActivity>(),
+            Path.Combine(_root, "scratch"));
+
+        var result = await RunInAsync(activity);
+
+        Assert.Null(result.PdfRefusal);
+        Assert.NotNull(await Jobs.FindPartitionAsync(ReportJobId, cancellationToken));
+    }
+
+    // An image data URI of exactly the given byte length; a parameter makes the body a
+    // multiple of four.
+    private static string ImageDataUri(int bytes)
+    {
+        for (var pad = 1; pad <= 4; pad++)
+        {
+            var prefix = "data:image/png;n=" + new string('p', pad) + ";base64,";
+            if ((bytes - prefix.Length) % 4 == 0)
+            {
+                return prefix + new string('A', bytes - prefix.Length);
+            }
+        }
+
+        throw new InvalidOperationException("four consecutive prefix lengths cover every remainder");
     }
 
     public void Dispose()

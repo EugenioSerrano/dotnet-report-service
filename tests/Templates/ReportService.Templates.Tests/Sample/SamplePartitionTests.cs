@@ -94,6 +94,29 @@ public sealed class SamplePartitionTests
     }
 
     [Fact]
+    public async Task ASingleRecordAboveOneMebibyteIsABlockOfItsOwnAsThePartitionerPlacesIt()
+    {
+        // One record of 1.5 MiB is a block alone; two records of 750 KiB are over the block's bytes.
+        var single = await SamplePartition.ReadAsync(Document(1, recordLength: 1_572_864), TestContext.Current.CancellationToken);
+        var two = await SamplePartition.ReadAsync(Document(2, recordLength: 786_432 + 1), TestContext.Current.CancellationToken);
+
+        var sample = Assert.IsType<SampleRead.Partitioned>(single).Sample;
+        Assert.Single(sample.Records);
+        var over = Assert.IsType<SampleRead.OverBound>(two);
+        Assert.Equal(SampleBound.RecordBytes, over.Bound);
+    }
+
+    [Fact]
+    public async Task ASingleRecordOfExactlyTwoMebibytesIsReadAndOneByteMoreIsUnreadable()
+    {
+        var atTheBound = await SamplePartition.ReadAsync(Document(1, recordLength: 2_097_152), TestContext.Current.CancellationToken);
+        var overTheBound = await SamplePartition.ReadAsync(Document(1, recordLength: 2_097_153), TestContext.Current.CancellationToken);
+
+        Assert.IsType<SampleRead.Partitioned>(atTheBound);
+        Assert.IsType<SampleRead.Unreadable>(overTheBound);
+    }
+
+    [Fact]
     public async Task ASampleOverBothBoundsNamesTheRecordCount()
     {
         // 2 001 records of 1 024 bytes are over both; the partitioner tests the count first.

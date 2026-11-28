@@ -16,7 +16,7 @@ public sealed class RowBoundScannerTests
     public void AValueAtTheBoundIsWithinItAndOneByteMoreIsFound()
     {
         Assert.Null(Find(Record("description", Quoted(new string('a', 262_144)))));
-        Assert.Equal(new RowBoundFinding("/description", 262_145), Find(Record("description", Quoted(new string('a', 262_145)))));
+        Assert.Equal(new RowBoundFinding("/description", 262_145, 262_144), Find(Record("description", Quoted(new string('a', 262_145)))));
     }
 
     [Fact]
@@ -26,19 +26,19 @@ public sealed class RowBoundScannerTests
         // crosses it.
         Assert.Null(Find(Record("description", Quoted(new string('\u00E9', 131_072)))));
         Assert.Equal(
-            new RowBoundFinding("/description", 262_145),
+            new RowBoundFinding("/description", 262_145, 262_144),
             Find(Record("description", Quoted(new string('\u00E9', 131_072) + "a"))));
 
         // Three-byte characters: 87 381 euro signs and one ASCII byte are exactly the bound.
         Assert.Null(Find(Record("description", Quoted(new string('\u20AC', 87_381) + "a"))));
         Assert.Equal(
-            new RowBoundFinding("/description", 262_145),
+            new RowBoundFinding("/description", 262_145, 262_144),
             Find(Record("description", Quoted(new string('\u20AC', 87_381) + "ab"))));
 
         // Four-byte characters: 65 536 emoji are exactly the bound.
         Assert.Null(Find(Record("description", Quoted(Emoji(65_536)))));
         Assert.Equal(
-            new RowBoundFinding("/description", 262_145),
+            new RowBoundFinding("/description", 262_145, 262_144),
             Find(Record("description", Quoted(Emoji(65_536) + "a"))));
     }
 
@@ -47,7 +47,7 @@ public sealed class RowBoundScannerTests
     {
         var finding = Find(Record("description", Quoted(new string('\u20AC', 100_000))));
 
-        Assert.Equal(new RowBoundFinding("/description", 300_000), finding);
+        Assert.Equal(new RowBoundFinding("/description", 300_000, 262_144), finding);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class RowBoundScannerTests
     {
         var escaped = string.Concat(Enumerable.Repeat("\\u00E9", 131_072)) + "\\n";
 
-        Assert.Equal(new RowBoundFinding("/description", 262_145), Find(Record("description", "\"" + escaped + "\"")));
+        Assert.Equal(new RowBoundFinding("/description", 262_145, 262_144), Find(Record("description", "\"" + escaped + "\"")));
     }
 
     [Fact]
@@ -73,18 +73,18 @@ public sealed class RowBoundScannerTests
         // 65 536 escaped emoji are exactly the bound; one ASCII byte more crosses it.
         var emoji = string.Concat(Enumerable.Repeat("\\uD83D\\uDE00", 65_536));
         Assert.Null(Find(Record("description", "\"" + emoji + "\"")));
-        Assert.Equal(new RowBoundFinding("/description", 262_145), Find(Record("description", "\"" + emoji + "a\"")));
+        Assert.Equal(new RowBoundFinding("/description", 262_145, 262_144), Find(Record("description", "\"" + emoji + "a\"")));
 
         // A lone surrogate is three bytes, and nothing throws while it is measured.
         var lone = string.Concat(Enumerable.Repeat("\\uD800", 87_382));
-        Assert.Equal(new RowBoundFinding("/description", 262_146), Find(Record("description", "\"" + lone + "\"")));
+        Assert.Equal(new RowBoundFinding("/description", 262_146, 262_144), Find(Record("description", "\"" + lone + "\"")));
     }
 
     [Fact]
     public void ANestedFieldIsNamedByItsPointerFromTheRecord()
     {
         Assert.Equal(
-            new RowBoundFinding("/lines/0/text", 262_145),
+            new RowBoundFinding("/lines/0/text", 262_145, 262_144),
             Find("""{"lines":[{"text":""" + Quoted(new string('a', 262_145)) + "}]}"));
     }
 
@@ -92,7 +92,7 @@ public sealed class RowBoundScannerTests
     public void AValueOfAnArrayOfStringsIsNamedByItsPosition()
     {
         Assert.Equal(
-            new RowBoundFinding("/tags/1", 262_145),
+            new RowBoundFinding("/tags/1", 262_145, 262_144),
             Find("""{"tags":["short",""" + Quoted(new string('a', 262_145)) + "]}"));
     }
 
@@ -102,7 +102,7 @@ public sealed class RowBoundScannerTests
     public void AMemberNameIsEscapedAsThePointerGrammarRequires(string member, string pointer)
     {
         Assert.Equal(
-            new RowBoundFinding(pointer, 262_145),
+            new RowBoundFinding(pointer, 262_145, 262_144),
             Find(Record(member, Quoted(new string('a', 262_145)))));
     }
 
@@ -110,7 +110,7 @@ public sealed class RowBoundScannerTests
     public void AnEscapedMemberNameIsDecodedInThePointer()
     {
         Assert.Equal(
-            new RowBoundFinding("/description", 262_145),
+            new RowBoundFinding("/description", 262_145, 262_144),
             Find(Record("\\u0064escription", Quoted(new string('a', 262_145)))));
     }
 
@@ -133,7 +133,7 @@ public sealed class RowBoundScannerTests
     [InlineData("\\uD800", "/\uFFFD")]
     public void AMemberNameIsDecodedFromItsUnicodeEscapesOfEveryWidth(string name, string pointer)
     {
-        Assert.Equal(new RowBoundFinding(pointer, 262_145), Find(Record(name, Quoted(new string('a', 262_145)))));
+        Assert.Equal(new RowBoundFinding(pointer, 262_145, 262_144), Find(Record(name, Quoted(new string('a', 262_145)))));
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public sealed class RowBoundScannerTests
     {
         var record = "{\"n\":[1,true,null," + Record("x", Quoted(new string('a', 262_145))) + "]}";
 
-        Assert.Equal(new RowBoundFinding("/n/3/x", 262_145), Find(record));
+        Assert.Equal(new RowBoundFinding("/n/3/x", 262_145, 262_144), Find(record));
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public sealed class RowBoundScannerTests
             .Append('}')
             .ToString();
 
-        Assert.Equal(new RowBoundFinding("/first", 262_145), Find(record));
+        Assert.Equal(new RowBoundFinding("/first", 262_145, 262_144), Find(record));
     }
 
     [Fact]
@@ -219,10 +219,10 @@ public sealed class RowBoundScannerTests
 
         record.Append('}');
         var bytes = Encoding.UTF8.GetBytes(record.ToString());
-        Assert.Null(RowBoundScanner.FindFirst(bytes, PdfRowBound.Bytes));
+        Assert.Null(RowBoundScanner.FindFirst(bytes, PdfRowBound.Bytes, PdfRowBound.ImageDataUriBytes));
 
         var before = GC.GetAllocatedBytesForCurrentThread();
-        var finding = RowBoundScanner.FindFirst(bytes, PdfRowBound.Bytes);
+        var finding = RowBoundScanner.FindFirst(bytes, PdfRowBound.Bytes, PdfRowBound.ImageDataUriBytes);
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.Null(finding);
@@ -230,7 +230,7 @@ public sealed class RowBoundScannerTests
     }
 
     private static RowBoundFinding? Find(string record) =>
-        RowBoundScanner.FindFirst(Encoding.UTF8.GetBytes(record), PdfRowBound.Bytes);
+        RowBoundScanner.FindFirst(Encoding.UTF8.GetBytes(record), PdfRowBound.Bytes, PdfRowBound.ImageDataUriBytes);
 
     private static string Record(string name, string value) => "{\"" + name + "\":" + value + "}";
 

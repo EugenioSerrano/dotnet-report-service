@@ -213,7 +213,7 @@ public sealed class HeaderItemsReaderTests
     [Fact]
     public async Task ARecordOverTheRecordLimitFailsAsRecordTooLarge()
     {
-        var record = SnapshotBytes.WideObject(1_100_000);
+        var record = SnapshotBytes.WideObject((int)DataContractLimits.RecordBytes + 100_000);
 
         var violation = await Assert.ThrowsAsync<DataContractViolation>(
             () => SnapshotBytes.ReadAllAsync(
@@ -263,7 +263,7 @@ public sealed class HeaderItemsReaderTests
     [Fact]
     public async Task ASingleTokenOverTheBufferCapFailsAsATokenQuota()
     {
-        var record = $$"""{"description":"{{new string('t', 1_200_000)}}"}""";
+        var record = $$"""{"description":"{{new string('t', DataContractLimits.BufferCapBytes + 100_000)}}"}""";
 
         var violation = await Assert.ThrowsAsync<DataContractViolation>(
             () => SnapshotBytes.ReadAllAsync(
