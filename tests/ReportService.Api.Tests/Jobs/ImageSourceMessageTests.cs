@@ -33,6 +33,34 @@ public sealed class ImageSourceMessageTests
         Assert.StartsWith("The document-start part writes an image whose xlink:href is not", message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AnImageTooLargeForTheHtmlOutputNamesThePartTheRecordTheSizeAndTheBound()
+    {
+        var warnings = new LogCapture();
+
+        var message = ErrorMessages.Format(
+            "OUTPUT_LIMIT_EXCEEDED",
+            "reason=image-bytes part=row ordinal=4 attribute=src size=1048580 bound=1048576",
+            warnings.CreateLogger("api"));
+
+        Assert.Equal(
+            "The row part of record 4 writes an image whose src holds 1048580 bytes; the HTML output accepts at most 1048576 bytes per image. Use a smaller image.",
+            message);
+        Assert.Empty(warnings.Lines);
+    }
+
+    [Theory]
+    [InlineData("reason=image-bytes part=row ordinal=4 attribute=src size=1048580")]
+    [InlineData("reason=image-bytes part=row ordinal=4 attribute=src size=big bound=1048576")]
+    [InlineData("reason=image-bytes part=body ordinal=4 attribute=src size=1 bound=2")]
+    public void AnImageBytesReasonThisBuildDidNotWriteRendersNoMessage(string reason)
+    {
+        var warnings = new LogCapture();
+
+        Assert.Null(ErrorMessages.Format("OUTPUT_LIMIT_EXCEEDED", reason, warnings.CreateLogger("api")));
+        Assert.Single(warnings.Lines);
+    }
+
     [Theory]
     [InlineData("part=row ordinal=12")]
     [InlineData("ordinal=12 part=row attribute=src")]

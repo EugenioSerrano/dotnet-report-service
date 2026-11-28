@@ -483,7 +483,7 @@ internal sealed class ImageSourceScanner(ImageSourcePolicy policy)
     private static bool IsWhitespace(char character) => character is ' ' or '\t' or '\n' or '\r' or '\f';
 
     /// <summary>One image source's value, read character by character without being kept.</summary>
-    private sealed class ImageSourceValue
+    internal sealed class ImageSourceValue
     {
         private readonly StringBuilder prefix = new(MaximumPrefixLength);
         private int length;
@@ -644,6 +644,10 @@ internal sealed class ImageSourceScanner(ImageSourcePolicy policy)
             }
         }
 
+        /// <summary>Whether the value read is an image data URI as the data contract defines it.</summary>
+        public bool IsImageDataUri =>
+            length > 0 && prefixDone && prefixValid && bodyValid && !innerSpace && bodyLength % 4 == 0;
+
         public bool Classify(ImageSourcePolicy policy)
         {
             if (length == 0)
@@ -651,7 +655,7 @@ internal sealed class ImageSourceScanner(ImageSourcePolicy policy)
                 return false;
             }
 
-            if (prefixDone && prefixValid && bodyValid && !innerSpace && bodyLength % 4 == 0)
+            if (IsImageDataUri)
             {
                 return true;
             }

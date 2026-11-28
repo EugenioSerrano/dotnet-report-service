@@ -27,6 +27,9 @@ namespace ReportService.Templates;
 /// </summary>
 public sealed partial class HtmlOutputAssembler
 {
+    // The record ordinal of the repeated fragment being read, for an image refusal's diagnostic.
+    private long repeatedOrdinal;
+
     /// <summary>The default bound on nested <c>@import</c> depth (SPEC §14 D5).</summary>
     public const int DefaultMaxImportDepth = HtmlAssetInliner.DefaultMaxImportDepth;
 
@@ -109,6 +112,8 @@ public sealed partial class HtmlOutputAssembler
             {
                 // A repeated row/group may carry no resource-loading reference (ADR-046 §3.3 item 2);
                 // its original bytes are then streamed through unchanged (byte-fidelity).
+                // The record the fragment prints names a refused image in the diagnostic (ADR-058).
+                repeatedOrdinal = fragment.RecordOrdinal;
                 ProcessFragment(block.TextOf(fragment), repeated: true, package, region, out var repeatedRefusal);
                 if (repeatedRefusal is not null)
                 {
@@ -432,6 +437,15 @@ public sealed partial class HtmlOutputAssembler
 
         if (repeated)
         {
+            // A record's image: an image data URI in an image source of a repeated part is
+            // already inline, so it is passed through as it is, bounded at 1 MiB per value
+            // (ADR-058 §3.3 item 2). Every other reference of the part is refused below.
+            var admitted = AdmittedImageSources(name, tag, region, out refusal);
+            if (refusal is not null)
+            {
+                return null;
+            }
+
             // Region confinement: ANY resource-loading reference inside a repeated row/group is
             // refused, even a packaged, inlinable one, so no asset is inlined once per record
             // (ADR-047 §3.3 item 2).
@@ -445,7 +459,7 @@ public sealed partial class HtmlOutputAssembler
                 return null;
             }
 
-            var repeatedReference = FirstResourceReference(name, tag);
+            var repeatedReference = FirstResourceReference(name, tag, admitted);
             if (repeatedReference is not null)
             {
                 refusal = new HtmlRefusal(HtmlRefusalCause.RepeatedRegion, repeatedReference, region);
@@ -550,7 +564,56 @@ public sealed partial class HtmlOutputAssembler
     /// Returns <see langword="null"/> when the tag carries none. The deciding attributes are
     /// decoded before detection (ADR-047 §3.3 item 5(b)).
     /// </summary>
-    private static string? FirstResourceReference(string name, string tag)
+    /// <summary>
+    /// The image-source attributes of a repeated part's tag whose value is an image data URI and
+    /// may pass through: the <c>src</c> of an <c>img</c> and the <c>href</c> / <c>xlink:href</c>
+    /// of an SVG <c>image</c>. A value larger than <see cref="ImageDataUri.MaximumBytes"/> is
+    /// refused with the attribute, the record and the size, never the value.
+    /// </summary>
+    private IReadOnlyCollection<string> AdmittedImageSources(string name, string tag, string region, out HtmlRefusal? refusal)
+    {
+        refusal = null;
+        var colon = name.LastIndexOf(':');
+        var local = colon < 0 ? name : name[(colon + 1)..];
+        string[] positions = local switch
+        {
+            "img" => ["src"],
+            "image" => ["href", "xlink:href"],
+            _ => [],
+        };
+
+        var admitted = new List<string>(positions.Length);
+        foreach (var attribute in positions)
+        {
+            var value = Attribute(tag, attribute);
+            if (value is null)
+            {
+                continue;
+            }
+
+            var decoded = System.Net.WebUtility.HtmlDecode(value);
+            if (!ImageDataUri.Is(decoded))
+            {
+                continue;
+            }
+
+            var size = Encoding.UTF8.GetByteCount(decoded);
+            if (size > ImageDataUri.MaximumBytes)
+            {
+                refusal = new HtmlRefusal(HtmlRefusalCause.ImageBytes, attribute, region, repeatedOrdinal, size);
+                return [];
+            }
+
+            admitted.Add(attribute);
+        }
+
+        return admitted;
+    }
+
+    private static string? FirstResourceReference(string name, string tag) =>
+        FirstResourceReference(name, tag, []);
+
+    private static string? FirstResourceReference(string name, string tag, IReadOnlyCollection<string> admitted)
     {
         if (name == "meta")
         {
@@ -565,6 +628,11 @@ public sealed partial class HtmlOutputAssembler
 
         foreach (var attribute in ResourceAttributes)
         {
+            if (attribute == "src" && admitted.Contains("src"))
+            {
+                continue;
+            }
+
             var value = Attribute(tag, attribute);
             if (value is not null)
             {
@@ -572,7 +640,7 @@ public sealed partial class HtmlOutputAssembler
             }
         }
 
-        if (name is "link" or "base" or "image" or "use")
+        if (name is "link" or "base" or "image" or "use" && !admitted.Contains("href"))
         {
             var href = Attribute(tag, "href");
             if (href is not null)
@@ -581,7 +649,7 @@ public sealed partial class HtmlOutputAssembler
             }
         }
 
-        return Attribute(tag, "xlink:href");
+        return admitted.Contains("xlink:href") ? null : Attribute(tag, "xlink:href");
     }
 
     /// <summary>

@@ -29,6 +29,13 @@ public static class ErrorMessages
     private const string ImageSourceSentence =
         "The {0} part{1} writes an image whose {2} is not an image this output accepts. Give the image as a base64 data URI of a PNG, JPEG, GIF, WebP or SVG image; a remote reference is never printed, and a relative one is not printed in a PDF.";
 
+    /// <summary>The code an output ends with when a value is too large for its format.</summary>
+    public const string OutputLimitExceeded = "OUTPUT_LIMIT_EXCEEDED";
+
+    /// <summary>The sentence of an image too large for the HTML output: the part, the record clause, the attribute, the size and the bound.</summary>
+    private const string ImageBytesSentence =
+        "The {0} part{1} writes an image whose {2} holds {3} bytes; the HTML output accepts at most {4} bytes per image. Use a smaller image.";
+
     private static readonly string[] ImageSourceParts = ["document-start", "group-start", "row", "group-end", "document-end"];
 
     /// <summary>The sentence of a refusal the row bound stopped: the record, the field, its size and the bound.</summary>
@@ -88,6 +95,21 @@ public static class ErrorMessages
             return null;
         }
 
+        if (string.Equals(code, OutputLimitExceeded, StringComparison.Ordinal)
+            && reason.StartsWith("reason=image-bytes ", StringComparison.Ordinal))
+        {
+            if (!TryParseImageBytes(reason, out var part, out var ordinal, out var attribute, out var size, out var bound))
+            {
+                WarnUnreadable(OutputLimitExceeded, logger);
+                return null;
+            }
+
+            var record = ordinal > 0
+                ? string.Format(CultureInfo.InvariantCulture, " of record {0}", ordinal)
+                : string.Empty;
+            return string.Format(CultureInfo.InvariantCulture, ImageBytesSentence, part, record, attribute, size, bound);
+        }
+
         if (string.Equals(code, ImageSourceInvalid, StringComparison.Ordinal))
         {
             if (!TryParseImageSource(reason, out var part, out var ordinal, out var attribute))
@@ -131,6 +153,32 @@ public static class ErrorMessages
         }
 
         return null;
+    }
+
+    // The image-bytes reason, read whole and in order:
+    // "reason=image-bytes part=<part> ordinal=<n> attribute=<name> size=<bytes> bound=<bytes>".
+    private static bool TryParseImageBytes(
+        string reason, out string part, out long ordinal, out string attribute, out long size, out long bound)
+    {
+        part = string.Empty;
+        attribute = string.Empty;
+        ordinal = size = bound = 0;
+        var fields = reason.Split(' ');
+        if (fields.Length != 6 || fields[0] != "reason=image-bytes")
+        {
+            return false;
+        }
+
+        if (!TryParseImageSource(string.Join(' ', fields[1], fields[2], fields[3]), out part, out ordinal, out attribute)
+            || !fields[4].StartsWith("size=", StringComparison.Ordinal)
+            || !fields[5].StartsWith("bound=", StringComparison.Ordinal)
+            || !long.TryParse(fields[4]["size=".Length..], NumberStyles.None, CultureInfo.InvariantCulture, out size)
+            || !long.TryParse(fields[5]["bound=".Length..], NumberStyles.None, CultureInfo.InvariantCulture, out bound))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     // The image-source reason, read whole and in order: "part=<part> ordinal=<n> attribute=<name>".

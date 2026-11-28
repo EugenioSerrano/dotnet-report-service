@@ -445,7 +445,9 @@ precomputed graphic or code is printed:
   never the value. This includes a remote or protocol-relative address, a
   `javascript:` value, a data URI of another type or not in base64, and an empty
   value. A relative reference is also refused on the PDF output; on the HTML
-  output it must name an asset of the package. The check reads the value the
+  output it must name an asset of the package, and only in the document parts.
+  In the HTML output an image data URI may hold at most 1 MiB (1 048 576
+  bytes); a larger one fails the HTML output with `OUTPUT_LIMIT_EXCEEDED`. The check reads the value the
   way a browser does, so case, tabs, line breaks and character references do not
   hide a scheme. A record value is admitted only in that one position: inside
   `srcset`, any other `href`, `poster`, `data`, `action`, `formaction`, `style`,

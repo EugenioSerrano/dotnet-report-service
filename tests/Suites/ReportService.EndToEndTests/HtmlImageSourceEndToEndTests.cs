@@ -105,6 +105,26 @@ public sealed class HtmlImageSourceEndToEndTests : IDisposable
         Assert.All(job.Outputs, output => Assert.Equal("SUCCEEDED", output.Status));
     }
 
+    // An image data URI above 1 MiB (within the 2 MiB record bound) fails the HTML output with
+    // OUTPUT_LIMIT_EXCEEDED; the job asks for HTML only, since the PDF output bounds images in its
+    // own validation pass.
+    [Fact]
+    public async Task AnImageAboveOneMebibyteFailsTheHtmlOutputWithTheOutputLimit()
+    {
+        var large = "data:image/png;base64," + new string('A', 1024 * 1024);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var world = await StartAsync("image-source-large", ImagePackage(), cancellationToken);
+
+        var reportJobId = await SubmitAsync(world, outputs: "\"html\"", large, cancellationToken);
+        var job = await WaitForSettledAsync(world.DataSource, reportJobId, cancellationToken);
+
+        Assert.Equal("FAILED", job.Status);
+        var html = Assert.Single(job.Outputs, output => output.Format == "HTML");
+        Assert.Equal("FAILED", html.Status);
+        Assert.Equal("OUTPUT_LIMIT_EXCEEDED", html.ErrorCode);
+        Assert.Null(html.ArtifactId);
+    }
+
     // A remote reference in the image source fails both outputs; with no output succeeded the
     // job ends failed.
     [Fact]

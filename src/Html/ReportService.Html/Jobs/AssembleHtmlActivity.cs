@@ -172,6 +172,16 @@ public sealed class AssembleHtmlActivity(
                 var result = await new HtmlOutputAssembler()
                     .AssembleAsync(composed, files, assembled, cancellationToken)
                     .ConfigureAwait(false);
+                if (result.Refusal is { Cause: HtmlRefusalCause.ImageBytes } tooLarge)
+                {
+                    // A record's image larger than the HTML output admits: decided by the data,
+                    // never retried, nothing published (ADR-058). The reason names the part, the
+                    // record, the attribute, the size and the bound, never the value.
+                    var reason = ImageBytesReason(tooLarge);
+                    logger.LogWarning("Output {OutputId} refused: an image is larger than the output admits ({Reason})", input.OutputId, reason);
+                    throw new ApplicationFailureException(reason, errorType: OutputLimitExceeded, nonRetryable: true);
+                }
+
                 if (!result.IsProduced)
                 {
                     // A definitive HTML failure: a reference outside the packaged template, a
@@ -291,6 +301,28 @@ public sealed class AssembleHtmlActivity(
 
             return (header ?? throw Refuse(ExecutionFailed, "the block holds no header"), records);
         }
+    }
+
+    /// <summary>The code of a value too large for this output's format.</summary>
+    public const string OutputLimitExceeded = "OUTPUT_LIMIT_EXCEEDED";
+
+    /// <summary>
+    /// The stored reason of an image too large for the HTML output:
+    /// <c>reason=image-bytes part=&lt;part&gt; ordinal=&lt;n&gt; attribute=&lt;name&gt; size=&lt;bytes&gt; bound=&lt;bytes&gt;</c>.
+    /// </summary>
+    /// <param name="refusal">The assembly's refusal.</param>
+    public static string ImageBytesReason(HtmlRefusal refusal)
+    {
+        ArgumentNullException.ThrowIfNull(refusal);
+        var part = refusal.Region switch
+        {
+            "groupStart" => "group-start",
+            "groupEnd" => "group-end",
+            _ => "row",
+        };
+        return string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"reason=image-bytes part={part} ordinal={refusal.RecordOrdinal ?? 0} attribute={refusal.Reference} size={refusal.Size ?? 0} bound={ImageDataUri.MaximumBytes}");
     }
 
     private static ApplicationFailureException Refuse(string code, string reason) =>
