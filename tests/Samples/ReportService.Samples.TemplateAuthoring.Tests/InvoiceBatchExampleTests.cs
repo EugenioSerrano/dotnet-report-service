@@ -141,12 +141,12 @@ public sealed class InvoiceBatchExampleTests
     }
 
     /// <summary>
-    /// Today's behaviour, pinned: the take's current rule refuses a data value written
-    /// inside an image's <c>src</c>, so a data URI carried in a record cannot be an image
-    /// source; the refusal names the part and the attribute.
+    /// A record value may be written as an image's <c>src</c>, and the sample render checks
+    /// it: a value that is not an image data URI - here the barcode's text - is refused
+    /// before anything is printed, naming the part, the record and the attribute.
     /// </summary>
     [Fact]
-    public async Task ADataValueInsideAnImageSourceIsRefusedByTheTakesCurrentRule()
+    public async Task AValueThatIsNotAnImageDataUriInAnImageSourceIsRefusedBySampleRender()
     {
         var root = TestPaths.Temp();
         var package = CopyPackage(OnePerPage, root);
@@ -169,7 +169,7 @@ public sealed class InvoiceBatchExampleTests
         Assert.Equal(1, code);
         Assert.Equal(0, printer.Calls);
         Assert.Contains("html/row.html.liquid", writer.ToString(), StringComparison.Ordinal);
-        Assert.Contains("\"src\" attribute", writer.ToString(), StringComparison.Ordinal);
+        Assert.Contains("attribute=src", writer.ToString(), StringComparison.Ordinal);
         Assert.False(Directory.Exists(outputDirectory));
     }
 

@@ -56,6 +56,8 @@ public sealed class ReportHtmlOutputWorkflowTests
     [InlineData("DATA_INVALID")]
     [InlineData("QUOTA_EXCEEDED")]
     [InlineData("EXECUTION_FAILED")]
+    [InlineData("IMAGE_SOURCE_INVALID")]
+    [InlineData("OUTPUT_LIMIT_EXCEEDED")]
     public void ADomainFailureKeepsTheCodeItCarries(string code)
     {
         var failure = new ApplicationFailureException("the step refused", errorType: code, nonRetryable: true);

@@ -64,6 +64,97 @@ public sealed class HtmlOutputAssemblerTests
     }
 
     [Fact]
+    public async Task AnImageDataUriFromTheRecordIsKeptAsItIsAndTheOutputIsProduced()
+    {
+        const string Png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==";
+        const string Svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=";
+        var block = Block(
+            (FragmentKind.DocumentStart, "<html><head></head><body>"),
+            (FragmentKind.Row, "<p><img src=\"" + Png + "\"></p>"),
+            (FragmentKind.Row, "<p><svg width=\"10\" height=\"10\"><image href=\"" + Svg + "\" xlink:href=\"" + Svg + "\"/></svg></p>"),
+            (FragmentKind.DocumentEnd, "</body></html>"));
+
+        var (result, output) = await Assemble(block, Package());
+
+        Assert.True(result.IsProduced, result.Refusal?.ToString());
+        Assert.Contains("src=\"" + Png + "\"", output, StringComparison.Ordinal);
+        Assert.Contains("href=\"" + Svg + "\"", output, StringComparison.Ordinal);
+        Assert.Contains("img-src data:", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>An image data URI of exactly the bound passes; one byte more fails with the record, the attribute and the size, never the value.</summary>
+    [Fact]
+    public async Task AnImageDataUriIsBoundedAtOneMebibytePerValue()
+    {
+        // 28 characters, so a base64 body of a multiple of 4 makes the value exactly the bound.
+        const string Prefix = "data:image/png;a=bcd;base64,";
+        var atBound = Prefix + new string('A', ImageDataUri.MaximumBytes - Prefix.Length);
+        var overBound = Prefix + new string('A', ImageDataUri.MaximumBytes - Prefix.Length + 4);
+
+        var (produced, output) = await Assemble(ImageRows(atBound), Package());
+        Assert.True(produced.IsProduced, produced.Refusal?.ToString());
+        Assert.Contains(atBound, output, StringComparison.Ordinal);
+
+        var (refused, _) = await Assemble(ImageRows(overBound), Package());
+        Assert.False(refused.IsProduced);
+        Assert.Equal(HtmlRefusalCause.ImageBytes, refused.Refusal!.Cause);
+        Assert.Equal("src", refused.Refusal.Reference);
+        Assert.Equal("row", refused.Refusal.Region);
+        Assert.Equal(2, refused.Refusal.RecordOrdinal);
+        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(overBound), refused.Refusal.Size);
+        Assert.DoesNotContain("AAAA", refused.Refusal.ToString(), StringComparison.Ordinal);
+        Assert.Equal(
+            "reason=image-bytes part=row ordinal=2 attribute=src size=1048580 bound=1048576",
+            ReportService.Workers.Orchestration.Jobs.AssembleHtmlActivity.ImageBytesReason(refused.Refusal));
+    }
+
+    /// <summary>In a repeated part, everything but an image data URI in an image source stays refused.</summary>
+    [Theory]
+    [InlineData("<img src=\"logo.png\">")]
+    [InlineData("<img src=\"https://host.example/x.png\">")]
+    [InlineData("<img src=\"data:text/html;base64,PHA+\">")]
+    [InlineData("<img srcset=\"data:image/png;base64,iVBORw0K 1x\">")]
+    [InlineData("<video poster=\"data:image/png;base64,iVBORw0K\"></video>")]
+    [InlineData("<picture><source src=\"data:image/png;base64,iVBORw0K\"></picture>")]
+    [InlineData("<p style=\"background:url(data:image/png;base64,iVBORw0K)\">x</p>")]
+    [InlineData("<img src=\"data:image/png;base64,iVBORw0K\" srcset=\"logo.png 2x\">")]
+    public async Task EveryOtherReferenceInARepeatedPartStaysRefused(string markup)
+    {
+        var block = Block(
+            (FragmentKind.DocumentStart, "<html><head></head><body>"),
+            (FragmentKind.Row, "<p>" + markup + "</p>"),
+            (FragmentKind.DocumentEnd, "</body></html>"));
+
+        var (result, _) = await Assemble(block, Package(("logo.png", "PNG")));
+
+        Assert.False(result.IsProduced);
+        Assert.Equal(HtmlRefusalCause.RepeatedRegion, result.Refusal!.Cause);
+    }
+
+    /// <summary>A group part's image data URI passes like a row's.</summary>
+    [Fact]
+    public async Task AGroupPartImageDataUriIsAdmitted()
+    {
+        const string Png = "data:image/png;base64,iVBORw0KGgo=";
+        var block = Block(
+            (FragmentKind.DocumentStart, "<html><head></head><body>"),
+            (FragmentKind.GroupStart, "<h2><img alt=\"g\" src=\"" + Png + "\"></h2>"),
+            (FragmentKind.Row, "<p>1</p>"),
+            (FragmentKind.DocumentEnd, "</body></html>"));
+
+        var (result, output) = await Assemble(block, Package());
+
+        Assert.True(result.IsProduced, result.Refusal?.ToString());
+        Assert.Contains(Png, output, StringComparison.Ordinal);
+    }
+
+    private static ComposedBlock ImageRows(string image) => Block(
+        (FragmentKind.DocumentStart, "<html><head></head><body>"),
+        (FragmentKind.Row, "<p>1</p>"),
+        (FragmentKind.Row, "<p><img src=\"" + image + "\"></p>"),
+        (FragmentKind.DocumentEnd, "</body></html>"));
+
+    [Fact]
     public async Task APackagedCssUrlReferenceIsInlinedAsADataUri()
     {
         var block = Block(

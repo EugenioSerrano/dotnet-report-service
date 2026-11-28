@@ -39,13 +39,22 @@ public enum HtmlRefusalCause
     /// no head/html/content anchor is found within the bounded head scan (ADR-047 §3.8 item 3).
     /// </summary>
     HeadNotConformable,
+
+    /// <summary>
+    /// An image data URI in a repeated part's image source is larger than the output admits
+    /// (1 MiB per value). The refusal names the attribute, the record and the size, never the
+    /// value; the output fails with <c>OUTPUT_LIMIT_EXCEEDED</c>, reason <c>image-bytes</c>.
+    /// </summary>
+    ImageBytes,
 }
 
 /// <summary>The first offending reference of a refused assembly: its coarse cause, the reference and its region.</summary>
 /// <param name="Cause">The coarse refusal cause.</param>
 /// <param name="Reference">The offending reference, as the template wrote it.</param>
 /// <param name="Region">Where it appeared (document start/end, a stylesheet, a repeated region).</param>
-public sealed record HtmlRefusal(HtmlRefusalCause Cause, string Reference, string Region);
+/// <param name="RecordOrdinal">The record of the repeated part, when the refusal is about one.</param>
+/// <param name="Size">The size in bytes the refusal measured, when it measured one.</param>
+public sealed record HtmlRefusal(HtmlRefusalCause Cause, string Reference, string Region, long? RecordOrdinal = null, long? Size = null);
 
 /// <summary>
 /// The result of assembling the HTML output: produced, or refused with a reason.

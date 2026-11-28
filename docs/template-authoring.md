@@ -435,11 +435,24 @@ precomputed graphic or code is printed:
   `@font-face` and packaged with the template prints the record's text as bars.
   The examples do not demonstrate it, and the font's licence is yours.
 
-**What the take's current rule refuses:** a data value written inside `src`,
-`srcset`, `href`, `xlink:href`, `poster`, `data`, `action`, `formaction`,
-`style` or an event attribute. So a data URI carried in the record cannot be
-the source of an `<img>` — `<img src="{{ item.qr }}">` is refused when the
-version is taken, naming the part and the `"src"` attribute.
+- **An image carried in the record.** The record carries the image as a data
+  URI, and the template writes it as the quoted source of an image:
+  `<img src="{{ item.qr }}">`, or `<image href="{{ item.qr }}">` inside an
+  `<svg>` (`xlink:href` too). When the report is rendered, the value must be a
+  base64 data URI of `image/png`, `image/jpeg`, `image/gif`, `image/webp` or
+  `image/svg+xml` (`data:image/png;base64,…`). Any other value fails the output
+  with `IMAGE_SOURCE_INVALID`, naming the part, the record and the attribute and
+  never the value. This includes a remote or protocol-relative address, a
+  `javascript:` value, a data URI of another type or not in base64, and an empty
+  value. A relative reference is also refused on the PDF output; on the HTML
+  output it must name an asset of the package, and only in the document parts.
+  In the HTML output an image data URI may hold at most 1 MiB (1 048 576
+  bytes); a larger one fails the HTML output with `OUTPUT_LIMIT_EXCEEDED`. The check reads the value the
+  way a browser does, so case, tabs, line breaks and character references do not
+  hide a scheme. A record value is admitted only in that one position: inside
+  `srcset`, any other `href`, `poster`, `data`, `action`, `formaction`, `style`,
+  an event attribute or an unquoted attribute value, it is still refused when
+  the version is taken.
 
 A code that depends on the final page rather than on an invoice is not
 precomputed: the template declares it and the service applies it to every page.
@@ -763,7 +776,7 @@ again; the fix is a new version.
 | 4 | the anchors | an `outputs.pdf.verification.anchors` path the schema does not declare at the header or the record root |
 | 5 | the parts' syntax | a syntax error in a part or an included file, with the file and, when the engine gives it, the line and column — the engine's own message is never shown |
 | 6 | includes and assets | an include that is not a fixed name, points outside the package, names no file the render loads (in Scriban, an include must be a declared part), carries another engine's extension or makes a cycle; a stylesheet or asset the manifest or a part refers to and the package does not hold; a `data:` URL outside an image |
-| 7 | the lint | a data output that is not escaped (Scriban: end it with `\| html.escape`), a raw output, a forbidden function, a data value inside a script, style, URL or event-handler attribute or an unquoted attribute value, and a Liquid range that is not fixed or has more than 10 000 values |
+| 7 | the lint | a data output that is not escaped (Scriban: end it with `\| html.escape`), a raw output, a forbidden function, a data value inside a script, style, URL or event-handler attribute (except the quoted source of an image, which must be an image data URI when the report is rendered) or an unquoted attribute value, and a Liquid range that is not fixed or has more than 10 000 values |
 | 8 | the engine version | an `engineVersion` whose major differs from the engine this deployment renders with |
 | 9 | the printed page totals | a version that turns `outputs.pdf.pageTotals.enabled` on: this build prints no totals, and a report with silently missing numbers is worse than a refusal. The message names the declaration, never its value; the fix is to print the totals in the template or turn them off |
 | 10 | the font family of the detail text | detail text whose text-bearing cells name no font family, or that no declaration reaches at all. The message names the part and the stylesheet and line of the declaration that sets only a generic keyword; the fix is to name the family the report is measured with, `"Liberation Sans", sans-serif`, on a rule that applies to the detail text |

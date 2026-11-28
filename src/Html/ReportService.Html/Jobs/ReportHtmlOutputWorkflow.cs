@@ -45,6 +45,8 @@ public sealed class ReportHtmlOutputWorkflow
         "DATA_INVALID",
         "QUOTA_EXCEEDED",
         "EXECUTION_FAILED",
+        "IMAGE_SOURCE_INVALID",
+        "OUTPUT_LIMIT_EXCEEDED",
     };
 
     /// <summary>The identifier of the one execution that produces <paramref name="reportJobId"/>'s HTML output.</summary>
@@ -109,9 +111,16 @@ public sealed class ReportHtmlOutputWorkflow
             // cancellation is not a failure: the job's finalisation owns the output then.
             var code = CodeOf(failure.InnerException);
             Workflow.Logger.LogWarning("Output {OutputId} ended with {ErrorCode}", input.OutputId, code);
+
+            // An image-source refusal and an image too large keep their message as the reason: it
+            // names the part, the record and the attribute (and the size), never a value. Every
+            // other code keeps no reason.
+            var reason = code is "IMAGE_SOURCE_INVALID" or "OUTPUT_LIMIT_EXCEEDED"
+                ? failure.InnerException?.Message
+                : null;
             await Workflow.ExecuteActivityAsync(
                 (JobTransitionActivities activities) => activities.FailOutputAsync(
-                    new FailOutputInput(input.OutputId, code, null)),
+                    new FailOutputInput(input.OutputId, code, reason)),
                 metadata).ConfigureAwait(true);
         }
     }

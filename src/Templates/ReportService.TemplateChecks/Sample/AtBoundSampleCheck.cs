@@ -221,7 +221,7 @@ public sealed class AtBoundSampleCheck(
                 "Correct the page settings or the parts so that every page carries its content.");
         }
 
-        if (failure.Kind is SampleFailureKind.EngineError or SampleFailureKind.EngineLimit or SampleFailureKind.GuardOutput)
+        if (failure.Kind is SampleFailureKind.EngineError or SampleFailureKind.EngineLimit or SampleFailureKind.GuardOutput or SampleFailureKind.ImageSource)
         {
             return TemplateRefusal.Refuse(
                 TemplateCheckCodes.TemplateInvalid,
@@ -344,6 +344,7 @@ public sealed class AtBoundSampleCheck(
         SampleFailureKind.EngineError => "engine-error",
         SampleFailureKind.EngineLimit => "engine-limit",
         SampleFailureKind.GuardOutput => "output-limit",
+        SampleFailureKind.ImageSource => "image-source",
         _ => "not-printed",
     };
 }
