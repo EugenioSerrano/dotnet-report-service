@@ -74,16 +74,21 @@ dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAu
 `render` runs the take's thirteen static checks on the package, in the take's
 order, then renders the package's own `sample.json` once through the product's
 sample renderer: the same engine adapter, fragment composition, Chromium print
-and post-render verification a job uses. It writes two files into
+and post-render verification a job uses. It writes into
 `artifacts/template-preview/<id>/<version>/` under the current directory by
 default (git-ignored when that is the repository root), or into `--out`:
 
 - `<id>-<version>.html` — the document that was printed, with the page rule
   appended;
 - `<id>-<version>.pdf` — the printed document, after the product's verification
-  accepted it.
+  accepted it;
+- the package files the printed document reads — the stylesheets it links and the
+  fonts or images they name, e.g. `html/styles.css` — at their package-relative
+  paths, so the HTML opens on its own in a browser showing what was printed. Only
+  relative references resolve there: a reference beginning with `/` reaches the
+  package root when printing but the root of the drive when the file is opened.
 
-The two files are regenerated on every run; no other file is touched.
+These files are regenerated on every run; no other file is touched.
 
 The page-number check measures the stamp at a page capacity: `--page-capacity`
 when you pass it (digits only, greater than zero), else the shipped example
