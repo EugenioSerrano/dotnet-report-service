@@ -17,7 +17,8 @@ and that anyone can run against a local instance.
 - `template-authoring/` — the local authoring tool: it scaffolds a template
   package for any of the three engines and renders a package's own sample to a
   preview HTML and a verified PDF, with the same checks and renderer the
-  service takes a version with — see
+  service takes a version with; it is also packed as a .NET tool an author
+  installs without the source — see
   [`../docs/template-authoring.md`](../docs/template-authoring.md).
 - `datasets/` — the seeded synthetic pilot datasets (simple; grouped with
   subtotals; high volume) and the generator that produces them

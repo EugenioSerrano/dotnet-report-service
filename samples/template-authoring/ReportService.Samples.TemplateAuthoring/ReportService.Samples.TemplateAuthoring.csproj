@@ -5,11 +5,33 @@
     engines, then render a package's own sample through the product's checks and
     sample renderer. It is an adopter-facing developer tool: it changes no product
     behaviour and every step it takes is a public product type.
+    It is also packed as a .NET tool (command report-template) so an author can
+    install it without the source. The version is the repository's single product
+    version; every Playwright driver platform is carried so one package installs on
+    each operating system Playwright supports. The browser itself is not carried.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>report-template</ToolCommandName>
+    <PackageId>ReportService.TemplateAuthoring</PackageId>
+    <Description>Scaffolds a report template package for one engine and renders its sample locally to a preview HTML and a verified PDF, with the report service's own checks and renderer.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>PACKAGE-README.md</PackageReadmeFile>
+    <PlaywrightPlatform>all</PlaywrightPlatform>
+    <!--
+      NU5111: the Playwright driver carries PowerShell scripts (playwright.ps1, the
+      browser installers) as files the user runs; NuGet would read any .ps1 as an
+      install hook it does not recognise. They are data, not hooks.
+    -->
+    <NoWarn>$(NoWarn);NU5111</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE-README.md" Pack="true" PackagePath="\" />
+    <None Include="THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The scaffold set is embedded so the tool runs from any working directory. -->
@@ -40,5 +62,42 @@
     <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Verification\ReportService.Pdf.Verification.csproj" />
     <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
   </ItemGroup>
+
+  <!--
+    Playwright's JavaScript package carries an icon font (codicon) for its own trace
+    viewer and recorder pages. The tool never uses those pages, so the three font files
+    are left out of the output, the publish folder and therefore the package. The files
+    arrive through the project reference to the renderer (Playwright's own target runs
+    there), so they are removed from the lists of files copied from referenced projects,
+    matched on their target path. Only these three paths are removed; every other
+    Playwright file is kept.
+  -->
+  <Target Name="ExcludePlaywrightIconFontFromOutput" AfterTargets="GetCopyToOutputDirectoryItems">
+    <ItemGroup>
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectory)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectory Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectoryAlways)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectoryIfDifferent)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectoryIfDifferent Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ExcludePlaywrightIconFontFromPublish" AfterTargets="GetCopyToPublishDirectoryItems">
+    <ItemGroup>
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectory)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectory Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectoryAlways)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectoryAlways Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectoryIfDifferent)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectoryIfDifferent Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

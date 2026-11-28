@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The template-authoring tool is packed as a .NET tool (`ReportService.TemplateAuthoring`,
+  command `report-template`): a template author installs it from the built package with
+  `dotnet tool install` and scaffolds and renders without the product source. The
+  browser it prints with stays a documented prerequisite.
 - A job's PDF work is now dispatched by its priority class. Each class has its own
   render queue and its own merge queue (`report-pdf-rendering-high`,
   `report-pdf-rendering`, `report-pdf-rendering-low`, and the same for merge); the
