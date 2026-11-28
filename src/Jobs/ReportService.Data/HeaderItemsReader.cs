@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Unicode;
 
 namespace ReportService.Data;
 
@@ -476,6 +477,7 @@ public static class HeaderItemsReader
                     // Before the name is written and before the limit of this token is checked:
                     // a repeated member is earlier in reading order than a limit the same token
                     // would cross, and nothing of the value is kept.
+                    RequireUtf8(ref reader);
                     CheckDuplicate(ref reader);
                     AppendQuoted(reader.ValueSpan);
                     Append(':');
@@ -542,6 +544,17 @@ public static class HeaderItemsReader
             _captured.Advance(1);
         }
 
+        // The tokenizer checks the structure of a string, not the bytes between its quotes, and
+        // those bytes are kept as they are: a string or a name that is not UTF-8 makes the
+        // document malformed. Escapes are ASCII text here and pass as written.
+        private void RequireUtf8(ref Utf8JsonReader reader)
+        {
+            if (!Utf8.IsValid(reader.ValueSpan))
+            {
+                throw Refuse(DataContractViolation.DataInvalid, "malformed", null, OrdinalOfCapture, Absolute(reader.TokenStartIndex));
+            }
+        }
+
         private void AppendQuoted(ReadOnlySpan<byte> raw)
         {
             Append('"');
@@ -556,6 +569,7 @@ public static class HeaderItemsReader
             switch (reader.TokenType)
             {
                 case JsonTokenType.String:
+                    RequireUtf8(ref reader);
                     AppendQuoted(reader.ValueSpan);
                     break;
 
