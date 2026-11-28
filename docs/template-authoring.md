@@ -28,21 +28,59 @@ same composed HTML and the same printed, verified PDF before that
 publish-and-wait cycle, using the service's own checks and renderer: nothing
 here is a second implementation of what the take does.
 
+### Install the tool
+
+The tool is a .NET tool package with the command `report-template`. Build the
+package once from the repository root, into a folder of your choice:
+
+```text
+dotnet pack samples/template-authoring/ReportService.Samples.TemplateAuthoring -c Release -o <package-folder>
+```
+
+Then install it from that folder - globally, or into a tool path of your own -
+on any machine with the .NET 11 SDK; the source is not needed after the pack.
+The version is the product's version (`0.10.0-dev` between releases):
+
+```text
+dotnet tool install --global ReportService.TemplateAuthoring --version <version> --add-source <package-folder>
+dotnet tool install ReportService.TemplateAuthoring --version <version> --add-source <package-folder> --tool-path <tools-folder>
+```
+
+Update it from a newer package with `dotnet tool update` and the same options,
+and remove it with `dotnet tool uninstall --global ReportService.TemplateAuthoring`
+(or `--tool-path <tools-folder>`). The package carries the browser driver for
+Windows x64, Linux x64 and arm64 and macOS x64 and arm64.
+
+Inside the repository you can run the same tool from source instead: replace
+`report-template` in the commands below with
+`dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring --`.
+
 ### Prerequisites
 
 The .NET 11 SDK. The scaffold and the static checks need nothing else; to print
-the PDF you also need the Chromium build Playwright 1.63.0 downloads — the same
-build the PDF base image installs. Install it once from the tool's build
-output, from the repository root:
+the PDF you also need the Chromium build Playwright 1.63.0 downloads - the same
+build the PDF base image installs. The package does not carry it: install it
+once with the `playwright.ps1` script (PowerShell 7) the tool carries. For a
+global install the script is under
+`~/.dotnet/tools/.store/reportservice.templateauthoring/<version>/reportservice.templateauthoring/<version>/tools/net11.0/any/`
+(under `<tools-folder>/.store/...` for a tool path):
+
+```text
+pwsh <that folder>/playwright.ps1 install chromium
+```
+
+Running from source, the script is in the tool's build output:
 
 ```text
 pwsh samples/template-authoring/ReportService.Samples.TemplateAuthoring/bin/Release/net11.0/playwright.ps1 install chromium
 ```
 
+Without the browser, `render` prints a `render-unavailable` line and exits `3`.
+
 ### Scaffold
 
 ```text
-dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <version>] [--out <directory>]
+report-template scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <version>] [--out <directory>]
 ```
 
 `--engine` names one of the three engines (case-insensitive) and is written to
@@ -68,7 +106,7 @@ checks: the command prints
 ### Render
 
 ```text
-dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render <package-folder> [--out <directory>] [--page-capacity <pages>]
+report-template render <package-folder> [--out <directory>] [--page-capacity <pages>]
 ```
 
 `render` runs the take's thirteen static checks on the package, in the take's

@@ -19,8 +19,8 @@ internal static class Program
         Scaffolds a template package for one engine and renders a package's own sample locally.
 
         Usage:
-          ReportService.Samples.TemplateAuthoring scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <semver>] [--out <dir>]
-          ReportService.Samples.TemplateAuthoring render <package-folder> [--out <dir>] [--page-capacity <pages>]
+          report-template scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <semver>] [--out <dir>]
+          report-template render <package-folder> [--out <dir>] [--page-capacity <pages>]
 
         Defaults: --version 1.0.0, --out <current directory>/<id> for scaffold and
         <current directory>/artifacts/template-preview/<id>/<version> for render;
