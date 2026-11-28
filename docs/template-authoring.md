@@ -106,7 +106,7 @@ checks: the command prints
 ### Render
 
 ```text
-report-template render <package-folder> [--out <directory>] [--page-capacity <pages>]
+report-template render <package-folder> [--out <directory>] [--page-capacity <pages>] [--data <file>]
 ```
 
 `render` runs the take's thirteen static checks on the package, in the take's
@@ -133,6 +133,15 @@ when you pass it (digits only, greater than zero), else the shipped example
 profile's 10 000 pages - the capacity a deployment that configures none runs.
 Pass the target deployment's configured `DocumentCapacity:MaximumPages` to check
 the numbering area against it.
+
+`--data <file>` renders that file instead of the package's `sample.json`. The
+file goes through exactly the path the sample takes: the tool renders a temporary
+copy of the package whose `sample.json` is your file, so the take's own checks
+read it against `schema.json` and the data contract's bounds, and the sample
+renderer prints it. A file the contract refuses is refused with the take's
+sentence, which names `sample.json` - with `--data` that name means your file.
+The package itself is never changed, and the output location and file names stay
+the package's. A data file that does not exist is an invalid command line (`2`).
 
 #### Warnings
 
@@ -163,6 +172,23 @@ warning: reserved-member-shadows-field file=html/row.html.liquid line=4 column=1
 
 A value in a warning is at most 32 characters of your own sample, with control
 characters escaped.
+
+### Watch
+
+```text
+report-template watch <package-folder> [--out <directory>] [--page-capacity <pages>] [--data <file>]
+```
+
+`watch` renders once, exactly as `render` does with the same options, prints
+`watching (Ctrl+C to stop)` and then renders again every time you save a file of
+the package - or the `--data` file. Saves that arrive close together are
+rendered once; a save made during a render leads to one more render after it.
+Each render prints what `render` prints, its warnings included; a refused or failed render does not stop
+the watch, and the next save renders again. The preview files are rewritten in
+place: reload the page in the browser to see the new render. Changes under the
+output directory are ignored, so writing the preview never triggers a render,
+even when it lies inside the package. An invalid command line exits `2` without
+watching; Ctrl+C stops the watch and exits `0`.
 
 ### Reading a refusal
 

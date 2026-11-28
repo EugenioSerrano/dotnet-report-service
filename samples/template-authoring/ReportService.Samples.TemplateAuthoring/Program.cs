@@ -23,7 +23,8 @@ internal static class Program
 
         Usage:
           report-template scaffold --engine <scriban|handlebars|liquid> --id <template-id> [--version <semver>] [--out <dir>]
-          report-template render <package-folder> [--out <dir>] [--page-capacity <pages>]
+          report-template render <package-folder> [--out <dir>] [--page-capacity <pages>] [--data <file>]
+          report-template watch <package-folder> [--out <dir>] [--page-capacity <pages>] [--data <file>]
 
         Defaults: --version 1.0.0, --out <current directory>/<id> for scaffold and
         <current directory>/artifacts/template-preview/<id>/<version> for render;
@@ -49,6 +50,7 @@ internal static class Program
             {
                 "scaffold" => Scaffold(tool, args, output),
                 "render" => await RenderAsync(args, output).ConfigureAwait(false),
+                "watch" => await WatchAsync(args, output).ConfigureAwait(false),
                 _ => Fail(output, args.Length == 0
                     ? "error: a command is required."
                     : "error: the command '" + args[0] + "' is not one this tool knows."),
@@ -91,7 +93,37 @@ internal static class Program
 
     private static Task<int> RenderAsync(string[] args, TextWriter output)
     {
-        var line = CommandLine.Parse(args, ["--out", PageCapacityOption.Name], positionalCount: 1);
+        var (tool, request) = RenderCommand(args);
+        return tool.RenderAsync(request, output);
+    }
+
+    // The watch writes each render's lines as it happens; only a usage error on the first
+    // render goes through the buffered output, so it is printed with the usage block.
+    private static async Task<int> WatchAsync(string[] args, TextWriter output)
+    {
+        var (tool, request) = RenderCommand(args);
+        using var stop = new CancellationTokenSource();
+        ConsoleCancelEventHandler onCancel = (_, press) =>
+        {
+            press.Cancel = true;
+            stop.Cancel();
+        };
+        Console.CancelKeyPress += onCancel;
+        try
+        {
+            return await new PackageWatcher(tool)
+                .RunAsync(request, Console.Out, stop.Token, usageOutput: output)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            Console.CancelKeyPress -= onCancel;
+        }
+    }
+
+    private static (TemplateAuthoringTool Tool, RenderRequest Request) RenderCommand(string[] args)
+    {
+        var line = CommandLine.Parse(args, ["--out", PageCapacityOption.Name, "--data"], positionalCount: 1);
         NumberingCapacity? capacity;
         try
         {
@@ -102,8 +134,9 @@ internal static class Program
             throw new UsageException(exception.Message);
         }
 
-        var tool = new TemplateAuthoringTool(capacity: capacity);
-        return tool.RenderAsync(new RenderRequest(line.Positional[0], line.Get("--out")), output);
+        return (
+            new TemplateAuthoringTool(capacity: capacity),
+            new RenderRequest(line.Positional[0], line.Get("--out"), line.Get("--data")));
     }
 
     private static int Fail(TextWriter output, string message)
