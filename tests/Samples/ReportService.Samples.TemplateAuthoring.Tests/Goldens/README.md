@@ -13,6 +13,8 @@ so `PdfSampleRenderer` verifies the exact printed page a live print produced.
 | `pilot-liquid.pdf` | `samples/templates/pilot-liquid` | Liquid/Fluid 2.40.0 | 55 651 | `3bafda49…86c18035` |
 | `invoice-batch.pdf` | `samples/templates/invoice-batch` | Liquid/Fluid 2.40.0 | 74 071 | `f1020a9a…91b363dc` |
 | `invoice-batch-two-up.pdf` | `samples/templates/invoice-batch-two-up` | Liquid/Fluid 2.40.0 | 76 787 | `1e5db173…b5c3815f` |
+| `invoice-charts.pdf` | `samples/templates/invoice-charts` (es-AR, as shipped) | Liquid/Fluid 2.40.0 | 81 278 | `5df7cbc3…a4dddef8` |
+| `invoice-charts-en-US.pdf` | `samples/templates/invoice-charts` with `localeDefaults.culture: en-US` | Liquid/Fluid 2.40.0 | 81 268 | `3ca835bd…bb6fd892` |
 
 The exact hashes are in `SHA256SUMS` beside this file.
 
@@ -49,6 +51,24 @@ dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAu
 
 They printed `rendered invoice-batch 1.0.0: engine=liquid pages=6 words=383` and
 `rendered invoice-batch-two-up 1.0.0: engine=liquid pages=3 words=383` and exited 0.
+
+### The charts goldens
+
+Printed the same way from product commit `c2fc30895b244bef3952fd04ba41ae4483f66caa`
+plus the `invoice-charts` package, on Windows, with the same Chromium build. The
+second one renders a temporary copy of the package whose only change is
+`localeDefaults.culture: en-US`, so the same charts are printed under a culture
+that writes decimals with a point as well as under `es-AR`, which writes them
+with a comma:
+
+```text
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render samples/templates/invoice-charts --out artifacts/template-preview/invoice-charts/1.0.0
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render <copy with culture en-US>/invoice-charts --out artifacts/template-preview/invoice-charts-en-US/1.0.0
+```
+
+Both printed `rendered invoice-charts 1.0.0: engine=liquid pages=6 words=541`, no
+warning, and exited 0. The en-US case copies the package the same way before
+replaying `invoice-charts-en-US.pdf`.
 
 ## When they must be regenerated
 

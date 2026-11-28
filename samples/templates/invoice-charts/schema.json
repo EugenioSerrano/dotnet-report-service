@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Invoice batch with consumption charts (header-items-v1)",
+  "description": "A batch of invoices: the header describes the batch, and every record is one invoice carrying its lines, its totals, twelve months of consumption and the average of that consumption. The totals and the average are business values computed by the producer; the template only draws from them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "header", "items"],
+  "properties": {
+    "contractVersion": { "const": "1.0" },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["batchId", "reportTitle", "issuer", "currency", "generatedAt", "invoiceCount"],
+      "properties": {
+        "batchId": { "type": "string" },
+        "reportTitle": { "type": "string" },
+        "issuer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "taxId"],
+          "properties": {
+            "name": { "type": "string" },
+            "taxId": { "type": "string" }
+          }
+        },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "invoiceCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/invoice" }
+    }
+  },
+  "$defs": {
+    "invoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invoiceNumber", "issueDate", "dueDate", "customer", "lines", "subtotal", "tax", "total", "consumption", "consumptionAverage"],
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date" },
+        "dueDate": { "type": "string", "format": "date" },
+        "customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "taxId", "address"],
+          "properties": {
+            "name": { "type": "string" },
+            "taxId": { "type": "string" },
+            "address": { "type": "string" }
+          }
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lineNumber", "description", "quantity", "unitPrice", "amount"],
+            "properties": {
+              "lineNumber": { "type": "integer", "minimum": 1 },
+              "description": { "type": "string" },
+              "quantity": { "type": "number", "minimum": 0 },
+              "unitPrice": { "type": "number", "minimum": 0 },
+              "amount": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "subtotal": { "type": "number", "minimum": 0 },
+        "tax": { "type": "number", "minimum": 0 },
+        "total": { "type": "number", "minimum": 0 },
+        "consumption": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["month", "kwh"],
+            "properties": {
+              "month": { "type": "string" },
+              "kwh": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "consumptionAverage": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

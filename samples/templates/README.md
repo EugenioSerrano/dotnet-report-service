@@ -12,6 +12,7 @@ One sample template package per pilot dataset (see
 | [`pilot-volume/`](pilot-volume/) | the volume dataset | A4 landscape | on (`amount`, 2 decimals) | by `groupId`, cut at group boundaries |
 | [`invoice-batch/`](invoice-batch/) | a batch of six invoices, one per page, rendered by Liquid | A4 portrait | off | — |
 | [`invoice-batch-two-up/`](invoice-batch-two-up/) | the same batch, two invoices per page, rendered by Liquid | A4 portrait | off | — |
+| [`invoice-charts/`](invoice-charts/) | a batch of six invoices with two charts each, one per page, rendered by Liquid | A4 portrait | off | — |
 
 Each package contains:
 
@@ -43,6 +44,17 @@ of its number, printed as inline SVG. Their `sample.json` is written by hand
 (six fictitious invoices), not by the dataset generator. The pattern is
 explained in
 [Printing a batch of invoices](../../docs/template-authoring.md#printing-a-batch-of-invoices).
+
+
+**The charts sample.** `invoice-charts` is a Liquid batch of six invoices, each
+drawing monthly consumption bars with a trend line and an average line, and a
+donut of its subtotal by line. The template computes the geometry from the
+plain numbers in the record and writes every computed number into its attribute
+with `num_invariant`, so the charts print the same under `es-AR` as under
+`en-US`; the totals and the average are business values carried in the data.
+Its `sample.json` is written by hand (six fictitious invoices, including a month
+and a whole year at zero and a single-line invoice). The pattern is explained in
+[Drawing a chart](../../docs/template-authoring.md#drawing-a-chart).
 
 
 **The takeable fixture family is test data, not a shipped sample.** The test
