@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The data reader probe: reads one snapshot through the product reader and partition pass,
+    with the data contract validated when a schema is given, and prints one result line with
+    the peak memory of its own process. The performance level publishes it for Linux and runs
+    it inside a memory-capped container; it is not a test project and holds no test.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.DataContract\ReportService.DataContract.csproj" />
+  </ItemGroup>
+
+</Project>

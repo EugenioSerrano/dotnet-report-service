@@ -123,8 +123,9 @@ the configured capacity is printed from one or more blocks.
 
 ### The message of a report refused by the row bound
 
-A PDF report whose detail data carries a text value above 262 144 bytes of UTF-8
-ends `failed` with `ROW_BOUND_EXCEEDED`, on the job and on its PDF output,
+A PDF report whose detail data carries a text value above 262 144 bytes of UTF-8,
+or an image data URI above 1 048 576 bytes, ends `failed` with
+`ROW_BOUND_EXCEEDED`, on the job and on its PDF output,
 before any page is rendered: no artifact to download. Its `errorMessage` names
 the first offending record, the field's path relative to the record, the value's
 size and the bound — never any part of the value:

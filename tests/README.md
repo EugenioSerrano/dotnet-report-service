@@ -22,7 +22,7 @@ failed.
 | **Integration** — one real dependency at a time | `ReportService.IntegrationTests` | PostgreSQL, Valkey and the Temporal development server, each in its own container; the API and the orchestration worker hosted in the test process against them; a storage root in the test's temporary area; the render worker image the startup class publishes from the render worker's entry project on the PDF base, run as a container | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- integration` |
 | **Rendering** — every printed document judged | `ReportService.RenderingTests` | the rendering host image and the judge image, built once per run on the PDF base and started as one-shot containers; the core tier of the fixture library and the known-bad controls | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- rendering` |
 | **End-to-end** — the whole local composition | `ReportService.EndToEndTests` | the composition of [`../src/ReportService.AppHost/`](../src/ReportService.AppHost/), started from the test | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- e2e` |
-| **Performance / NFR** — the on-demand heavy cases | `ReportService.PerformanceTests` (`tests/Suites/`) | bounded-memory and large-buffer cases that prove a resource bound in-process (the download, upload-verification and object-store memory cases over a large source; the guarded writer's large-buffer refusal); the reference environment for a comparable figure | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
+| **Performance / NFR** — the on-demand heavy cases | `ReportService.PerformanceTests` (`tests/Suites/`) | bounded-memory and large-buffer cases that prove a resource bound in-process (the download, upload-verification and object-store memory cases over a large source; the guarded writer's large-buffer refusal; the data pass's hostile inputs at the record bound, and the same inputs with a one-million-record snapshot in a Linux container capped at 128 MiB, which needs a container runtime); the reference environment for a comparable figure | `dotnet run --project eng/test/ReportService.Eng.TestRunner -- performance --timeout <mm:ss>` |
 
 
 Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level runs under; the deadline is one for the whole attempt, covering the prepare step, the build and every project. `performance` requires it until a run of that level is recorded, because no recorded span justifies a deadline for it.
@@ -59,7 +59,10 @@ Every level accepts `--timeout <mm:ss>`, which replaces the deadline that level 
   memory and large-buffer cases that prove a resource bound rather than logic or
   structure, kept out of the hermetic V-Bounce so the inner loop stays fast for TDD.
   It holds the download, upload-verification and object-store large-source memory
-  cases and the guarded writer's large-buffer refusal cases. It runs only on its
+  cases, the guarded writer's large-buffer refusal cases, and the data pass's
+  hostile inputs at the record bound - in-process, and through the data reader
+  probe (`tests/Suites/ReportService.DataReaderProbe`) inside a container capped
+  at 128 MiB, which needs Docker. It runs only on its
   triggers — at a release, when a change touches the memory/streaming path, and
   nightly once a scheduler exists (until then, run it by the command above) — never
   in the hermetic or integration levels. Its memory figures are comparable only on

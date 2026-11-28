@@ -31,8 +31,13 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
     /// <summary>The most nested calls one render may take.</summary>
     public const int RecursiveLimit = 100;
 
-    /// <summary>The most characters one converted value may produce.</summary>
-    public const int LimitToString = 1024 * 1024;
+    /// <summary>
+    /// The most characters one converted value may produce: the call guard of the output writer.
+    /// The largest value admissible data can give, escaped, stays below it, so no such value is
+    /// ever cut; a longer one is cut by the engine to this length plus an ellipsis, which the
+    /// guard then refuses, so a value is never shortened without an error.
+    /// </summary>
+    public const int LimitToString = GuardedWriter.MaximumCharactersPerCall;
 
     /// <summary>The deadline of one regular-expression evaluation.</summary>
     public static readonly TimeSpan RegexTimeOut = TimeSpan.FromSeconds(1);

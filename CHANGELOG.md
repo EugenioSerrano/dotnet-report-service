@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A record may now be up to 2 MiB (it was 1 MiB), so a picture the producer has
+  computed can travel in the record as a `data:` URI; a single token follows the
+  record limit and the header stays at 1 MiB. Blocks still gather records up to
+  1 MiB, and a larger record is printed in a block of its own. On a PDF, a value
+  that is a base64 image data URI (PNG, JPEG, GIF, WebP or SVG) may carry up to
+  1 MiB, while every other value keeps the 256 KiB bound; the
+  `ROW_BOUND_EXCEEDED` diagnostic names the bound that applied. A template
+  sample may be a single record of up to 2 MiB.
+
+### Fixed
+
+- A Scriban template no longer shortens a long escaped value without an error.
+  The engine cut any converted value above its string limit (1 Mi characters)
+  and appended `...`, so a text of ampersands at the PDF row bound, or a long
+  accented text on HTML, printed incomplete. The limit is now the output
+  guard's 16 Mi characters: the largest value admitted data can give is printed
+  whole, and a longer value fails the render with
+  `QUOTA_EXCEEDED limit=render-output` instead of being cut.
+
 ### Added
 
 - The template-authoring tool is packed as a .NET tool (`ReportService.TemplateAuthoring`,

@@ -11,7 +11,8 @@ namespace ReportService.Templates;
 /// A sample above the hard maximum of a block is not a block any job's partitioner
 /// would produce, so it is reported as <see cref="SampleRead.OverBound"/> rather
 /// than rendered: at most 2 000 records and at most 1 MiB of record content, the
-/// records' wire JSON summed as the partitioner sums it. A sample the delivered
+/// records' wire JSON summed as the partitioner sums it - or a single record above
+/// 1 MiB, up to the record bound, which the partitioner places in a block alone. A sample the delivered
 /// reader rejects is <see cref="SampleRead.Unreadable"/>, never an exception. The
 /// read allocates nothing but the values and the sample's own bytes; it holds no
 /// engine and no package.
@@ -75,7 +76,9 @@ public sealed record SamplePartition(
             return new SampleRead.OverBound(SampleBound.Records, records.Count, recordBytes);
         }
 
-        if (recordBytes > DataContractLimits.BlockRecordBytes)
+        // A single record above the block's byte maximum is a block of its own, as the
+        // partitioner places it; the reader has already held it to the record bound.
+        if (recordBytes > DataContractLimits.BlockRecordBytes && records.Count > 1)
         {
             return new SampleRead.OverBound(SampleBound.RecordBytes, records.Count, recordBytes);
         }

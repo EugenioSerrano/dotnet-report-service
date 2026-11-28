@@ -22,6 +22,29 @@ public static class RowBoundScanner
     public static RowBoundFinding? FindFirst(ReadOnlySpan<byte> record, int boundBytes)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(boundBytes, 1);
+        return Scan(record, boundBytes, imageBoundBytes: null);
+    }
+
+    /// <summary>
+    /// Finds the first value of <paramref name="record"/> above the bound that applies to it:
+    /// <paramref name="imageDataUriBoundBytes"/> for a value that is an image data URI
+    /// (<see cref="JsonImageDataUri"/>), and <paramref name="boundBytes"/> for every other string.
+    /// The finding names the bound that applied. A value is classified only once it is already
+    /// above <paramref name="boundBytes"/>, so an ordinary record is still scanned with no decoding.
+    /// </summary>
+    /// <param name="record">One record's JSON, exactly as the reader yielded it.</param>
+    /// <param name="boundBytes">The most bytes of decoded UTF-8 a value that is not an image data URI may carry.</param>
+    /// <param name="imageDataUriBoundBytes">The most bytes of decoded UTF-8 an image data URI may carry.</param>
+    /// <returns>The first value over its bound, or <see langword="null"/> when every value is within it.</returns>
+    public static RowBoundFinding? FindFirst(ReadOnlySpan<byte> record, int boundBytes, int imageDataUriBoundBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(boundBytes, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(imageDataUriBoundBytes, boundBytes);
+        return Scan(record, boundBytes, imageDataUriBoundBytes);
+    }
+
+    private static RowBoundFinding? Scan(ReadOnlySpan<byte> record, int boundBytes, int? imageBoundBytes)
+    {
 
         // One frame per level of the record, the record's own object included: the depth the
         // profile admits bounds the stack, so it never grows.
@@ -71,7 +94,13 @@ public static class RowBoundScanner
                         var decoded = Utf8StringLength.Decoded(raw, reader.ValueIsEscaped);
                         if (decoded > boundBytes)
                         {
-                            return new RowBoundFinding(Pointer(frames[..(depth + 1)], record), decoded);
+                            var applied = imageBoundBytes is { } imageBound && JsonImageDataUri.Is(raw, reader.ValueIsEscaped)
+                                ? imageBound
+                                : boundBytes;
+                            if (decoded > applied)
+                            {
+                                return new RowBoundFinding(Pointer(frames[..(depth + 1)], record), decoded, applied);
+                            }
                         }
                     }
 

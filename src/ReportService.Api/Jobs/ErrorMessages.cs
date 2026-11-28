@@ -72,8 +72,11 @@ public static class ErrorMessages
 
     private const string PathKey = " path=";
 
-    /// <summary>The most bytes of UTF-8 one text field of a detail record may carry: a larger bound is not this version's.</summary>
+    /// <summary>The most bytes of UTF-8 one text field of a detail record may carry: any other bound is not this version's.</summary>
     private const int FieldBoundBytes = 262_144;
+
+    /// <summary>The most bytes of UTF-8 one image data URI of a detail record may carry: the other bound of this version.</summary>
+    private const int ImageDataUriBoundBytes = 1_048_576;
 
     private const string OrdinalKey = " ordinal=";
 
@@ -263,7 +266,7 @@ public static class ErrorMessages
         if (!TryTake(ref rest, BoundKey)
             || !TryTakeToSpace(ref rest, out var boundText)
             || !long.TryParse(boundText, NumberStyles.None, CultureInfo.InvariantCulture, out bound)
-            || bound != FieldBoundBytes
+            || bound is not (FieldBoundBytes or ImageDataUriBoundBytes)
             || size <= bound)
         {
             return false;

@@ -24,4 +24,10 @@
     <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The shared conformance cases of the image data URI definition, linked rather than
+         referenced so that this project keeps measuring only its own assembly. -->
+    <Compile Include="..\..\Support\ReportService.Testing\ImageDataUriVectors.cs" Link="Shared\ImageDataUriVectors.cs" />
+  </ItemGroup>
+
 </Project>
