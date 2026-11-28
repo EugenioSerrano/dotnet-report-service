@@ -9,7 +9,7 @@ namespace ReportService.Data.Tests;
 /// every case is read from the value as it is written in JSON, escapes included, and must be
 /// classified as the case says.
 /// </summary>
-public sealed class ImageDataUriTests
+public sealed class JsonImageDataUriTests
 {
     public static TheoryData<ImageDataUriVector> Vectors => new(ImageDataUriVectors.All);
 
@@ -20,7 +20,7 @@ public sealed class ImageDataUriTests
         var written = Encoding.UTF8.GetBytes(vector.Written);
         var escaped = vector.Written.Contains('\\', StringComparison.Ordinal);
 
-        Assert.Equal(vector.IsImageDataUri, ImageDataUri.Is(written, escaped));
+        Assert.Equal(vector.IsImageDataUri, JsonImageDataUri.Is(written, escaped));
     }
 
     [Fact]
@@ -40,10 +40,10 @@ public sealed class ImageDataUriTests
     public void ALargeImageIsClassifiedWithoutAllocating()
     {
         var value = Encoding.UTF8.GetBytes("data:image/png;base64," + new string('A', 1_000_000));
-        Assert.True(ImageDataUri.Is(value, isEscaped: false));
+        Assert.True(JsonImageDataUri.Is(value, isEscaped: false));
 
         var before = GC.GetAllocatedBytesForCurrentThread();
-        var result = ImageDataUri.Is(value, isEscaped: false);
+        var result = JsonImageDataUri.Is(value, isEscaped: false);
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.True(result);

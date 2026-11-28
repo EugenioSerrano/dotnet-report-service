@@ -28,7 +28,7 @@ public static class RowBoundScanner
     /// <summary>
     /// Finds the first value of <paramref name="record"/> above the bound that applies to it:
     /// <paramref name="imageDataUriBoundBytes"/> for a value that is an image data URI
-    /// (<see cref="ImageDataUri"/>), and <paramref name="boundBytes"/> for every other string.
+    /// (<see cref="JsonImageDataUri"/>), and <paramref name="boundBytes"/> for every other string.
     /// The finding names the bound that applied. A value is classified only once it is already
     /// above <paramref name="boundBytes"/>, so an ordinary record is still scanned with no decoding.
     /// </summary>
@@ -94,7 +94,7 @@ public static class RowBoundScanner
                         var decoded = Utf8StringLength.Decoded(raw, reader.ValueIsEscaped);
                         if (decoded > boundBytes)
                         {
-                            var applied = imageBoundBytes is { } imageBound && ImageDataUri.Is(raw, reader.ValueIsEscaped)
+                            var applied = imageBoundBytes is { } imageBound && JsonImageDataUri.Is(raw, reader.ValueIsEscaped)
                                 ? imageBound
                                 : boundBytes;
                             if (decoded > applied)

@@ -105,7 +105,8 @@ public sealed class ScribanTemplateAdapterTests
         Assert.Equal("7.5.1", ScribanTemplateAdapter.EngineVersion);
         Assert.Equal(10_000, ScribanTemplateAdapter.LoopLimit);
         Assert.Equal(100, ScribanTemplateAdapter.RecursiveLimit);
-        Assert.Equal(2 * 1024 * 1024, ScribanTemplateAdapter.LimitToString);
+        Assert.Equal(16 * 1024 * 1024, ScribanTemplateAdapter.LimitToString);
+        Assert.Equal(GuardedWriter.MaximumCharactersPerCall, ScribanTemplateAdapter.LimitToString);
         Assert.Equal(TimeSpan.FromSeconds(1), ScribanTemplateAdapter.RegexTimeOut);
     }
 

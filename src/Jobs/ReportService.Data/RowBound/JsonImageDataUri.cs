@@ -11,7 +11,7 @@ namespace ReportService.Data;
 /// one. The value is read once from its written bytes, its escapes resolved on the fly, and
 /// nothing is decoded into a copy or allocated.
 /// </summary>
-public static class ImageDataUri
+public static class JsonImageDataUri
 {
     private static readonly byte[][] MediaTypes =
     [

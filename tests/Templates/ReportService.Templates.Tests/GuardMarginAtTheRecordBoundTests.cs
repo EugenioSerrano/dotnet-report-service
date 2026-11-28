@@ -25,7 +25,7 @@ public sealed class GuardMarginAtTheRecordBoundTests
         var data = new TheoryData<string, string, bool>();
         foreach (var engine in new[] { ScribanTemplateAdapter.EngineName, HandlebarsTemplateAdapter.EngineName, FluidTemplateAdapter.EngineName })
         {
-            foreach (var fixture in new[] { "ampersand", "apostrophe", "less-than", "e-acute", "emoji", "base64" })
+            foreach (var fixture in new[] { "ampersand", "apostrophe", "less-than", "e-acute", "emoji", "base64", "accented" })
             {
                 data.Add(engine, fixture, true);
                 data.Add(engine, fixture, false);
@@ -85,6 +85,55 @@ public sealed class GuardMarginAtTheRecordBoundTests
         Assert.True(block.Html.Length <= GuardedWriter.MaximumBlockBytes, figure);
     }
 
+    public static TheoryData<string> Engines => new(ScribanTemplateAdapter.EngineName, HandlebarsTemplateAdapter.EngineName, FluidTemplateAdapter.EngineName);
+
+    [Theory]
+    [MemberData(nameof(Engines))]
+    public async Task AValuePrintedTwiceInOneCallAboveTheGuardIsATypedRefusalNeverACut(string engine)
+    {
+        var value = Print(engine, "item.v");
+        var refusal = await Assert.ThrowsAsync<TemplateGuardException>(() => EngineCases.Compose(
+            engine,
+            [(TemplatePart.Row, "<p>" + value + value + "</p>")],
+            "{}",
+            [AmpersandRecord()]));
+
+        Assert.Equal(TemplateErrorCodes.QuotaExceeded, refusal.Code);
+        Assert.Equal("render-output", refusal.Limit);
+    }
+
+    [Fact]
+    public async Task AScribanValueConvertedAboveTheGuardIsATypedRefusalNeverACut()
+    {
+        // The escaped value concatenated with itself is one converted value of 20 971 440
+        // characters: the engine cuts it to its limit plus an ellipsis, and the guard refuses it.
+        var refusal = await Assert.ThrowsAsync<TemplateGuardException>(() => EngineCases.Compose(
+            ScribanTemplateAdapter.EngineName,
+            [(TemplatePart.Row, "<p>{{ (item.v | html.escape) + (item.v | html.escape) }}</p>")],
+            "{}",
+            [AmpersandRecord()]));
+
+        Assert.Equal(TemplateErrorCodes.QuotaExceeded, refusal.Code);
+        Assert.Equal("render-output", refusal.Limit);
+    }
+
+    [Theory]
+    [InlineData("{{ item.v | html.escape | string.upcase }}", "upcase")]
+    [InlineData("{{ \"[\" + (item.v | html.escape) + \"]\" }}", "concatenation")]
+    public async Task NoOtherScribanConversionPathCutsAnEscapedValueAtTheRecordBound(string source, string path)
+    {
+        var value = new string('&', RecordBytes - "{\"v\":\"\"}".Length);
+        var escaped = WebUtility.HtmlEncode(value);
+        var expected = path == "upcase" ? escaped.ToUpperInvariant() : "[" + escaped + "]";
+
+        var block = await EngineCases.Compose(ScribanTemplateAdapter.EngineName, [(TemplatePart.Row, source)], "{}", [AmpersandRecord()]);
+
+        var text = block.Text.Trim();
+        Assert.True(
+            text == expected,
+            string.Create(CultureInfo.InvariantCulture, $"{path}: expected {expected.Length} characters, the output has {text.Length}, ending [{text[Math.Max(0, text.Length - 24)..]}]"));
+    }
+
     [Fact]
     public async Task ScribanPrintsAStringAtTheRecordBoundWithoutCuttingIt()
     {
@@ -100,6 +149,31 @@ public sealed class GuardMarginAtTheRecordBoundTests
         Assert.True(value.Length < ScribanTemplateAdapter.LimitToString);
     }
 
+    private static string AmpersandRecord() => "{\"v\":\"" + new string('&', RecordBytes - "{\"v\":\"\"}".Length) + "\"}";
+
+    // Mixed accented text of exactly the given wire bytes: two-byte letters and one-byte spaces.
+    private static string Accented(int bytes)
+    {
+        const string pattern = "\u00E1\u00E9\u00ED\u00F3\u00FA\u00F1 ";
+        var text = new StringBuilder(bytes);
+        var used = 0;
+        var index = 0;
+        while (true)
+        {
+            var next = pattern[index++ % pattern.Length];
+            var size = next == ' ' ? 1 : 2;
+            if (used + size > bytes)
+            {
+                break;
+            }
+
+            text.Append(next);
+            used += size;
+        }
+
+        return text.Append('a', bytes - used).ToString();
+    }
+
     private static string Print(string engine, string member) =>
         engine == ScribanTemplateAdapter.EngineName ? "{{ " + member + " | html.escape }}" : "{{ " + member + " }}";
 
@@ -112,6 +186,7 @@ public sealed class GuardMarginAtTheRecordBoundTests
         "e-acute" => new string('é', bytes / 2) + new string('a', bytes % 2),
         "emoji" => string.Concat(Enumerable.Repeat("\U0001F600", bytes / 4)) + new string('a', bytes % 4),
         "base64" => "data:image/png;base64," + new string('A', bytes - 22),
+        "accented" => Accented(bytes),
         _ => throw new ArgumentOutOfRangeException(nameof(fixture), fixture, "no such fixture"),
     };
 }

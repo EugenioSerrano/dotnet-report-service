@@ -401,7 +401,9 @@ The data a job sends is held to fixed sizes; the full rules are in the
   beyond its limits (16 Mi characters in one call, 32 MiB in one block). A
   header and a record at their limits, each printed once, stay inside them; a
   template that prints the same large value - or the header - several times can
-  reach the limit and fails with `QUOTA_EXCEEDED limit=render-output`.
+  reach the limit and fails with `QUOTA_EXCEEDED limit=render-output`. A value is
+  never shortened silently, on any engine: it is printed whole, or the render
+  fails with that code.
 
 ## The values a template can read
 

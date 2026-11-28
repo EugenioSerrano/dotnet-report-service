@@ -15,7 +15,7 @@ public static class PdfRowBound
 
     /// <summary>
     /// The most bytes of decoded UTF-8 one string value may carry when it is an image data URI
-    /// (<see cref="ImageDataUri"/>), its prefix included. Every other value keeps <see cref="Bytes"/>.
+    /// (<see cref="JsonImageDataUri"/>), its prefix included. Every other value keeps <see cref="Bytes"/>.
     /// </summary>
     public const int ImageDataUriBytes = 1_048_576;
 }
