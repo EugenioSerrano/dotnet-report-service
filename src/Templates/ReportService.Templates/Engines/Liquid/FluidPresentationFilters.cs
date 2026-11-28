@@ -11,7 +11,7 @@ namespace ReportService.Templates;
 /// </summary>
 public static class FluidPresentationFilters
 {
-    /// <summary>Registers the nine names on <paramref name="options"/>.</summary>
+    /// <summary>Registers the ten names on <paramref name="options"/>.</summary>
     /// <param name="options">The options the part renders with.</param>
     /// <param name="settings">The block's presentation settings.</param>
     public static void Register(TemplateOptions options, PresentationSettings settings)

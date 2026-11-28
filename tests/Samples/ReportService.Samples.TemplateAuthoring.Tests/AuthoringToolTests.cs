@@ -126,6 +126,7 @@ public sealed class AuthoringToolTests
 
         Assert.Equal(0, code);
         Assert.Contains("rendered " + id + " 1.0.0", writer.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("warning:", writer.ToString(), StringComparison.Ordinal);
 
         var htmlPath = Path.Combine(outputDirectory, id + "-1.0.0.html");
         var pdfPath = Path.Combine(outputDirectory, id + "-1.0.0.pdf");

@@ -18,7 +18,7 @@ namespace ReportService.Templates;
 /// </summary>
 public static class HandlebarsPresentationHelpers
 {
-    /// <summary>Registers the nine names on <paramref name="handlebars"/>.</summary>
+    /// <summary>Registers the ten names on <paramref name="handlebars"/>.</summary>
     /// <param name="handlebars">The environment the package's parts are compiled in.</param>
     public static void Register(IHandlebars handlebars)
     {
@@ -31,6 +31,7 @@ public static class HandlebarsPresentationHelpers
         handlebars.RegisterHelper(PresentationFunctionTable.NumLessOrEqualName, (HandlebarsReturnHelper)((context, arguments) => Answer(context, arguments, PresentationFunctionTable.NumLessOrEqualName)));
         handlebars.RegisterHelper(PresentationFunctionTable.NumEqualName, (HandlebarsReturnHelper)((context, arguments) => Answer(context, arguments, PresentationFunctionTable.NumEqualName)));
         handlebars.RegisterHelper(PresentationFunctionTable.NumNotEqualName, (HandlebarsReturnHelper)((context, arguments) => Answer(context, arguments, PresentationFunctionTable.NumNotEqualName)));
+        handlebars.RegisterHelper(PresentationFunctionTable.NumInvariantName, (HandlebarsReturnHelper)((context, arguments) => Answer(context, arguments, PresentationFunctionTable.NumInvariantName)));
         handlebars.RegisterHelper(PresentationFunctionTable.NumSignName, (HandlebarsReturnHelper)((context, arguments) => Answer(context, arguments, PresentationFunctionTable.NumSignName)));
     }
 

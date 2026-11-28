@@ -34,7 +34,7 @@ public abstract record PresentationResult
 }
 
 /// <summary>
-/// The nine presentation functions, bound to one block's settings. Every result is a pure
+/// The ten presentation functions, bound to one block's settings. Every result is a pure
 /// function of the value, the format and the settings: no function reads the host clock or
 /// the process culture, and none accepts a culture, a time zone or a clock an author could
 /// pass to override the job's own.
@@ -128,6 +128,36 @@ public sealed class PresentationFunctions(PresentationSettings settings)
         }
 
         return new PresentationResult.Text(number > 0 ? "1" : number < 0 ? "-1" : "0");
+    }
+
+    /// <summary>
+    /// Writes a number culture-invariantly, for a position a machine reads (an attribute or a
+    /// CSS length): <c>.</c> as the decimal separator, no group separator, no exponent. The
+    /// job's culture is not read.
+    /// </summary>
+    /// <param name="value">Invariant plain decimal text, or an engine's own number.</param>
+    /// <param name="decimals">
+    /// <see langword="null"/> to keep the value's own scale, or a whole number from 0 to 28 to
+    /// round half away from zero and write exactly that many decimals.
+    /// </param>
+    public PresentationResult NumInvariant(object? value, object? decimals)
+    {
+        if (!InvariantNumber.TryRead(value, out var number))
+        {
+            return new PresentationResult.Refused(PresentationRefusal.NoDecimal);
+        }
+
+        if (decimals is null)
+        {
+            return new PresentationResult.Text(InvariantNumber.Write(number));
+        }
+
+        if (!InvariantNumber.TryReadDecimals(decimals, out var places))
+        {
+            return new PresentationResult.Refused(PresentationRefusal.BadFormat);
+        }
+
+        return new PresentationResult.Text(InvariantNumber.Write(number, places));
     }
 
     private static PresentationResult Compare(object? left, object? right, Func<decimal, decimal, bool> compare)

@@ -11,7 +11,7 @@ namespace ReportService.Templates;
 /// </summary>
 public static class ScribanPresentationFunctions
 {
-    /// <summary>Registers the nine names on <paramref name="globals"/>.</summary>
+    /// <summary>Registers the ten names on <paramref name="globals"/>.</summary>
     /// <param name="globals">The scope the part renders with.</param>
     /// <param name="settings">The block's presentation settings.</param>
     public static void Register(ScriptObject globals, PresentationSettings settings)
@@ -29,6 +29,7 @@ public static class ScribanPresentationFunctions
         globals[PresentationFunctionTable.NumEqualName] = TwoArguments(table, PresentationFunctionTable.NumEqualName);
         globals[PresentationFunctionTable.NumNotEqualName] = TwoArguments(table, PresentationFunctionTable.NumNotEqualName);
         globals[PresentationFunctionTable.NumSignName] = OneArgument(table, PresentationFunctionTable.NumSignName);
+        globals[PresentationFunctionTable.NumInvariantName] = OneOrTwoArguments(table, PresentationFunctionTable.NumInvariantName);
     }
 
     private static object TwoArguments(IReadOnlyDictionary<string, PresentationFunction> table, string name) =>
@@ -37,6 +38,14 @@ public static class ScribanPresentationFunctions
 
     private static object OneArgument(IReadOnlyDictionary<string, PresentationFunction> table, string name) =>
         DynamicCustomFunction.Create(new Func<object?, object>(value => Answer(table[name], name, [value])));
+
+    // Scriban binds a method's parameters by position and honours an optional one, so a
+    // template can write the one-argument and the two-argument form of the same function.
+    private static object OneOrTwoArguments(IReadOnlyDictionary<string, PresentationFunction> table, string name)
+    {
+        var call = new OptionalSecondArgument(table[name], name);
+        return DynamicCustomFunction.Create(call, typeof(OptionalSecondArgument).GetMethod(nameof(OptionalSecondArgument.Invoke))!);
+    }
 
     private static object Answer(PresentationFunction function, string name, IReadOnlyList<object?> arguments) =>
         function(arguments) switch
@@ -47,4 +56,10 @@ public static class ScribanPresentationFunctions
                 PresentationFailures.Describe(refused.Reason, name, recordOrdinal: null)),
             _ => string.Empty,
         };
+
+    private sealed class OptionalSecondArgument(PresentationFunction function, string name)
+    {
+        public object Invoke(object? value, object? second = null) =>
+            Answer(function, name, second is null ? [value] : [value, second]);
+    }
 }

@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ReportService.Templates.Tests.Presentation;
 
 /// <summary>
-/// The nine presentation functions under the job's culture and zone: the same decimal in
+/// The ten presentation functions under the job's culture and zone: the same decimal in
 /// three cultures, the same instant in three zones across a daylight-saving change, a
 /// calendar date that never moves, the report's clock, and each typed refusal.
 /// </summary>

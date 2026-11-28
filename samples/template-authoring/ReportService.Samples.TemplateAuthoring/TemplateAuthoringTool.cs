@@ -332,6 +332,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
                         rendered.Facts,
                         scratchOutput,
                         request.OutputDirectory,
+                        packageDirectory,
                         output,
                         cancellationToken).ConfigureAwait(false);
 
@@ -364,6 +365,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
         SampleFacts facts,
         string scratchOutput,
         string? namedOutput,
+        string packageDirectory,
         TextWriter output,
         CancellationToken cancellationToken)
     {
@@ -425,6 +427,19 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
         // own showing what was printed. The document itself is left as it was printed.
         PreviewAssets.WriteBeside(PreviewAssets.Reached(html, files), files, outputDirectory);
 
+        // Warnings are advice on a render that succeeded: they are printed only here, right
+        // before the result line, and never change the exit code or the files written.
+        var warnings = AuthoringWarnings.Default.Lines(new WarningInput(
+            engineName,
+            block,
+            TemplateSources(packageDirectory),
+            partitioned.Sample.Header,
+            partitioned.Sample.Records));
+        foreach (var warning in warnings)
+        {
+            output.WriteLine(warning);
+        }
+
         output.WriteLine(
             "rendered " + templateId + " " + version + ": engine=" + engineName
             + " pages=" + facts.Pages.ToString(CultureInfo.InvariantCulture)
@@ -433,6 +448,18 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
             + " pdf=" + pdfPath);
         return 0;
     }
+
+    /// <summary>The package's template sources, by package-relative path, in ordinal order.</summary>
+    private static List<KeyValuePair<string, string>> TemplateSources(string packageDirectory) =>
+        [.. Directory
+            .EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".sbn", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith(".hbs", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith(".liquid", StringComparison.OrdinalIgnoreCase))
+            .Select(path => new KeyValuePair<string, string>(
+                Path.GetRelativePath(packageDirectory, path).Replace(Path.DirectorySeparatorChar, '/'),
+                File.ReadAllText(path)))
+            .OrderBy(source => source.Key, StringComparer.Ordinal)];
 
     /// <summary>
     /// The take's presentation rule for a sample: the package's own locale when it declares
