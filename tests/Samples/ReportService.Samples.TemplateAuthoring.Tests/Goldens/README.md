@@ -15,6 +15,8 @@ so `PdfSampleRenderer` verifies the exact printed page a live print produced.
 | `invoice-batch-two-up.pdf` | `samples/templates/invoice-batch-two-up` | Liquid/Fluid 2.40.0 | 76 787 | `1e5db173…b5c3815f` |
 | `invoice-charts.pdf` | `samples/templates/invoice-charts` (es-AR, as shipped) | Liquid/Fluid 2.40.0 | 81 278 | `5df7cbc3…a4dddef8` |
 | `invoice-charts-en-US.pdf` | `samples/templates/invoice-charts` with `localeDefaults.culture: en-US` | Liquid/Fluid 2.40.0 | 81 268 | `3ca835bd…bb6fd892` |
+| `invoice-qr.pdf` | `samples/templates/invoice-qr` | Liquid/Fluid 2.40.0 | 113 400 | `4ca15a95…8288ef35` |
+| `invoice-qr.html` | `samples/templates/invoice-qr` (the composed HTML) | Liquid/Fluid 2.40.0 | 16 500 | `658e17df…bf3742c3` |
 
 The exact hashes are in `SHA256SUMS` beside this file.
 
@@ -69,6 +71,26 @@ dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAu
 Both printed `rendered invoice-charts 1.0.0: engine=liquid pages=6 words=541`, no
 warning, and exited 0. The en-US case copies the package the same way before
 replaying `invoice-charts-en-US.pdf`.
+
+### The QR goldens
+
+Printed the same way from product commit `0801a23e662c7ae091d4265d59c055e7a1b3a902`
+plus the `invoice-qr` package, on Windows, with the same Chromium build:
+
+```text
+dotnet run --project samples/template-authoring/ReportService.Samples.TemplateAuthoring -- render samples/templates/invoice-qr --out artifacts/template-preview/invoice-qr/1.0.0
+```
+
+It printed `rendered invoice-qr 1.0.0: engine=liquid pages=6 words=414`, no
+warning, and exited 0. `invoice-qr.pdf` is the printed PDF, and
+`invoice-qr.html` is the HTML document that same render composed and wrote.
+
+`invoice-qr.html` is a new kind of golden here: the other examples keep only a
+PDF golden and compare the composed HTML with the document handed to the
+printer. The QR case also compares the composed HTML with this file byte for
+byte. Like the PDFs, it is regenerated only by a deliberate live render (copy the
+render's `.html` here and rewrite its line in `SHA256SUMS`), never edited by
+hand, and its hash is in `SHA256SUMS`.
 
 ## When they must be regenerated
 

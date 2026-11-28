@@ -1,0 +1,285 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "batchId": "invoice-qr-sample",
+    "reportTitle": "Lote de facturas con código QR",
+    "issuer": {
+      "name": "Comercial Ejemplo S.A.",
+      "taxId": "30-70000000-7"
+    },
+    "currency": "ARS",
+    "generatedAt": "2026-11-27T00:00:00Z",
+    "invoiceCount": 6
+  },
+  "items": [
+    {
+      "invoiceNumber": "A-0001-00000001",
+      "issueDate": "2026-11-02",
+      "dueDate": "2026-12-02",
+      "customer": {
+        "name": "Ferretería Los Andes S.A.",
+        "taxId": "30-71234567-1",
+        "address": "Av. Siempre Viva 742, Mendoza"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1250.50,
+          "amount": 1250.50
+        },
+        {
+          "lineNumber": 2,
+          "description": "Pintura látex 20 L",
+          "quantity": 2,
+          "unitPrice": 1287.50,
+          "amount": 2575.00
+        },
+        {
+          "lineNumber": 3,
+          "description": "Cable unipolar 2,5 mm (rollo)",
+          "quantity": 3,
+          "unitPrice": 1324.50,
+          "amount": 3973.50
+        }
+      ],
+      "subtotal": 7799.00,
+      "tax": 1637.79,
+      "total": 9436.79,
+      "flags": {
+        "paid": false,
+        "showQr": true,
+        "showDueNotice": true
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wMiIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6MSwiaW1wb3J0ZSI6OTQzNi43OSwibW9uZWRhIjoiUEVTIiwiY3R6IjoxLCJ0aXBvRG9jUmVjIjo4MCwibnJvRG9jUmVjIjozMDcxMjM0NTY3MSwidGlwb0NvZEF1dCI6IkUiLCJjb2RBdXQiOjcwMDAwMDAwMDAwMDAxfQ==",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEXUlEQVR4nO2aS3LbQAxEcYO5/y1xA6Te66FkL1LlRVLwQrLsiFQzNQPi0w2w5kevrg/uY5f/4wdVdU71OaenzpmqORxw5tTh61XcmTmnJmdaAOd65hR/eK/i2EZNVXcXSy/+YX9dXMLBNq7dwJzu5hoO88MWfwGOdXdz/6er8IQZzX1+AW7m9AyfjmadmsNecA1dYhdnHP399T3eFnC+sGtN45wsHZsTVcTUt3y1gDtddapxT13Ufc3UaYFafhVnEhqQXOEX1borGeDgEZu4Mra7p/FLrHyTt65b/exjCzeNcbExP3wxB9traa4/u7juwQW0sRmc/fBr3HvtKo5IIYQ8tF4Pxr2BxIdZxbH2xlkJ80QVaRNfTfXpXZynccaUQaI7CUkuUVy8iktc82t9rsawMp5hS1acTRw7aNberDlR/2QlCuITR1s4S4rnTTzgsDx8ts2XyzhZxGVgxnWzCz6NVJtSuIojbd9DclLqi+FFYrrkbA/HsqktrB231OxKAq1PZlrFYVVCKCUGm+ML1sV8Vbs4sjVkQt8kzs8jV0IxtnHxA5ZMnZG4Xm3A1sIcV3GwBlQxhrYg4g6Ele9omEWct1tzyhFVo4n1IrB0jVWcvB+PNB9pZlwhrCwVchMnJ0zi1mGhNjqALZHbdFjEuVg1Mje+buUxK3n49tMdXEgs1S81kNDR6pHL7zy0hZPMGORhEbYXkCvRKU+dXsOZfSA3UO0Id1In6Uka8fDYJRyLptCgltOVuVXQmLJZs4oLYYDWmCb116R2FIzeu4rzlpOI7Hmk5KRa47TWmlWc/NCyooziyEpIPMXmy7g0U9P1UKW8OsIWnkdHbeFwBOrdJTWP7LO+pOLs4lytjBBKI3U1eeO8/i+1jOOshJqaGFbDtuxw2SM5qzhqCRGuZJL3a2iWb8F5dMoWjppiHwSpfENeVESpW1vGRRo7bsIlTE0KAhCPDl3EmQohrOmpc4lNJL+cZRxl2KHN1SmKY9VUug9Pn3ULF9+8zS0WHyEVdRDkKk418jjp2z1zhQJmVnEIUaWeoj2NrfAyiaxDsVVc9FNyNp8j5/2L3Hv325dwkUvODMNqv9x7stNTL5dwd5rE54zXE9wq0Fx1VnGZVj8y2Sx0m61pab76nUs4lXKkQNpu0cw6rLLldT+2cOgmzWqom5nsEUbRv/qdW7jMDyPwlPCZ5ChMLZG7uMhOHlLIsFPdzlt3zax4Fec4STWc1huJMVnTZPnW0zs4GOvtD2ZKh3s6ZMoTIK/neLZwmfODMenY61LwhTu+9eoSLq5oUBtO9oDzcMr13VXcrTRpp6c9aMhH3kvCV3EvgawXJOIvGVOk3PuwhrPoXc2eqUi6mpBbe0xfnnNbwbmNO/PPZ9MSuuB5KGUd147oHLJ79/Okh9e8nuNZxMkjTD2Z+6f1bz8ugn4TJ/F3dijnsgOsSiEppaO+iYv2TJ8602z7maEUefhtFffT52g/uI9d+l/7wR+wX1gIeDK6CgAAAABJRU5ErkJggg=="
+      },
+      "dueNotice": "Vence el 02/12/2026. Pasada esa fecha se aplican intereses."
+    },
+    {
+      "invoiceNumber": "A-0001-00000002",
+      "issueDate": "2026-11-03",
+      "dueDate": "2026-12-03",
+      "customer": {
+        "name": "Distribuidora Río Sur S.R.L.",
+        "taxId": "30-70987654-3",
+        "address": "Calle 9 N° 1550, La Plata"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1350.50,
+          "amount": 1350.50
+        }
+      ],
+      "subtotal": 1350.50,
+      "tax": 283.60,
+      "total": 1634.10,
+      "flags": {
+        "paid": true,
+        "showQr": true,
+        "showDueNotice": false
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wMyIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6MiwiaW1wb3J0ZSI6MTYzNC4xMCwibW9uZWRhIjoiUEVTIiwiY3R6IjoxLCJ0aXBvRG9jUmVjIjo4MCwibnJvRG9jUmVjIjozMDcwOTg3NjU0MywidGlwb0NvZEF1dCI6IkUiLCJjb2RBdXQiOjcwMDAwMDAwMDAwMDAyfQ==",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEWklEQVR4nO2aS3IbMQxEeQPc/5a4AVLvNUe2FqnyIgmykPwpWdPjIjD4dIM886NXnw/u45e/EwfnnKrTVTV1quac4X3zSZ3i8iquZqrOnNPnVFd113Bppg6/+F7FHdY7fU4Pa+eGKuzr09e2bdwAadzddY7v84WJ/wGOJU/X0aWHSJgBRESs42Z49hXv1qk5g9+JhlPv8bKBM49+/3rPtwWcrzOdH0NzuqfIKnLqrV4t4Ir8JncwiWDArpmD49sbahdHEao53alEXOAPXkQpEbGJI7dLLxOXJo+xgfMplY8dWzifNQsfvvQ4SYVx1M6eWsZZcfTqGALYw4/t0HtXcWPrw4zCGJaNc28iWTtXcUnuZEwnq5o0Ij6MkN7F8aiH9Gndy3fu5V/MIYJXcc9zvwvHFszQ39z25PkWzgXztOnPfZkEJYlcqgTGJk6uSlnUo4YmgWBRt14u464zXb953VhBdZc2QsZWcaE1Bids7PYXm6OJryjYxF3fchGLUjORBNf92zjSCAdDJYiA1E2swuGtaFnEpSKS3vY+aqbKhU+gGNu4+NVyibv5K9pKYRrmuIrrtnaTMnJZqaOmRT4/ebSEk8XapuWI3pVcb7P/1QeXcBHtXMAEModIheekAMAYN3GsO4Xbd+Q3sSH3tglu46zY5EzjY++0kvORAVyruAgA1DCNRv86AqGE039e9WAL5/SIX+R0iKtyBZPCgHZxUgWaNQwswp0yLr24rHYTFw/TpxF8mRTaBenVDkJqFWfFjpqTtDpVkvMwY3DEuYpzYmQDDHdARunwkAup7CbONadTk1Mmk+2QCL6KfhWXWYwPX7VnvuPwtvF811s7OIsPH9ANzZs7MJSTfdmxg4Pn215MG6mrxTvNh8a4jJODWR8V7nySjGfyYGis4hx0EQARd7CbcMf8RetexTmnllir6e688CVgNG0ZFypBc1bPG6gKAhCPDl3D5YpVUmPSY0RxcZZxVJ4sWU1CjzaP1KDn25x1CedY2p2wW4QipDJwCHIVp5JCIUvEXts6l5c5aF3FZcKQ5LGvhFlgSHTos8+0hLMEZdZPgXRXx8QiFuQUuzg7icPLjDFfz96QuFcWcc7gsuS7K5H9xASwlXwVZ3UkBjJa4IZnuzhku3ZxNmo0ieI9+4gvumPlnFWcSW0GJdVt0s6WouifPr2HC1kIk00tv+I9+57LOAdI8GuaIUGZrU35jTPNXsbJDq1Cmb6FS3jKI7uJs4oLY7VPu3doeEobM7p+nePZwtkJ49fsgimbo15y+mMXZ1zmFNQVeTl94kdfc5AtnITaiVZUZ86fKEiJC/7PKi7HEdxhlzZoRMhY8v/tnNu/x0UTh+NkV+QO1ZXxbnbu4jTDswnPe12exMqhlHWcExDngj79AHIU4HWOZxEnU8y+ZmSyQznncTkqs4mT+Lt3mKFWghQ972Cul3FOZ+7xSg8zsn75YrT81z7TDu6n52g/uI9f+k/HwS/l70m86P6ezAAAAABJRU5ErkJggg=="
+      },
+      "dueNotice": "Vence el 03/12/2026. Pasada esa fecha se aplican intereses."
+    },
+    {
+      "invoiceNumber": "A-0001-00000003",
+      "issueDate": "2026-11-04",
+      "dueDate": "2026-12-04",
+      "customer": {
+        "name": "Panadería El Trigal",
+        "taxId": "20-28765432-9",
+        "address": "San Martín 210, Rosario"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1450.50,
+          "amount": 1450.50
+        },
+        {
+          "lineNumber": 2,
+          "description": "Pintura látex 20 L",
+          "quantity": 2,
+          "unitPrice": 1487.50,
+          "amount": 2975.00
+        },
+        {
+          "lineNumber": 3,
+          "description": "Cable unipolar 2,5 mm (rollo)",
+          "quantity": 3,
+          "unitPrice": 1524.50,
+          "amount": 4573.50
+        },
+        {
+          "lineNumber": 4,
+          "description": "Servicio de flete",
+          "quantity": 4,
+          "unitPrice": 1561.50,
+          "amount": 6246.00
+        },
+        {
+          "lineNumber": 5,
+          "description": "Guantes de trabajo (par)",
+          "quantity": 5,
+          "unitPrice": 1598.50,
+          "amount": 7992.50
+        }
+      ],
+      "subtotal": 23237.50,
+      "tax": 4879.88,
+      "total": 28117.38,
+      "flags": {
+        "paid": false,
+        "showQr": false,
+        "showDueNotice": true
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wNCIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6MywiaW1wb3J0ZSI6MjgxMTcuMzgsIm1vbmVkYSI6IlBFUyIsImN0eiI6MSwidGlwb0RvY1JlYyI6ODAsIm5yb0RvY1JlYyI6MjAyODc2NTQzMjksInRpcG9Db2RBdXQiOiJFIiwiY29kQXV0Ijo3MDAwMDAwMDAwMDAwM30=",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEU0lEQVR4nO2aQXLsOAxDeQPe/5a8gabeo9Sd2Uz9zS/MIp0s0jacsmiQBCHX+aPP1C/uNy5/hwdV1af7TDVHZs7wd3N2qj2dxDW/fU71qequnqpTNWDf6SiumlXM6cPdV03NAVLV057O48bjVW2wuczThwv+Bzjo2sW3maqaQ7TP+C/iOG62DzGFoNBhZvzm8Z98SeCI7n98/pVvCRwfvsxpsge6mkRkVrGMH/UqgWtv9DQFqKWBDB3AY+5ncUW6DGuhAHEIHrS4R5QkjlpzKD177x40p/gfU6wvimsBJLe5DTOKNDpFaWdJHcXxtKHlHP+wA1KPPAsJXpxDuMtKzuyfrmt/WZmrCeJmmrjaakz5XRgEIfZwN4pbdrIEnn3Jyr2cCoDQ6TCO+0VxmTdgLmHRYTPkUxJHOby3roaAtAUtbql8fTqFa5Oa214kX5sgk0mm14niFA3wdOjJrACFs7pHCn/yKIM75W3Ta0wmn/yiX7sO45ouSEsmwA+klH2lMoobs5sHP65KeWNNUnxvrc/hFDK0Y5Zi+kgLLjTnv3oygyORrZP2lR2iEGQc9bpX71M4AspI8m7fXkipNKc4E8UBcDYB03ZnCqfiscoFRnGOxHQYRgC160oexz1Z0VncBhRhvUnkzELjoc8Y8ygOCWuL3pHYMWCbtcICYBRH1mgprOUBIRwKrkz8zlsp3J1Et2Qvc80dpxSqURiH9tp0xmvYOVTvwbFg3bkgThuuURPy0lA/zbhDYBanoGYBelrWIo0k8h+KLCVyuA3wpjoP31QyiaQBRSCMc0jePPKbhZMCDlTrMIozyV3AdRW2Qq6CvYAkjkq9IALt42cJMIA283RYCqcFvNaCBiZQEl4Nq8TI4hCt1whxkjLlPyLHwEdxBtdo7iS/BohDste/OSqGs/CwCG56nQUZa4N8LTGHsw+vHe2Asmaw3vVzu6K4TSN7CwX99r3RrL4lPoozxGpqO7R6cR05efDx0VO4++B13PD1HUiZ7qCAc0EWp0K0JLqtaUu884rj1NOJKZy+NKnkEECRdMj78S86iqN625KdlinkHseuYVHfPhPCrXrVCLEmmj+ywuXsRJrEOULt1jrh3e1hhY8jAZo2ioOctwitD8dsd5Pca7M4k3wFDZFW7tzdWN2az35ZCGcRX7auacnX+5rCl8s5HAP7HfR2x/MVcvD6D1ncrT+uwDB/RJhPATJEcUb3vu3B43dc1hsGsOosiyPIO7HvDxGGA2t0vTyP4d7WyDpu+7aMW8dc/4PPKZwWiPKaM2+rhHR39/3DgxBuK7nF2y0vt90pSHee+volGdwSwF5orXR70xmFhXx9kBROXq57vgPAVbGbPj98kBTu0wX3hQCcj9WIWiP7Wkoch/qy8tgW94U3x4JPn07ilNXaCuoxPK/bcXb7PYp7Vo3upZP7thfCfvdkkzjj6UsylqPrNlypbX5lcX/y+cX9xuX8DR78AxbJsvZvoXe9AAAAAElFTkSuQmCC"
+      },
+      "dueNotice": "Vence el 04/12/2026. Pasada esa fecha se aplican intereses."
+    },
+    {
+      "invoiceNumber": "A-0001-00000004",
+      "issueDate": "2026-11-05",
+      "dueDate": "2026-12-05",
+      "customer": {
+        "name": "Talleres Patagónicos S.A.",
+        "taxId": "30-69876543-0",
+        "address": "Ruta 3 km 1290, Comodoro Rivadavia"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1550.50,
+          "amount": 1550.50
+        },
+        {
+          "lineNumber": 2,
+          "description": "Pintura látex 20 L",
+          "quantity": 2,
+          "unitPrice": 1587.50,
+          "amount": 3175.00
+        }
+      ],
+      "subtotal": 4725.50,
+      "tax": 992.36,
+      "total": 5717.86,
+      "flags": {
+        "paid": true,
+        "showQr": true,
+        "showDueNotice": false
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wNSIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6NCwiaW1wb3J0ZSI6NTcxNy44NiwibW9uZWRhIjoiUEVTIiwiY3R6IjoxLCJ0aXBvRG9jUmVjIjo4MCwibnJvRG9jUmVjIjozMDY5ODc2NTQzMCwidGlwb0NvZEF1dCI6IkUiLCJjb2RBdXQiOjcwMDAwMDAwMDAwMDA0fQ==",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEU0lEQVR4nO2aS44cIRBEuQH3v2XeAOu9gB7NwpIXtsKL6fanqyqQICs/kQHr/NFn1g/uxy7/xg/WWnuv2Xufmb3PWuf93nttHldx+5y91iw+Z/ae2Qcct/mHP1Ucy1hn7ZmzmPqatTfrm8UQLtq4ObMw9cwwZvb7nv1f4BbfyfvX3vscQNyp487Zvu+lB6x91tms5TD6u780cMbR7z/f462A87POMH2ck6nPEFu6xfd8VcDtWTgB3jqY13Ud4kqglq/iNkF+QDLCB2uSl/BSPKKJwz25fwa/xMo3eR+DbN46ergzh3kfv4zYrEhLLwzdxekGmxwOOhUQoxtdju3iAN3bXPtwNrmIB/w4VRzVDq8cy+H1VXxhKDSUoC6OFIQxrcqJbpISHIIH5KcqLnOmwpjSKYdmIUKKYS/OWzgieggm3jmBI+shhDC7iaqK01NJilpU18QR4LNjvmzjJK1hYMb1uAoGGeqUwiZufOTUKXu3vjh/K+ON/xrOSh0CQcDbFQBlXTf+uzh4qzaVWmN3MhDUG4MnwRdx1hcJgwXHrJl2JRSjjcMT8E9LtMmc8JbDJjdNG2dVlsQmqZvTDSvb5xdvLRxdPO+cmkcoMerGukR7urhQGzOR9U+dwZWZxnGQKo55a13CybxorMu9LYJlnCKNMRP2f+kDLag++/y0haPccYEbGOjYWipru/yVh1q4JBxjx2qovJCwok95dbqGs5iQg2BgadyjKcXwRlcRp+JxZbeoMrcKyr4Va6q4MAWVmQiF6aIi0cSLqzhfuQTWtdjSa3CWAvr2ATXca+h89ykvV9o0Fb082cLZ6EVagPyzBD1V3mPC7OKuthqhkLlfcZr5p+J0cbl2FdIwK+HNm65ydXGkb7xAOKTa9snMiaE/fWgLRwBZVRRrlBrSC8jA5bRVHM5oGy/5D5tNa2BT6tLKOLXAUNn7944D8frQGm5rWSUjI1w+oYjkw1PGSRG5iSe85jhJSTXk6awt3JUWVPqDjxyXuyK7OJVp8mWo13XPjCDOPzpcB3dZQ4rNFbbsk9OnuCnWxEGlmfqrNDamwG0PJLld3N0fVrV8AiExZKI8yppNXHaTshbVTGtNOtCM2lWcbBrBKNK+xeZuF4ds7y7uaqvR4fhPG+Ozt2356CUdnJ7oIjyiEKFQjTAd/Vc97+BUZtxQv7uIHvYwOerAq4xLa3c5YfbnEFw9mKKmOV1c1N+7v3n1BQVWLsLOqrhIrG6t25PqnlJYT4DoqFVcBP57lkJXCHVMe6+zVnH+SvG7XWlOn5jav3SQFs5MdHc6o+q7bzyfkykfntPB5RyKHYCCsIt4ZCyLq+LSE7Mh4t4DHUG4Q9RN1YYqTtEjR+/gEzkf4+mi+MHXfnwPp4TpzmbIWOqfYz7neIo4N72MIjfZbT1Dce5RmSZOk4ZBKMrESdnZVvaaMu7qvh4zUuhi/ulakgIezynh/vQc7Q/uxy7zt/3gF14CZ/jl9+d/AAAAAElFTkSuQmCC"
+      },
+      "dueNotice": "Vence el 05/12/2026. Pasada esa fecha se aplican intereses."
+    },
+    {
+      "invoiceNumber": "A-0001-00000005",
+      "issueDate": "2026-11-06",
+      "dueDate": "2026-12-06",
+      "customer": {
+        "name": "Librería Del Centro",
+        "taxId": "27-31234567-4",
+        "address": "Belgrano 455, Córdoba"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1650.50,
+          "amount": 1650.50
+        },
+        {
+          "lineNumber": 2,
+          "description": "Pintura látex 20 L",
+          "quantity": 2,
+          "unitPrice": 1687.50,
+          "amount": 3375.00
+        },
+        {
+          "lineNumber": 3,
+          "description": "Cable unipolar 2,5 mm (rollo)",
+          "quantity": 3,
+          "unitPrice": 1724.50,
+          "amount": 5173.50
+        },
+        {
+          "lineNumber": 4,
+          "description": "Servicio de flete",
+          "quantity": 4,
+          "unitPrice": 1761.50,
+          "amount": 7046.00
+        }
+      ],
+      "subtotal": 17245.00,
+      "tax": 3621.45,
+      "total": 20866.45,
+      "flags": {
+        "paid": false,
+        "showQr": true,
+        "showDueNotice": false
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wNiIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6NSwiaW1wb3J0ZSI6MjA4NjYuNDUsIm1vbmVkYSI6IlBFUyIsImN0eiI6MSwidGlwb0RvY1JlYyI6ODAsIm5yb0RvY1JlYyI6MjczMTIzNDU2NzQsInRpcG9Db2RBdXQiOiJFIiwiY29kQXV0Ijo3MDAwMDAwMDAwMDAwNX0=",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEQElEQVR4nO2aQY7kOgxDfQPd/5a+gQfv0a6pv/mYzYCz6KCArkqYhu2IFCVnnT869vrB/azL34mDtdacmbP9svc+m/PD1b0mZ4u4OWe4xi17Zs1ei89eM/dyF8fvYfyH0QPaB8has8fLfdzZjn7PmuPAmcXZhxv+AdzwyFll8WsfVvtw1z+AY7DDCotfc9beezOLnD9dHET5n+M/fGvgOPwhkXZCdRMPa6T7l141cONAj6EwhoERugFvbpoubkEXSA6zPUUcBPcCpYk7xmjEknU+ig9w1p2pdXEDQATcZkZMBMaf5J3H8xrO4U7mIKmITJAL5FvnFi6BYJJhxLNd8Hyc2eN5CQd/NnQhSglX6OOFISF6tokzOjeSSDSsLLYLjQJw+3RxsEaplDd8NwnyMXxD/hrO5eTh52DQLG5wiudUcYfIdORKkAyazaoTtTGQTRwqdM8vDmcAvePLTIlNHPkFLTQxe+Gg4aBfui7jmAWx4AI/kFb2SWUTF+sKiuQHDHtzCaYsdXGp7nRfFgA3LKgAoP5Hh1o4raGCc2sVMrdRC/VJjqeL08JKISQnJpGK4EoRpVUTd42rUarnWQlajQ7J+6vP0MAhODvelTIKveTnWO4ZFVPFQWWU0ewMiSC+udoEftq4DJ2RUzITEsQr6Qc1N0dWcbDG09ouPTZhar52jh+/W8Lp/YEylRhXuRP7rVGs4kzP1sOMPrSy92BseKWJg8mkGCI0VRMkime05mvj0g9Uz9XJMJy/+jEcZBWnxyE0bbKGSnGJ1nwvDlo4E4zZjovKkDV8brdUqeJQG6iEHSM/W5hqYpMh08Pu4TBdMFwJZ70tmJMUXfq3zi3c7ZanGaK3ViZNQOF+F0d64XHHcTF6xp486Fy6OB+7tjW1imWAzpGE7aeKQyWfy7Edkio5yXA4faq4dD5sMCTtxZYZq7fbVcVlA+y2PEjNad3YrLYAnC5OK0ijOjmZfrXmWkb5j8q4pGU7bpGg254xEG7NXMQlG9+2ludBf0L1q8/fwr3EQv4zPrMJ5j6dNreKi+HX3UDqWzanyiMoPjxq4axQ4PjduOHP2120C1bGQWVa05cx3BAFiockiKs4Cj0TTDyYrZC7yG5SnC7Ottbn5YQLuDs4lgXTxYXoRCnqSLK+DQYE6aNVRVw8A/2i7HhGyIO3/9DF6R4+/vAV7+Zt2w+ufhF3XwTI84bvLrvuJkq5uzgV0gnkFY/X4rfnpSKdLs4+iIXK7TRww9XL53GauJul7Xrsz1aJuv5Eqom771G4I5Ky1JcTsrf43Qcp4fKOh6pjE9jtTWsUJvK7D9LCGZcGgx7Cl97SS4+yf/XrOjj7SL44phiZqCmnpNXtstdxqecMiexD3Ibh7zzdxClDEt1X8HTYyTjuxXZxig7JOhuJSrjvyaiedZzrmf06+PQkM1Zb3ezi/uT4wf2sy/kbcfALP5nbRpdrd6YAAAAASUVORK5CYII="
+      },
+      "dueNotice": "Vence el 06/12/2026. Pasada esa fecha se aplican intereses."
+    },
+    {
+      "invoiceNumber": "A-0001-00000006",
+      "issueDate": "2026-11-07",
+      "dueDate": "2026-12-07",
+      "customer": {
+        "name": "Agro Servicios Pampa S.R.L.",
+        "taxId": "30-71555444-2",
+        "address": "Ruta 5 km 210, Bragado"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Tornillos 8x40 (caja x100)",
+          "quantity": 1,
+          "unitPrice": 1750.50,
+          "amount": 1750.50
+        },
+        {
+          "lineNumber": 2,
+          "description": "Pintura látex 20 L",
+          "quantity": 2,
+          "unitPrice": 1787.50,
+          "amount": 3575.00
+        }
+      ],
+      "subtotal": 5325.50,
+      "tax": 1118.36,
+      "total": 6443.86,
+      "flags": {
+        "paid": false,
+        "showQr": true,
+        "showDueNotice": true
+      },
+      "qr": {
+        "text": "https://www.afip.gob.ar/fe/qr/?p=eyJ2ZXIiOjEsImZlY2hhIjoiMjAyNi0xMS0wNyIsImN1aXQiOjMwNzAwMDAwMDA3LCJwdG9WdGEiOjEsInRpcG9DbXAiOjEsIm5yb0NtcCI6NiwiaW1wb3J0ZSI6NjQ0My44NiwibW9uZWRhIjoiUEVTIiwiY3R6IjoxLCJ0aXBvRG9jUmVjIjo4MCwibnJvRG9jUmVjIjozMDcxNTU1NDQ0MiwidGlwb0NvZEF1dCI6IkUiLCJjb2RBdXQiOjcwMDAwMDAwMDAwMDA2fQ==",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAETElEQVR4nO2aQXLjMAwE+QP+/5f4Abe6h7I3h63KIVuTg+0klqVRioQGwADkOt96zfrgPnb5PzxYa+29Zu89M3uftc7e63C899pcruL2OXutw5l9BvQ+HHGaP/xUcYspMJ0ZDtfig/nNmu3lOo6hzuLSMKfZzxuT/wIcH7OO+LVgwjmAzv4FODADVvjaxyPZsPZXvjRw+tG/X1/9rYDz5WFIGlLgWzr+13hVwO1Za69ZTunA07jRHoFavorbBKHzQLyAy/OCpTCiisO3GfDAyziPD/9I23nPt4M7wwyws+8ES74OfzF0F4dhtaqx25OcMLxjfoJSFeeo1xgb5cXBuNeRODhtnMM3AcarBjci5/A/yNhNHFMgBAWpdx/SNpfPWQNdm7g8d4MQZIjBF1PA48eM08QFmoTzUhIwl5OmxjJOrSpTn6gEEQzqxss27opCxq9fj7PgJl2dVNjEEWh86Dxv9SxDv+NP9q7i+Ea+w4GgJe5kQtTxca0uzpFHTPDo4SURiLyIwceipYiL3IILSdWGIhVZJEYbZ0Lhjc8Y1HFvCwDcXOVYxUV0kfAI4Lj4xsGVOBbLp4wDqbzBjTx6fF2hPV2cpTtXoaZlHkxlXoZxzF3FcU7rKmaJi/q62tsk2MZhVX1G7cXM1LVXbyPKqjjSnToCO+NQtkQgr+XyOw61cIZCkwpYhavlClNyQm2cJcDg5k8NpUcRKq+qbeIkpHRM3cmnWdDywLqviku9ZBzH5QngeHlaNLK4i0s1Z62s/mdWGlzSmmuquFdBB01VN9ZViu7YvIuzXxmtTV5hCiECFwyYXRwuY0Xnx61C06FRk73yUQsHDxi6vYW0HLA4JfJTYjVxaRiNJ73J8knljaFfdWgNh4ZwKSKa2/I9CTGT222cJRQkfVSjYscGWCJTF2cQ4pTo/OJMnnCtpIszMFKiMIm7qCMHaPHb5q/iQkX1NPGIHG2ItAalSrk6p4ZDNqRGeYKQ7TgbDkFWcXQYjIXQYL2WdWSFvZtXHCrhom2MkuYVm4ZZHVPUPutRJRz6Qbvi1gmX9oHN2mqKLs6OW1aL00G/z95GF3c/eqOEs0jOigMe49qr0elmRcvAIi6lieHbhty8l4sjtncXh9tkpwJBO9Hb5qsupuCu4lIiuzynq9/Gkrdcp+ri0kxIgaeRs5KTloihvYrjQOVFgxBSurRpqExPc7o4G5dWA+Gn+xWwMnamXfPU0yVcFKsh0iZwMk9qFIu99zp2B/es82c9keuRjriS2uJ0celqJZ9Y5N00mJW7t51LODMNTz6bUSQqlrfFwI1Pn7qEu/vI0peOkE39bttfb6riTHo+9LQtGbmkkKp2l7o4mx5Ga/Ng9sfIivDgVc8UcVdLJE5KCBtdYWkfl9qdKj7r/llCvLsp/rJzBZetRtefDZPphPDtdtSbuOwjY9yRixZPqVrcwfXwoIX77j7aD+5jl/lpHvwBP9FE0K7DimEAAAAASUVORK5CYII="
+      },
+      "dueNotice": "Vence el 07/12/2026. Pasada esa fecha se aplican intereses."
+    }
+  ]
+}

@@ -241,6 +241,11 @@ invoice — monthly bars with a trend line and an average line, and a donut of t
 subtotal — computing their geometry in the template; see
 [Drawing a chart](#drawing-a-chart).
 
+`invoice-qr` (Liquid/Fluid) is a batch of invoices in which each invoice prints
+its own QR, carried in its record as a PNG image data URI the producer computed
+before the job; see
+[Graphics and codes are computed before the job](#graphics-and-codes-are-computed-before-the-job).
+
 ### Then publish
 
 Nothing is uploaded through the tool. A version is taken by the service the
@@ -479,6 +484,14 @@ precomputed graphic or code is printed:
   `srcset`, any other `href`, `poster`, `data`, `action`, `formaction`, `style`,
   an event attribute or an unquoted attribute value, it is still refused when
   the version is taken.
+
+  The example `invoice-qr` prints each invoice's QR this way: the record carries
+  `qr.image`, a `data:image/png;base64,…` value, and the row part writes
+  `<img src="{{ item.qr.image }}">`. The size bounds an image is subject to are
+  in [The limits](#the-limits) and
+  [The record at the row bound](#the-record-at-the-row-bound). A QR drawn as SVG
+  geometry follows the precomputed-geometry route above instead; the examples do
+  not ship one.
 
 A code that depends on the final page rather than on an invoice is not
 precomputed: the template declares it and the service applies it to every page.
