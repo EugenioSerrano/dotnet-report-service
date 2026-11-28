@@ -420,6 +420,11 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
         File.WriteAllText(htmlPath, html, Utf8NoBom);
         File.Copy(renderedPdf, pdfPath, overwrite: true);
 
+        // The preview links the package's files by relative path, exactly as the print
+        // was served them: the files it reaches are written beside it, so it opens on its
+        // own showing what was printed. The document itself is left as it was printed.
+        PreviewAssets.WriteBeside(PreviewAssets.Reached(html, files), files, outputDirectory);
+
         output.WriteLine(
             "rendered " + templateId + " " + version + ": engine=" + engineName
             + " pages=" + facts.Pages.ToString(CultureInfo.InvariantCulture)

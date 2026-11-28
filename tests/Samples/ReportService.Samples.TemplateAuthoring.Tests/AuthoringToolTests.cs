@@ -147,6 +147,66 @@ public sealed class AuthoringToolTests
         Assert.Contains(items[items.GetArrayLength() - 1].GetProperty("description").GetString()!, printed, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Opened on its own from the output folder, the written preview reaches every
+    /// stylesheet it links, and each is the very file the print was served for that
+    /// reference; the preview itself stays the document the printer received.
+    /// </summary>
+    /// <param name="id">The example package's identifier.</param>
+    [Theory]
+    [InlineData("pilot-simple")]
+    [InlineData("pilot-handlebars")]
+    [InlineData("pilot-liquid")]
+    [InlineData("invoice-batch")]
+    [InlineData("invoice-batch-two-up")]
+    public async Task ThePreviewReachesTheStylesheetsThePrintWasServed(string id)
+    {
+        var root = TestPaths.Temp();
+        var outputDirectory = Path.Combine(root, "out");
+        var printer = new ReplayPrinter(Path.Combine(TestPaths.Goldens, id + ".pdf"));
+
+        var code = await Tool(printer)
+            .RenderAsync(new RenderRequest(TestPaths.Example(id), outputDirectory), new StringWriter(CultureInfo.InvariantCulture), TestContext.Current.CancellationToken)
+            .ConfigureAwait(true);
+
+        Assert.Equal(0, code);
+        var written = File.ReadAllText(Path.Combine(outputDirectory, id + "-1.0.0.html"));
+        Assert.Equal(printer.Document, written);
+
+        var links = StylesheetLinks(written);
+        Assert.NotEmpty(links);
+        foreach (var href in links)
+        {
+            AssertServedFileIsBeside(TestPaths.Example(id), outputDirectory, new Uri(new Uri(PackageRoutePolicy.DocumentUrl), href));
+        }
+    }
+
+    /// <summary>
+    /// A file the linked stylesheet names - an image here - is reached from the output
+    /// folder as well, as the very file the print would be served for it.
+    /// </summary>
+    [Fact]
+    public async Task AFileTheStylesheetNamesIsBesideThePreviewToo()
+    {
+        var root = TestPaths.Temp();
+        var package = CopyPackage("pilot-liquid", root);
+        File.WriteAllBytes(Path.Combine(package, "html", "mark.png"), MarkPng);
+        File.AppendAllText(Path.Combine(package, "html", "styles.css"), "\n.mark { background-image: url(\"mark.png\"); }\n", Utf8NoBom);
+        var outputDirectory = Path.Combine(root, "out");
+        var printer = new ReplayPrinter(Path.Combine(TestPaths.Goldens, "pilot-liquid.pdf"));
+        var writer = new StringWriter(CultureInfo.InvariantCulture);
+
+        var code = await Tool(printer)
+            .RenderAsync(new RenderRequest(package, outputDirectory), writer, TestContext.Current.CancellationToken)
+            .ConfigureAwait(true);
+
+        Assert.True(code == 0, writer.ToString());
+        Assert.Equal(printer.Document, File.ReadAllText(Path.Combine(outputDirectory, "pilot-liquid-1.0.0.html")));
+        var stylesheet = new Uri(new Uri(PackageRoutePolicy.DocumentUrl), "html/styles.css");
+        AssertServedFileIsBeside(package, outputDirectory, stylesheet);
+        AssertServedFileIsBeside(package, outputDirectory, new Uri(stylesheet, "mark.png"));
+    }
+
     /// <summary>The two new examples are the same report in another engine as the simple one.</summary>
     [Fact]
     public void TheExamplesMirrorTheSimpleReportContract()
@@ -192,7 +252,7 @@ public sealed class AuthoringToolTests
         }
     }
 
-    /// <summary>A render writes its two files under the output directory and changes nothing else.</summary>
+    /// <summary>A render writes the preview, the PDF and the stylesheet the preview links under the output directory, and changes nothing else.</summary>
     [Fact]
     public async Task TheRenderWritesOnlyUnderTheOutputDirectory()
     {
@@ -209,13 +269,13 @@ public sealed class AuthoringToolTests
         Assert.Equal(0, code);
         Assert.Equal(before, PackageDigest.Of(package));
         Assert.Equal(
-            ["pilot-liquid-1.0.0.html", "pilot-liquid-1.0.0.pdf"],
+            ["pilot-liquid-1.0.0.html", "pilot-liquid-1.0.0.pdf", "styles.css"],
             Directory.EnumerateFiles(outputDirectory, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetFileName(path))
                 .Order(StringComparer.Ordinal)
                 .ToArray());
         Assert.Equal(
-            ["out", "pilot-liquid", "pilot-liquid/html"],
+            ["out", "out/html", "pilot-liquid", "pilot-liquid/html"],
             Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
                 .Order(StringComparer.Ordinal)
@@ -425,7 +485,7 @@ public sealed class AuthoringToolTests
         Assert.False(Directory.Exists(outputDirectory));
     }
 
-    /// <summary>An output directory that already holds the two files has them replaced and no other file touched.</summary>
+    /// <summary>An output directory that already holds the written files has them replaced and no other file touched.</summary>
     [Fact]
     public async Task AnExistingOutputDirectoryIsOverwrittenWithoutTouchingOtherFiles()
     {
@@ -447,7 +507,7 @@ public sealed class AuthoringToolTests
         Assert.Equal(printer.Document, File.ReadAllText(Path.Combine(outputDirectory, "pilot-simple-1.0.0.html")));
         Assert.True(new FileInfo(Path.Combine(outputDirectory, "pilot-simple-1.0.0.pdf")).Length > 3);
         Assert.Equal(
-            ["notes.txt", "pilot-simple-1.0.0.html", "pilot-simple-1.0.0.pdf"],
+            ["notes.txt", "pilot-simple-1.0.0.html", "pilot-simple-1.0.0.pdf", "styles.css"],
             Directory.EnumerateFiles(outputDirectory, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetFileName(path))
                 .Order(StringComparer.Ordinal)
@@ -583,6 +643,33 @@ public sealed class AuthoringToolTests
             .Select(value => value.GetString()!)
             .Order(StringComparer.Ordinal)
             .ToArray();
+
+    /// <summary>A 1x1 PNG.</summary>
+    private static readonly byte[] MarkPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+
+    private static string[] StylesheetLinks(string html) =>
+        System.Text.RegularExpressions.Regex.Matches(
+                html,
+                "<link\\b[^>]*\\brel=\"stylesheet\"[^>]*\\bhref=\"([^\"]+)\"",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromSeconds(1))
+            .Select(match => WebUtility.HtmlDecode(match.Groups[1].Value))
+            .ToArray();
+
+    /// <summary>
+    /// The print's route policy serves <paramref name="url"/> from the package; the file a
+    /// browser reaches for it from the written preview exists and carries the same bytes.
+    /// </summary>
+    private static void AssertServedFileIsBeside(string package, string outputDirectory, Uri url)
+    {
+        var decision = new PackageRoutePolicy(new FolderTemplatePackageFiles(package)).Decide(url.AbsoluteUri);
+        Assert.Equal(RouteKind.Served, decision.Kind);
+        var relative = url.AbsolutePath.TrimStart('/');
+        var beside = Path.Combine(outputDirectory, relative.Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(beside), relative + " is not under the output folder.");
+        Assert.Equal(File.ReadAllBytes(Path.Combine(package, decision.PackagePath!)), File.ReadAllBytes(beside));
+    }
 
     private static string CopyPackage(string id, string root)
     {
