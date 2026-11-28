@@ -29,8 +29,7 @@ public sealed record HostileCase(
 /// <summary>
 /// The hostile inputs of the data pass, re-stated at the bounds of this version: record and
 /// token two mebibytes, header one, depth 64. Each limit is crossed by one byte where a byte is
-/// meaningful, and the malformed-document reasons the pass reports are each given one input -
-/// invalid UTF-8 inside a string value excepted, which the reader does not yet refuse.
+/// meaningful, and the malformed-document reasons the pass reports are each given one input.
 /// The input-size quota and the verified totals belong to the upload's verification, not to
 /// this pass, and are not repeated here. Two admissible cases close the list: a record that is
 /// one two-mebibyte string, and a two-mebibyte record whose base64 image string is validated by
@@ -75,9 +74,9 @@ public static class HostileCases
             path => Plain(path, "{\"contractVersion\":\"1.0\",\"items\":[" + Ordinary(1) + "],\"header\":" + Header + "}")),
         new("H10", "h10-duplicate-property.json", "DATA_INVALID", "reason=duplicate-property", false,
             path => Plain(path, Envelope(Header, "{\"sequence\":1,\"sequence\":2}"))),
-        // H11 (a string value holding invalid UTF-8) is not in this list: the reader does not
-        // yet refuse invalid UTF-8 inside a string value. The case returns, expecting
-        // DATA_INVALID reason=malformed, with the reader change that refuses it.
+        // A string value holding a lead byte followed by a byte that is not a continuation byte.
+        new("H11", "h11-invalid-utf8.json", "DATA_INVALID", "reason=malformed", false,
+            path => Bytes(path, Envelope(Header, Ordinary(1), "{\"sequence\":2,\"v\":\"a<invalid>b\"}"), "<invalid>"u8, [0xC3, 0x28])),
 
         // The whitespace run follows the comma between two records: there the reader must hold
         // the comma, the whole run and the next token in one buffer, so a run longer than the
@@ -121,6 +120,14 @@ public static class HostileCases
     private static string Deep(int levels) => new StringBuilder().Insert(0, "{\"a\":", levels).Append('1').Append('}', levels).ToString();
 
     private static void Plain(string path, string text) => File.WriteAllText(path, text, new UTF8Encoding(false));
+
+    // The UTF-8 of the text with its one marker replaced by raw bytes no text can encode.
+    private static void Bytes(string path, string text, ReadOnlySpan<byte> marker, byte[] raw)
+    {
+        var encoded = Encoding.UTF8.GetBytes(text).AsSpan();
+        var at = encoded.IndexOf(marker);
+        File.WriteAllBytes(path, [.. encoded[..at], .. raw, .. encoded[(at + marker.Length)..]]);
+    }
 
     // Record 1 is one 512 MiB string, written through gzip (a few hundred KiB on disk).
     private static void HugeString(string path)

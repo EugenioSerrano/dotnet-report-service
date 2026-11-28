@@ -410,6 +410,52 @@ public sealed class RefusalClassificationTests
     }
 
     [Fact]
+    public async Task InvalidUtf8InsideAHeaderStringValueFailsAsMalformed()
+    {
+        // A lead byte followed by a byte that is not a continuation byte, between the quotes.
+        var document = Spliced(
+            "{\"contractVersion\":\"1.0\",\"header\":{\"title\":\"a",
+            [0xC3, 0x28],
+            "b\"},\"items\":[]}");
+
+        await AssertRefusedAsync(document, "malformed", 0);
+    }
+
+    [Theory]
+    [InlineData(new byte[] { 0xC3, 0x28 })]
+    [InlineData(new byte[] { 0x80 })]
+    [InlineData(new byte[] { 0xE2, 0x82 })]
+    public async Task InvalidUtf8InsideARecordStringValueFailsAsMalformed(byte[] invalid)
+    {
+        var document = Spliced(
+            "{\"contractVersion\":\"1.0\",\"header\":{},\"items\":[{\"sequence\":1,\"v\":\"row\"},{\"sequence\":2,\"nested\":{\"v\":\"",
+            invalid,
+            "\"}}]}");
+
+        await AssertRefusedAsync(document, "malformed", 2);
+    }
+
+    [Fact]
+    public async Task InvalidUtf8InsideARecordMemberNameFailsAsMalformed()
+    {
+        var document = Spliced(
+            "{\"contractVersion\":\"1.0\",\"header\":{},\"items\":[{\"sequence\":1,\"v\":\"row\"},{\"sequence\":2,\"n",
+            [0xC3, 0x28],
+            "\":1}]}");
+
+        await AssertRefusedAsync(document, "malformed", 2);
+    }
+
+    [Fact]
+    public async Task ValidMultiByteTextAndEscapesInsideStringsStayAccepted()
+    {
+        const string record = "{\"sequence\":1,\"v\":\"caf\u00e9 \U0001F600\",\"e\":\"\\ud83d\\ude00 \\u00e9\",\"n\u00e9\":1}";
+        var read = await AssertAcceptedAsync(SnapshotBytes.Document(SnapshotBytes.ValidHeader, record));
+
+        Assert.Contains(read, value => SnapshotBytes.Text(value) == record);
+    }
+
+    [Fact]
     public async Task AnInvalidTokenStaysMalformed()
     {
         var document = SnapshotBytes.Utf8(
@@ -555,6 +601,10 @@ public sealed class RefusalClassificationTests
             AssertNoMarker(violation, markers);
         }
     }
+
+    // A document whose bytes are the UTF-8 of the text around raw bytes no text can encode.
+    private static byte[] Spliced(string before, byte[] raw, string after) =>
+        [.. SnapshotBytes.Utf8(before), .. raw, .. SnapshotBytes.Utf8(after)];
 
     private static async Task<List<RawRecord>> AssertAcceptedAsync(byte[] document)
     {
