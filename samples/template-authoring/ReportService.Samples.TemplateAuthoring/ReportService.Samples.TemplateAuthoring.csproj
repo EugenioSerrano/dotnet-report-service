@@ -63,4 +63,41 @@
     <ProjectReference Include="..\..\..\src\Platform\ReportService.ServiceDefaults\ReportService.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <!--
+    Playwright's JavaScript package carries an icon font (codicon) for its own trace
+    viewer and recorder pages. The tool never uses those pages, so the three font files
+    are left out of the output, the publish folder and therefore the package. The files
+    arrive through the project reference to the renderer (Playwright's own target runs
+    there), so they are removed from the lists of files copied from referenced projects,
+    matched on their target path. Only these three paths are removed; every other
+    Playwright file is kept.
+  -->
+  <Target Name="ExcludePlaywrightIconFontFromOutput" AfterTargets="GetCopyToOutputDirectoryItems">
+    <ItemGroup>
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectory)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectory Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectoryAlways)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToOutputDirectoryIfDifferent)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToOutputDirectoryIfDifferent Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ExcludePlaywrightIconFontFromPublish" AfterTargets="GetCopyToPublishDirectoryItems">
+    <ItemGroup>
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectory)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectory Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectoryAlways)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectoryAlways Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Include="@(_SourceItemsToCopyToPublishDirectoryIfDifferent)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '(^|[/\x5C])\.playwright[/\x5C]package[/\x5C]lib[/\x5C]vite[/\x5C]((dashboard|recorder)[/\x5C]assets[/\x5C]codicon-[^/\x5C]*|traceViewer[/\x5C]codicon\.[^/\x5C]*)\.ttf$'))" />
+      <_SourceItemsToCopyToPublishDirectoryIfDifferent Remove="@(_PlaywrightIconFont)" />
+      <_PlaywrightIconFont Remove="@(_PlaywrightIconFont)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

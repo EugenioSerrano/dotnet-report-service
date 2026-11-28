@@ -42,6 +42,6 @@ the Playwright JavaScript package. Their licence texts are carried beside them:
 
 The Chromium browser the PDF is printed with is not part of this package: it is
 installed by the user with Playwright's own script. No font a document prints
-with is carried either; a template's fonts are the template author's. (The
-Playwright JavaScript package carries an icon font, `codicon`, for its own
-trace-viewer and recorder pages; the tool never prints with it.)
+with is carried either; a template's fonts are the template author's. The icon font
+the Playwright JavaScript package carries for its own trace-viewer and recorder
+pages (`codicon`) is left out of this package; the tool never uses those pages.
