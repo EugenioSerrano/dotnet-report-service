@@ -44,6 +44,10 @@ public sealed class PackageWatcher(TemplateAuthoringTool tool, TimeSpan? quietPe
 
         var outputDirectories = new List<string>();
         Remember(outputDirectories, request);
+
+        // The watch starts before the first render, so a save made while it runs is seen.
+        // A folder that does not exist cannot be watched; the first render then reports it.
+        using var fileSystem = changes is null ? FileSystemChanges.TryStart(request) : null;
         int first;
         try
         {
@@ -60,8 +64,8 @@ public sealed class PackageWatcher(TemplateAuthoringTool tool, TimeSpan? quietPe
         }
 
         Remember(outputDirectories, request);
-        using var fileSystem = changes is null ? new FileSystemChanges(request) : null;
-        var reader = changes ?? fileSystem!.Reader;
+        using var late = changes is null && fileSystem is null ? new FileSystemChanges(request) : null;
+        var reader = changes ?? fileSystem?.Reader ?? late!.Reader;
         await output.WriteLineAsync(WatchingLine).ConfigureAwait(false);
         await output.FlushAsync(cancellationToken).ConfigureAwait(false);
 
@@ -90,7 +94,19 @@ public sealed class PackageWatcher(TemplateAuthoringTool tool, TimeSpan? quietPe
                 while (more);
 
                 Remember(outputDirectories, request);
-                await RenderOnceAsync(request, output, usageOutput: null, firstRender: false, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await RenderOnceAsync(request, output, usageOutput: null, firstRender: false, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+                {
+                    // An unexpected exception is this render's failure, never the watch's: it
+                    // prints its type, never its message (a message can carry a path or
+                    // template text), and the next change renders again.
+                    await output.WriteLineAsync("internal-error: " + exception.GetType().Name + " in watch").ConfigureAwait(false);
+                    await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+                }
+
                 Remember(outputDirectories, request);
             }
         }
@@ -157,15 +173,36 @@ public sealed class PackageWatcher(TemplateAuthoringTool tool, TimeSpan? quietPe
 
         public FileSystemChanges(RenderRequest request)
         {
-            Add(new FileSystemWatcher(Path.GetFullPath(request.PackageDirectory)) { IncludeSubdirectories = true });
-            if (request.DataFile is { Length: > 0 } data)
+            try
             {
-                var full = Path.GetFullPath(data);
-                Add(new FileSystemWatcher(Path.GetDirectoryName(full)!, Path.GetFileName(full)));
+                Add(new FileSystemWatcher(Path.GetFullPath(request.PackageDirectory)) { IncludeSubdirectories = true });
+                if (request.DataFile is { Length: > 0 } data)
+                {
+                    var full = Path.GetFullPath(data);
+                    Add(new FileSystemWatcher(Path.GetDirectoryName(full)!, Path.GetFileName(full)));
+                }
+            }
+            catch
+            {
+                Dispose();
+                throw;
             }
         }
 
         public ChannelReader<string> Reader => _channel.Reader;
+
+        /// <summary>Starts watching, or answers <see langword="null"/> when a watched folder cannot be watched yet.</summary>
+        public static FileSystemChanges? TryStart(RenderRequest request)
+        {
+            try
+            {
+                return new FileSystemChanges(request);
+            }
+            catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                return null;
+            }
+        }
 
         public void Dispose()
         {

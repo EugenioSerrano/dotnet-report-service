@@ -183,7 +183,7 @@ report-template watch <package-folder> [--out <directory>] [--page-capacity <pag
 `watching (Ctrl+C to stop)` and then renders again every time you save a file of
 the package - or the `--data` file. Saves that arrive close together are
 rendered once; a save made during a render leads to one more render after it.
-Each render prints what `render` prints, its warnings included; a refused or failed render does not stop
+Each render prints what `render` prints, its warnings included; a refused or failed render - or one that hits an unexpected error, which prints `internal-error: <type> in watch` - does not stop
 the watch, and the next save renders again. The preview files are rewritten in
 place: reload the page in the browser to see the new render. Changes under the
 output directory are ignored, so writing the preview never triggers a render,

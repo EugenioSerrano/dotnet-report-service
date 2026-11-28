@@ -206,6 +206,64 @@ public sealed class AuthoringLoopTests
         Assert.Equal(Path.Combine(root, "named"), TemplateAuthoringTool.PreviewDirectoryOf(new RenderRequest(package, Path.Combine(root, "named"))));
     }
 
+    /// <summary>
+    /// A watched render that throws - here the manifest held open by another writer, as an
+    /// editor can - is that render's failure: its type is printed, the watch goes on and the
+    /// next change renders.
+    /// </summary>
+    [Fact]
+    public async Task AnUnexpectedExceptionInAWatchedRenderIsThatRendersFailure()
+    {
+        var root = TestPaths.Temp();
+        var package = CopyPackage(Package, root);
+        var printer = Printer();
+        var output = new SynchronizedWriter();
+        var changes = Channel.CreateUnbounded<string>();
+        using var stop = new CancellationTokenSource();
+        var manifest = Path.Combine(package, "template.yaml");
+
+        var watch = Watcher(printer).RunAsync(new RenderRequest(package, Path.Combine(root, "out")), output, stop.Token, changes.Reader);
+        await Until(() => output.Text.Contains(PackageWatcher.WatchingLine, StringComparison.Ordinal)).ConfigureAwait(true);
+
+        using (new FileStream(manifest, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            changes.Writer.TryWrite(manifest);
+            await Until(() => output.Text.Contains("internal-error: IOException in watch", StringComparison.Ordinal)).ConfigureAwait(true);
+            Assert.False(watch.IsCompleted);
+        }
+
+        Assert.DoesNotContain(manifest, output.Text, StringComparison.OrdinalIgnoreCase);
+        changes.Writer.TryWrite(manifest);
+        await Until(() => Count(output.Text, "rendered " + Package) == 2).ConfigureAwait(true);
+        Assert.Equal(2, printer.Calls);
+
+        await stop.CancelAsync().ConfigureAwait(true);
+        Assert.Equal(0, await watch.ConfigureAwait(true));
+    }
+
+    /// <summary>A save made while the first render runs is seen: the file-system watch is already on.</summary>
+    [Fact]
+    public async Task ASaveDuringTheFirstRenderIsSeen()
+    {
+        var root = TestPaths.Temp();
+        var package = CopyPackage(Package, root);
+        var outputDirectory = Path.Combine(root, "out");
+        var printer = new GatedPrinter(Printer());
+        var output = new SynchronizedWriter();
+        using var stop = new CancellationTokenSource();
+        printer.Hold();
+
+        var watch = Watcher(printer).RunAsync(new RenderRequest(package, outputDirectory), output, stop.Token);
+        await Until(() => printer.Waiting).ConfigureAwait(true);
+        File.AppendAllText(Path.Combine(package, "html", "styles.css"), "\n" + Marker + "\n", Utf8NoBom);
+        printer.Release();
+
+        await Until(() => printer.Calls >= 2 && ReadPreviewStylesheet(outputDirectory).Contains(Marker, StringComparison.Ordinal)).ConfigureAwait(true);
+
+        await stop.CancelAsync().ConfigureAwait(true);
+        Assert.Equal(0, await watch.ConfigureAwait(true));
+    }
+
     /// <summary>A first render that is a usage error is reported and nothing is watched.</summary>
     [Fact]
     public async Task AFirstRenderThatIsAUsageErrorNeverStartsWatching()
