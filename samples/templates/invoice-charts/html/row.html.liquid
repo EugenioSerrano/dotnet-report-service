@@ -1,0 +1,73 @@
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura {{ item.invoiceNumber }}</h2>
+    <p>Emitida {{ item.issueDate | format_date: "dd/MM/yyyy" }} · Vence {{ item.dueDate | format_date: "dd/MM/yyyy" }}</p>
+    <p class="customer">{{ item.customer.name }}</p>
+    <p>CUIT {{ item.customer.taxId }} · {{ item.customer.address }}</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    {% for line in item.lines %}
+      <tr><td class="num">{{ line.lineNumber }}</td><td class="text">{{ line.description }}</td><td class="num">{{ line.quantity | format_number: "N0" }}</td><td class="num">{{ line.unitPrice | format_number: "N2" }}</td><td class="num">{{ line.amount | format_number: "N2" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="totals">Subtotal {{ item.subtotal | format_number: "N2" }} · IVA {{ item.tax | format_number: "N2" }} · Total {{ item.total | format_number: "N2" }}</p>
+  {%- comment -%} Presentation arithmetic only: every computed number sizes or places a shape and is written with num_invariant. The average is the record's own value. {%- endcomment -%}
+  {%- assign max = 0 -%}
+  {%- for c in item.consumption -%}
+    {%- assign kwh = c.kwh | plus: 0 -%}
+    {%- if kwh > max -%}{%- assign max = kwh -%}{%- endif -%}
+  {%- endfor -%}
+  <div class="charts">
+    <figure class="chart consumption">
+      <figcaption>Consumo de los últimos 12 meses (kWh) · promedio {{ item.consumptionAverage | format_number: "N1" }}</figcaption>
+      <svg class="bars-chart" viewBox="0 0 370 130" role="img" aria-label="Consumo mensual">
+        <line class="axis" x1="0" y1="110" x2="370" y2="110"></line>
+        {%- assign points = "" -%}
+        {%- for c in item.consumption -%}
+          {%- assign h = 0 -%}
+          {%- if max > 0 -%}{%- assign h = c.kwh | times: 100.0 | divided_by: max -%}{%- endif -%}
+          {%- assign x = forloop.index0 | times: 30 | plus: 4 -%}
+          {%- assign y = 110 | minus: h %}
+        <rect class="bar" x="{{ x }}" y="{{ y | num_invariant: 2 }}" width="22" height="{{ h | num_invariant: 2 }}"></rect>
+        <text class="month" x="{{ x | plus: 11 }}" y="124">{{ c.month }}</text>
+          {%- capture point -%}{{ x | plus: 11 }},{{ y | num_invariant: 2 }}{%- endcapture -%}
+          {%- assign points = points | append: point | append: " " -%}
+        {%- endfor %}
+        <polyline class="trend" points="{{ points | strip }}"></polyline>
+        {%- assign avg = 0 -%}
+        {%- if max > 0 -%}{%- assign avg = item.consumptionAverage | times: 100.0 | divided_by: max -%}{%- endif -%}
+        {%- assign avgY = 110 | minus: avg %}
+        <line class="average" x1="0" y1="{{ avgY | num_invariant: 2 }}" x2="370" y2="{{ avgY | num_invariant: 2 }}"></line>
+      </svg>
+    </figure>
+    <figure class="chart split">
+      <figcaption>Distribución del subtotal</figcaption>
+      <svg class="donut" viewBox="0 0 160 160" role="img" aria-label="Distribución por concepto">
+        <circle class="ring" cx="80" cy="80" r="60"></circle>
+        {%- assign palette = "#2f6fdf,#f08a24,#27a376,#c94f7c,#7b61d1,#d4b106" | split: "," -%}
+        {%- assign done = 0 -%}
+        {%- if item.subtotal > 0 -%}
+        {%- for line in item.lines -%}
+          {%- assign slice = line.amount | times: 376.99 | divided_by: item.subtotal -%}
+          {%- assign gap = 376.99 | minus: slice -%}
+          {%- assign offset = 94.25 | minus: done %}
+        <circle class="slice" cx="80" cy="80" r="60" stroke="{{ palette[forloop.index0] }}" stroke-dasharray="{{ slice | num_invariant: 2 }} {{ gap | num_invariant: 2 }}" stroke-dashoffset="{{ offset | num_invariant: 2 }}"></circle>
+          {%- assign done = done | plus: slice -%}
+        {%- endfor -%}
+        {%- endif %}
+      </svg>
+      <ul class="legend">
+        {%- for line in item.lines -%}
+          {%- assign share = 0 -%}
+          {%- if item.subtotal > 0 -%}{%- assign share = line.amount | times: 100.0 | divided_by: item.subtotal -%}{%- endif %}
+        <li><svg class="swatch" viewBox="0 0 10 10"><rect width="10" height="10" fill="{{ palette[forloop.index0] }}"></rect></svg>{{ line.description }} · {{ share | format_number: "N1" }} %</li>
+        {%- endfor %}
+      </ul>
+    </figure>
+  </div>
+</section>

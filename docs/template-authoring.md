@@ -210,6 +210,11 @@ engines: copy the one written in the engine you want and change it.
 invoices printed in two layouts — one invoice per page, and two per page; see
 [Printing a batch of invoices](#printing-a-batch-of-invoices).
 
+`invoice-charts` (Liquid/Fluid) is a batch of invoices that draws two charts per
+invoice — monthly bars with a trend line and an average line, and a donut of the
+subtotal — computing their geometry in the template; see
+[Drawing a chart](#drawing-a-chart).
+
 ### Then publish
 
 Nothing is uploaded through the tool. A version is taken by the service the
@@ -402,19 +407,23 @@ your layout produces is printed as it is.
 
 A record's nested arrays are read in the row part with the engine's loop — in
 Liquid, `{% for line in item.lines %}…{% endfor %}`. Totals are carried in the
-data: a template does no arithmetic, so the consumer computes the subtotal, the
-tax and the total and the template prints them.
+data: the consumer computes the subtotal, the tax, the total and every other
+value a reader takes as a figure of the invoice, and the template prints them.
+A template computes only what it draws — see [Drawing a chart](#drawing-a-chart).
 
 ### Graphics and codes are computed before the job
 
-A graphic or a code that depends on an invoice — a barcode, a QR, a small
-chart — is **computed by the consumer before the job** and carried inside the
-record. The service never runs code written in a template: there is no script
-in a package, and an expression has no effect beyond printing a value. The ways
-that work today:
+A code that depends on an invoice — a barcode, a QR — and any graphic whose
+shapes encode the data in a way the template cannot work out from plain numbers
+is **computed by the consumer before the job** and carried inside the record. A
+chart drawn from plain numbers in the record — bars, lines, a donut — may
+instead be computed by the template; see [Drawing a chart](#drawing-a-chart).
+The service never runs code written in a template: there is no script in a
+package, and an expression has no effect beyond printing a value. The ways a
+precomputed graphic or code is printed:
 
-- **Geometry printed as SVG elements.** The record carries the shapes — for a
-  barcode, the position and width of each bar — and the row prints them inside
+- **Precomputed geometry printed as SVG elements.** The record carries the
+  shapes — for a barcode, the position and width of each bar — and the row prints them inside
   an inline `<svg>`, each value in an ordinary quoted attribute:
 
   ```text
@@ -435,6 +444,87 @@ version is taken, naming the part and the `"src"` attribute.
 A code that depends on the final page rather than on an invoice is not
 precomputed: the template declares it and the service applies it to every page.
 See [A code on every page](#a-code-on-every-page).
+
+### Drawing a chart
+
+A template may compute the geometry of a chart from the numbers in the record:
+a bar's height scaled to the series maximum, the x position of a point, the
+share of a donut slice. That is **presentation arithmetic**: its result only
+sizes or places a shape, and is written only into a geometry attribute (`x`,
+`y`, `width`, `height`, `points`, `stroke-dasharray`…) or a CSS length — or into
+a label that is plainly a drawing aid, such as the percentage beside a slice.
+
+A **business value** is never computed by the template: an amount, a quantity, a
+price, a total or subtotal, a tax, a balance, a rate, a count or an average that
+a reader takes as a figure of the document comes from the data (or a declared
+accumulator) and is printed with `format_number`. Which side of the line a
+number is on is a matter of meaning, so it is judged when the template is
+reviewed; the service does not and cannot check it.
+
+`invoice-charts` (Liquid/Fluid) draws, for each invoice, twelve months of
+consumption as bars with a trend line through their tops and an average line,
+and a donut of the subtotal by line. In Liquid the arithmetic is done with the
+math filters (`plus`, `minus`, `times`, `divided_by`, `modulo`, `round`, `ceil`,
+`floor`, `abs`, `at_least`, `at_most`). A bar, inside the loop over the months
+(`max` is the series maximum, found by an earlier loop):
+
+```text
+{%- assign h = 0 -%}
+{%- if max > 0 -%}{%- assign h = c.kwh | times: 100.0 | divided_by: max -%}{%- endif -%}
+{%- assign x = forloop.index0 | times: 30 | plus: 4 -%}
+{%- assign y = 110 | minus: h %}
+<rect class="bar" x="{{ x }}" y="{{ y | num_invariant: 2 }}" width="22" height="{{ h | num_invariant: 2 }}"></rect>
+```
+
+A donut slice, inside the loop over the lines, on a ring of radius 60 (its
+circumference, 376.99, is a constant of the template; `done` is the length
+already drawn):
+
+```text
+{%- assign slice = line.amount | times: 376.99 | divided_by: item.subtotal -%}
+{%- assign gap = 376.99 | minus: slice -%}
+{%- assign offset = 94.25 | minus: done %}
+<circle class="slice" cx="80" cy="80" r="60" stroke="{{ palette[forloop.index0] }}" stroke-dasharray="{{ slice | num_invariant: 2 }} {{ gap | num_invariant: 2 }}" stroke-dashoffset="{{ offset | num_invariant: 2 }}"></circle>
+{%- assign done = done | plus: slice -%}
+```
+
+The rules the sample follows:
+
+- **Write every computed number with `num_invariant`.** Liquid prints its own
+  results in the job's culture, so under `es-AR` a height prints as `79,21` and
+  the bar is lost (see [Template traps](#template-traps)). Two decimals are
+  plenty for a drawing.
+- **Give a division a decimal operand.** `3 | divided_by: 2` is `1` in Liquid;
+  `times: 100.0` before the division keeps the decimals.
+- **Guard every division by zero with `{% if %}`.** Liquid fails the render on
+  `divided_by: 0`; an all-zero series must still print (as bars of height 0).
+- **Take the maximum with a loop**, comparing numbers: `{%- assign kwh = c.kwh | plus: 0 -%}`
+  turns the data's number into one the comparison reads as a number.
+- **Keep business values in the data.** The average line is drawn at the
+  record's own average, the same value its caption prints; the template only
+  scales it.
+- **The same template computes the same output on the same engine**, but the
+  engines compute with different numeric types, so a chart is not
+  byte-identical across engines (see [Numbers in attributes](#numbers-in-attributes)).
+
+### Template traps
+
+Two mistakes print a page that looks almost right. The render warns about both
+(see [Warnings](#warnings)).
+
+- **The chart disappears, or is drawn in the wrong place, under `es-AR`.** A
+  number printed in the job's culture where a machine reads it —
+  `height="{{ h }}"` gives `height="41,82"` — is not a length, so the browser
+  drops the shape. Write it with `num_invariant`: `height="{{ h | num_invariant: 2 }}"`.
+  The `culture-number-in-attribute` warning names the element and attribute;
+  it does not judge `d`, `transform` and `stroke-dasharray`, whose commas are
+  separators, so check those yourself.
+- **A field prints a small whole number instead of its value.** In Liquid,
+  `.size` on an object is the number of its members, so `item.size` never reads
+  a field named `size`. Read it as
+  `item["size"]`, or rename the field in the data. The
+  `reserved-member-shadows-field` warning names the expression. On an array,
+  `.size` is its length, as intended.
 
 ### Showing or hiding on a flag
 

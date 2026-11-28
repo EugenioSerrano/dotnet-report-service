@@ -1,0 +1,524 @@
+{
+  "contractVersion": "1.0",
+  "header": {
+    "batchId": "invoice-charts-sample",
+    "reportTitle": "Lote de facturas con gráficos de consumo",
+    "issuer": {
+      "name": "Distribuidora Eléctrica Ejemplo S.A.",
+      "taxId": "30-70000000-7"
+    },
+    "currency": "ARS",
+    "generatedAt": "2026-11-27T00:00:00Z",
+    "invoiceCount": 6
+  },
+  "items": [
+    {
+      "invoiceNumber": "B-0002-00000001",
+      "issueDate": "2026-11-02",
+      "dueDate": "2026-12-02",
+      "customer": {
+        "name": "Ferretería Los Andes S.A.",
+        "taxId": "30-71234567-1",
+        "address": "Av. Siempre Viva 742, Mendoza"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 7799.0,
+          "amount": 7799.0
+        }
+      ],
+      "subtotal": 7799.0,
+      "tax": 1637.79,
+      "total": 9436.79,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 412.5
+        },
+        {
+          "month": "ene",
+          "kwh": 398.25
+        },
+        {
+          "month": "feb",
+          "kwh": 455.75
+        },
+        {
+          "month": "mar",
+          "kwh": 501.0
+        },
+        {
+          "month": "abr",
+          "kwh": 487.5
+        },
+        {
+          "month": "may",
+          "kwh": 430.25
+        },
+        {
+          "month": "jun",
+          "kwh": 388.0
+        },
+        {
+          "month": "jul",
+          "kwh": 402.5
+        },
+        {
+          "month": "ago",
+          "kwh": 476.25
+        },
+        {
+          "month": "sep",
+          "kwh": 520.75
+        },
+        {
+          "month": "oct",
+          "kwh": 498.0
+        },
+        {
+          "month": "nov",
+          "kwh": 455.5
+        }
+      ],
+      "consumptionAverage": 452.19
+    },
+    {
+      "invoiceNumber": "B-0002-00000002",
+      "issueDate": "2026-11-03",
+      "dueDate": "2026-12-03",
+      "customer": {
+        "name": "Panadería La Espiga",
+        "taxId": "20-28765432-9",
+        "address": "Belgrano 1550, Rosario"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Cargo fijo",
+          "quantity": 1,
+          "unitPrice": 1200.0,
+          "amount": 1200.0
+        },
+        {
+          "lineNumber": 2,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 2400.0,
+          "amount": 2400.0
+        },
+        {
+          "lineNumber": 3,
+          "description": "Alumbrado público",
+          "quantity": 1,
+          "unitPrice": 1200.0,
+          "amount": 1200.0
+        }
+      ],
+      "subtotal": 4800.0,
+      "tax": 1008.0,
+      "total": 5808.0,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 210.5
+        },
+        {
+          "month": "ene",
+          "kwh": 0.0
+        },
+        {
+          "month": "feb",
+          "kwh": 185.25
+        },
+        {
+          "month": "mar",
+          "kwh": 240.75
+        },
+        {
+          "month": "abr",
+          "kwh": 260.0
+        },
+        {
+          "month": "may",
+          "kwh": 255.5
+        },
+        {
+          "month": "jun",
+          "kwh": 230.25
+        },
+        {
+          "month": "jul",
+          "kwh": 199.0
+        },
+        {
+          "month": "ago",
+          "kwh": 205.5
+        },
+        {
+          "month": "sep",
+          "kwh": 248.75
+        },
+        {
+          "month": "oct",
+          "kwh": 270.0
+        },
+        {
+          "month": "nov",
+          "kwh": 262.25
+        }
+      ],
+      "consumptionAverage": 213.98
+    },
+    {
+      "invoiceNumber": "B-0002-00000003",
+      "issueDate": "2026-11-04",
+      "dueDate": "2026-12-04",
+      "customer": {
+        "name": "Estudio Contable Ríos & Asoc.",
+        "taxId": "30-70987654-3",
+        "address": "San Martín 320, Córdoba"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Cargo fijo",
+          "quantity": 1,
+          "unitPrice": 1000.0,
+          "amount": 1000.0
+        },
+        {
+          "lineNumber": 2,
+          "description": "Conexión nueva",
+          "quantity": 1,
+          "unitPrice": 1000.0,
+          "amount": 1000.0
+        },
+        {
+          "lineNumber": 3,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 1000.0,
+          "amount": 1000.0
+        }
+      ],
+      "subtotal": 3000.0,
+      "tax": 630.0,
+      "total": 3630.0,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 0.0
+        },
+        {
+          "month": "ene",
+          "kwh": 0.0
+        },
+        {
+          "month": "feb",
+          "kwh": 0.0
+        },
+        {
+          "month": "mar",
+          "kwh": 0.0
+        },
+        {
+          "month": "abr",
+          "kwh": 0.0
+        },
+        {
+          "month": "may",
+          "kwh": 0.0
+        },
+        {
+          "month": "jun",
+          "kwh": 0.0
+        },
+        {
+          "month": "jul",
+          "kwh": 0.0
+        },
+        {
+          "month": "ago",
+          "kwh": 0.0
+        },
+        {
+          "month": "sep",
+          "kwh": 0.0
+        },
+        {
+          "month": "oct",
+          "kwh": 0.0
+        },
+        {
+          "month": "nov",
+          "kwh": 0.0
+        }
+      ],
+      "consumptionAverage": 0.0
+    },
+    {
+      "invoiceNumber": "B-0002-00000004",
+      "issueDate": "2026-11-05",
+      "dueDate": "2026-12-05",
+      "customer": {
+        "name": "Taller Mecánico El Pistón",
+        "taxId": "20-31234567-4",
+        "address": "Ruta 9 km 12, Tucumán"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Cargo fijo",
+          "quantity": 1,
+          "unitPrice": 1500.0,
+          "amount": 1500.0
+        },
+        {
+          "lineNumber": 2,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 9875.5,
+          "amount": 9875.5
+        },
+        {
+          "lineNumber": 3,
+          "description": "Potencia contratada",
+          "quantity": 1,
+          "unitPrice": 3200.25,
+          "amount": 3200.25
+        },
+        {
+          "lineNumber": 4,
+          "description": "Alumbrado público",
+          "quantity": 1,
+          "unitPrice": 450.75,
+          "amount": 450.75
+        }
+      ],
+      "subtotal": 15026.5,
+      "tax": 3155.57,
+      "total": 18182.07,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 980.5
+        },
+        {
+          "month": "ene",
+          "kwh": 1010.25
+        },
+        {
+          "month": "feb",
+          "kwh": 1150.0
+        },
+        {
+          "month": "mar",
+          "kwh": 1205.75
+        },
+        {
+          "month": "abr",
+          "kwh": 990.0
+        },
+        {
+          "month": "may",
+          "kwh": 870.5
+        },
+        {
+          "month": "jun",
+          "kwh": 905.25
+        },
+        {
+          "month": "jul",
+          "kwh": 1100.0
+        },
+        {
+          "month": "ago",
+          "kwh": 1180.5
+        },
+        {
+          "month": "sep",
+          "kwh": 1240.75
+        },
+        {
+          "month": "oct",
+          "kwh": 1195.0
+        },
+        {
+          "month": "nov",
+          "kwh": 1230.25
+        }
+      ],
+      "consumptionAverage": 1088.23
+    },
+    {
+      "invoiceNumber": "B-0002-00000005",
+      "issueDate": "2026-11-06",
+      "dueDate": "2026-12-06",
+      "customer": {
+        "name": "Vivero Las Hortensias",
+        "taxId": "27-25555444-2",
+        "address": "Calle 7 n.º 1180, La Plata"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Cargo fijo",
+          "quantity": 1,
+          "unitPrice": 980.0,
+          "amount": 980.0
+        },
+        {
+          "lineNumber": 2,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 2150.4,
+          "amount": 2150.4
+        }
+      ],
+      "subtotal": 3130.4,
+      "tax": 657.38,
+      "total": 3787.78,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 150.25
+        },
+        {
+          "month": "ene",
+          "kwh": 160.5
+        },
+        {
+          "month": "feb",
+          "kwh": 175.0
+        },
+        {
+          "month": "mar",
+          "kwh": 190.75
+        },
+        {
+          "month": "abr",
+          "kwh": 210.5
+        },
+        {
+          "month": "may",
+          "kwh": 230.0
+        },
+        {
+          "month": "jun",
+          "kwh": 220.25
+        },
+        {
+          "month": "jul",
+          "kwh": 205.5
+        },
+        {
+          "month": "ago",
+          "kwh": 180.0
+        },
+        {
+          "month": "sep",
+          "kwh": 165.75
+        },
+        {
+          "month": "oct",
+          "kwh": 158.0
+        },
+        {
+          "month": "nov",
+          "kwh": 170.5
+        }
+      ],
+      "consumptionAverage": 184.75
+    },
+    {
+      "invoiceNumber": "B-0002-00000006",
+      "issueDate": "2026-11-07",
+      "dueDate": "2026-12-07",
+      "customer": {
+        "name": "Club Social y Deportivo Unión",
+        "taxId": "30-69111222-5",
+        "address": "Mitre 45, Salta"
+      },
+      "lines": [
+        {
+          "lineNumber": 1,
+          "description": "Cargo fijo",
+          "quantity": 1,
+          "unitPrice": 1250.5,
+          "amount": 1250.5
+        },
+        {
+          "lineNumber": 2,
+          "description": "Energía activa",
+          "quantity": 1,
+          "unitPrice": 5310.25,
+          "amount": 5310.25
+        },
+        {
+          "lineNumber": 3,
+          "description": "Potencia contratada",
+          "quantity": 1,
+          "unitPrice": 1890.0,
+          "amount": 1890.0
+        }
+      ],
+      "subtotal": 8450.75,
+      "tax": 1774.66,
+      "total": 10225.41,
+      "consumption": [
+        {
+          "month": "dic",
+          "kwh": 620.0
+        },
+        {
+          "month": "ene",
+          "kwh": 640.5
+        },
+        {
+          "month": "feb",
+          "kwh": 700.25
+        },
+        {
+          "month": "mar",
+          "kwh": 755.0
+        },
+        {
+          "month": "abr",
+          "kwh": 810.75
+        },
+        {
+          "month": "may",
+          "kwh": 790.5
+        },
+        {
+          "month": "jun",
+          "kwh": 760.0
+        },
+        {
+          "month": "jul",
+          "kwh": 720.25
+        },
+        {
+          "month": "ago",
+          "kwh": 690.5
+        },
+        {
+          "month": "sep",
+          "kwh": 705.0
+        },
+        {
+          "month": "oct",
+          "kwh": 730.75
+        },
+        {
+          "month": "nov",
+          "kwh": 760.25
+        }
+      ],
+      "consumptionAverage": 723.65
+    }
+  ]
+}
