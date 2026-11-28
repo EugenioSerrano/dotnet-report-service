@@ -96,6 +96,36 @@ profile's 10 000 pages - the capacity a deployment that configures none runs.
 Pass the target deployment's configured `DocumentCapacity:MaximumPages` to check
 the numbering area against it.
 
+#### Warnings
+
+A render that succeeded may print `warning:` lines right before its `rendered`
+line. A warning is advice: the exit code stays `0` and the two files are
+written as usual. A refused render prints none. At most 20 warnings are
+printed, in document order, then `warning: <n> more warnings not shown`.
+
+```text
+warning: culture-number-in-attribute part=row record=3 element=rect attribute=height value=41,82 - write the number with num_invariant
+warning: reserved-member-shadows-field file=html/row.html.liquid line=4 column=12 expression=item.size field=item.size - in Liquid .size is the member count; read item["size"]
+```
+
+- **`culture-number-in-attribute`** - a number in a culture's form (`41,82`,
+  `1,234.50`) where a machine reads it: a numeric SVG or HTML attribute (`x`,
+  `y`, `width`, `height`, `r`, `opacity`, `stroke-width`, `font-size`…),
+  `points`, `viewBox`, or a CSS length in a `style` attribute. The browser
+  cannot read it, so the graphic is drawn wrong or not at all. Write the
+  number with `num_invariant` (see *Presenting a date or a number*). Text
+  between tags and other attributes are a reader's text and are not judged;
+  `d`, `transform` and `stroke-dasharray` use commas as separators and are not
+  judged either, so check them yourself.
+- **`reserved-member-shadows-field`** - in Liquid, `x.size` on an object is the
+  number of its members, not its field `size`. Read the field as `x["size"]`,
+  or rename it. The tool warns when the sample shows the shadow; for a name the
+  template binds itself (a loop variable), it warns when any object of the
+  sample carries a field of that name.
+
+A value in a warning is at most 32 characters of your own sample, with control
+characters escaped.
+
 ### Reading a refusal
 
 A package the checks refuse prints the take's own sentence and exits `1`:
@@ -408,6 +438,7 @@ names and the arguments are the same in every engine.
 | `format_date` | a date or an instant, a date/time format | the text in the job's culture and zone |
 | `num_gt`, `num_ge`, `num_lt`, `num_le`, `num_eq`, `num_ne` | two values | a boolean, for a condition |
 | `num_sign` | a value | `"-1"`, `"0"` or `"1"`, **as text** |
+| `num_invariant` | a number, optionally a count of decimals (0-28) | the number with `.` as decimal separator, no group separator and no exponent, **whatever the job's culture** |
 
 ```text
 Scriban      {{ format_number item.amount "N2" }}       {{ format_date item.date "dd/MM/yyyy" }}
@@ -440,6 +471,35 @@ Liquid       {{ item.amount | format_number: "N2" }}     {{ item.date | format_d
   native filter would read the worker's own culture, so a version that reached
   printing with one is outside what this service can promise; that residual is
   why the take refuses them rather than warning.
+
+### Numbers in attributes
+
+`format_number` writes the reader's form; a number a machine reads - an SVG or
+HTML attribute, a CSS length - must be written with `num_invariant`, or a
+comma-decimal culture such as `es-AR` turns `height="41.82"` into
+`height="41,82"`, which is not a length.
+
+```text
+Scriban      <rect height="{{ num_invariant item.height | html.escape }}"/>     {{ num_invariant item.ratio 2 | html.escape }}
+Handlebars   <rect height="{{num_invariant item.height}}"/>                     {{num_invariant item.ratio 2}}
+Liquid       <rect height="{{ item.height | num_invariant }}"/>                 {{ item.ratio | num_invariant: 2 }}
+```
+
+- **Without decimals** the value keeps its own digits (`1000.00` stays
+  `1000.00`). **With decimals** it is rounded half away from zero (`2.345` with
+  2 is `2.35`, `-2.345` is `-2.35`) and written with exactly that many.
+- **It takes data text or an engine's own number.** A data value is already
+  invariant text; the result of an engine's arithmetic is accepted as it is. A
+  text in a culture's form (`41,82`, `1,000`) is refused, never read as another
+  number; a value that is not a number ends the job `DATA_INVALID`, and a count
+  of decimals outside 0-28 `TEMPLATE_INVALID` with `format-string`.
+- **The engines' own numbers differ.** Scriban computes with integers and
+  `double` (`1 / 3` is `0.3333333333333333`, `1 / 0` is `Infinity`, which
+  `num_invariant` refuses) and prints them invariantly. Liquid computes with
+  decimals, divides integers as integers (`3 | divided_by: 2` is `1`), fails the
+  render on `divided_by: 0`, and prints its results **in the job's culture** -
+  pass them through `num_invariant`. Handlebars has no arithmetic. Where a
+  result must be the same in every engine, compute it in the data.
 
 The job's accepted culture and zone also reach the `render` values a template can
 print: `render.culture`, `render.timeZone` and `render.clock` (an instant). The

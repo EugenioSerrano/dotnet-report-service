@@ -15,7 +15,7 @@ public delegate PresentationResult PresentationFunction(IReadOnlyList<object?> a
 public static class PresentationFunctionTable
 {
     /// <summary>The number of names the table holds.</summary>
-    public const int FunctionCount = 9;
+    public const int FunctionCount = 10;
 
     /// <summary>Presents a number in the job's culture.</summary>
     public const string FormatNumberName = "format_number";
@@ -44,6 +44,9 @@ public static class PresentationFunctionTable
     /// <summary>The sign of a number as text for printing.</summary>
     public const string NumSignName = "num_sign";
 
+    /// <summary>Writes a number culture-invariantly, for an attribute or a CSS length.</summary>
+    public const string NumInvariantName = "num_invariant";
+
     /// <summary>The names, in the order they are documented.</summary>
     public static IReadOnlyList<string> Names { get; } =
     [
@@ -56,6 +59,7 @@ public static class PresentationFunctionTable
         NumEqualName,
         NumNotEqualName,
         NumSignName,
+        NumInvariantName,
     ];
 
     /// <summary>Binds the table to <paramref name="settings"/>.</summary>
@@ -75,11 +79,17 @@ public static class PresentationFunctionTable
             [NumEqualName] = arguments => Arity(arguments, 2, () => functions.NumEqual(arguments[0], arguments[1])),
             [NumNotEqualName] = arguments => Arity(arguments, 2, () => functions.NumNotEqual(arguments[0], arguments[1])),
             [NumSignName] = arguments => Arity(arguments, 1, () => functions.NumSign(arguments[0])),
+            [NumInvariantName] = arguments => Arity(arguments, 1, 2, () => functions.NumInvariant(arguments[0], arguments.Count == 2 ? arguments[1] : null)),
         };
     }
 
     private static PresentationResult Arity(IReadOnlyList<object?> arguments, int expected, Func<PresentationResult> call) =>
         arguments.Count == expected
+            ? call()
+            : new PresentationResult.Refused(PresentationRefusal.BadFormat);
+
+    private static PresentationResult Arity(IReadOnlyList<object?> arguments, int fewest, int most, Func<PresentationResult> call) =>
+        arguments.Count >= fewest && arguments.Count <= most
             ? call()
             : new PresentationResult.Refused(PresentationRefusal.BadFormat);
 

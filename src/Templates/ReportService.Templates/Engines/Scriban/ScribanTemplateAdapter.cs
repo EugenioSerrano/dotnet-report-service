@@ -108,7 +108,7 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         ApplyEscapingPolicy(templateContext);
         RemoveHostClock(templateContext);
 
-        // One global scope for the part: the values of the render model and the nine
+        // One global scope for the part: the values of the render model and the ten
         // presentation functions, which are bound to this block's settings and to nothing else.
         var globals = new ScriptObject(context.Members().Count() + PresentationFunctionTable.FunctionCount);
         foreach (var member in context.Members())
@@ -141,7 +141,7 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
         }
         catch (Scriban.Syntax.ScriptRuntimeException exception)
         {
-            // A presentation refusal raised by one of the nine functions is the block's own
+            // A presentation refusal raised by one of the ten functions is the block's own
             // typed refusal, whatever the engine wrapped it in: it reaches the renderer as the
             // refusal it is, so the consumer reads DATA_INVALID or TEMPLATE_INVALID with its
             // reason, never the generic code of a step that could not finish.

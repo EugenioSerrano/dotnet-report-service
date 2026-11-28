@@ -8,7 +8,10 @@ namespace ReportService.Samples.TemplateAuthoring;
 /// four exit codes (0 success, 1 refused, 2 usage, 3 could not run). The result lines
 /// go to standard output; a usage error and the usage block go to standard error. A
 /// command never writes anything but its own line: a refusal never carries template
-/// text, a sample value or a host path.
+/// text, a sample value or a host path. A render that succeeded may print authoring
+/// warnings right before its result line; a warning names a package-relative file or a
+/// part and at most a short, escaped value of the author's own sample, and never changes
+/// the exit code or the files written.
 /// </summary>
 internal static class Program
 {
@@ -29,6 +32,8 @@ internal static class Program
 
         Exit codes: 0 success, 1 refused by a product check or the sample render,
         2 invalid command line, 3 the render could not run.
+        A render that succeeded may print 'warning:' lines before its result line;
+        a warning never changes the exit code.
         """;
 
     /// <summary>Runs one command and returns its exit code.</summary>

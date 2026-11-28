@@ -4,7 +4,7 @@ using System.Reflection;
 namespace ReportService.Templates.Tests.Presentation;
 
 /// <summary>
-/// The one table of presentation function names: nine names, one delegate each, an
+/// The one table of presentation function names: ten names, one delegate each, an
 /// engine-neutral signature, and no culture, time zone or clock a template could pass.
 /// </summary>
 public sealed class PresentationFunctionTableTests
@@ -15,7 +15,7 @@ public sealed class PresentationFunctionTableTests
         new DateTimeOffset(2026, 11, 2, 2, 21, 56, TimeSpan.Zero));
 
     [Fact]
-    public void TheTableHoldsTheNineNames()
+    public void TheTableHoldsTheTenNames()
     {
         Assert.Equal(PresentationFunctionTable.FunctionCount, PresentationFunctionTable.Names.Count);
         Assert.Equal(
@@ -29,6 +29,7 @@ public sealed class PresentationFunctionTableTests
                 "num_eq",
                 "num_ne",
                 "num_sign",
+                "num_invariant",
             ],
             PresentationFunctionTable.Names);
     }
