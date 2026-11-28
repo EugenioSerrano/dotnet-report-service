@@ -87,13 +87,15 @@ public sealed record CompositionRender(string? Culture, string? TimeZone, DateTi
 /// <param name="Records">The block's records, in ordinal order.</param>
 /// <param name="Render">The job's fixed render values.</param>
 /// <param name="GroupKey">The record field that begins a group, or <see langword="null"/> when the package declares none.</param>
+/// <param name="ImageSources">How the output treats an image source that is a relative reference; the printed page by default.</param>
 public sealed record CompositionRequest(
     PreparedTemplate Template,
     CompositionBlock Block,
     IReadOnlyDictionary<string, object?> Header,
     IReadOnlyList<ComposedRecord> Records,
     CompositionRender Render,
-    string? GroupKey);
+    string? GroupKey,
+    ImageSourcePolicy ImageSources = ImageSourcePolicy.Pdf);
 
 /// <summary>
 /// Composes one block in block mode: the document start, then per record the
@@ -135,7 +137,7 @@ public sealed class BlockComposer(TimeProvider clock)
         var fragments = new List<ComposedFragment>(request.Records.Count * 2 + 4);
         using var stream = new MemoryStream(64 * 1024);
         using var text = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1 << 16, leaveOpen: true);
-        var writer = new GuardedWriter(text, clock);
+        var writer = new GuardedWriter(text, clock, request.ImageSources);
 
         // The composition hook: a test's stall is awaited here, after the guard's clock has
         // started and before the first part is composed, so the first write after it raises
@@ -171,6 +173,7 @@ public sealed class BlockComposer(TimeProvider clock)
         }
 
         Compose(request, adapter, settings, TemplatePart.DocumentEnd, FragmentKind.DocumentEnd, null, null, 0, null, writer, fragments, cancellationToken);
+        writer.Complete();
 
         text.Flush();
         var html = stream.ToArray();
@@ -247,6 +250,7 @@ public sealed class BlockComposer(TimeProvider clock)
             RenderContextFactory.Render(settings.Culture.Name, settings.TimeZone.Id, settings.Clock));
 
         var start = checked((int)writer.BytesWritten);
+        writer.BeginPart(part, kind == FragmentKind.Row ? recordOrdinal : 0);
         adapter.RenderPart(request.Template, part, context, settings, writer, cancellationToken);
         fragments.Add(new ComposedFragment(kind, start, checked((int)writer.BytesWritten) - start, kind == FragmentKind.Row ? recordOrdinal : 0, fragmentGroupKey));
     }

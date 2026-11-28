@@ -135,22 +135,38 @@ public sealed class AssembleHtmlActivity(
                     throw Refuse(UnsupportedCapability, "the taken copy cannot be prepared for HTML");
                 }
 
-                var composed = await new BlockComposer(clock).ComposeAsync(
-                    new CompositionRequest(
-                        template,
-                        new CompositionBlock(
-                            0,
-                            records.Count,
-                            records.Count == 0 ? 1 : records[0].Ordinal,
-                            IsFirst: true,
-                            IsLast: true),
-                        header,
-                        records,
-                        new CompositionRender(state.Job.Culture, state.Job.TimeZone, state.Job.ReportClock),
-                        manifest.GroupKey),
-                    adapter,
-                    settings,
-                    cancellationToken).ConfigureAwait(false);
+                ComposedBlock composed;
+                try
+                {
+                    composed = await new BlockComposer(clock).ComposeAsync(
+                        new CompositionRequest(
+                            template,
+                            new CompositionBlock(
+                                0,
+                                records.Count,
+                                records.Count == 0 ? 1 : records[0].Ordinal,
+                                IsFirst: true,
+                                IsLast: true),
+                            header,
+                            records,
+                            new CompositionRender(state.Job.Culture, state.Job.TimeZone, state.Job.ReportClock),
+                            manifest.GroupKey,
+                            ImageSourcePolicy.Html),
+                        adapter,
+                        settings,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.ImageSourceInvalid, StringComparison.Ordinal))
+                {
+                    // An image source the HTML output does not admit: decided by the data and the
+                    // parts, never retried, nothing published. The reason names the part, the
+                    // record and the attribute, never the value.
+                    logger.LogWarning(
+                        "Output {OutputId} refused: an image source is not admitted ({Reason})",
+                        input.OutputId,
+                        guard.Message);
+                    throw new ApplicationFailureException(guard.Message, errorType: TemplateErrorCodes.ImageSourceInvalid, nonRetryable: true);
+                }
 
                 using var assembled = new MemoryStream();
                 var result = await new HtmlOutputAssembler()

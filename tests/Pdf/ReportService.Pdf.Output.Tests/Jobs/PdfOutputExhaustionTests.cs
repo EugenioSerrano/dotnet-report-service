@@ -136,6 +136,31 @@ public sealed class PdfOutputExhaustionTests
     }
 
     /// <summary>A doubled read: it answers the row it was given and counts its calls.</summary>
+    /// <summary>An image-source refusal keeps its code and its message as the reason, and reads nothing.</summary>
+    [Fact]
+    public async Task AnImageSourceRefusalKeepsItsCodeAndItsDiagnostic()
+    {
+        var read = new CountingRead(null);
+
+        var (code, reason) = await ReportPdfOutputWorkflow.ExhaustionAsync("IMAGE_SOURCE_INVALID", "part=row ordinal=3 attribute=src", read.ReadAsync);
+
+        Assert.Equal("IMAGE_SOURCE_INVALID", code);
+        Assert.Equal("part=row ordinal=3 attribute=src", reason);
+        Assert.Equal(0, read.Calls);
+    }
+
+    /// <summary>Another refusal keeps no reason even when its failure carries a message.</summary>
+    [Fact]
+    public async Task AnotherRefusalKeepsNoReasonFromItsMessage()
+    {
+        var read = new CountingRead(null);
+
+        var (code, reason) = await ReportPdfOutputWorkflow.ExhaustionAsync("QUOTA_EXCEEDED", "the composed text passed", read.ReadAsync);
+
+        Assert.Equal("QUOTA_EXCEEDED", code);
+        Assert.Null(reason);
+    }
+
     private sealed class CountingRead(LastAttemptCause? row)
     {
         /// <summary>How many times the map asked for the cause.</summary>

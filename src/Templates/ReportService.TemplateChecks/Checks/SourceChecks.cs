@@ -544,7 +544,9 @@ public sealed class TemplateLintCheck(TemplateCheckSession session) : ITemplateV
                         HtmlContextKind.Style => "<style element>",
                         HtmlContextKind.Tag => "a tag, where an attribute name is expected",
                         HtmlContextKind.AttributeValueUnquoted => "an unquoted attribute value",
-                        HtmlContextKind.AttributeValueQuoted when HtmlScanner.IsDangerousAttribute(context.AttributeName) =>
+                        HtmlContextKind.AttributeValueQuoted
+                            when HtmlScanner.IsDangerousAttribute(context.AttributeName)
+                                && !HtmlScanner.IsImageSourcePosition(context.TagName, context.AttributeName) =>
                             "the \"" + context.AttributeName + "\" attribute",
                         _ => null,
                     };
@@ -555,7 +557,7 @@ public sealed class TemplateLintCheck(TemplateCheckSession session) : ITemplateV
                             TemplateCheckCodes.TemplateInvalid,
                             TemplateRefusal.Echo(path),
                             "the value" + where + " is written inside " + dangerous + ".",
-                            "Data may only appear in element text and quoted attribute values."));
+                            "Data may only appear in element text, quoted attribute values and the quoted source of an image, which must be an image data URI when the report is rendered."));
                     }
                 }
             }

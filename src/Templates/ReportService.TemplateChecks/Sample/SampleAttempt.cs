@@ -55,6 +55,12 @@ public enum SampleFailureKind
     /// a value or returns content that is not allowed, or the code does not verify.
     /// </summary>
     PageCode,
+
+    /// <summary>
+    /// The source of an image the sample composes is not an image data URI the printed page
+    /// admits; the reason names the part, the record and the attribute, never the value.
+    /// </summary>
+    ImageSource,
 }
 
 /// <summary>

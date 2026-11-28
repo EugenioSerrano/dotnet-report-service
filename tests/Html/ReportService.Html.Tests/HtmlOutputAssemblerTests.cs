@@ -64,6 +64,25 @@ public sealed class HtmlOutputAssemblerTests
     }
 
     [Fact]
+    public async Task AnImageDataUriFromTheRecordIsKeptAsItIsAndTheOutputIsProduced()
+    {
+        const string Png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==";
+        const string Svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=";
+        var block = Block(
+            (FragmentKind.DocumentStart, "<html><head></head><body>"),
+            (FragmentKind.Row, "<p><img src=\"" + Png + "\"></p>"),
+            (FragmentKind.Row, "<p><svg width=\"10\" height=\"10\"><image href=\"" + Svg + "\" xlink:href=\"" + Svg + "\"/></svg></p>"),
+            (FragmentKind.DocumentEnd, "</body></html>"));
+
+        var (result, output) = await Assemble(block, Package());
+
+        Assert.True(result.IsProduced, result.Refusal?.ToString());
+        Assert.Contains("src=\"" + Png + "\"", output, StringComparison.Ordinal);
+        Assert.Contains("href=\"" + Svg + "\"", output, StringComparison.Ordinal);
+        Assert.Contains("img-src data:", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task APackagedCssUrlReferenceIsInlinedAsADataUri()
     {
         var block = Block(

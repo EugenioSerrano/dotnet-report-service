@@ -22,6 +22,15 @@ public static class ErrorMessages
     /// <summary>The code an output ends with when the last attempt's recorded cause is a deadline.</summary>
     public const string RenderTimeout = "RENDER_TIMEOUT";
 
+    /// <summary>The code an output ends with when an image source is not an image data URI it admits.</summary>
+    public const string ImageSourceInvalid = "IMAGE_SOURCE_INVALID";
+
+    /// <summary>The sentence of an image-source refusal: the part, the record clause and the attribute.</summary>
+    private const string ImageSourceSentence =
+        "The {0} part{1} writes an image whose {2} is not an image this output accepts. Give the image as a base64 data URI of a PNG, JPEG, GIF, WebP or SVG image; a remote reference is never printed, and a relative one is not printed in a PDF.";
+
+    private static readonly string[] ImageSourceParts = ["document-start", "group-start", "row", "group-end", "document-end"];
+
     /// <summary>The sentence of a refusal the row bound stopped: the record, the field, its size and the bound.</summary>
     private const string RowBoundSentence =
         "Record {0} has a text field at {1} of {2} bytes of UTF-8; the PDF output accepts at most {3} bytes per field. Shorten that field.";
@@ -79,6 +88,20 @@ public static class ErrorMessages
             return null;
         }
 
+        if (string.Equals(code, ImageSourceInvalid, StringComparison.Ordinal))
+        {
+            if (!TryParseImageSource(reason, out var part, out var ordinal, out var attribute))
+            {
+                WarnUnreadable(ImageSourceInvalid, logger);
+                return null;
+            }
+
+            var record = ordinal > 0
+                ? string.Format(CultureInfo.InvariantCulture, " of record {0}", ordinal)
+                : string.Empty;
+            return string.Format(CultureInfo.InvariantCulture, ImageSourceSentence, part, record, attribute);
+        }
+
         if (string.Equals(code, RowBoundExceeded, StringComparison.Ordinal))
         {
             if (!TryParseRowBound(reason, out var ordinal, out var size, out var bound, out var path))
@@ -108,6 +131,39 @@ public static class ErrorMessages
         }
 
         return null;
+    }
+
+    // The image-source reason, read whole and in order: "part=<part> ordinal=<n> attribute=<name>".
+    // The part is one of the five part tokens, the ordinal a non-negative number, and the
+    // attribute the name of an image source; anything else is not a reason this build wrote.
+    private static bool TryParseImageSource(string reason, out string part, out long ordinal, out string attribute)
+    {
+        part = string.Empty;
+        ordinal = 0;
+        attribute = string.Empty;
+        var fields = reason.Split(' ');
+        if (fields.Length != 3
+            || !fields[0].StartsWith("part=", StringComparison.Ordinal)
+            || !fields[1].StartsWith("ordinal=", StringComparison.Ordinal)
+            || !fields[2].StartsWith("attribute=", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var partText = fields[0]["part=".Length..];
+        var attributeText = fields[2]["attribute=".Length..];
+        if (Array.IndexOf(ImageSourceParts, partText) < 0
+            || !long.TryParse(fields[1]["ordinal=".Length..], NumberStyles.None, CultureInfo.InvariantCulture, out var number)
+            || !(attributeText == "src" || attributeText == "href" || attributeText.EndsWith(":href", StringComparison.Ordinal))
+            || attributeText.Length > 64)
+        {
+            return false;
+        }
+
+        part = partText;
+        ordinal = number;
+        attribute = attributeText;
+        return true;
     }
 
     // A reason this build cannot read is reported once, naming the code and never the text a

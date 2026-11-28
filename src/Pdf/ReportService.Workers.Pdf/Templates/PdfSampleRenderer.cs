@@ -502,6 +502,11 @@ public sealed class PdfSampleRenderer : ISampleRenderer
             case TemplateGuardException guard when string.Equals(guard.Code, TemplateErrorCodes.RenderTimeout, StringComparison.Ordinal):
                 return new SampleAttempt.Unavailable(SampleUnavailableCause.RenderTimeout, file);
 
+            case TemplateGuardException guard when string.Equals(guard.Code, TemplateErrorCodes.ImageSourceInvalid, StringComparison.Ordinal):
+                // A value the printed page does not admit as an image source: the version's own,
+                // decided by its data and its parts, never by the service.
+                return FailedAttempt(new SampleFailure(SampleFailureKind.ImageSource, file, Reason: guard.Message));
+
             case TemplateGuardException guard when guard.Limit is null or "render-output":
                 return FailedAttempt(new SampleFailure(SampleFailureKind.GuardOutput, file, Limit: guard.Limit));
 

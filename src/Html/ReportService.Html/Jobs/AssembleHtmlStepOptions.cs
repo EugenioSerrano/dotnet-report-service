@@ -46,6 +46,7 @@ public static class AssembleHtmlStepOptions
         "DATA_INVALID",
         "QUOTA_EXCEEDED",
         "EXECUTION_FAILED",
+        "IMAGE_SOURCE_INVALID",
     ];
 
     /// <summary>Builds the execution settings of one HTML assembly.</summary>

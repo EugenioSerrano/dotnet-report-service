@@ -127,6 +127,9 @@ public static class TemplateRefusal
         /// <summary>The sample is larger than one block.</summary>
         public const string SampleOverBound = "sample-over-bound";
 
+        /// <summary>The sample composes an image source that is not an image data URI.</summary>
+        public const string SampleImageSource = "sample-image-source";
+
         /// <summary>The printed sample does not carry what its parts composed.</summary>
         public const string SampleNotPrinted = "sample-not-printed";
 
@@ -141,6 +144,7 @@ public static class TemplateRefusal
             SampleFailureKind.EngineLimit => SampleEngineLimit,
             SampleFailureKind.GuardOutput => SampleOutputLimit,
             SampleFailureKind.OverBound => SampleOverBound,
+            SampleFailureKind.ImageSource => SampleImageSource,
             SampleFailureKind.EmptySample => SampleEmpty,
             SampleFailureKind.Unreadable => SampleFormat,
             _ => SampleNotPrinted,
