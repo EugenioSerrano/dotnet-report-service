@@ -9,7 +9,9 @@ namespace ReportService.Templates;
 /// <list type="bullet">
 /// <item>a render call above 16 Mi characters, or a block above 32 MiB, ends with
 /// <c>QUOTA_EXCEEDED limit=render-output</c>;</item>
-/// <item>a block not produced within 60 s ends with <c>RENDER_TIMEOUT</c>.</item>
+/// <item>a block not produced within 60 s ends with <c>RENDER_TIMEOUT</c>;</item>
+/// <item>the source of an image that is not an image data URI the output admits ends with
+/// <c>IMAGE_SOURCE_INVALID</c>, naming the part, the record and the attribute.</item>
 /// </list>
 /// The values are guard values far above the measured cost of admissible data;
 /// they exist for a template that misbehaves, not for the data of a job.
@@ -26,14 +28,27 @@ public sealed class GuardedWriter : TextWriter
     public static readonly TimeSpan MaximumBlockTime = TimeSpan.FromSeconds(60);
 
     private readonly TextWriter inner;
+    private readonly ImageSourceScanner images;
+    private TemplatePart part = TemplatePart.DocumentStart;
+    private long ordinal;
     private readonly TimeProvider clock;
     private readonly long startedAt;
     private long bytes;
     private int callCharacters;
 
-    /// <summary>Creates a writer over <paramref name="inner"/>, starting the block's deadline now.</summary>
+    /// <summary>Creates a writer over <paramref name="inner"/> for the printed page, starting the block's deadline now.</summary>
     public GuardedWriter(TextWriter inner, TimeProvider clock)
+        : this(inner, clock, ImageSourcePolicy.Pdf)
     {
+    }
+
+    /// <summary>
+    /// Creates a writer over <paramref name="inner"/>, starting the block's deadline now. Every
+    /// image source the composed text carries is checked under <paramref name="imageSources"/>.
+    /// </summary>
+    public GuardedWriter(TextWriter inner, TimeProvider clock, ImageSourcePolicy imageSources)
+    {
+        images = new ImageSourceScanner(imageSources);
         this.inner = inner;
         this.clock = clock;
         startedAt = clock.GetTimestamp();
@@ -58,6 +73,25 @@ public sealed class GuardedWriter : TextWriter
 
     /// <summary>Starts a new render call of the same block; the block's totals are kept.</summary>
     public void BeginCall() => callCharacters = 0;
+
+    /// <summary>Names the part about to be composed and its record, for the diagnostic of a refused image source.</summary>
+    /// <param name="composed">The part.</param>
+    /// <param name="recordOrdinal">The record of a row part, or 0.</param>
+    public void BeginPart(TemplatePart composed, long recordOrdinal)
+    {
+        part = composed;
+        ordinal = recordOrdinal;
+    }
+
+    /// <summary>Ends the block's text: an image source left open is refused.</summary>
+    public void Complete()
+    {
+        if (images.Complete() is { } attribute)
+        {
+            Refusal = TemplateGuardException.ImageSource(part, ordinal, attribute);
+            throw Refusal;
+        }
+    }
 
     /// <inheritdoc />
     public override void Write(char value) => Write(value.ToString());
@@ -96,6 +130,12 @@ public sealed class GuardedWriter : TextWriter
             Refusal = TemplateGuardException.Quota(
                 "render-output",
                 $"The composed text of the block passed {MaximumBlockBytes} bytes.");
+            throw Refusal;
+        }
+
+        if (images.Feed(value) is { } attribute)
+        {
+            Refusal = TemplateGuardException.ImageSource(part, ordinal, attribute);
             throw Refusal;
         }
 

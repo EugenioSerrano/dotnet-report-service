@@ -25,7 +25,8 @@ public enum HtmlContextKind
 /// <summary>The context one output sits in, and the attribute it belongs to.</summary>
 /// <param name="Kind">The context.</param>
 /// <param name="AttributeName">The attribute whose value the output sits in, lower-cased; otherwise null.</param>
-public sealed record HtmlContextAt(HtmlContextKind Kind, string? AttributeName);
+/// <param name="TagName">The tag the output sits in, lower-cased with any prefix kept; otherwise null.</param>
+public sealed record HtmlContextAt(HtmlContextKind Kind, string? AttributeName, string? TagName = null);
 
 /// <summary>One reference an HTML document or a stylesheet makes the render fetch.</summary>
 /// <param name="Url">The reference, as written after trimming and unquoting.</param>
@@ -184,7 +185,7 @@ public static class HtmlScanner
                 {
                     readingTagName = false;
                 }
-                else if (char.IsLetterOrDigit(character))
+                else if (char.IsLetterOrDigit(character) || character is ':' or '-')
                 {
                     tagName += character;
                 }
@@ -243,6 +244,7 @@ public static class HtmlScanner
         }
 
         var lowerAttribute = attrName.Length > 0 ? attrName.ToLowerInvariant() : null;
+        var lowerTag = inTag && tagName.Length > 0 ? tagName.ToLowerInvariant() : null;
         if (rawText.Equals("script", StringComparison.OrdinalIgnoreCase))
         {
             return new HtmlContextAt(HtmlContextKind.Script, null);
@@ -257,12 +259,44 @@ public static class HtmlScanner
         {
             return new HtmlContextAt(
                 quote == '\0' ? HtmlContextKind.AttributeValueUnquoted : HtmlContextKind.AttributeValueQuoted,
-                lowerAttribute);
+                lowerAttribute,
+                lowerTag);
         }
 
         return inTag
-            ? new HtmlContextAt(HtmlContextKind.Tag, lowerAttribute)
+            ? new HtmlContextAt(HtmlContextKind.Tag, lowerAttribute, lowerTag)
             : new HtmlContextAt(HtmlContextKind.Text, null);
+    }
+
+    /// <summary>
+    /// Whether an attribute of a tag is the source of an image: the <c>src</c> of an
+    /// <c>img</c> (or of an <c>image</c>, which an HTML parser reads as <c>img</c>), and the
+    /// <c>href</c> or any prefixed <c>href</c> of an SVG <c>image</c>. Tag names are compared
+    /// on their local part, after the last colon. A record value may be written there; the
+    /// output writer admits it at render only as an image data URI.
+    /// </summary>
+    /// <param name="tagName">The tag's name, lower-cased.</param>
+    /// <param name="attributeName">The attribute's name, lower-cased.</param>
+    public static bool IsImageSourcePosition(string? tagName, string? attributeName)
+    {
+        if (string.IsNullOrEmpty(tagName) || string.IsNullOrEmpty(attributeName))
+        {
+            return false;
+        }
+
+        var tag = LocalName(tagName);
+        if (attributeName == "src")
+        {
+            return tag is "img" or "image";
+        }
+
+        return LocalName(attributeName) == "href" && tag == "image";
+    }
+
+    private static string LocalName(string name)
+    {
+        var colon = name.LastIndexOf(':');
+        return colon < 0 ? name : name[(colon + 1)..];
     }
 
     /// <summary>Whether an attribute must never carry a value derived from the records.</summary>

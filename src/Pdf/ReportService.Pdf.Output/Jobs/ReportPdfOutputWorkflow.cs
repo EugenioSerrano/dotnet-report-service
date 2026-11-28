@@ -114,6 +114,7 @@ public sealed class ReportPdfOutputWorkflow
         "QUOTA_EXCEEDED",
         "OUTPUT_LIMIT_EXCEEDED",
         "ARTIFACT_INTEGRITY_FAILED",
+        "IMAGE_SOURCE_INVALID",
     ];
 
     /// <summary>The identifier of the one execution that produces <paramref name="reportJobId"/>'s PDF output.</summary>
@@ -194,9 +195,11 @@ public sealed class ReportPdfOutputWorkflow
         }
         catch (BlockRenderFailure blockFailure)
         {
-            var carried = ((blockFailure.InnerException as ActivityFailureException)?.InnerException as ApplicationFailureException)?.ErrorType;
+            var application = (blockFailure.InnerException as ActivityFailureException)?.InnerException as ApplicationFailureException;
+            var carried = application?.ErrorType;
             var (code, reason) = await ExhaustionAsync(
                 carried,
+                application?.Message,
                 () => Workflow.ExecuteActivityAsync(
                     (AttemptCauseActivities activities) => activities.FindLastAttemptCauseAsync(
                         new FindLastAttemptCauseInput(input.OutputId, blockFailure.BlockIndex)),
@@ -221,6 +224,7 @@ public sealed class ReportPdfOutputWorkflow
             var carried = (failure.InnerException as ApplicationFailureException)?.ErrorType;
             var (code, reason) = await ExhaustionAsync(
                 carried,
+                (failure.InnerException as ApplicationFailureException)?.Message,
                 () => Workflow.ExecuteActivityAsync(
                     (AttemptCauseActivities activities) => activities.FindLastAttemptCauseAsync(
                         new FindLastAttemptCauseInput(input.OutputId, 0)),
@@ -383,15 +387,32 @@ public sealed class ReportPdfOutputWorkflow
     /// <param name="carried">The code the last failure carries, or <see langword="null"/> when it carries none.</param>
     /// <param name="read">The read of the block's last recorded cause.</param>
     /// <returns>The code and the reason the output ends with.</returns>
+    public static Task<(string Code, string? Reason)> ExhaustionAsync(
+        string? carried,
+        Func<Task<LastAttemptCause?>> read) =>
+        ExhaustionAsync(carried, null, read);
+
+    /// <summary>
+    /// The code and the reason an output ends with, as <see cref="ExhaustionAsync(string?, Func{Task{LastAttemptCause?}})"/>
+    /// decides them, keeping the carried message of an image-source refusal as its reason: that
+    /// message names the part, the record and the attribute, and never a value.
+    /// </summary>
+    /// <param name="carried">The code the last failure carries, or <see langword="null"/> when it carries none.</param>
+    /// <param name="carriedMessage">The message the last failure carries, or <see langword="null"/>.</param>
+    /// <param name="read">The read of the block's last recorded cause.</param>
+    /// <returns>The code and the reason the output ends with.</returns>
     public static async Task<(string Code, string? Reason)> ExhaustionAsync(
         string? carried,
+        string? carriedMessage,
         Func<Task<LastAttemptCause?>> read)
     {
         ArgumentNullException.ThrowIfNull(read);
 
         if (IsDeterministicRefusal(carried))
         {
-            return (carried!, null);
+            return string.Equals(carried, "IMAGE_SOURCE_INVALID", StringComparison.Ordinal)
+                ? (carried!, carriedMessage)
+                : (carried!, null);
         }
 
         var last = await read().ConfigureAwait(true);
@@ -436,6 +457,7 @@ public sealed class ReportPdfOutputWorkflow
         "EXECUTION_FAILED",
         "OUTPUT_LIMIT_EXCEEDED",
         "ARTIFACT_INTEGRITY_FAILED",
+        "IMAGE_SOURCE_INVALID",
     };
 
     private static async Task FailTheOutputAsync(

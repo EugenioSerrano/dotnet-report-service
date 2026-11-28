@@ -220,6 +220,12 @@ public sealed class SampleRenderCheck(ISampleRenderer renderer, ILogger<SampleRe
                 "the sample cannot print a report with no records (" + (failure.Reason ?? "no-page") + ").",
                 "Make the document parts render their header for zero records."),
 
+            SampleFailureKind.ImageSource => TemplateRefusal.Refuse(
+                TemplateCheckCodes.TemplateInvalid,
+                file,
+                "the source of an image is not an image data URI (" + (failure.Reason ?? "image-source") + ").",
+                "Give the image as a base64 data URI of image/png, image/jpeg, image/gif, image/webp or image/svg+xml; a remote or relative reference is not printed."),
+
             SampleFailureKind.PageCode => TemplateRefusal.Refuse(
                 TemplateCheckCodes.TemplateInvalid,
                 PackagePath.ManifestFileName,

@@ -72,6 +72,7 @@ public sealed class RenderPdfBlockActivityTests : IDisposable
             "QUOTA_EXCEEDED",
             "EXECUTION_FAILED",
             "OUTPUT_LIMIT_EXCEEDED",
+            "IMAGE_SOURCE_INVALID",
         ];
         Assert.Equal(delivered, RenderPdfBlockOptions.NonRetryableErrorTypes);
         Assert.Equal(delivered, options.RetryPolicy!.NonRetryableErrorTypes);

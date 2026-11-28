@@ -347,6 +347,21 @@ public sealed class RenderPdfBlockActivity(
                     errorType: TemplateErrorCodes.QuotaExceeded,
                     nonRetryable: true);
             }
+            catch (TemplateGuardException guard) when (string.Equals(guard.Code, TemplateErrorCodes.ImageSourceInvalid, StringComparison.Ordinal))
+            {
+                // An image source the printed page does not admit is decided by the data and the
+                // parts: it is never retried and writes no cause row. The reason names the part,
+                // the record and the attribute, never the value.
+                logger.LogWarning(
+                    "Block {BlockIndex} of output {OutputId} not printed: an image source is not admitted ({Reason})",
+                    input.BlockIndex,
+                    input.OutputId,
+                    guard.Message);
+                throw new ApplicationFailureException(
+                    guard.Message,
+                    errorType: TemplateErrorCodes.ImageSourceInvalid,
+                    nonRetryable: true);
+            }
             catch (EngineRefusedException refused)
             {
                 // The version's engine cannot compose the block: nothing was composed or

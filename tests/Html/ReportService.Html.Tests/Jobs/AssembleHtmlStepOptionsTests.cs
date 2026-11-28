@@ -51,7 +51,7 @@ public sealed class AssembleHtmlStepOptionsTests
     public void TheNeverRetriedCodesAreTheDeterministicRefusalsOfTheHtmlPath()
     {
         Assert.Equal(
-            ["UNSUPPORTED_CAPABILITY", "TEMPLATE_INVALID", "DATA_INVALID", "QUOTA_EXCEEDED", "EXECUTION_FAILED"],
+            ["UNSUPPORTED_CAPABILITY", "TEMPLATE_INVALID", "DATA_INVALID", "QUOTA_EXCEEDED", "EXECUTION_FAILED", "IMAGE_SOURCE_INVALID"],
             AssembleHtmlStepOptions.NonRetryableErrorTypes);
         Assert.Equal(
             AssembleHtmlStepOptions.NonRetryableErrorTypes,

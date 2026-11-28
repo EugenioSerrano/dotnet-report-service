@@ -50,6 +50,7 @@ public static class RenderPdfBlockStepOptions
         "EXECUTION_FAILED",
         "OUTPUT_LIMIT_EXCEEDED",
         "ARTIFACT_INTEGRITY_FAILED",
+        "IMAGE_SOURCE_INVALID",
     ];
 
     /// <summary>Builds the execution settings of one block render.</summary>
