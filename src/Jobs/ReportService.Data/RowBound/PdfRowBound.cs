@@ -10,6 +10,12 @@ namespace ReportService.Data;
 /// </summary>
 public static class PdfRowBound
 {
-    /// <summary>The most bytes of decoded UTF-8 one string value of a detail record may carry.</summary>
+    /// <summary>The most bytes of decoded UTF-8 one string value of a detail record may carry, unless it is an image data URI.</summary>
     public const int Bytes = 262_144;
+
+    /// <summary>
+    /// The most bytes of decoded UTF-8 one string value may carry when it is an image data URI
+    /// (<see cref="ImageDataUri"/>), its prefix included. Every other value keeps <see cref="Bytes"/>.
+    /// </summary>
+    public const int ImageDataUriBytes = 1_048_576;
 }

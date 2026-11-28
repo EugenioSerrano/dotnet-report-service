@@ -32,7 +32,7 @@ public sealed class ScribanTemplateAdapter : ITemplateEngineAdapter
     public const int RecursiveLimit = 100;
 
     /// <summary>The most characters one converted value may produce.</summary>
-    public const int LimitToString = 1024 * 1024;
+    public const int LimitToString = 2 * 1024 * 1024;
 
     /// <summary>The deadline of one regular-expression evaluation.</summary>
     public static readonly TimeSpan RegexTimeOut = TimeSpan.FromSeconds(1);

@@ -446,10 +446,11 @@ are planned after the MVP.
   with signed URLs; the Filesystem provider supports API streaming only.
 - **Limits and quotas**: maximum header and record size, block size, JSON
   depth, render timeout per block, concurrent blocks per job, PDF renders per
-  worker. The shipped defaults are starting hypotheses (1 MiB header and
-  record, 1 000 records or 8 MiB per block, 16 MiB hard maximum, 64 levels,
-  5-minute block timeout, 2 concurrent blocks, 1 render per PDF worker);
-  measure before relying on them.
+  worker. The data limits are fixed: 1 MiB header, 2 MiB record, blocks of at
+  most 2 000 records or 1 MiB with a larger record printed alone, 64 levels;
+  on a PDF, 256 KiB per text value and 1 MiB per image data URI. The other
+  shipped defaults are starting hypotheses (5-minute block timeout, 2
+  concurrent blocks, 1 render per PDF worker); measure before relying on them.
 - **PostgreSQL**, **Temporal** and **Valkey** (or Redis) connection settings.
   The service keeps its own records in a database and a login role of its own,
   neither of which may be the workflow engine's; the role is not a superuser and

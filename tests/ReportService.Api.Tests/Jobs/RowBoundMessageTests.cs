@@ -44,6 +44,14 @@ public sealed class RowBoundMessageTests
     }
 
     [Fact]
+    public void AnImageOverTheImageBoundNamesTheImageBound()
+    {
+        Assert.Equal(
+            "Record 3 has a text field at $.logo of 1048577 bytes of UTF-8; the PDF output accepts at most 1048576 bytes per field. Shorten that field.",
+            Format(StoredSentence(ordinal: 3, size: 1_048_577, bound: 1_048_576, path: "$.logo")));
+    }
+
+    [Fact]
     public void TheTwoRenderingsOfOneReasonAreIdentical()
     {
         var reason = StoredSentence(ordinal: 1_500, size: 262_145, bound: 262_144, path: "$.description");
@@ -67,6 +75,9 @@ public sealed class RowBoundMessageTests
     [InlineData("the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 keyword=type path=$.description")]
     [InlineData("the document cannot be used: code=ROW_BOUND_EXCEEDED reason=another-word size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description")]
     [InlineData("the document cannot be used: code=DATA_INVALID reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description")]
+    [InlineData("the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=1048576 bound=1048576 limit=row-bound ordinal=1500 offset=48213 path=$.description")]
+    [InlineData("the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=600000 bound=524288 limit=row-bound ordinal=1500 offset=48213 path=$.description")]
+    [InlineData("the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=3000000 bound=2097152 limit=row-bound ordinal=1500 offset=48213 path=$.description")]
     [InlineData("")]
     public void AReasonThisBuildCannotReadRendersNoMessageAndIsReportedOnce(string reason)
     {

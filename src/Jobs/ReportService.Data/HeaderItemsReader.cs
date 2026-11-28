@@ -134,6 +134,13 @@ public static class HeaderItemsReader
             {
                 if (_buffer.Length >= DataContractLimits.BufferCapBytes)
                 {
+                    // Inside the header the header bound applies first: a token the buffer cap
+                    // cannot hold is already larger than the header may be.
+                    if (_capturing && _capturingHeader)
+                    {
+                        throw Refuse(DataContractViolation.QuotaExceeded, null, "header", 0, _captureStart);
+                    }
+
                     throw Refuse(DataContractViolation.QuotaExceeded, null, "token", _ordinal, Absolute(_consumedInBuffer));
                 }
 

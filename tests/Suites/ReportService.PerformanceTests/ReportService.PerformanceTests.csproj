@@ -35,6 +35,14 @@
     <ProjectReference Include="..\..\..\src\Templates\ReportService.Templates\ReportService.Templates.csproj" />
     <!-- The assembly-at-ceiling case exercises the product's assembly and its reader directly. -->
     <ProjectReference Include="..\..\..\src\Pdf\ReportService.Pdf.Assembly\ReportService.Pdf.Assembly.csproj" />
+    <!-- The data-limits memory cases read and validate through the product reader and contract. -->
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.Data\ReportService.Data.csproj" />
+    <ProjectReference Include="..\..\..\src\Jobs\ReportService.DataContract\ReportService.DataContract.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The hostile inputs, shared with the probe the capped-container case runs. -->
+    <Compile Include="..\ReportService.DataReaderProbe\HostileCases.cs" Link="Shared\HostileCases.cs" />
   </ItemGroup>
 
   <ItemGroup>

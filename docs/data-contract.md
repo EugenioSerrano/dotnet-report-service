@@ -79,13 +79,40 @@ A snapshot that breaks nothing is not refused: a valid document, an empty
 `items` array, a single leading byte-order mark and trailing whitespace all pass
 the check, and a job over them continues to printing.
 
+## The size limits
+
+The reader holds every value to a fixed size, the same for every job:
+
+| Limit | Value | Refusal |
+|-------|-------|---------|
+| The header | 1 MiB (1 048 576 bytes of wire JSON) | `QUOTA_EXCEEDED limit=header` |
+| One record | 2 MiB (2 097 152 bytes of wire JSON, escapes and inner whitespace included) | `RECORD_TOO_LARGE limit=record` |
+| One token | 2 MiB, so a value the record limit admits is never refused as a token; inside the header the header limit applies first | `QUOTA_EXCEEDED limit=token` |
+| Nesting | 64 levels | `QUOTA_EXCEEDED limit=depth` |
+
+A record of up to 2 MiB lets a precomputed image travel in the record as a
+`data:` URI. Blocks still gather records only up to 1 MiB (and 2 000 records); a
+record larger than 1 MiB is printed in a block of its own, so every admitted
+record fits and no record is ever split.
+
 ## The PDF row bound
 
 One PDF detail record may carry at most **262 144 bytes** (256 KiB) of UTF-8 in
 any one string value, at any depth of the record, measured **after** the JSON
 escapes are resolved: a value written with escapes counts what it becomes once
-decoded, not the bytes it was written with. The rule is a constant of this
-version, never a setting.
+decoded, not the bytes it was written with. A value that is an **image data
+URI** may carry up to **1 048 576 bytes** (1 MiB), its `data:` prefix included.
+The bounds are constants of this version, never a setting.
+
+A value is an image data URI when, once decoded, it is in full: `data:`; one of
+`image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`; zero or
+more `;name=value` parameters; `;base64`; a comma; and a body made only of the
+base64 alphabet (`A-Z a-z 0-9 + /`) with at most two trailing `=`, of a length
+that is a multiple of four and with no whitespace. The scheme, the media type
+and `base64` are matched without regard to case. Every other value keeps the
+262 144-byte bound - a `data:` value of another media type, a percent-encoded
+data URI, and a value that starts like an image data URI but whose body breaks
+the rule included.
 
 - It applies to a job that asks for PDF output, and to detail records only: the
   `header` is not a row and its fields are not covered.
@@ -97,11 +124,13 @@ version, never a setting.
 - The **first** offending record in snapshot order is the one reported, and
   within one record the first over-bound value in document order. The refusal
   names the record by its number (the first record is `1`), the field's path
-  relative to the record, the value's size in bytes and the bound — never any
-  part of the value:
+  relative to the record, the value's size in bytes and the bound that applied
+  to it (262144, or 1048576 for an image data URI) — never any part of the
+  value:
 
   ```text
   the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=262145 bound=262144 limit=row-bound ordinal=1500 offset=48213 path=$.description
+  the document cannot be used: code=ROW_BOUND_EXCEEDED reason=field-too-large size=1048577 bound=1048576 limit=row-bound ordinal=3 offset=1204 path=$.logo
   ```
 
 - The path is the one every data diagnostic uses: declared member names as

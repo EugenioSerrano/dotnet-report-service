@@ -10,11 +10,11 @@ public static class DataContractLimits
     /// <summary>The most bytes the header value may occupy.</summary>
     public const long HeaderBytes = 1_048_576;
 
-    /// <summary>The most bytes one record may occupy.</summary>
-    public const long RecordBytes = 1_048_576;
+    /// <summary>The most bytes one record may occupy. A record above <see cref="BlockRecordBytes"/> is the only record of its block.</summary>
+    public const long RecordBytes = 2_097_152;
 
-    /// <summary>The most bytes any single token may occupy, whitespace included.</summary>
-    public const long TokenBytes = 1_048_576;
+    /// <summary>The most bytes any single token may occupy, whitespace included; equal to the record bound, so a value the record bound admits is never refused as a token. Inside the header the header bound applies first.</summary>
+    public const long TokenBytes = 2_097_152;
 
     /// <summary>The most levels of nesting a record or the header may reach.</summary>
     public const int Depth = 64;
@@ -22,7 +22,7 @@ public static class DataContractLimits
     /// <summary>The most records one block may hold.</summary>
     public const int BlockRecords = 2_000;
 
-    /// <summary>The most bytes of record content one block may hold.</summary>
+    /// <summary>The most bytes of record content one block accumulates; a single record above it, up to <see cref="RecordBytes"/>, is placed in a block alone.</summary>
     public const long BlockRecordBytes = 1_048_576;
 
     /// <summary>The buffer the reader starts with, before it grows by doubling.</summary>

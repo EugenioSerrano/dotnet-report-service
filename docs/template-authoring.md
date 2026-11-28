@@ -313,7 +313,7 @@ not).
 | One pattern | 1 024 characters |
 | One match of a pattern | 1 second, then the job ends `TEMPLATE_INVALID` |
 | Nesting of a value | 64, then the value cannot be decided |
-| One record | 1 MiB (the reader's own limit) |
+| One record | 2 MiB (the reader's own limit) |
 
 The evaluator parses the schema with its own bound as well, and that bound is
 lower than 64 positions: a schema nested past it is refused as `compile` rather
@@ -380,6 +380,29 @@ sample is verified — never silenced at print time.
    its amount prints on the page the row started on. A grid cell aligned to the
    bottom of a page cannot be split and is refused when a version is taken.
 
+## How large the data may be
+
+The data a job sends is held to fixed sizes; the full rules are in the
+[data contract](data-contract.md).
+
+- **One record: 2 MiB** of JSON as written. A record may carry a picture the
+  producer has computed - a chart, a signature, a photo - as a `data:` URI, so
+  the record is the place for an image that belongs to that record. An image
+  that belongs to the whole report, such as a logo, is a file of the package,
+  not data.
+- **The header: 1 MiB.** It is read with every block, so it is kept small.
+- **On a PDF, one value: 256 KiB of text, or 1 MiB for an image.** A value that
+  is an image data URI - `data:image/png`, `image/jpeg`, `image/gif`,
+  `image/webp` or `image/svg+xml`, base64-encoded - may carry up to 1 048 576
+  bytes; every other value up to 262 144 bytes. A larger value fails the PDF
+  output with `ROW_BOUND_EXCEEDED`, naming the record, the field, its size and
+  the bound that applied. HTML and Markdown outputs do not apply these bounds.
+- **Print a large value once.** The service stops a template whose output grows
+  beyond its limits (16 Mi characters in one call, 32 MiB in one block). A
+  header and a record at their limits, each printed once, stay inside them; a
+  template that prints the same large value - or the header - several times can
+  reach the limit and fails with `QUOTA_EXCEEDED limit=render-output`.
+
 ## The values a template can read
 
 The document is composed in block mode, and the same context is available to
@@ -413,7 +436,7 @@ no special mode. The job's data is an ordinary `header-items-v1` document in
 which **each record is one invoice**: its own fields, its lines as a nested
 array, its totals, and the values its graphics and codes are drawn from. The
 header describes the batch. Every record is checked against the record schema,
-printed once and in the order received, and the 1 MiB record bound applies to
+printed once and in the order received, and the 2 MiB record bound applies to
 each invoice.
 
 The examples `samples/templates/invoice-batch` and
@@ -860,10 +883,11 @@ this check passes, nothing of the version is kept.
   validated it against the package's `schema.json`. It is the version's own
   sample - not a fixture of the service, and never a job's data.
 - **One block.** A sample is one block: at most 2 000 records and at most 1 MiB
-  of record content. A larger sample is refused before anything is composed -
+  of record content, or a single record of up to 2 MiB, which a job prints in a
+  block of its own. A larger sample is refused before anything is composed -
   `sample.json: the sample holds N records and M bytes of record data, where one
-  block holds at most 2 000 records and 1 MiB. Reduce the sample to a single
-  block's worth of records.`
+  block holds at most 2 000 records and 1 MiB, or a single record of up to 2 MiB.
+  Reduce the sample to a single block's worth of records.`
 - **A sample the reader rejects is a refusal, not a crash.** A `sample.json` that
   does not follow the data format (for instance, no header) is refused in the
   same form: `sample.json: the sample does not follow the data format
