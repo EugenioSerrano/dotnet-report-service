@@ -10,7 +10,8 @@ namespace ReportService.Templates;
 /// Parts are parsed once, at preparation, and never again; a fresh context is
 /// built for every part, so nothing a template assigns survives the render call.
 /// The engine's limits are the product's (10 000 loop iterations, 100 nested
-/// calls, 1 MiB for one converted value, a one-second regular-expression
+/// calls, 16 Mi characters for one converted value - the output guard of one call -,
+/// a one-second regular-expression
 /// timeout), its cancellation token is the render's, and includes resolve only
 /// inside the package. Escaping is template discipline: <c>html.escape</c> is
 /// replaced by the product's one policy so that every engine encodes a data value
