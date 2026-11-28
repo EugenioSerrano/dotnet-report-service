@@ -1,0 +1,47 @@
+manifestVersion: "1.0"
+id: invoice-qr
+version: "1.0.0"
+owner: dev-consumer
+shared: false
+engine: liquid
+engineVersion: "2.40.0"
+dataContract:
+  version: "1.0"
+  profile: header-items-v1
+  schema: schema.json
+outputs:
+  html:
+    parts:
+      documentStart: html/document-start.html.liquid
+      row: html/row.html.liquid
+      documentEnd: html/document-end.html.liquid
+    styles: [html/styles.css]
+  pdf:
+    paper: A4
+    orientation: portrait
+    marginMm: { top: 15, right: 12, bottom: 18, left: 12 }
+    chunkLayout: page-boundary
+    pageNumbering: global
+    pageTotals:
+      enabled: false
+    verification:
+      anchors:
+        header:
+          - "$.reportTitle"
+          - "$.issuer.name"
+          - "$.batchId"
+        item:
+          - "$.invoiceNumber"
+          - "$.customer.name"
+  xlsx:
+    fallback: raw
+    columns:
+      - { path: invoiceNumber, type: string }
+      - { path: issueDate, type: date }
+      - { path: dueDate, type: date }
+      - { path: subtotal, type: decimal }
+      - { path: tax, type: decimal }
+      - { path: total, type: decimal }
+localeDefaults:
+  culture: es-AR
+  timeZone: America/Argentina/Buenos_Aires

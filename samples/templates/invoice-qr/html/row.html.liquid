@@ -1,0 +1,27 @@
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura {{ item.invoiceNumber }}</h2>
+    {% if item.flags.paid %}<p class="paid-stamp">PAGADA</p>{% endif %}
+    <p>Emitida {{ item.issueDate | format_date: "dd/MM/yyyy" }} · Vence {{ item.dueDate | format_date: "dd/MM/yyyy" }}</p>
+    <p class="customer">{{ item.customer.name }}</p>
+    <p>CUIT {{ item.customer.taxId }} · {{ item.customer.address }}</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    {% for line in item.lines %}
+      <tr><td class="num">{{ line.lineNumber }}</td><td class="text">{{ line.description }}</td><td class="num">{{ line.quantity | format_number: "N0" }}</td><td class="num">{{ line.unitPrice | format_number: "N2" }}</td><td class="num">{{ line.amount | format_number: "N2" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal {{ item.subtotal | format_number: "N2" }} · IVA {{ item.tax | format_number: "N2" }} · Total {{ item.total | format_number: "N2" }}</p>
+    {% if item.flags.showDueNotice %}<p class="due-notice">{{ item.dueNotice }}</p>{% endif %}
+    {% if item.flags.showQr %}<figure class="qr">
+      <img class="qr-code" src="{{ item.qr.image }}" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>{% endif %}
+  </div>
+</section>

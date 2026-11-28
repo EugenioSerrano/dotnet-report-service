@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <title>Lote de facturas con c&#243;digo QR</title>
+  <link rel="stylesheet" href="html/styles.css">
+</head>
+<body>
+<header class="batch-header">
+  <h1>Lote de facturas con c&#243;digo QR</h1>
+  <p>Comercial Ejemplo S.A. · CUIT 30-70000000-7</p>
+  <p>Lote invoice-qr-sample · 6 facturas · ARS</p>
+</header>
+<main class="invoices">
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000001</h2>
+    
+    <p>Emitida 02/11/2026 · Vence 02/12/2026</p>
+    <p class="customer">Ferreter&#237;a Los Andes S.A.</p>
+    <p>CUIT 30-71234567-1 · Av. Siempre Viva 742, Mendoza</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.250,50</td><td class="num">1.250,50</td></tr>
+    
+      <tr><td class="num">2</td><td class="text">Pintura l&#225;tex 20 L</td><td class="num">2</td><td class="num">1.287,50</td><td class="num">2.575,00</td></tr>
+    
+      <tr><td class="num">3</td><td class="text">Cable unipolar 2,5 mm (rollo)</td><td class="num">3</td><td class="num">1.324,50</td><td class="num">3.973,50</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 7.799,00 · IVA 1.637,79 · Total 9.436,79</p>
+    <p class="due-notice">Vence el 02/12/2026. Pasada esa fecha se aplican intereses.</p>
+    <figure class="qr">
+      <img class="qr-code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEXUlEQVR4nO2aS3LbQAxEcYO5/y1xA6Te66FkL1LlRVLwQrLsiFQzNQPi0w2w5kevrg/uY5f/4wdVdU71OaenzpmqORxw5tTh61XcmTmnJmdaAOd65hR/eK/i2EZNVXcXSy/+YX9dXMLBNq7dwJzu5hoO88MWfwGOdXdz/6er8IQZzX1+AW7m9AyfjmadmsNecA1dYhdnHP399T3eFnC+sGtN45wsHZsTVcTUt3y1gDtddapxT13Ufc3UaYFafhVnEhqQXOEX1borGeDgEZu4Mra7p/FLrHyTt65b/exjCzeNcbExP3wxB9traa4/u7juwQW0sRmc/fBr3HvtKo5IIYQ8tF4Pxr2BxIdZxbH2xlkJ80QVaRNfTfXpXZynccaUQaI7CUkuUVy8iktc82t9rsawMp5hS1acTRw7aNberDlR/2QlCuITR1s4S4rnTTzgsDx8ts2XyzhZxGVgxnWzCz6NVJtSuIojbd9DclLqi+FFYrrkbA/HsqktrB231OxKAq1PZlrFYVVCKCUGm+ML1sV8Vbs4sjVkQt8kzs8jV0IxtnHxA5ZMnZG4Xm3A1sIcV3GwBlQxhrYg4g6Ele9omEWct1tzyhFVo4n1IrB0jVWcvB+PNB9pZlwhrCwVchMnJ0zi1mGhNjqALZHbdFjEuVg1Mje+buUxK3n49tMdXEgs1S81kNDR6pHL7zy0hZPMGORhEbYXkCvRKU+dXsOZfSA3UO0Id1In6Uka8fDYJRyLptCgltOVuVXQmLJZs4oLYYDWmCb116R2FIzeu4rzlpOI7Hmk5KRa47TWmlWc/NCyooziyEpIPMXmy7g0U9P1UKW8OsIWnkdHbeFwBOrdJTWP7LO+pOLs4lytjBBKI3U1eeO8/i+1jOOshJqaGFbDtuxw2SM5qzhqCRGuZJL3a2iWb8F5dMoWjppiHwSpfENeVESpW1vGRRo7bsIlTE0KAhCPDl3EmQohrOmpc4lNJL+cZRxl2KHN1SmKY9VUug9Pn3ULF9+8zS0WHyEVdRDkKk418jjp2z1zhQJmVnEIUaWeoj2NrfAyiaxDsVVc9FNyNp8j5/2L3Hv325dwkUvODMNqv9x7stNTL5dwd5rE54zXE9wq0Fx1VnGZVj8y2Sx0m61pab76nUs4lXKkQNpu0cw6rLLldT+2cOgmzWqom5nsEUbRv/qdW7jMDyPwlPCZ5ChMLZG7uMhOHlLIsFPdzlt3zax4Fec4STWc1huJMVnTZPnW0zs4GOvtD2ZKh3s6ZMoTIK/neLZwmfODMenY61LwhTu+9eoSLq5oUBtO9oDzcMr13VXcrTRpp6c9aMhH3kvCV3EvgawXJOIvGVOk3PuwhrPoXc2eqUi6mpBbe0xfnnNbwbmNO/PPZ9MSuuB5KGUd147oHLJ79/Okh9e8nuNZxMkjTD2Z+6f1bz8ugn4TJ/F3dijnsgOsSiEppaO+iYv2TJ8602z7maEUefhtFffT52g/uI9d+l/7wR+wX1gIeDK6CgAAAABJRU5ErkJggg==" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000002</h2>
+    <p class="paid-stamp">PAGADA</p>
+    <p>Emitida 03/11/2026 · Vence 03/12/2026</p>
+    <p class="customer">Distribuidora R&#237;o Sur S.R.L.</p>
+    <p>CUIT 30-70987654-3 · Calle 9 N&#176; 1550, La Plata</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.350,50</td><td class="num">1.350,50</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 1.350,50 · IVA 283,60 · Total 1.634,10</p>
+    
+    <figure class="qr">
+      <img class="qr-code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEWklEQVR4nO2aS3IbMQxEeQPc/5a4AVLvNUe2FqnyIgmykPwpWdPjIjD4dIM886NXnw/u45e/EwfnnKrTVTV1quac4X3zSZ3i8iquZqrOnNPnVFd113Bppg6/+F7FHdY7fU4Pa+eGKuzr09e2bdwAadzddY7v84WJ/wGOJU/X0aWHSJgBRESs42Z49hXv1qk5g9+JhlPv8bKBM49+/3rPtwWcrzOdH0NzuqfIKnLqrV4t4Ir8JncwiWDArpmD49sbahdHEao53alEXOAPXkQpEbGJI7dLLxOXJo+xgfMplY8dWzifNQsfvvQ4SYVx1M6eWsZZcfTqGALYw4/t0HtXcWPrw4zCGJaNc28iWTtXcUnuZEwnq5o0Ij6MkN7F8aiH9Gndy3fu5V/MIYJXcc9zvwvHFszQ39z25PkWzgXztOnPfZkEJYlcqgTGJk6uSlnUo4YmgWBRt14u464zXb953VhBdZc2QsZWcaE1Bids7PYXm6OJryjYxF3fchGLUjORBNf92zjSCAdDJYiA1E2swuGtaFnEpSKS3vY+aqbKhU+gGNu4+NVyibv5K9pKYRrmuIrrtnaTMnJZqaOmRT4/ebSEk8XapuWI3pVcb7P/1QeXcBHtXMAEModIheekAMAYN3GsO4Xbd+Q3sSH3tglu46zY5EzjY++0kvORAVyruAgA1DCNRv86AqGE039e9WAL5/SIX+R0iKtyBZPCgHZxUgWaNQwswp0yLr24rHYTFw/TpxF8mRTaBenVDkJqFWfFjpqTtDpVkvMwY3DEuYpzYmQDDHdARunwkAup7CbONadTk1Mmk+2QCL6KfhWXWYwPX7VnvuPwtvF811s7OIsPH9ANzZs7MJSTfdmxg4Pn215MG6mrxTvNh8a4jJODWR8V7nySjGfyYGis4hx0EQARd7CbcMf8RetexTmnllir6e688CVgNG0ZFypBc1bPG6gKAhCPDl3D5YpVUmPSY0RxcZZxVJ4sWU1CjzaP1KDn25x1CedY2p2wW4QipDJwCHIVp5JCIUvEXts6l5c5aF3FZcKQ5LGvhFlgSHTos8+0hLMEZdZPgXRXx8QiFuQUuzg7icPLjDFfz96QuFcWcc7gsuS7K5H9xASwlXwVZ3UkBjJa4IZnuzhku3ZxNmo0ieI9+4gvumPlnFWcSW0GJdVt0s6WouifPr2HC1kIk00tv+I9+57LOAdI8GuaIUGZrU35jTPNXsbJDq1Cmb6FS3jKI7uJs4oLY7VPu3doeEobM7p+nePZwtkJ49fsgimbo15y+mMXZ1zmFNQVeTl94kdfc5AtnITaiVZUZ86fKEiJC/7PKi7HEdxhlzZoRMhY8v/tnNu/x0UTh+NkV+QO1ZXxbnbu4jTDswnPe12exMqhlHWcExDngj79AHIU4HWOZxEnU8y+ZmSyQznncTkqs4mT+Lt3mKFWghQ972Cul3FOZ+7xSg8zsn75YrT81z7TDu6n52g/uI9f+k/HwS/l70m86P6ezAAAAABJRU5ErkJggg==" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000003</h2>
+    
+    <p>Emitida 04/11/2026 · Vence 04/12/2026</p>
+    <p class="customer">Panader&#237;a El Trigal</p>
+    <p>CUIT 20-28765432-9 · San Mart&#237;n 210, Rosario</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.450,50</td><td class="num">1.450,50</td></tr>
+    
+      <tr><td class="num">2</td><td class="text">Pintura l&#225;tex 20 L</td><td class="num">2</td><td class="num">1.487,50</td><td class="num">2.975,00</td></tr>
+    
+      <tr><td class="num">3</td><td class="text">Cable unipolar 2,5 mm (rollo)</td><td class="num">3</td><td class="num">1.524,50</td><td class="num">4.573,50</td></tr>
+    
+      <tr><td class="num">4</td><td class="text">Servicio de flete</td><td class="num">4</td><td class="num">1.561,50</td><td class="num">6.246,00</td></tr>
+    
+      <tr><td class="num">5</td><td class="text">Guantes de trabajo (par)</td><td class="num">5</td><td class="num">1.598,50</td><td class="num">7.992,50</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 23.237,50 · IVA 4.879,88 · Total 28.117,38</p>
+    <p class="due-notice">Vence el 04/12/2026. Pasada esa fecha se aplican intereses.</p>
+    
+  </div>
+</section>
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000004</h2>
+    <p class="paid-stamp">PAGADA</p>
+    <p>Emitida 05/11/2026 · Vence 05/12/2026</p>
+    <p class="customer">Talleres Patag&#243;nicos S.A.</p>
+    <p>CUIT 30-69876543-0 · Ruta 3 km 1290, Comodoro Rivadavia</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.550,50</td><td class="num">1.550,50</td></tr>
+    
+      <tr><td class="num">2</td><td class="text">Pintura l&#225;tex 20 L</td><td class="num">2</td><td class="num">1.587,50</td><td class="num">3.175,00</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 4.725,50 · IVA 992,36 · Total 5.717,86</p>
+    
+    <figure class="qr">
+      <img class="qr-code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEU0lEQVR4nO2aS44cIRBEuQH3v2XeAOu9gB7NwpIXtsKL6fanqyqQICs/kQHr/NFn1g/uxy7/xg/WWnuv2Xufmb3PWuf93nttHldx+5y91iw+Z/ae2Qcct/mHP1Ucy1hn7ZmzmPqatTfrm8UQLtq4ObMw9cwwZvb7nv1f4BbfyfvX3vscQNyp487Zvu+lB6x91tms5TD6u780cMbR7z/f462A87POMH2ck6nPEFu6xfd8VcDtWTgB3jqY13Ud4kqglq/iNkF+QDLCB2uSl/BSPKKJwz25fwa/xMo3eR+DbN46ergzh3kfv4zYrEhLLwzdxekGmxwOOhUQoxtdju3iAN3bXPtwNrmIB/w4VRzVDq8cy+H1VXxhKDSUoC6OFIQxrcqJbpISHIIH5KcqLnOmwpjSKYdmIUKKYS/OWzgieggm3jmBI+shhDC7iaqK01NJilpU18QR4LNjvmzjJK1hYMb1uAoGGeqUwiZufOTUKXu3vjh/K+ON/xrOSh0CQcDbFQBlXTf+uzh4qzaVWmN3MhDUG4MnwRdx1hcJgwXHrJl2JRSjjcMT8E9LtMmc8JbDJjdNG2dVlsQmqZvTDSvb5xdvLRxdPO+cmkcoMerGukR7urhQGzOR9U+dwZWZxnGQKo55a13CybxorMu9LYJlnCKNMRP2f+kDLag++/y0haPccYEbGOjYWipru/yVh1q4JBxjx2qovJCwok95dbqGs5iQg2BgadyjKcXwRlcRp+JxZbeoMrcKyr4Va6q4MAWVmQiF6aIi0cSLqzhfuQTWtdjSa3CWAvr2ATXca+h89ykvV9o0Fb082cLZ6EVagPyzBD1V3mPC7OKuthqhkLlfcZr5p+J0cbl2FdIwK+HNm65ydXGkb7xAOKTa9snMiaE/fWgLRwBZVRRrlBrSC8jA5bRVHM5oGy/5D5tNa2BT6tLKOLXAUNn7944D8frQGm5rWSUjI1w+oYjkw1PGSRG5iSe85jhJSTXk6awt3JUWVPqDjxyXuyK7OJVp8mWo13XPjCDOPzpcB3dZQ4rNFbbsk9OnuCnWxEGlmfqrNDamwG0PJLld3N0fVrV8AiExZKI8yppNXHaTshbVTGtNOtCM2lWcbBrBKNK+xeZuF4ds7y7uaqvR4fhPG+Ozt2356CUdnJ7oIjyiEKFQjTAd/Vc97+BUZtxQv7uIHvYwOerAq4xLa3c5YfbnEFw9mKKmOV1c1N+7v3n1BQVWLsLOqrhIrG6t25PqnlJYT4DoqFVcBP57lkJXCHVMe6+zVnH+SvG7XWlOn5jav3SQFs5MdHc6o+q7bzyfkykfntPB5RyKHYCCsIt4ZCyLq+LSE7Mh4t4DHUG4Q9RN1YYqTtEjR+/gEzkf4+mi+MHXfnwPp4TpzmbIWOqfYz7neIo4N72MIjfZbT1Dce5RmSZOk4ZBKMrESdnZVvaaMu7qvh4zUuhi/ulakgIezynh/vQc7Q/uxy7zt/3gF14CZ/jl9+d/AAAAAElFTkSuQmCC" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000005</h2>
+    
+    <p>Emitida 06/11/2026 · Vence 06/12/2026</p>
+    <p class="customer">Librer&#237;a Del Centro</p>
+    <p>CUIT 27-31234567-4 · Belgrano 455, C&#243;rdoba</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.650,50</td><td class="num">1.650,50</td></tr>
+    
+      <tr><td class="num">2</td><td class="text">Pintura l&#225;tex 20 L</td><td class="num">2</td><td class="num">1.687,50</td><td class="num">3.375,00</td></tr>
+    
+      <tr><td class="num">3</td><td class="text">Cable unipolar 2,5 mm (rollo)</td><td class="num">3</td><td class="num">1.724,50</td><td class="num">5.173,50</td></tr>
+    
+      <tr><td class="num">4</td><td class="text">Servicio de flete</td><td class="num">4</td><td class="num">1.761,50</td><td class="num">7.046,00</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 17.245,00 · IVA 3.621,45 · Total 20.866,45</p>
+    
+    <figure class="qr">
+      <img class="qr-code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAEQElEQVR4nO2aQY7kOgxDfQPd/5a+gQfv0a6pv/mYzYCz6KCArkqYhu2IFCVnnT869vrB/azL34mDtdacmbP9svc+m/PD1b0mZ4u4OWe4xi17Zs1ei89eM/dyF8fvYfyH0QPaB8has8fLfdzZjn7PmuPAmcXZhxv+AdzwyFll8WsfVvtw1z+AY7DDCotfc9beezOLnD9dHET5n+M/fGvgOPwhkXZCdRMPa6T7l141cONAj6EwhoERugFvbpoubkEXSA6zPUUcBPcCpYk7xmjEknU+ig9w1p2pdXEDQATcZkZMBMaf5J3H8xrO4U7mIKmITJAL5FvnFi6BYJJhxLNd8Hyc2eN5CQd/NnQhSglX6OOFISF6tokzOjeSSDSsLLYLjQJw+3RxsEaplDd8NwnyMXxD/hrO5eTh52DQLG5wiudUcYfIdORKkAyazaoTtTGQTRwqdM8vDmcAvePLTIlNHPkFLTQxe+Gg4aBfui7jmAWx4AI/kFb2SWUTF+sKiuQHDHtzCaYsdXGp7nRfFgA3LKgAoP5Hh1o4raGCc2sVMrdRC/VJjqeL08JKISQnJpGK4EoRpVUTd42rUarnWQlajQ7J+6vP0MAhODvelTIKveTnWO4ZFVPFQWWU0ewMiSC+udoEftq4DJ2RUzITEsQr6Qc1N0dWcbDG09ouPTZhar52jh+/W8Lp/YEylRhXuRP7rVGs4kzP1sOMPrSy92BseKWJg8mkGCI0VRMkime05mvj0g9Uz9XJMJy/+jEcZBWnxyE0bbKGSnGJ1nwvDlo4E4zZjovKkDV8brdUqeJQG6iEHSM/W5hqYpMh08Pu4TBdMFwJZ70tmJMUXfq3zi3c7ZanGaK3ViZNQOF+F0d64XHHcTF6xp486Fy6OB+7tjW1imWAzpGE7aeKQyWfy7Edkio5yXA4faq4dD5sMCTtxZYZq7fbVcVlA+y2PEjNad3YrLYAnC5OK0ijOjmZfrXmWkb5j8q4pGU7bpGg254xEG7NXMQlG9+2ludBf0L1q8/fwr3EQv4zPrMJ5j6dNreKi+HX3UDqWzanyiMoPjxq4axQ4PjduOHP2120C1bGQWVa05cx3BAFiockiKs4Cj0TTDyYrZC7yG5SnC7Ottbn5YQLuDs4lgXTxYXoRCnqSLK+DQYE6aNVRVw8A/2i7HhGyIO3/9DF6R4+/vAV7+Zt2w+ufhF3XwTI84bvLrvuJkq5uzgV0gnkFY/X4rfnpSKdLs4+iIXK7TRww9XL53GauJul7Xrsz1aJuv5Eqom771G4I5Ky1JcTsrf43Qcp4fKOh6pjE9jtTWsUJvK7D9LCGZcGgx7Cl97SS4+yf/XrOjj7SL44phiZqCmnpNXtstdxqecMiexD3Ibh7zzdxClDEt1X8HTYyTjuxXZxig7JOhuJSrjvyaiedZzrmf06+PQkM1Zb3ezi/uT4wf2sy/kbcfALP5nbRpdrd6YAAAAASUVORK5CYII=" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="invoice">
+  <div class="invoice-head">
+    <h2>Factura A-0001-00000006</h2>
+    
+    <p>Emitida 07/11/2026 · Vence 07/12/2026</p>
+    <p class="customer">Agro Servicios Pampa S.R.L.</p>
+    <p>CUIT 30-71555444-2 · Ruta 5 km 210, Bragado</p>
+  </div>
+  <table class="lines">
+    <thead>
+      <tr><th class="num">#</th><th class="text">Descripción</th><th class="num">Cantidad</th><th class="num">Precio unitario</th><th class="num">Importe</th></tr>
+    </thead>
+    <tbody>
+    
+      <tr><td class="num">1</td><td class="text">Tornillos 8x40 (caja x100)</td><td class="num">1</td><td class="num">1.750,50</td><td class="num">1.750,50</td></tr>
+    
+      <tr><td class="num">2</td><td class="text">Pintura l&#225;tex 20 L</td><td class="num">2</td><td class="num">1.787,50</td><td class="num">3.575,00</td></tr>
+    
+    </tbody>
+  </table>
+  <div class="invoice-foot">
+    <p class="totals">Subtotal 5.325,50 · IVA 1.118,36 · Total 6.443,86</p>
+    <p class="due-notice">Vence el 07/12/2026. Pasada esa fecha se aplican intereses.</p>
+    <figure class="qr">
+      <img class="qr-code" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATQAAAE0AQAAAACK+vIyAAAETElEQVR4nO2aQXLjMAwE+QP+/5f4Abe6h7I3h63KIVuTg+0klqVRioQGwADkOt96zfrgPnb5PzxYa+29Zu89M3uftc7e63C899pcruL2OXutw5l9BvQ+HHGaP/xUcYspMJ0ZDtfig/nNmu3lOo6hzuLSMKfZzxuT/wIcH7OO+LVgwjmAzv4FODADVvjaxyPZsPZXvjRw+tG/X1/9rYDz5WFIGlLgWzr+13hVwO1Za69ZTunA07jRHoFavorbBKHzQLyAy/OCpTCiisO3GfDAyziPD/9I23nPt4M7wwyws+8ES74OfzF0F4dhtaqx25OcMLxjfoJSFeeo1xgb5cXBuNeRODhtnMM3AcarBjci5/A/yNhNHFMgBAWpdx/SNpfPWQNdm7g8d4MQZIjBF1PA48eM08QFmoTzUhIwl5OmxjJOrSpTn6gEEQzqxss27opCxq9fj7PgJl2dVNjEEWh86Dxv9SxDv+NP9q7i+Ea+w4GgJe5kQtTxca0uzpFHTPDo4SURiLyIwceipYiL3IILSdWGIhVZJEYbZ0Lhjc8Y1HFvCwDcXOVYxUV0kfAI4Lj4xsGVOBbLp4wDqbzBjTx6fF2hPV2cpTtXoaZlHkxlXoZxzF3FcU7rKmaJi/q62tsk2MZhVX1G7cXM1LVXbyPKqjjSnToCO+NQtkQgr+XyOw61cIZCkwpYhavlClNyQm2cJcDg5k8NpUcRKq+qbeIkpHRM3cmnWdDywLqviku9ZBzH5QngeHlaNLK4i0s1Z62s/mdWGlzSmmuquFdBB01VN9ZViu7YvIuzXxmtTV5hCiECFwyYXRwuY0Xnx61C06FRk73yUQsHDxi6vYW0HLA4JfJTYjVxaRiNJ73J8knljaFfdWgNh4ZwKSKa2/I9CTGT222cJRQkfVSjYscGWCJTF2cQ4pTo/OJMnnCtpIszMFKiMIm7qCMHaPHb5q/iQkX1NPGIHG2ItAalSrk6p4ZDNqRGeYKQ7TgbDkFWcXQYjIXQYL2WdWSFvZtXHCrhom2MkuYVm4ZZHVPUPutRJRz6Qbvi1gmX9oHN2mqKLs6OW1aL00G/z95GF3c/eqOEs0jOigMe49qr0elmRcvAIi6lieHbhty8l4sjtncXh9tkpwJBO9Hb5qsupuCu4lIiuzynq9/Gkrdcp+ri0kxIgaeRs5KTloihvYrjQOVFgxBSurRpqExPc7o4G5dWA+Gn+xWwMnamXfPU0yVcFKsh0iZwMk9qFIu99zp2B/es82c9keuRjriS2uJ0celqJZ9Y5N00mJW7t51LODMNTz6bUSQqlrfFwI1Pn7qEu/vI0peOkE39bttfb6riTHo+9LQtGbmkkKp2l7o4mx5Ga/Ng9sfIivDgVc8UcVdLJE5KCBtdYWkfl9qdKj7r/llCvLsp/rJzBZetRtefDZPphPDtdtSbuOwjY9yRixZPqVrcwfXwoIX77j7aD+5jl/lpHvwBP9FE0K7DimEAAAAASUVORK5CYII=" alt="Código QR del comprobante">
+      <figcaption>Escaneá el código para verificar el comprobante</figcaption>
+    </figure>
+  </div>
+</section>
+</main>
+</body>
+</html>
+<style>@page { size: 210mm 297mm !important; margin: 15mm 12mm 18mm 12mm !important; }</style>

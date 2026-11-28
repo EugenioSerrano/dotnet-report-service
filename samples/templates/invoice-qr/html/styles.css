@@ -1,0 +1,94 @@
+/* Page size and margins match outputs.pdf in template.yaml. One invoice per
+   page: every invoice after the first starts a new page. The layout is this
+   template's choice, not a rule of the service. */
+@page {
+  size: A4 portrait;
+  margin: 15mm 12mm 18mm 12mm;
+}
+
+body {
+  margin: 0;
+  color: #222;
+  font-family: "Liberation Sans", sans-serif;
+  font-size: 9pt;
+}
+
+.batch-header h1 {
+  margin: 0 0 4pt;
+  font-size: 14pt;
+}
+
+.batch-header p {
+  margin: 0 0 2pt;
+}
+
+.invoice {
+  padding-top: 6pt;
+}
+
+.invoice + .invoice {
+  break-before: page;
+}
+
+.invoice h2 {
+  margin: 0 0 4pt;
+  font-size: 12pt;
+}
+
+.invoice p {
+  margin: 0 0 2pt;
+}
+
+.paid-stamp {
+  font-weight: bold;
+  color: #1a6b1a;
+}
+
+table.lines {
+  width: 100%;
+  margin: 6pt 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.lines th,
+table.lines td {
+  padding: 2pt 4pt;
+  border-bottom: 0.5pt solid #ccc;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.lines .text {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+table.lines .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals {
+  font-weight: bold;
+}
+
+.due-notice {
+  font-style: italic;
+}
+
+.qr {
+  margin: 6pt 0 0;
+}
+
+.qr-code {
+  display: block;
+  width: 30mm;
+  height: 30mm;
+  image-rendering: pixelated;
+}
+
+.qr figcaption {
+  margin-top: 2pt;
+}

@@ -13,6 +13,7 @@ One sample template package per pilot dataset (see
 | [`invoice-batch/`](invoice-batch/) | a batch of six invoices, one per page, rendered by Liquid | A4 portrait | off | — |
 | [`invoice-batch-two-up/`](invoice-batch-two-up/) | the same batch, two invoices per page, rendered by Liquid | A4 portrait | off | — |
 | [`invoice-charts/`](invoice-charts/) | a batch of six invoices with two charts each, one per page, rendered by Liquid | A4 portrait | off | — |
+| [`invoice-qr/`](invoice-qr/) | a batch of six invoices, each with its own QR image, one per page, rendered by Liquid | A4 portrait | off | — |
 
 Each package contains:
 
@@ -55,6 +56,15 @@ with `num_invariant`, so the charts print the same under `es-AR` as under
 Its `sample.json` is written by hand (six fictitious invoices, including a month
 and a whole year at zero and a single-line invoice). The pattern is explained in
 [Drawing a chart](../../docs/template-authoring.md#drawing-a-chart).
+
+**The QR sample.** `invoice-qr` is the invoice batch with the barcode replaced by
+a QR: each record carries `qr.text` and `qr.image`, a PNG image data URI of that
+text which the producer computed before the job, and the row part prints it as
+the source of an `<img>`. Its `sample.json` is written by hand (the six
+fictitious invoices of `invoice-batch`, one with its QR switched off) and its
+images were encoded once outside the repository; nothing in the service or the
+tool generates a QR. The pattern is explained in
+[Graphics and codes are computed before the job](../../docs/template-authoring.md#graphics-and-codes-are-computed-before-the-job).
 
 
 **The takeable fixture family is test data, not a shipped sample.** The test
