@@ -32,7 +32,13 @@ public sealed record ScaffoldRequest(
 /// <summary>What one local render is asked for.</summary>
 /// <param name="PackageDirectory">The package folder to check and render.</param>
 /// <param name="OutputDirectory">Where the two files go, or <see langword="null"/> for <c>artifacts/template-preview/&lt;id&gt;/&lt;version&gt;</c>.</param>
-public sealed record RenderRequest(string PackageDirectory, string? OutputDirectory = null);
+/// <param name="DataFile">A data file to render instead of the package's <c>sample.json</c>, or <see langword="null"/> for the sample.</param>
+/// <param name="WorkingDirectory">The base of the default output location, or <see langword="null"/> for the current directory.</param>
+public sealed record RenderRequest(
+    string PackageDirectory,
+    string? OutputDirectory = null,
+    string? DataFile = null,
+    string? WorkingDirectory = null);
 
 /// <summary>
 /// The local authoring loop around a template package. <see cref="Scaffold"/> writes a
@@ -198,6 +204,25 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
             return 2;
         }
 
+        string? dataFile = null;
+        if (request.DataFile is not null)
+        {
+            dataFile = TargetPath(request.DataFile);
+            if (dataFile is null)
+            {
+                output.WriteLine("error: the data file is not a usable path.");
+                return 2;
+            }
+
+            if (!File.Exists(dataFile))
+            {
+                output.WriteLine("error: the data file '" + dataFile + "' does not exist.");
+                return 2;
+            }
+        }
+
+        // The identity and the output location stay the author's package's, whatever data is rendered.
+        var sourcePackage = packageDirectory;
         var fixedClock = new FixedTimeProvider(FixedInstant);
         var scratchRoot = Path.Combine(
             Path.GetTempPath(),
@@ -208,6 +233,17 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
         SampleRenderMetrics? metrics = null;
         try
         {
+            if (dataFile is not null)
+            {
+                // The named data goes through the sample's own path: a copy of the package
+                // whose sample.json is that file, checked and rendered exactly as a sample.
+                var staged = Path.Combine(scratchRoot, "package");
+                StagePackage(sourcePackage, staged, PreviewDirectoryOf(request));
+                var data = await File.ReadAllBytesAsync(dataFile, cancellationToken).ConfigureAwait(false);
+                await File.WriteAllBytesAsync(Path.Combine(staged, "sample.json"), data, cancellationToken).ConfigureAwait(false);
+                packageDirectory = staged;
+            }
+
             var read = ReadManifest(packageDirectory);
             if (!read.Succeeded)
             {
@@ -227,8 +263,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
                 return 1;
             }
 
-            var templateId = string.IsNullOrEmpty(manifest.Id) ? Path.GetFileName(packageDirectory) : manifest.Id;
-            var version = string.IsNullOrEmpty(manifest.Version) ? "0.0.0" : manifest.Version;
+            var (templateId, version) = IdentityOf(manifest, sourcePackage);
             var files = new FolderTemplatePackageFiles(packageDirectory);
             var candidate = new TemplateCandidate(
                 templateId,
@@ -331,7 +366,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
                         engineName,
                         rendered.Facts,
                         scratchOutput,
-                        request.OutputDirectory,
+                        OutputDirectoryFor(request.OutputDirectory, request.WorkingDirectory, templateId, version),
                         packageDirectory,
                         output,
                         cancellationToken).ConfigureAwait(false);
@@ -364,7 +399,7 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
         string engineName,
         SampleFacts facts,
         string scratchOutput,
-        string? namedOutput,
+        string outputDirectory,
         string packageDirectory,
         TextWriter output,
         CancellationToken cancellationToken)
@@ -407,14 +442,6 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
             return 3;
         }
 
-        var outputDirectory = namedOutput is { Length: > 0 }
-            ? Path.GetFullPath(namedOutput)
-            : Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "artifacts",
-                "template-preview",
-                templateId,
-                version);
         Directory.CreateDirectory(outputDirectory);
 
         var htmlPath = Path.Combine(outputDirectory, templateId + "-" + version + ".html");
@@ -460,6 +487,78 @@ public sealed class TemplateAuthoringTool(TimeProvider? clock = null, Func<IPdfP
                 Path.GetRelativePath(packageDirectory, path).Replace(Path.DirectorySeparatorChar, '/'),
                 File.ReadAllText(path)))
             .OrderBy(source => source.Key, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// Where a render of <paramref name="request"/> writes its files now, by the rule the
+    /// render itself applies, or <see langword="null"/> when the package's manifest cannot
+    /// be read at this moment.
+    /// </summary>
+    /// <param name="request">The render request.</param>
+    /// <returns>The full path of the output directory, or <see langword="null"/>.</returns>
+    public static string? PreviewDirectoryOf(RenderRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.OutputDirectory is { Length: > 0 } named)
+        {
+            return TargetPath(named);
+        }
+
+        if (TargetPath(request.PackageDirectory) is not { } package)
+        {
+            return null;
+        }
+
+        try
+        {
+            var read = ReadManifest(package);
+            if (read is not { Succeeded: true, Manifest: { } manifest })
+            {
+                return null;
+            }
+
+            var (templateId, version) = IdentityOf(manifest, package);
+            return OutputDirectoryFor(null, request.WorkingDirectory, templateId, version);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The output location: the named directory, else <c>artifacts/template-preview/&lt;id&gt;/&lt;version&gt;</c> under the working directory.</summary>
+    private static string OutputDirectoryFor(string? namedOutput, string? workingDirectory, string templateId, string version) =>
+        namedOutput is { Length: > 0 }
+            ? Path.GetFullPath(namedOutput)
+            : Path.Combine(
+                workingDirectory is { Length: > 0 } ? Path.GetFullPath(workingDirectory) : Directory.GetCurrentDirectory(),
+                "artifacts",
+                "template-preview",
+                templateId,
+                version);
+
+    /// <summary>The identifier and version a render names its files by.</summary>
+    private static (string Id, string Version) IdentityOf(TemplateManifest manifest, string packageDirectory) =>
+        (string.IsNullOrEmpty(manifest.Id) ? Path.GetFileName(packageDirectory) : manifest.Id,
+            string.IsNullOrEmpty(manifest.Version) ? "0.0.0" : manifest.Version);
+
+    /// <summary>Copies the package's files, leaving out an output directory that lies inside it.</summary>
+    private static void StagePackage(string source, string target, string? outputDirectory)
+    {
+        var excluded = outputDirectory is null
+            ? null
+            : Path.TrimEndingDirectorySeparator(outputDirectory) + Path.DirectorySeparatorChar;
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            if (excluded is not null && file.StartsWith(excluded, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var destination = Path.Combine(target, Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(file, destination);
+        }
+    }
 
     /// <summary>
     /// The take's presentation rule for a sample: the package's own locale when it declares
